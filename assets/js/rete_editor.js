@@ -195,6 +195,131 @@ export async function createEditor(container) {
         }
     });
 
+    // Selection box for Shift+click drag to select multiple nodes
+    let isSelecting = false;
+    let selectionStartX = 0;
+    let selectionStartY = 0;
+
+    const createSelectionBox = () => {
+        const box = document.createElement('div');
+        box.id = 'rete-selection-box';
+        document.body.appendChild(box);
+        return box;
+    };
+    const selectionBox = createSelectionBox();
+
+    const updateSelectionBox = (startX, startY, endX, endY) => {
+        const left = Math.min(startX, endX);
+        const top = Math.min(startY, endY);
+        const width = Math.abs(endX - startX);
+        const height = Math.abs(endY - startY);
+        
+        selectionBox.style.cssText = `
+            position: fixed;
+            left: ${left}px;
+            top: ${top}px;
+            width: ${width}px;
+            height: ${height}px;
+            border: 2px solid oklch(58% 0.233 277.117);
+            background: oklch(58% 0.233 277.117 / 0.1);
+            border-radius: 0.5rem;
+            z-index: 9999;
+            pointer-events: none;
+            display: ${width > 5 && height > 5 ? 'block' : 'none'};
+        `;
+    };
+
+    const selectNodesInBox = () => {
+        const boxRect = selectionBox.getBoundingClientRect();
+        const { k, x: tx, y: ty } = area.area.transform;
+        
+        const boxLeft = (boxRect.left - tx) / k;
+        const boxRight = (boxRect.right - tx) / k;
+        const boxTop = (boxRect.top - ty) / k;
+        const boxBottom = (boxRect.bottom - ty) / k;
+        
+        editor.getNodes().forEach(node => {
+            const view = area.nodeViews.get(node.id);
+            if (view && view.element) {
+                const nodeEl = view.element;
+                const nodeRect = nodeEl.getBoundingClientRect();
+                
+                const nodeLeft = (nodeRect.left - tx) / k;
+                const nodeRight = (nodeRect.right - tx) / k;
+                const nodeTop = (nodeRect.top - ty) / k;
+                const nodeBottom = (nodeRect.bottom - ty) / k;
+                
+                const overlaps = !(nodeRight < boxLeft || nodeLeft > boxRight || nodeBottom < boxTop || nodeTop > boxBottom);
+                
+                if (overlaps) {
+                    node.selected = true;
+                    const customNode = nodeEl.querySelector('custom-node');
+                    if (customNode) {
+                        customNode.selected = true;
+                        customNode.requestUpdate();
+                    }
+                }
+            }
+        });
+        
+        selectionBox.style.display = 'none';
+        
+        // Re-enable drag
+        if (area.area.privateDragInit) {
+            area.area.setDragHandler(area.area.privateDragInit);
+        }
+        
+        isSelecting = false;
+    };
+
+    const handleSelectionMove = (e) => {
+        if (isSelecting) {
+            e.preventDefault();
+            updateSelectionBox(selectionStartX, selectionStartY, e.clientX, e.clientY);
+        }
+    };
+
+    const handleSelectionUp = (e) => {
+        if (isSelecting) {
+            e.preventDefault();
+            document.removeEventListener('mousemove', handleSelectionMove);
+            document.removeEventListener('mouseup', handleSelectionUp);
+            selectNodesInBox();
+        }
+    };
+
+    container.addEventListener('mousedown', (e) => {
+        const containerRect = container.getBoundingClientRect();
+        const isInsideContainer = e.clientX >= containerRect.left && 
+                                  e.clientX <= containerRect.right && 
+                                  e.clientY >= containerRect.top && 
+                                  e.clientY <= containerRect.bottom;
+        
+        if (!isInsideContainer) return;
+        
+        const isBackground = e.target === container || 
+            e.target.classList.contains('rete-area') || 
+            e.target.classList.contains('scene-layer') ||
+            e.target.classList.contains('layer');
+        
+        if (e.shiftKey && isBackground) {
+            e.preventDefault();
+            e.stopPropagation();
+            isSelecting = true;
+            
+            // Disable drag to freeze camera
+            area.area.privateDragInit = area.area.dragHandler;
+            area.area.setDragHandler(null);
+            
+            selectionStartX = e.clientX;
+            selectionStartY = e.clientY;
+            updateSelectionBox(selectionStartX, selectionStartY, selectionStartX, selectionStartY);
+            
+            document.addEventListener('mousemove', handleSelectionMove);
+            document.addEventListener('mouseup', handleSelectionUp);
+        }
+    });
+
     const processAddNode = async (name, definition, data = null) => {
         if (!definition) {
             console.error("Node definition not provided for", name);
