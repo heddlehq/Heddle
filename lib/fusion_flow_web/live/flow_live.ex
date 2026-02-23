@@ -832,7 +832,9 @@ defmodule FusionFlowWeb.FlowLive do
             "Create Node": "<%= gettext("Create Node") %>",
             "Copy": "<%= gettext("Copy") %>",
             "Paste": "<%= gettext("Paste") %>",
-            "Delete Selected": "<%= gettext("Delete Selected") %>"
+            "Delete Selected": "<%= gettext("Delete Selected") %>",
+            "Undo": "<%= gettext("Undo") %>",
+            "Redo": "<%= gettext("Redo") %>"
           };
         </script>
 
