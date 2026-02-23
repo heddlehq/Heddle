@@ -69,11 +69,6 @@ defmodule FusionFlowWeb.Components.Flow.FlowHeader do
               </.button>
             </div>
           <% end %>
-
-          <div class="flex items-center gap-1.5 mt-0.5">
-            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Active Session</p>
-          </div>
         </div>
       </div>
 
