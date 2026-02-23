@@ -169,7 +169,6 @@ export async function createEditor(container) {
         return context;
     });
 
-    // Handle drag and drop
     container.addEventListener("dragover", (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = "copy";
@@ -181,12 +180,9 @@ export async function createEditor(container) {
         
         if (!nodeName) return;
 
-        // Ensure we have a definition for this node
         if (editor.handleDrop) {
             const rect = container.getBoundingClientRect();
             
-            // Calculate coordinates taking zoom/pan into account
-            // Adjust the - 110 and - 24 to match the drag image hook offsets
             const { k, x: tx, y: ty } = area.area.transform;
             const x = (e.clientX - rect.left - tx - 40 * k) / k;
             const y = (e.clientY - rect.top - ty - 40 * k) / k;
@@ -195,7 +191,6 @@ export async function createEditor(container) {
         }
     });
 
-    // Selection box for Shift+click drag to select multiple nodes
     let isSelecting = false;
     let selectionStartX = 0;
     let selectionStartY = 0;
@@ -264,7 +259,6 @@ export async function createEditor(container) {
         
         selectionBox.style.display = 'none';
         
-        // Re-enable drag
         if (area.area.privateDragInit) {
             area.area.setDragHandler(area.area.privateDragInit);
         }
@@ -289,6 +283,8 @@ export async function createEditor(container) {
     };
 
     container.addEventListener('mousedown', (e) => {
+        if (!container.contains(e.target)) return;
+        
         const containerRect = container.getBoundingClientRect();
         const isInsideContainer = e.clientX >= containerRect.left && 
                                   e.clientX <= containerRect.right && 
@@ -302,12 +298,40 @@ export async function createEditor(container) {
             e.target.classList.contains('scene-layer') ||
             e.target.classList.contains('layer');
         
+        const clickedElement = document.elementFromPoint(e.clientX, e.clientY);
+        let clickedNodeId = null;
+        
+        const nodeViews = area.nodeViews;
+        for (const [nodeId, view] of nodeViews) {
+            if (view.element && view.element.contains(clickedElement)) {
+                clickedNodeId = nodeId;
+                break;
+            }
+        }
+        
+        if (clickedNodeId && e.shiftKey && e.button === 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            const node = editor.getNode(clickedNodeId);
+            if (node) {
+                node.selected = true;
+                const view = area.nodeViews.get(clickedNodeId);
+                if (view && view.element) {
+                    const customNode = view.element.querySelector('custom-node');
+                    if (customNode) {
+                        customNode.selected = true;
+                        customNode.requestUpdate();
+                    }
+                }
+                return;
+            }
+        }
+        
         if (e.shiftKey && isBackground) {
             e.preventDefault();
             e.stopPropagation();
             isSelecting = true;
             
-            // Disable drag to freeze camera
             area.area.privateDragInit = area.area.dragHandler;
             area.area.setDragHandler(null);
             
@@ -317,6 +341,254 @@ export async function createEditor(container) {
             
             document.addEventListener('mousemove', handleSelectionMove);
             document.addEventListener('mouseup', handleSelectionUp);
+        }
+        else if (isBackground && e.button === 0) {
+            editor.getNodes().forEach(node => {
+                node.selected = false;
+                const view = area.nodeViews.get(node.id);
+                if (view && view.element) {
+                    const customNode = view.element.querySelector('custom-node');
+                    if (customNode) {
+                        customNode.selected = false;
+                        customNode.requestUpdate();
+                    }
+                }
+            });
+        }
+    });
+
+    let contextMenu = null;
+    let contextMenuX = 0;
+    let contextMenuY = 0;
+
+    window.copiedNodesData = [];
+
+    const removeContextMenu = () => {
+        if (contextMenu) {
+            contextMenu.remove();
+            contextMenu = null;
+        }
+    };
+
+    const createContextMenu = (x, y) => {
+        removeContextMenu();
+        
+        contextMenuX = x;
+        contextMenuY = y;
+        
+        const menu = document.createElement('div');
+        menu.className = 'fixed z-[200] bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-gray-100 dark:border-slate-700 py-1.5 min-w-[200px]';
+        
+        const allNodes = editor.getNodes();
+        
+        const selectedNodes = allNodes.filter(n => {
+            if (n.selected) return true;
+            const view = area.nodeViews.get(n.id);
+            if (view && view.element) {
+                const customNode = view.element.querySelector('custom-node');
+                if (customNode && customNode.selected) return true;
+            }
+            return false;
+        });
+        
+        const hasSelection = selectedNodes.length > 0;
+        const hasCopiedData = window.copiedNodesData && window.copiedNodesData.length > 0;
+        
+        if (hasSelection) {
+            const copyItem = document.createElement('button');
+            copyItem.className = 'w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-3';
+            copyItem.innerHTML = `<span>Copy <span class="text-gray-400 text-xs">Ctrl+C</span></span>`;
+            copyItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.copiedNodesData = selectedNodes.map(node => {
+                    let position = { x: 0, y: 0 };
+                    const view = area.nodeViews.get(node.id);
+                    if (view && view.position) position = { x: view.position.x, y: view.position.y };
+                    return { type: node.type, label: node.label, data: { ...node.data }, position };
+                });
+                removeContextMenu();
+            });
+            menu.appendChild(copyItem);
+        }
+        
+        if (hasCopiedData) {
+            const pasteItem = document.createElement('button');
+            pasteItem.className = 'w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-3';
+            pasteItem.innerHTML = `<span>Paste <span class="text-gray-400 text-xs">Ctrl+V</span></span>`;
+            pasteItem.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const { k, x: tx, y: ty } = area.area.transform;
+                const pasteX = (contextMenuX - tx) / k;
+                const pasteY = (contextMenuY - ty) / k;
+                const positions = window.copiedNodesData.map(n => n.position || { x: 0, y: 0 });
+                const minX = Math.min(...positions.map(p => p.x));
+                const minY = Math.min(...positions.map(p => p.y));
+                
+                for (const nodeData of window.copiedNodesData) {
+                    const pos = nodeData.position || { x: 0, y: 0 };
+                    const newId = 'node_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    const newData = { ...nodeData.data, id: newId, label: nodeData.label, position: { x: pasteX + (pos.x - minX) + 20, y: pasteY + (pos.y - minY) + 20 }};
+                    const definition = editor.nodeDefinitions && editor.nodeDefinitions[nodeData.type];
+                    if (definition) {
+                        await processAddNode(nodeData.type, definition, newData);
+                    }
+                }
+                removeContextMenu();
+            });
+            menu.appendChild(pasteItem);
+        }
+        
+        if (hasSelection) {
+            const deleteItem = document.createElement('button');
+            deleteItem.className = 'w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3';
+            deleteItem.innerHTML = `<span>Delete <span class="text-gray-400 text-xs">Del</span></span>`;
+            deleteItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                const currentNodes = editor.getNodes();
+                const selectedIds = new Set(selectedNodes.map(n => n.id));
+                
+                const allConnections = [...editor.getConnections()];
+                allConnections.forEach(conn => {
+                    if (selectedIds.has(conn.source) || selectedIds.has(conn.target)) {
+                        try { editor.removeConnection(conn.id); } catch(e) { 
+                        }
+                    }
+                });
+                
+                currentNodes.forEach(node => {
+                    if (selectedIds.has(node.id)) {
+                        try { editor.removeNode(node.id); } catch(e) { 
+                        }
+                    }
+                });
+                
+                removeContextMenu();
+            });
+            menu.appendChild(deleteItem);
+            
+            const sep = document.createElement('div');
+            sep.className = 'my-1 border-t border-gray-100 dark:border-slate-700';
+            menu.appendChild(sep);
+        }
+        
+        const createItem = document.createElement('button');
+        createItem.className = 'w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-3';
+        createItem.innerHTML = `<span>Create Node</span>`;
+        createItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const { k, x: tx, y: ty } = area.area.transform;
+            const nodeX = (contextMenuX - tx) / k;
+            const nodeY = (contextMenuY - ty) / k;
+            if (editor.triggerCreateNode) {
+                editor.triggerCreateNode(nodeX, nodeY);
+            }
+            removeContextMenu();
+        });
+        menu.appendChild(createItem);
+        
+        let posX = x;
+        let posY = y;
+        if (x + 200 > window.innerWidth) posX = window.innerWidth - 210;
+        if (y + 200 > window.innerHeight) posY = window.innerHeight - 210;
+        
+        menu.style.left = posX + 'px';
+        menu.style.top = posY + 'px';
+        document.body.appendChild(menu);
+        contextMenu = menu;
+    };
+
+    container.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        createContextMenu(e.clientX, e.clientY);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.button === 0 && contextMenu && !contextMenu.contains(e.target)) {
+            removeContextMenu();
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        
+        if (e.key === 'Escape') {
+            removeContextMenu();
+            editor.getNodes().forEach(node => {
+                node.selected = false;
+                const view = area.nodeViews.get(node.id);
+                if (view && view.element) {
+                    const customNode = view.element.querySelector('custom-node');
+                    if (customNode) { customNode.selected = false; customNode.requestUpdate(); }
+                }
+            });
+        }
+        
+        if (e.key === 'c' && (e.ctrlKey || e.metaKey)) {
+            const nodes = editor.getNodes().filter(n => n.selected);
+            if (nodes.length > 0) {
+                e.preventDefault();
+                window.copiedNodesData = nodes.map(node => {
+                    let position = { x: 0, y: 0 };
+                    const view = area.nodeViews.get(node.id);
+                    if (view && view.position) position = { x: view.position.x, y: view.position.y };
+                    return { type: node.type, label: node.label, data: { ...node.data }, position };
+                });
+            }
+        }
+        
+        if (e.key === 'v' && (e.ctrlKey || e.metaKey)) {
+            if (window.copiedNodesData && window.copiedNodesData.length > 0) {
+                e.preventDefault();
+                const { k, x: tx, y: ty } = area.area.transform;
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                const pasteX = (centerX - tx) / k;
+                const pasteY = (centerY - ty) / k;
+                const positions = window.copiedNodesData.map(n => n.position || { x: 0, y: 0 });
+                const minX = Math.min(...positions.map(p => p.x));
+                const minY = Math.min(...positions.map(p => p.y));
+                
+                window.copiedNodesData.forEach(async (nodeData) => {
+                    const pos = nodeData.position || { x: 0, y: 0 };
+                    const newId = 'node_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    const newData = { ...nodeData.data, id: newId, label: nodeData.label, position: { x: pasteX + (pos.x - minX) + 20, y: pasteY + (pos.y - minY) + 20 }};
+                    const definition = editor.nodeDefinitions && editor.nodeDefinitions[nodeData.type];
+                    if (definition) await processAddNode(nodeData.type, definition, newData);
+                });
+            }
+        }
+        
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            const allNodes = editor.getNodes();
+            const nodes = allNodes.filter(n => {
+                if (n.selected) return true;
+                const view = area.nodeViews.get(n.id);
+                if (view && view.element) {
+                    const customNode = view.element.querySelector('custom-node');
+                    if (customNode && customNode.selected) return true;
+                }
+                return false;
+            });
+            
+            if (nodes.length > 0) {
+                e.preventDefault();
+                
+                const selectedIds = new Set(nodes.map(n => n.id));
+                
+                const allConnections = [...editor.getConnections()];
+                allConnections.forEach(conn => {
+                    if (selectedIds.has(conn.source) || selectedIds.has(conn.target)) {
+                        try { editor.removeConnection(conn.id); } catch(e) {}
+                    }
+                });
+                
+                const currentNodes = editor.getNodes();
+                currentNodes.forEach(node => {
+                    if (selectedIds.has(node.id)) {
+                        try { editor.removeNode(node.id); } catch(e) {}
+                    }
+                });
+            }
         }
     });
 
@@ -389,7 +661,6 @@ export async function createEditor(container) {
             node.addControl(field.name, control);
         });
 
-        // Restore code_elixir and code_python controls if they exist in saved data or from field defaults
         const elixirField = uiFields.find(f => f.name === 'code_elixir');
         const pythonField = uiFields.find(f => f.name === 'code_python');
         
@@ -434,11 +705,11 @@ export async function createEditor(container) {
             return await processAddNode(name, definition, data);
         },
         importData: async ({ nodes, connections, definitions }) => {
-            console.log("ReteEditor: Importing data...", { nodes, connections });
             await editor.clear();
 
+            editor.nodeDefinitions = definitions || {};
+
             for (const nodeData of nodes) {
-                // Use type if available, otherwise fallback to label (legacy support)
                 const nodeType = nodeData.type || nodeData.label;
                 const definition = definitions[nodeType];
 
@@ -488,6 +759,9 @@ export async function createEditor(container) {
         onErrorDetails: (cb) => {
             editor.triggerErrorDetails = cb;
         },
+        onCreateNode: (cb) => {
+            editor.triggerCreateNode = cb;
+        },
         onDrop: (cb) => {
             editor.handleDrop = cb;
         },
@@ -533,10 +807,8 @@ export async function createEditor(container) {
             const node = editor.getNode(nodeId);
             if (!node) return;
 
-            // Update inputs
             const currentInputs = Object.keys(node.inputs);
 
-            // Remove inputs that are no longer present
             for (const inputKey of currentInputs) {
                 if (!inputs.includes(inputKey)) {
                     const connections = editor.getConnections().filter(c => c.target === nodeId && c.targetInput === inputKey);
@@ -547,17 +819,14 @@ export async function createEditor(container) {
                 }
             }
 
-            // Add new inputs
             for (const inputKey of inputs) {
                 if (!node.inputs[inputKey]) {
                     node.addInput(inputKey, new ClassicPreset.Input(socket));
                 }
             }
 
-            // Update outputs
             const currentOutputs = Object.keys(node.outputs);
 
-            // Remove outputs that are no longer present
             for (const outputKey of currentOutputs) {
                 if (!outputs.includes(outputKey)) {
                     const connections = editor.getConnections().filter(c => c.source === nodeId && c.sourceOutput === outputKey);
@@ -568,7 +837,6 @@ export async function createEditor(container) {
                 }
             }
 
-            // Add new outputs
             for (const outputKey of outputs) {
                 if (!node.outputs[outputKey]) {
                     node.addOutput(outputKey, new ClassicPreset.Output(socket));
@@ -591,7 +859,7 @@ export async function createEditor(container) {
 
                 nodes.push({
                     id: node.id,
-                    type: node.type || node.label, // Use saved type, fallback to label
+                    type: node.type || node.label,
                     label: node.label,
                     controls,
                     position: area.nodeViews.get(node.id)?.position || { x: 0, y: 0 }
@@ -617,10 +885,8 @@ export async function createEditor(container) {
                     customNode.classList.add('error');
                     customNode.error = message;
                 } else {
-                    // Fallback if custom-node is not found (should not happen with Lit render)
                     view.element.classList.add('error');
                 }
-                // Optional: Show message somehow? For now just border.
             } else {
                 console.warn("ReteEditor: View or element not found for nodeId", nodeId);
             }
