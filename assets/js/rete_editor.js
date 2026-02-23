@@ -126,6 +126,45 @@ export async function createEditor(container) {
 
     AreaExtensions.simpleNodesOrder(area);
 
+    let isMultiNodeDragging = false;
+    let isTranslatingSelection = false;
+    const clearMultiDragCursor = () => {
+        if (isMultiNodeDragging) {
+            isMultiNodeDragging = false;
+            container.style.cursor = '';
+        }
+        window.removeEventListener('pointerup', clearMultiDragCursor);
+    };
+    area.addPipe(async (context) => {
+        if (!context || context.type !== 'nodetranslated') return context;
+        if (isTranslatingSelection) return context;
+        const { id: draggedId, position, previous } = context.data;
+        const delta = { x: position.x - previous.x, y: position.y - previous.y };
+        const selected = editor.getNodes().filter(n => n.selected);
+        if (selected.length <= 1) return context;
+        const draggedInSelection = selected.some(n => n.id === draggedId);
+        if (!draggedInSelection) return context;
+        if (!isMultiNodeDragging) {
+            isMultiNodeDragging = true;
+            container.style.cursor = 'grabbing';
+            window.addEventListener('pointerup', clearMultiDragCursor, { once: true });
+        }
+        isTranslatingSelection = true;
+        try {
+            for (const node of selected) {
+                if (node.id === draggedId) continue;
+                const view = area.nodeViews.get(node.id);
+                if (view) {
+                    const p = view.position;
+                    await area.translate(node.id, { x: p.x + delta.x, y: p.y + delta.y });
+                }
+            }
+        } finally {
+            isTranslatingSelection = false;
+        }
+        return context;
+    });
+
     const UNDO_MAX = 50;
     const undoStack = [];
     const redoStack = [];
@@ -181,7 +220,7 @@ export async function createEditor(container) {
     };
 
     const pushUndo = () => {
-        if (isRestoring) return;
+        if (isRestoring || isTranslatingSelection) return;
         const snapshot = getSnapshot();
         const top = undoStack[undoStack.length - 1];
         if (top && isSameSnapshot(top, snapshot)) return;
@@ -281,7 +320,7 @@ export async function createEditor(container) {
             context.type === 'translated'
         ) {
             processChange();
-            if (!isRestoring && !isImportingData) {
+            if (!isRestoring && !isImportingData && !isTranslatingSelection) {
                 if (context.type === 'translated') {
                     if (Date.now() - lastImportOrRestoreTime < IGNORE_TRANSLATED_MS) return context;
                     if (translateDebounce) clearTimeout(translateDebounce);
@@ -367,6 +406,7 @@ export async function createEditor(container) {
         const boxTop = (boxRect.top - ty) / k;
         const boxBottom = (boxRect.bottom - ty) / k;
         
+        const nodesInBox = [];
         editor.getNodes().forEach(node => {
             const view = area.nodeViews.get(node.id);
             if (view && view.element) {
@@ -380,13 +420,30 @@ export async function createEditor(container) {
                 
                 const overlaps = !(nodeRight < boxLeft || nodeLeft > boxRight || nodeBottom < boxTop || nodeTop > boxBottom);
                 
-                if (overlaps) {
-                    node.selected = true;
-                    const customNode = nodeEl.querySelector('custom-node');
-                    if (customNode) {
-                        customNode.selected = true;
-                        customNode.requestUpdate();
-                    }
+                if (overlaps) nodesInBox.push(node);
+            }
+        });
+        
+        editor.getNodes().forEach(node => {
+            node.selected = false;
+            const view = area.nodeViews.get(node.id);
+            if (view && view.element) {
+                const customNode = view.element.querySelector('custom-node');
+                if (customNode) {
+                    customNode.selected = false;
+                    customNode.requestUpdate();
+                }
+            }
+        });
+        
+        nodesInBox.forEach(node => {
+            node.selected = true;
+            const view = area.nodeViews.get(node.id);
+            if (view && view.element) {
+                const customNode = view.element.querySelector('custom-node');
+                if (customNode) {
+                    customNode.selected = true;
+                    customNode.requestUpdate();
                 }
             }
         });
