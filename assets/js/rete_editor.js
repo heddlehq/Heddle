@@ -70,7 +70,6 @@ export async function createEditor(container) {
         if (!addToSelection) selectedConnectionIds.clear();
         selectedConnectionIds.add(connId);
         area.update('connection', connId);
-        // Não limpar seleção de nós ao selecionar conexão, para permitir apagar nó + conexão em conjunto
     };
     const clearConnectionSelection = () => {
         if (selectedConnectionIds.size === 0) return;
