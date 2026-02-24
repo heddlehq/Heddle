@@ -5,6 +5,9 @@ defmodule FusionFlowWeb.DashboardLive do
 
   @impl true
   def mount(_params, _session, socket) do
+    user = socket.assigns[:current_scope] && socket.assigns.current_scope.user
+    system_admin? = user && FusionFlow.Accounts.User.system_admin?(user)
+
     flows = Flows.list_flows()
     active_count = length(flows)
 
@@ -12,7 +15,8 @@ defmodule FusionFlowWeb.DashboardLive do
      socket
      |> assign(page_title: "Dashboard")
      |> assign(flows: flows)
-     |> assign(active_count: active_count)}
+     |> assign(active_count: active_count)
+     |> assign(system_admin?: system_admin?)}
   end
 
   @impl true
@@ -33,14 +37,17 @@ defmodule FusionFlowWeb.DashboardLive do
           </p>
         </div>
 
-        <.button
-          navigate={~p"/flows"}
-          variant="primary"
-        >
-          {gettext("Manage Flows")}
-        </.button>
+        <%= if @system_admin? do %>
+          <.button
+            navigate={~p"/flows"}
+            variant="primary"
+          >
+            {gettext("Manage Flows")}
+          </.button>
+        <% end %>
       </div>
 
+      <%= if @system_admin? do %>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
           <div class="flex items-center justify-between mb-4">
@@ -186,6 +193,7 @@ defmodule FusionFlowWeb.DashboardLive do
           </div>
         <% end %>
       </div>
+      <% end %>
     </div>
     """
   end
