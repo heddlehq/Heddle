@@ -1,27 +1,102 @@
 name: Playwright Tests
+
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
+
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: postgres:17-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fusion_flow_dev
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: dev
+
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: lts/*
-    - name: Install dependencies
-      run: npm ci
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-    - name: Run Playwright tests
-      run: npx playwright test
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: playwright-report
-        path: playwright-report/
-        retention-days: 30
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18'
+          otp-version: '28'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Cache Elixir deps
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-dev-${{ hashFiles('**/mix.lock') }}
+
+      - name: Install Elixir dependencies
+        run: mix deps.get
+
+      - name: Compile
+        run: mix compile
+
+      - name: Install npm dependencies (root)
+        run: npm ci
+
+      - name: Install npm dependencies (assets)
+        run: npm ci
+        working-directory: assets
+
+      - name: Setup assets
+        run: mix assets.setup
+
+      - name: Build assets
+        run: mix assets.build
+
+      - name: Setup database
+        run: mix ecto.setup
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Start Phoenix server
+        run: mix phx.server &
+        env:
+          SECRET_KEY_BASE: dummy_secret_key_base_for_ci_e2e_tests_only_1234567890ab
+          OPENAI_API_KEY: dummy_openai_key
+
+      - name: Wait for Phoenix server
+        run: |
+          for i in $(seq 1 30); do
+            curl -s http://localhost:4000/users/log-in > /dev/null && break
+            echo "Waiting for Phoenix... ($i)"
+            sleep 2
+          done
+
+      - name: Run Playwright tests
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
