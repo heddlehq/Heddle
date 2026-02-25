@@ -2,14 +2,20 @@ name: Elixir CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   test:
-    name: Run mix test
+    name: Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }}
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        elixir: ['1.18', '1.19']
+        otp: ['28']
 
     services:
       db:
@@ -26,6 +32,11 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      MIX_ENV: test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,23 +44,25 @@ jobs:
       - name: Setup Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: '1.18'
-          otp-version: '28'
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
 
-      - name: Cache dependencies
+      - name: Cache deps and build
         uses: actions/cache@v3
         with:
-          path: deps
-          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-          restore-keys: ${{ runner.os }}-mix-
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
 
       - name: Install dependencies
         run: mix deps.get
 
+      - name: Compile
+        run: mix compile --warnings-as-errors
+
       - name: Run tests
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
           SECRET_KEY_BASE: dummy_secret_key_base_for_ci_tests_only_1234567890
           OPENAI_API_KEY: dummy_openai_key
         run: mix test
