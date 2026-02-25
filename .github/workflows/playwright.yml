@@ -57,6 +57,12 @@ jobs:
       - name: Compile
         run: mix compile
 
+      - name: Setup assets
+        run: mix assets.setup
+
+      - name: Build assets
+        run: mix assets.build
+
       - name: Setup database
         run: mix ecto.setup
 
