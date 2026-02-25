@@ -57,6 +57,9 @@ jobs:
       - name: Compile
         run: mix compile
 
+      - name: Install npm dependencies
+        run: npm ci
+
       - name: Setup assets
         run: mix assets.setup
 
@@ -65,9 +68,6 @@ jobs:
 
       - name: Setup database
         run: mix ecto.setup
-
-      - name: Install npm dependencies
-        run: npm ci
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
