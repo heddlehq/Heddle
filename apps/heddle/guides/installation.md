@@ -19,7 +19,7 @@ Follow these steps to run Heddle directly from the source code.
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/FusionFlow-app/heddle.git
+git clone https://github.com/heddlehq/heddle.git
 cd heddle
 ```
 
@@ -73,7 +73,7 @@ Running with Docker is the fastest way to get started without worrying about loc
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/FusionFlow-app/heddle.git
+git clone https://github.com/heddlehq/heddle.git
 cd heddle
 ```
 
