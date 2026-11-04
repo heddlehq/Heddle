@@ -1,5 +1,5 @@
 #!/bin/bash
-# entrypoint_ui.sh — entrypoint for the fusion_flow_ui release
+# entrypoint_ui.sh — entrypoint for the heddle_ui release
 
 set -e
 
@@ -9,7 +9,7 @@ if [ -z "$SECRET_KEY_BASE" ]; then
 fi
 
 echo "Waiting for database and running migrations..."
-while ! /app/bin/fusion_flow_ui eval "FusionFlowCore.Release.migrate" > /dev/null 2>&1; do
+while ! /app/bin/heddle_ui eval "HeddleCore.Release.migrate" > /dev/null 2>&1; do
   echo "Migration failed, retrying in 2s..."
   sleep 2
 done
@@ -17,7 +17,7 @@ done
 echo "Migrations successful!"
 
 echo "Running seeds..."
-/app/bin/fusion_flow_ui eval "FusionFlowCore.Release.seed"
+/app/bin/heddle_ui eval "HeddleCore.Release.seed"
 
 echo "Starting UI application..."
-exec /app/bin/fusion_flow_ui start
+exec /app/bin/heddle_ui start

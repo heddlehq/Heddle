@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-MODE="${FUSION_FLOW_MODE:-${1:-all}}"
+MODE="${HEDDLE_MODE:-${1:-all}}"
 
 if [ $# -gt 0 ] && [ "$1" = "$MODE" ]; then
   shift
@@ -14,11 +14,11 @@ if [ -z "${SECRET_KEY_BASE:-}" ]; then
   SECRET_KEY_BASE="$(openssl rand -base64 48)"
 fi
 
-run_seeds="${FUSION_FLOW_RUN_SEEDS:-true}"
+run_seeds="${HEDDLE_RUN_SEEDS:-true}"
 
 wait_for_worker_db() {
   echo "Waiting for database..."
-  while ! /app/worker/bin/fusion_flow_worker eval "FusionFlowCore.Repo.__adapter__().storage_status(FusionFlowCore.Repo.config())" > /dev/null 2>&1; do
+  while ! /app/worker/bin/heddle_worker eval "HeddleCore.Repo.__adapter__().storage_status(HeddleCore.Repo.config())" > /dev/null 2>&1; do
     echo "Database not ready, retrying in 2s..."
     sleep 2
   done
@@ -28,7 +28,7 @@ wait_for_worker_db() {
 
 prepare_ui() {
   echo "Waiting for database and running migrations..."
-  while ! /app/ui/bin/fusion_flow_ui eval "FusionFlowCore.Release.migrate" > /dev/null 2>&1; do
+  while ! /app/ui/bin/heddle_ui eval "HeddleCore.Release.migrate" > /dev/null 2>&1; do
     echo "Migration failed, retrying in 2s..."
     sleep 2
   done
@@ -37,23 +37,23 @@ prepare_ui() {
 
   if [ "$run_seeds" = "true" ]; then
     echo "Running seeds..."
-    /app/ui/bin/fusion_flow_ui eval "FusionFlowCore.Release.seed"
+    /app/ui/bin/heddle_ui eval "HeddleCore.Release.seed"
   fi
 }
 
 start_ui() {
-  echo "Starting UI application in ${FUSION_FLOW_UI_MODE:-full} mode..."
-  exec /app/ui/bin/fusion_flow_ui start "$@"
+  echo "Starting UI application in ${HEDDLE_UI_MODE:-full} mode..."
+  exec /app/ui/bin/heddle_ui start "$@"
 }
 
 start_worker() {
   echo "Starting worker application..."
-  exec /app/worker/bin/fusion_flow_worker start "$@"
+  exec /app/worker/bin/heddle_worker start "$@"
 }
 
 start_all() {
   echo "Starting worker application in background..."
-  /app/worker/bin/fusion_flow_worker start &
+  /app/worker/bin/heddle_worker start &
   worker_pid=$!
 
   cleanup() {
@@ -64,7 +64,7 @@ start_all() {
   trap cleanup INT TERM EXIT
 
   echo "Starting UI application..."
-  /app/ui/bin/fusion_flow_ui start &
+  /app/ui/bin/heddle_ui start &
   ui_pid=$!
 
   set +e

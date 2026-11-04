@@ -11,8 +11,8 @@ release_name = System.get_env("RELEASE_NAME")
 
 runtime_role =
   case release_name do
-    "fusion_flow_ui" -> :ui
-    "fusion_flow_worker" -> :worker
+    "heddle_ui" -> :ui
+    "heddle_worker" -> :worker
     _ -> if(System.get_env("PHX_SERVER"), do: :ui, else: :worker)
   end
 
@@ -28,19 +28,19 @@ runtime_role =
 # If you use `mix release`, you need to explicitly enable the server
 # by passing the PHX_SERVER=true when you start it:
 #
-#     PHX_SERVER=true bin/fusion_flow start
+#     PHX_SERVER=true bin/heddle start
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 if System.get_env("PHX_SERVER") do
-  config :fusion_flow_ui, FusionFlowUI.Endpoint, server: true
-  config :fusion_flow_ui, FusionFlowUI.ApiEndpoint, server: true
+  config :heddle_ui, HeddleUI.Endpoint, server: true
+  config :heddle_ui, HeddleUI.ApiEndpoint, server: true
 end
 
-config :fusion_flow_ui, FusionFlowUI.Endpoint,
+config :heddle_ui, HeddleUI.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
-config :fusion_flow_ui, FusionFlowUI.ApiEndpoint,
+config :heddle_ui, HeddleUI.ApiEndpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
 if config_env() == :prod do
@@ -59,7 +59,7 @@ if config_env() == :prod do
       :worker -> env_int.("WORKER_POOL_SIZE", env_int.("POOL_SIZE", 3))
     end
 
-  config :fusion_flow_core, FusionFlowCore.Repo,
+  config :heddle_core, HeddleCore.Repo,
     # ssl: true,
     url: database_url,
     pool_size: pool_size,
@@ -68,14 +68,14 @@ if config_env() == :prod do
     socket_options: maybe_ipv6
 
   if runtime_role == :worker do
-    config :fusion_flow_worker, Oban,
+    config :heddle_worker, Oban,
       engine: Oban.Engines.Basic,
       notifier: Oban.Notifiers.Postgres,
       queues: [
         default: env_int.("OBAN_DEFAULT_CONCURRENCY", 2),
         executions: env_int.("OBAN_EXECUTIONS_CONCURRENCY", 5)
       ],
-      repo: FusionFlowCore.Repo
+      repo: HeddleCore.Repo
   end
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
@@ -92,9 +92,9 @@ if config_env() == :prod do
 
   host = System.get_env("PHX_HOST") || "example.com"
 
-  config :fusion_flow_ui, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
+  config :heddle_ui, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
-  config :fusion_flow_ui, FusionFlowUI.Endpoint,
+  config :heddle_ui, HeddleUI.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
       # Enable IPv6 and bind on all interfaces.
@@ -105,7 +105,7 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
-  config :fusion_flow_ui, FusionFlowUI.ApiEndpoint,
+  config :heddle_ui, HeddleUI.ApiEndpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
       ip: {0, 0, 0, 0, 0, 0, 0, 0}
@@ -117,7 +117,7 @@ if config_env() == :prod do
   # To get SSL working, you will need to add the `https` key
   # to your endpoint configuration:
   #
-  #     config :fusion_flow_ui, FusionFlowUI.Endpoint,
+  #     config :heddle_ui, HeddleUI.Endpoint,
   #       https: [
   #         ...,
   #         port: 443,
@@ -139,7 +139,7 @@ if config_env() == :prod do
   # We also recommend setting `force_ssl` in your config/prod.exs,
   # ensuring no data is ever sent via http, always redirecting to https:
   #
-  #     config :fusion_flow_ui, FusionFlowUI.Endpoint,
+  #     config :heddle_ui, HeddleUI.Endpoint,
   #       force_ssl: [hsts: true]
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.

@@ -1,12 +1,12 @@
 openapi: 3.1.0
 info:
-  title: FusionFlow Public API
+  title: Heddle Public API
   version: 1.0.0
   description: |
-    Public API for managing FusionFlow workflows, node definitions, and workflow executions.
+    Public API for managing Heddle workflows, node definitions, and workflow executions.
 
-    Authentication is performed per request with a FusionFlow API key. Use the
-    `Authorization: Bearer <api-key>` header. The `X-FusionFlow-API-Key` header is
+    Authentication is performed per request with a Heddle API key. Use the
+    `Authorization: Bearer <api-key>` header. The `X-Heddle-API-Key` header is
     also accepted for integrations that cannot set `Authorization`.
 
     API keys are scoped. Each endpoint documents the required scope.
@@ -361,12 +361,12 @@ components:
     bearerApiKey:
       type: http
       scheme: bearer
-      bearerFormat: FusionFlow API key
-      description: API key in the format `ff_live_<prefix>_<secret>`.
-    fusionFlowApiKeyHeader:
+      bearerFormat: Heddle API key
+      description: API key in the format `hd_live_<prefix>_<secret>`.
+    heddleApiKeyHeader:
       type: apiKey
       in: header
-      name: X-FusionFlow-API-Key
+      name: X-Heddle-API-Key
       description: Alternative API key header.
   parameters:
     WorkflowId:
@@ -585,7 +585,7 @@ components:
     ReteNode:
       type: object
       additionalProperties: false
-      description: Rete node payload stored by FusionFlow.
+      description: Rete node payload stored by Heddle.
       required:
         - id
         - type
@@ -617,7 +617,7 @@ components:
     ReteConnection:
       type: object
       additionalProperties: false
-      description: Rete connection payload stored by FusionFlow.
+      description: Rete connection payload stored by Heddle.
       required:
         - source
         - sourceOutput

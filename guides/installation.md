@@ -1,6 +1,6 @@
 # Installation Guide
 
-This guide will help you get **FusionFlow** up and running on your local machine.
+This guide will help you get **Heddle** up and running on your local machine.
 
 ## 🛠 Prerequisites
 
@@ -15,17 +15,17 @@ Before you begin, ensure you have the following installed:
 
 ## 🏗 Installation (Source)
 
-Follow these steps to run FusionFlow directly from the source code.
+Follow these steps to run Heddle directly from the source code.
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/FusionFlow-app/fusion_flow.git
-cd fusion_flow
+git clone https://github.com/FusionFlow-app/heddle.git
+cd heddle
 ```
 
 ### 2. Install dependencies and setup
 This command will install Elixir dependencies, install the UI JavaScript dependencies in
-`apps/fusion_flow_ui/assets` including Rete.js, preferring `npm` and falling back to `bun`,
+`apps/heddle_ui/assets` including Rete.js, preferring `npm` and falling back to `bun`,
 create the database, and run migrations.
 ```bash
 mix setup
@@ -36,13 +36,13 @@ Open two terminals.
 
 In the first terminal:
 ```bash
-cd apps/fusion_flow_ui
+cd apps/heddle_ui
 mix phx.server
 ```
 
 In the second terminal:
 ```bash
-cd apps/fusion_flow_worker
+cd apps/heddle_worker
 mix run --no-halt
 ```
 
@@ -55,13 +55,13 @@ If you need to isolate a process during development:
 
 Start only the UI:
 ```bash
-cd apps/fusion_flow_ui
+cd apps/heddle_ui
 mix phx.server
 ```
 
 Start only the worker:
 ```bash
-cd apps/fusion_flow_worker
+cd apps/heddle_worker
 mix run --no-halt
 ```
 
@@ -73,22 +73,22 @@ Running with Docker is the fastest way to get started without worrying about loc
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/FusionFlow-app/fusion_flow.git
-cd fusion_flow
+git clone https://github.com/FusionFlow-app/heddle.git
+cd heddle
 ```
 
 ### 2. Build the image
 ```bash
-docker build -t fusion_flow .
+docker build -t heddle .
 ```
 
 ### 3. Run the full stack in one container
 ```bash
 docker run --rm -p 4000:4000 \
   --env-file .env \
-  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/fusion_flow \
+  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/heddle \
   -e SECRET_KEY_BASE=replace-me \
-  fusion_flow
+  heddle
 ```
 
 No mode argument means `all`, which starts UI and worker in the same container.
@@ -109,18 +109,18 @@ docker compose --profile all up -d --build db all
 ```bash
 docker run --rm -p 4000:4000 \
   --env-file .env \
-  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/fusion_flow \
+  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/heddle \
   -e SECRET_KEY_BASE=replace-me \
-  fusion_flow ui
+  heddle ui
 ```
 
 ### 6. Run only the worker
 ```bash
 docker run --rm \
   --env-file .env \
-  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/fusion_flow \
+  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/heddle \
   -e SECRET_KEY_BASE=replace-me \
-  fusion_flow worker
+  heddle worker
 ```
 
 ### 7. Access the application
@@ -142,10 +142,10 @@ Increase worker replicas carefully and tune these values together with your Post
 The UI release can run as an HTTP API gateway without the visual interface:
 
 ```bash
-FUSION_FLOW_UI_MODE=api
+HEDDLE_UI_MODE=api
 ```
 
-In this mode FusionFlow starts the API endpoint only:
+In this mode Heddle starts the API endpoint only:
 
 - `/api/*` routes stay available
 - webhook execution endpoints stay available
@@ -158,10 +158,10 @@ Docker example:
 ```bash
 docker run --rm -p 4000:4000 \
   --env-file .env \
-  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/fusion_flow \
+  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/heddle \
   -e SECRET_KEY_BASE=replace-me \
-  -e FUSION_FLOW_UI_MODE=api \
-  fusion_flow ui
+  -e HEDDLE_UI_MODE=api \
+  heddle ui
 ```
 
 ---

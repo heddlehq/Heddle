@@ -1,5 +1,5 @@
 {
-  "name": "fusion_flow",
+  "name": "heddle",
   "version": "1.0.0",
   "description": "[![Discord](https://img.shields.io/discord/1474594465225117740?color=7289da&label=discord&logo=discord&logoColor=white)](https://discord.gg/7zjnpna239)",
   "main": "index.js",
@@ -16,16 +16,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/FusionFlow-app/fusion_flow.git"
+    "url": "git+https://github.com/FusionFlow-app/heddle.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/FusionFlow-app/fusion_flow/issues"
+    "url": "https://github.com/FusionFlow-app/heddle/issues"
   },
-  "homepage": "https://github.com/FusionFlow-app/fusion_flow#readme",
+  "homepage": "https://github.com/FusionFlow-app/heddle#readme",
   "devDependencies": {
     "@playwright/test": "1.57.0"
   }

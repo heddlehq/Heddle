@@ -1,6 +1,6 @@
-# Contributing to FusionFlow
+# Contributing to Heddle
 
-We welcome contributions to FusionFlow! Whether you're fixing bugs, adding new node types, or improving documentation, your help is appreciated.
+We welcome contributions to Heddle! Whether you're fixing bugs, adding new node types, or improving documentation, your help is appreciated.
 
 ## How to Contribute
 
@@ -20,7 +20,7 @@ We welcome contributions to FusionFlow! Whether you're fixing bugs, adding new n
 
 ## Development Guidelines
 
--   **Node Development**: New nodes should be added to `lib/fusion_flow/nodes/`. Follow the structure of existing nodes (separated `definition/0` and `handler/2`).
+-   **Node Development**: New nodes should be added to `lib/heddle/nodes/`. Follow the structure of existing nodes (separated `definition/0` and `handler/2`).
 -   **UI Components**: We use Phoenix LiveView for the UI. Ensure any new JS components in `assets/js` are properly integrated via hooks.
 -   **Code Formatting**: Always run `mix format` before committing to maintain consistent code style.
 
@@ -35,7 +35,7 @@ mix test
 Run a specific test file:
 
 ```bash
-mix test test/fusion_flow_web/live/flow_live_test.exs
+mix test test/heddle_web/live/flow_live_test.exs
 ```
 
 ### E2E Tests (Playwright)

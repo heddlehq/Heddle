@@ -1,4 +1,4 @@
-defmodule FusionFlow.Umbrella.MixProject do
+defmodule Heddle.Umbrella.MixProject do
   use Mix.Project
 
   @version File.read!("VERSION") |> String.trim()
@@ -27,22 +27,22 @@ defmodule FusionFlow.Umbrella.MixProject do
 
   defp releases do
     [
-      fusion_flow_ui: [
+      heddle_ui: [
         applications: [
-          fusion_flow_core: :permanent,
-          fusion_flow_runtime: :permanent,
-          fusion_flow_nodes: :permanent,
-          fusion_flow_ai: :permanent,
-          fusion_flow_ui: :permanent
+          heddle_core: :permanent,
+          heddle_runtime: :permanent,
+          heddle_nodes: :permanent,
+          heddle_ai: :permanent,
+          heddle_ui: :permanent
         ]
       ],
-      fusion_flow_worker: [
+      heddle_worker: [
         applications: [
-          fusion_flow_core: :permanent,
-          fusion_flow_runtime: :permanent,
-          fusion_flow_nodes: :permanent,
-          fusion_flow_ai: :permanent,
-          fusion_flow_worker: :permanent
+          heddle_core: :permanent,
+          heddle_runtime: :permanent,
+          heddle_nodes: :permanent,
+          heddle_ai: :permanent,
+          heddle_worker: :permanent
         ]
       ]
     ]
@@ -54,7 +54,7 @@ defmodule FusionFlow.Umbrella.MixProject do
       "ecto.setup": [
         "ecto.create",
         "ecto.migrate",
-        "run apps/fusion_flow_core/priv/repo/seeds.exs"
+        "run apps/heddle_core/priv/repo/seeds.exs"
       ],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
@@ -63,18 +63,18 @@ defmodule FusionFlow.Umbrella.MixProject do
         "tailwind.install --if-missing",
         "esbuild.install --if-missing"
       ],
-      "assets.build": ["compile", "tailwind fusion_flow_ui", "esbuild fusion_flow_ui"],
+      "assets.build": ["compile", "tailwind heddle_ui", "esbuild heddle_ui"],
       "assets.deploy": [
-        "tailwind fusion_flow_ui --minify",
-        "esbuild fusion_flow_ui --minify",
-        "phx.digest -o apps/fusion_flow_ui/priv/static"
+        "tailwind heddle_ui --minify",
+        "esbuild heddle_ui --minify",
+        "phx.digest -o apps/heddle_ui/priv/static"
       ],
       precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
     ]
   end
 
   defp install_ui_assets(_args) do
-    assets_path = Path.expand("apps/fusion_flow_ui/assets", File.cwd!())
+    assets_path = Path.expand("apps/heddle_ui/assets", File.cwd!())
 
     cond do
       executable = System.find_executable("npm") ->
