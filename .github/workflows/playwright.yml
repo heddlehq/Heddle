@@ -19,7 +19,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: fusion_flow_test
+          POSTGRES_DB: heddle_test
         options: >-
           --health-cmd "pg_isready -U postgres"
           --health-interval 5s
@@ -45,7 +45,7 @@ jobs:
           cache: npm
           cache-dependency-path: |
             package-lock.json
-            apps/fusion_flow_ui/assets/package-lock.json
+            apps/heddle_ui/assets/package-lock.json
 
       - name: Cache Elixir deps
         uses: actions/cache@v3
@@ -66,7 +66,7 @@ jobs:
 
       - name: Install npm dependencies (UI assets)
         run: npm ci
-        working-directory: apps/fusion_flow_ui/assets
+        working-directory: apps/heddle_ui/assets
 
       - name: Setup assets
         run: mix assets.setup
@@ -83,7 +83,7 @@ jobs:
 
       - name: Start Phoenix server
         run: mix phx.server &
-        working-directory: apps/fusion_flow_ui
+        working-directory: apps/heddle_ui
         env:
           PHX_SERVER: "true"
           SECRET_KEY_BASE: dummy_secret_key_base_for_ci_e2e_tests_only_1234567890ab

@@ -18,12 +18,12 @@ RUN mix local.hex --force && \
 ENV MIX_ENV="prod"
 
 COPY mix.exs mix.lock ./
-COPY apps/fusion_flow_core/mix.exs apps/fusion_flow_core/mix.exs
-COPY apps/fusion_flow_nodes/mix.exs apps/fusion_flow_nodes/mix.exs
-COPY apps/fusion_flow_runtime/mix.exs apps/fusion_flow_runtime/mix.exs
-COPY apps/fusion_flow_ai/mix.exs apps/fusion_flow_ai/mix.exs
-COPY apps/fusion_flow_ui/mix.exs apps/fusion_flow_ui/mix.exs
-COPY apps/fusion_flow_worker/mix.exs apps/fusion_flow_worker/mix.exs
+COPY apps/heddle_core/mix.exs apps/heddle_core/mix.exs
+COPY apps/heddle_nodes/mix.exs apps/heddle_nodes/mix.exs
+COPY apps/heddle_runtime/mix.exs apps/heddle_runtime/mix.exs
+COPY apps/heddle_ai/mix.exs apps/heddle_ai/mix.exs
+COPY apps/heddle_ui/mix.exs apps/heddle_ui/mix.exs
+COPY apps/heddle_worker/mix.exs apps/heddle_worker/mix.exs
 
 RUN mix deps.get --only prod
 RUN mix deps.compile
@@ -31,8 +31,8 @@ RUN mix deps.compile
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs
 
-COPY apps/fusion_flow_ui/assets apps/fusion_flow_ui/assets
-RUN cd apps/fusion_flow_ui/assets && npm install
+COPY apps/heddle_ui/assets apps/heddle_ui/assets
+RUN cd apps/heddle_ui/assets && npm install
 
 COPY config config
 COPY apps apps
@@ -41,8 +41,8 @@ COPY scripts scripts
 RUN mix assets.setup
 RUN mix assets.deploy
 RUN mix compile
-RUN mix release fusion_flow_ui
-RUN mix release fusion_flow_worker
+RUN mix release heddle_ui
+RUN mix release heddle_worker
 
 FROM ${RUNNER_IMAGE}
 
@@ -61,8 +61,8 @@ ENV HOME=/app
 WORKDIR /app
 RUN chown nobody /app
 
-COPY --from=builder --chown=nobody:root /app/_build/prod/rel/fusion_flow_ui /app/ui
-COPY --from=builder --chown=nobody:root /app/_build/prod/rel/fusion_flow_worker /app/worker
+COPY --from=builder --chown=nobody:root /app/_build/prod/rel/heddle_ui /app/ui
+COPY --from=builder --chown=nobody:root /app/_build/prod/rel/heddle_worker /app/worker
 COPY scripts/entrypoint.sh /app/entrypoint.sh
 
 RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh

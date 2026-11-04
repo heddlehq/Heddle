@@ -1,0 +1,663 @@
+## "msgid"s in this file come from POT (.pot) files.
+###
+### Do not add, change, or remove "msgid"s manually here as
+### they're tied to the ones in the corresponding POT file
+### (with the same domain).
+###
+### Use "mix gettext.extract --merge" or "mix gettext.merge"
+### to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n>1);\n"
+
+#: lib/heddle_web/components/core_components.ex:405
+#, elixir-autogen, elixir-format
+msgid "Actions"
+msgstr "Ações"
+
+#: lib/heddle_web/live/dashboard_live.ex:90
+#, elixir-autogen, elixir-format
+msgid "Active Integrations"
+msgstr "Integrações Ativas"
+
+#: lib/heddle_web/components/layouts.ex:279
+#: lib/heddle_web/components/layouts.ex:291
+#, elixir-autogen, elixir-format
+msgid "Attempting to reconnect"
+msgstr "Tentando reconectar"
+
+#: lib/heddle_web/live/flow_live.ex:829
+#, elixir-autogen, elixir-format
+msgid "Coming Soon"
+msgstr "Em Breve"
+
+#: lib/heddle_web/live/flow_live.ex:826
+#, elixir-autogen, elixir-format
+msgid "Configure Node"
+msgstr "Configurar Nó"
+
+#: lib/heddle_web/live/dashboard_live.ex:130
+#, elixir-autogen, elixir-format
+msgid "Create Flow"
+msgstr "Criar Fluxo"
+
+#: lib/heddle_web/live/flow_list_live.ex:84
+#, elixir-autogen, elixir-format
+msgid "Create your first flow"
+msgstr "Crie seu primeiro fluxo"
+
+#: lib/heddle_web/components/layouts.ex:89
+#: lib/heddle_web/live/dashboard_live.ex:32
+#, elixir-autogen, elixir-format
+msgid "Dashboard"
+msgstr "Painel"
+
+#: lib/heddle_web/live/flow_live.ex:831
+#, elixir-autogen, elixir-format
+msgid "Drag to canvas"
+msgstr "Arraste para a tela"
+
+#: lib/heddle_web/components/modals/node_config_modal.ex:122
+#: lib/heddle_web/live/flow_live.ex:828
+#, elixir-autogen, elixir-format
+msgid "Edit Code"
+msgstr "Editar Código"
+
+#: lib/heddle_web/live/flow_list_live.ex:22
+#, elixir-autogen, elixir-format
+msgid "Failed to create flow."
+msgstr "Falha ao criar o fluxo."
+
+#: lib/heddle_web/live/flow_list_live.ex:40
+#, elixir-autogen, elixir-format
+msgid "Flows available"
+msgstr "Fluxos disponíveis"
+
+#: lib/heddle_web/live/dashboard_live.ex:126
+#, elixir-autogen, elixir-format
+msgid "Get started by creating a new workflow automation."
+msgstr "Comece criando uma nova automação de processo."
+
+#: lib/heddle_web/live/flow_list_live.ex:76
+#, elixir-autogen, elixir-format
+msgid "Get started by creating your first workflow automation. It's easy!"
+msgstr "Comece criando sua primeira automação. É fácil!"
+
+#: lib/heddle_web/live/dashboard_live.ex:43
+#, elixir-autogen, elixir-format
+msgid "Manage Flows"
+msgstr "Gerenciar Fluxos"
+
+#: lib/heddle_web/components/layouts.ex:108
+#: lib/heddle_web/live/flow_list_live.ex:8
+#: lib/heddle_web/live/flow_list_live.ex:37
+#, elixir-autogen, elixir-format
+msgid "My Flows"
+msgstr "Meus Fluxos"
+
+#: lib/heddle_web/live/flow_list_live.ex:48
+#, elixir-autogen, elixir-format
+msgid "New Flow"
+msgstr "Novo Fluxo"
+
+#: lib/heddle_web/live/dashboard_live.ex:124
+#, elixir-autogen, elixir-format
+msgid "No flows"
+msgstr "Nenhum fluxo"
+
+#: lib/heddle_web/live/flow_list_live.ex:72
+#, elixir-autogen, elixir-format
+msgid "No flows created yet"
+msgstr "Nenhum fluxo criado ainda"
+
+#: lib/heddle_web/live/dashboard_live.ex:110
+#, elixir-autogen, elixir-format
+msgid "Recent Workflows"
+msgstr "Fluxos Recentes"
+
+#: lib/heddle_web/live/flow_live.ex:825
+#, elixir-autogen, elixir-format
+msgid "Remove Node"
+msgstr "Remover Nó"
+
+#: lib/heddle_web/live/flow_live.ex:823
+#, elixir-autogen, elixir-format
+msgid "Run"
+msgstr "Executar"
+
+#: lib/heddle_web/live/flow_live.ex:830
+#, elixir-autogen, elixir-format
+msgid "Select Integration"
+msgstr "Selecione a Integração"
+
+#: lib/heddle_web/components/layouts.ex:286
+#, elixir-autogen, elixir-format
+msgid "Something went wrong!"
+msgstr "Algo deu errado!"
+
+#: lib/heddle_web/components/layouts.ex:169
+#, elixir-autogen, elixir-format
+msgid "Theme"
+msgstr "Tema"
+
+#: lib/heddle_web/live/dashboard_live.ex:71
+#, elixir-autogen, elixir-format
+msgid "Total Processed Nodes"
+msgstr "Nós Processados"
+
+#: lib/heddle_web/live/dashboard_live.ex:53
+#, elixir-autogen, elixir-format
+msgid "Total Workflows"
+msgstr "Total de Fluxos"
+
+#: lib/heddle_web/live/flow_list_live.ex:116
+#, elixir-autogen, elixir-format
+msgid "Updated"
+msgstr "Atualizado"
+
+#: lib/heddle_web/live/flow_live.ex:827
+#, elixir-autogen, elixir-format
+msgid "View Error"
+msgstr "Ver Erro"
+
+#: lib/heddle_web/live/flow_live.ex:824
+#, elixir-autogen, elixir-format
+msgid "Waiting..."
+msgstr "Aguardando..."
+
+#: lib/heddle_web/components/layouts.ex:274
+#, elixir-autogen, elixir-format
+msgid "We can't find the internet"
+msgstr "Não conseguimos conectar à internet"
+
+#: lib/heddle_web/live/dashboard_live.ex:35
+#, elixir-autogen, elixir-format
+msgid "Welcome back to Heddle! Here's an overview of your automated logic."
+msgstr "Bem-vindo de volta ao Heddle! Aqui está um resumo da sua lógica automatizada."
+
+#: lib/heddle_web/components/core_components.ex:75
+#, elixir-autogen, elixir-format
+msgid "close"
+msgstr "fechar"
+
+#: lib/heddle_web/live/flow_list_live.ex:116
+#, elixir-autogen, elixir-format
+msgid "connections"
+msgstr "conexões"
+
+#: lib/heddle_web/live/flow_list_live.ex:114
+#, elixir-autogen, elixir-format
+msgid "nodes"
+msgstr "nós"
+
+#: lib/heddle_web/live/flow_ai_creator_live.ex:349
+#, elixir-autogen, elixir-format
+msgid "Are you happy with this implementation plan?"
+msgstr "Você está satisfeito com este plano de implementação?"
+
+#: lib/heddle_web/live/flow_ai_creator_live.ex:322
+#, elixir-autogen, elixir-format
+msgid "Building flow and rendering graph..."
+msgstr "Construindo o fluxo e renderizando o gráfico..."
+
+#: lib/heddle_web/live/flow_ai_creator_live.ex:14
+#: lib/heddle_web/live/flow_ai_creator_live.ex:269
+#, elixir-autogen, elixir-format
+msgid "Create Flow with AI"
+msgstr "Criar Fluxo com IA"
+
+#: lib/heddle_web/components/layouts.ex:127
+#, elixir-autogen, elixir-format
+msgid "Create with AI"
+msgstr "Criar com IA"
+
+#: lib/heddle_web/live/flow_ai_creator_live.ex:273
+#, elixir-autogen, elixir-format
+msgid "Describe what you want to automate, and I will build the flow structure for you."
+msgstr "Descreva o que você deseja automatizar e eu construirei a estrutura do fluxo para você."
+
+#: lib/heddle_web/live/flow_ai_creator_live.ex:208
+#, elixir-autogen, elixir-format
+msgid "Flow built successfully!"
+msgstr "Fluxo construído com sucesso!"
+
+#: lib/heddle_web/live/flow_ai_creator_live.ex:307
+#, elixir-autogen, elixir-format
+msgid "For example: 'Create a flow that listens to a webhook, logs the payload and saves it into the database.'"
+msgstr "Por exemplo: 'Crie um fluxo que escuta um webhook, registra o payload e o salva no banco de dados.'"
+
+#: lib/heddle_web/live/flow_ai_creator_live.ex:303
+#, elixir-autogen, elixir-format
+msgid "How can I help you today?"
+msgstr "Como posso ajudá-lo hoje?"
+
+#: lib/heddle_web/live/flow_ai_creator_live.ex:24
+#, elixir-autogen, elixir-format
+msgid "OpenAI API Key is not configured."
+msgstr "A chave de API da OpenAI não está configurada."
+
+#: lib/heddle_web/live/flow_ai_creator_live.ex:359
+#, elixir-autogen, elixir-format
+msgid "Or reply below with adjustments"
+msgstr "Ou responda abaixo com ajustes"
+
+#: lib/heddle_web/live/components/chat_component.ex:196
+#: lib/heddle_web/live/flow_ai_creator_live.ex:388
+#, elixir-autogen, elixir-format
+msgid "Send"
+msgstr "Enviar"
+
+#: lib/heddle_web/live/flow_ai_creator_live.ex:337
+#, elixir-autogen, elixir-format
+msgid "Thinking..."
+msgstr "Pensando..."
+
+#: lib/heddle_web/live/flow_ai_creator_live.ex:375
+#, elixir-autogen, elixir-format
+msgid "Type your prompt here..."
+msgstr "Digite seu comando aqui..."
+
+#: lib/heddle_web/live/flow_ai_creator_live.ex:356
+#, elixir-autogen, elixir-format
+msgid "Yes, Build This Flow"
+msgstr "Sim, Construa Este Fluxo"
+
+#: lib/heddle_web/live/user_live/settings.ex:15
+#, elixir-autogen, elixir-format
+msgid "Account Settings"
+msgstr "Configurações de Conta"
+
+#: lib/heddle_web/components/modals/execution_result_modal.ex:38
+#, elixir-autogen, elixir-format
+msgid "Back to Result"
+msgstr "Voltar ao Resultado"
+
+#: lib/heddle_web/components/modals/code_editor_modal.ex:90
+#: lib/heddle_web/components/modals/create_node_modal.ex:91
+#: lib/heddle_web/components/modals/node_config_modal.ex:159
+#, elixir-autogen, elixir-format
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: lib/heddle_web/live/user_live/settings.ex:73
+#, elixir-autogen, elixir-format
+msgid "Change Email"
+msgstr "Alterar E-mail"
+
+#: lib/heddle_web/live/user_live/settings.ex:84
+#, elixir-autogen, elixir-format
+msgid "Change Password"
+msgstr "Alterar Senha"
+
+#: lib/heddle_web/live/user_live/settings.ex:72
+#, elixir-autogen, elixir-format
+msgid "Changing..."
+msgstr "Alterando..."
+
+#: lib/heddle_web/components/modals/error_modal.ex:58
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Close"
+msgstr "fechar"
+
+#: lib/heddle_web/live/user_live/settings.ex:120
+#, elixir-autogen, elixir-format
+msgid "Confirm New Password"
+msgstr "Confirmar Nova Senha"
+
+#: lib/heddle_web/components/modals/execution_result_modal.ex:101
+#, elixir-autogen, elixir-format
+msgid "Done"
+msgstr "Concluído"
+
+#: lib/heddle_web/live/user_live/settings.ex:68
+#, elixir-autogen, elixir-format
+msgid "Email Address"
+msgstr "Endereço de E-mail"
+
+#: lib/heddle_web/live/user_live/settings.ex:88
+#, elixir-autogen, elixir-format
+msgid "Ensure your account is using a long, random password to stay secure."
+msgstr "Garanta que sua conta esteja usando uma senha longa e aleatória para se manter segura."
+
+#: lib/heddle_web/live/user_live/login.ex:54
+#: lib/heddle_web/live/user_live/register.ex:69
+#: lib/heddle_web/live/user_live/setup.ex:52
+#, elixir-autogen, elixir-format
+msgid "Enter your username"
+msgstr "Digite seu nome de usuário"
+
+#: lib/heddle_web/components/modals/execution_result_modal.ex:78
+#, elixir-autogen, elixir-format
+msgid "Inspect Full Context"
+msgstr "Inspecionar Contexto Completo"
+
+#: lib/heddle_web/components/modals/dependencies_modal.ex:131
+#, elixir-autogen, elixir-format
+msgid "Install"
+msgstr "Instalar"
+
+#: lib/heddle_web/live/user_live/login.ex:72
+#, elixir-autogen, elixir-format
+msgid "Log in"
+msgstr "Entrar"
+
+#: lib/heddle_web/components/layouts.ex:233
+#, elixir-autogen, elixir-format
+msgid "Log out"
+msgstr "Sair"
+
+#: lib/heddle_web/live/user_live/settings.ex:19
+#, elixir-autogen, elixir-format
+msgid "Manage your account settings, security, and preferences."
+msgstr "Gerencie suas configurações de conta, segurança e preferências."
+
+#: lib/heddle_web/live/user_live/settings.ex:113
+#, elixir-autogen, elixir-format
+msgid "New Password"
+msgstr "Nova Senha"
+
+#: lib/heddle_web/live/user_live/login.ex:61
+#: lib/heddle_web/live/user_live/register.ex:83
+#: lib/heddle_web/live/user_live/setup.ex:66
+#, elixir-autogen, elixir-format
+msgid "Password"
+msgstr "Senha"
+
+#: lib/heddle_web/live/user_live/settings.ex:28
+#, elixir-autogen, elixir-format
+msgid "Profile Information"
+msgstr "Informações do Perfil"
+
+#: lib/heddle_web/components/modals/dependencies_modal.ex:121
+#, elixir-autogen, elixir-format
+msgid "Restart Required"
+msgstr "Reinício Necessário"
+
+#: lib/heddle_web/components/flow/flow_header.ex:115
+#: lib/heddle_web/components/modals/code_editor_modal.ex:96
+#, elixir-autogen, elixir-format
+msgid "Save Changes"
+msgstr "Salvar Alterações"
+
+#: lib/heddle_web/components/modals/node_config_modal.ex:166
+#, elixir-autogen, elixir-format
+msgid "Save Configuration"
+msgstr "Salvar Configuração"
+
+#: lib/heddle_web/live/user_live/settings.ex:51
+#: lib/heddle_web/live/user_live/settings.ex:124
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Saving..."
+msgstr "Salvando..."
+
+#: lib/heddle_web/components/layouts.ex:226
+#, elixir-autogen, elixir-format
+msgid "Settings"
+msgstr "Configurações"
+
+#: lib/heddle_web/live/user_live/login.ex:18
+#, elixir-autogen, elixir-format
+msgid "Sign in to your account to continue"
+msgstr "Entre em sua conta para continuar"
+
+#: lib/heddle_web/live/user_live/settings.ex:125
+#, elixir-autogen, elixir-format
+msgid "Update Password"
+msgstr "Atualizar Senha"
+
+#: lib/heddle_web/live/user_live/settings.ex:52
+#, elixir-autogen, elixir-format
+msgid "Update Username"
+msgstr "Atualizar Nome de Usuário"
+
+#: lib/heddle_web/live/user_live/settings.ex:32
+#, elixir-autogen, elixir-format
+msgid "Update your public username and email address."
+msgstr "Atualize seu nome de usuário público e endereço de e-mail."
+
+#: lib/heddle_web/live/user_live/index.ex:122
+#: lib/heddle_web/live/user_live/login.ex:53
+#: lib/heddle_web/live/user_live/register.ex:68
+#: lib/heddle_web/live/user_live/settings.ex:47
+#: lib/heddle_web/live/user_live/setup.ex:51
+#, elixir-autogen, elixir-format
+msgid "Username"
+msgstr "Nome de Usuário"
+
+#: lib/heddle_web/live/user_live/login.ex:11
+#, elixir-autogen, elixir-format
+msgid "Welcome back"
+msgstr "Bem-vindo de volta"
+
+#: lib/heddle_web/user_auth.ex:228
+#: lib/heddle_web/user_auth.ex:305
+#, elixir-autogen, elixir-format
+msgid "You must log in to access this page."
+msgstr "Você deve estar logado para acessar esta página."
+
+#: lib/heddle_web/user_auth.ex:252
+#, elixir-autogen, elixir-format
+msgid "You must re-authenticate to access this page."
+msgstr "Você deve se reautenticar para acessar esta página."
+
+#: lib/heddle_web/live/user_live/login.ex:16
+#, elixir-autogen, elixir-format
+msgid "You need to re-authenticate to perform sensitive actions."
+msgstr "Você precisa se reautenticar para realizar ações sensíveis."
+
+#: lib/heddle_web/live/user_live/register.ex:125
+#: lib/heddle_web/live/user_live/setup.ex:98
+#, elixir-autogen, elixir-format
+msgid "Account created successfully. You can now log in."
+msgstr ""
+
+#: lib/heddle_web/live/user_live/index.ex:128
+#, elixir-autogen, elixir-format
+msgid "Admin"
+msgstr ""
+
+#: lib/heddle_web/live/user_live/index.ex:111
+#, elixir-autogen, elixir-format
+msgid "All users"
+msgstr "Todos os usuários"
+
+#: lib/heddle_web/live/user_live/register.ex:107
+#, elixir-autogen, elixir-format
+msgid "Back to log in"
+msgstr ""
+
+#: lib/heddle_web/live/user_live/register.ex:90
+#: lib/heddle_web/live/user_live/setup.ex:73
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Confirm password"
+msgstr "Confirmar Nova Senha"
+
+#: lib/heddle_web/live/flow_live.ex:833
+#, elixir-autogen, elixir-format
+msgid "Copy"
+msgstr ""
+
+#: lib/heddle_web/components/modals/create_node_modal.ex:18
+#: lib/heddle_web/live/flow_live.ex:832
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Create Node"
+msgstr "Criar Fluxo"
+
+#: lib/heddle_web/live/user_live/register.ex:39
+#: lib/heddle_web/live/user_live/register.ex:100
+#: lib/heddle_web/live/user_live/setup.ex:83
+#, elixir-autogen, elixir-format
+msgid "Create account"
+msgstr ""
+
+#: lib/heddle_web/live/user_live/setup.ex:38
+#: lib/heddle_web/user_auth.ex:230
+#, elixir-autogen, elixir-format
+msgid "Create the first administrator account to get started."
+msgstr ""
+
+#: lib/heddle_web/live/user_live/register.ex:52
+#, elixir-autogen, elixir-format
+msgid "Create your account"
+msgstr ""
+
+#: lib/heddle_web/live/flow_live.ex:835
+#, elixir-autogen, elixir-format
+msgid "Delete Selected"
+msgstr ""
+
+#: lib/heddle_web/live/flow_live.ex:838
+#, elixir-autogen, elixir-format
+msgid "Delete connection"
+msgstr "Excluir conexão"
+
+#: lib/heddle_web/live/user_live/index.ex:125
+#: lib/heddle_web/live/user_live/register.ex:76
+#: lib/heddle_web/live/user_live/setup.ex:59
+#, elixir-autogen, elixir-format
+msgid "Email"
+msgstr ""
+
+#: lib/heddle_web/live/user_live/register.ex:77
+#: lib/heddle_web/live/user_live/setup.ex:60
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Enter your email"
+msgstr "Digite seu nome de usuário"
+
+#: lib/heddle_web/live/user_live/index.ex:38
+#, elixir-autogen, elixir-format
+msgid "Failed to generate invite."
+msgstr "Falha ao gerar convite."
+
+#: lib/heddle_web/live/user_live/index.ex:70
+#, elixir-autogen, elixir-format
+msgid "Generate a link to invite a new user. If you already have a valid invite, the same link is shown."
+msgstr "Gere um link para convidar um novo usuário. Se já tiver um convite válido, o mesmo link será exibido."
+
+#: lib/heddle_web/live/user_live/index.ex:76
+#, elixir-autogen, elixir-format
+msgid "Generate invite link"
+msgstr "Gerar link de convite"
+
+#: lib/heddle_web/live/user_live/register.ex:15
+#, elixir-autogen, elixir-format
+msgid "Invalid invite link."
+msgstr "Link de convite inválido."
+
+#: lib/heddle_web/live/user_live/index.ex:67
+#, elixir-autogen, elixir-format
+msgid "Invite link"
+msgstr "Link de convite"
+
+#: lib/heddle_web/live/user_live/index.ex:35
+#, elixir-autogen, elixir-format
+msgid "Invite link generated. It expires in %{days} days."
+msgstr "Link de convite gerado. Expira em %{days} dias."
+
+#: lib/heddle_web/live/user_live/index.ex:131
+#, elixir-autogen, elixir-format
+msgid "Joined"
+msgstr ""
+
+#: lib/heddle_web/live/user_live/index.ex:59
+#, elixir-autogen, elixir-format
+msgid "Manage users and invite new people. Invites expire in %{days} days."
+msgstr "Gerencie usuários e convide novas pessoas. Os convites expiram em %{days} dias."
+
+#: lib/heddle_web/live/user_live/index.ex:148
+#, elixir-autogen, elixir-format
+msgid "No"
+msgstr ""
+
+#: lib/heddle_web/user_auth.ex:269
+#, elixir-autogen, elixir-format
+msgid "Only system administrators can access this page."
+msgstr ""
+
+#: lib/heddle_web/live/user_live/index.ex:100
+#, elixir-autogen, elixir-format
+msgid "Open link"
+msgstr "Abrir link"
+
+#: lib/heddle_web/live/flow_live.ex:834
+#, elixir-autogen, elixir-format
+msgid "Paste"
+msgstr ""
+
+#: lib/heddle_web/live/flow_live.ex:837
+#, elixir-autogen, elixir-format
+msgid "Redo"
+msgstr "Refazer"
+
+#: lib/heddle_web/live/user_live/setup.ex:22
+#, elixir-autogen, elixir-format
+msgid "Setup"
+msgstr ""
+
+#: lib/heddle_web/live/user_live/setup.ex:34
+#, elixir-autogen, elixir-format
+msgid "Setup Heddle"
+msgstr ""
+
+#: lib/heddle_web/live/user_live/setup.ex:11
+#, elixir-autogen, elixir-format
+msgid "Setup already completed. Please log in."
+msgstr ""
+
+#: lib/heddle_web/live/user_live/register.ex:21
+#, elixir-autogen, elixir-format
+msgid "This invite has already been used."
+msgstr ""
+
+#: lib/heddle_web/live/user_live/register.ex:27
+#, elixir-autogen, elixir-format
+msgid "This invite has expired."
+msgstr ""
+
+#: lib/heddle_web/live/flow_live.ex:836
+#, elixir-autogen, elixir-format
+msgid "Undo"
+msgstr "Desfazer"
+
+#: lib/heddle_web/components/layouts.ex:146
+#: lib/heddle_web/live/user_live/index.ex:16
+#: lib/heddle_web/live/user_live/index.ex:57
+#, elixir-autogen, elixir-format
+msgid "Users"
+msgstr "Usuários"
+
+#: lib/heddle_web/live/user_live/index.ex:81
+#, elixir-autogen, elixir-format
+msgid "Valid until"
+msgstr "Válido até"
+
+#: lib/heddle_web/live/user_live/index.ex:146
+#, elixir-autogen, elixir-format
+msgid "Yes"
+msgstr ""
+
+#: lib/heddle_web/live/user_live/register.ex:55
+#, elixir-autogen, elixir-format
+msgid "You were invited to Heddle. Complete the form below."
+msgstr ""
+
+#: lib/heddle_web/live/user_live/index.ex:114
+#, elixir-autogen, elixir-format
+msgid "users"
+msgstr ""
+
+#: lib/heddle_web/live/user_live/index.ex:90
+#, elixir-autogen, elixir-format
+msgid "Invite URL"
+msgstr "URL do convite"
+
+#: lib/heddle_web/user_auth.ex:324
+#, elixir-autogen, elixir-format
+msgid "You are already logged in."
+msgstr ""
+
+#: lib/heddle_web/live/dashboard_live.ex:37
+#, elixir-autogen, elixir-format
+msgid "Welcome back to Heddle! Contact an administrator to access flows."
+msgstr ""

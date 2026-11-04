@@ -5,7 +5,7 @@ export async function waitForLiveView(page, timeout = 15000) {
 }
 
 const E2E_SETUP_HINT =
-  'Create the admin user first: MIX_ENV=test mix ecto.reset. Then start the server with cd apps/fusion_flow_ui && MIX_ENV=test mix phx.server and run E2E again.';
+  'Create the admin user first: MIX_ENV=test mix ecto.reset. Then start the server with cd apps/heddle_ui && MIX_ENV=test mix phx.server and run E2E again.';
 
 export async function loginViaUI(page, username = 'admin', password = 'admin') {
   await page.goto('/users/log-in');

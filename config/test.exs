@@ -2,32 +2,32 @@ import Config
 
 # Only in tests, remove the complexity from the password hashing algorithm
 config :pbkdf2_elixir, :rounds, 1
-config :fusion_flow_core, Oban, testing: :manual
-config :fusion_flow_worker, Oban, testing: :manual
-config :fusion_flow_core, :log_email_notifications?, false
-config :fusion_flow_runtime, :log_python_execution_errors?, false
+config :heddle_core, Oban, testing: :manual
+config :heddle_worker, Oban, testing: :manual
+config :heddle_core, :log_email_notifications?, false
+config :heddle_runtime, :log_python_execution_errors?, false
 
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
-config :fusion_flow_core, FusionFlowCore.Repo,
+config :heddle_core, HeddleCore.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
-  database: "fusion_flow_test#{System.get_env("MIX_TEST_PARTITION")}",
+  database: "heddle_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :fusion_flow_ui, FusionFlowUI.Endpoint,
+config :heddle_ui, HeddleUI.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "RGDMKwy9wtqfdYXUnhZUPhKjpRZJaZAjQKUtup44jrU3NmYZNqepUEc/l3pEtpP4",
   server: false
 
-config :fusion_flow_ui, FusionFlowUI.ApiEndpoint,
+config :heddle_ui, HeddleUI.ApiEndpoint,
   http: [ip: {127, 0, 0, 1}, port: 4003],
   secret_key_base: "RGDMKwy9wtqfdYXUnhZUPhKjpRZJaZAjQKUtup44jrU3NmYZNqepUEc/l3pEtpP4",
   server: false
@@ -46,4 +46,4 @@ config :phoenix_live_view,
 config :phoenix,
   sort_verified_routes_query_params: true
 
-config :fusion_flow_nodes, :req_plug, {Req.Test, FusionFlowNodes.Nodes.HttpRequest}
+config :heddle_nodes, :req_plug, {Req.Test, HeddleNodes.Nodes.HttpRequest}

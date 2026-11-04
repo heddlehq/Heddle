@@ -1,21 +1,21 @@
-# FusionFlow Public API Guide
+# Heddle Public API Guide
 
-This guide will help you get started with the FusionFlow Public API.
+This guide will help you get started with the Heddle Public API.
 
 ## Authentication
 
 All API requests require authentication using an API key. You can pass the API key in the `Authorization` header.
 
 ```bash
-curl -H "Authorization: Bearer ff_live_ab12cd34_xxxxxxxxxxxxxxxxxxxxxxxx" \
-  https://api.fusionflow.com/api/v1/workflows
+curl -H "Authorization: Bearer hd_live_ab12cd34_xxxxxxxxxxxxxxxxxxxxxxxx" \
+  https://api.example.com/api/v1/workflows
 ```
 
-Alternatively, you can use the `X-FusionFlow-API-Key` header:
+Alternatively, you can use the `X-Heddle-API-Key` header:
 
 ```bash
-curl -H "X-FusionFlow-API-Key: ff_live_ab12cd34_xxxxxxxxxxxxxxxxxxxxxxxx" \
-  https://api.fusionflow.com/api/v1/workflows
+curl -H "X-Heddle-API-Key: hd_live_ab12cd34_xxxxxxxxxxxxxxxxxxxxxxxx" \
+  https://api.example.com/api/v1/workflows
 ```
 
 ## Examples
@@ -23,7 +23,7 @@ curl -H "X-FusionFlow-API-Key: ff_live_ab12cd34_xxxxxxxxxxxxxxxxxxxxxxxx" \
 ### 1. Create Workflow
 
 ```bash
-curl -X POST https://api.fusionflow.com/api/v1/workflows \
+curl -X POST https://api.example.com/api/v1/workflows \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -60,14 +60,14 @@ curl -X POST https://api.fusionflow.com/api/v1/workflows \
 ### 2. List Nodes
 
 ```bash
-curl -X GET https://api.fusionflow.com/api/v1/nodes \
+curl -X GET https://api.example.com/api/v1/nodes \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 ### 3. Create Execution
 
 ```bash
-curl -X POST https://api.fusionflow.com/api/v1/workflows/123/executions \
+curl -X POST https://api.example.com/api/v1/workflows/123/executions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -83,7 +83,7 @@ curl -X POST https://api.fusionflow.com/api/v1/workflows/123/executions \
 ### 4. Consult Execution
 
 ```bash
-curl -X GET https://api.fusionflow.com/api/v1/workflows/123/executions/blue-orbit-route \
+curl -X GET https://api.example.com/api/v1/workflows/123/executions/blue-orbit-route \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 

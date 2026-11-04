@@ -1,13 +1,13 @@
 # Scaling Guide
 
-This guide shows how to scale **FusionFlow** after the umbrella split between UI and worker.
+This guide shows how to scale **Heddle** after the umbrella split between UI and worker.
 
 ## Runtime model
 
-FusionFlow now has two operational roles:
+Heddle now has two operational roles:
 
-- `fusion_flow_ui`: serves Phoenix, LiveView, HTTP and enqueues executions
-- `fusion_flow_worker`: consumes Oban jobs and executes flows
+- `heddle_ui`: serves Phoenix, LiveView, HTTP and enqueues executions
+- `heddle_worker`: consumes Oban jobs and executes flows
 
 That means scaling usually looks like this:
 
@@ -68,43 +68,43 @@ You should see:
 If you are not using Compose, build the image once:
 
 ```bash
-docker build -t fusion_flow .
+docker build -t heddle .
 ```
 
 Run the UI:
 
 ```bash
-docker run -d --name fusion-flow-ui -p 4000:4000 \
+docker run -d --name heddle-ui -p 4000:4000 \
   --env-file .env \
-  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/fusion_flow \
+  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/heddle \
   -e SECRET_KEY_BASE=replace-me \
-  fusion_flow ui
+  heddle ui
 ```
 
 Run 5 workers:
 
 ```bash
-docker run -d --name fusion-flow-worker-1 \
+docker run -d --name heddle-worker-1 \
   --env-file .env \
-  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/fusion_flow \
+  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/heddle \
   -e SECRET_KEY_BASE=replace-me \
-  fusion_flow worker
+  heddle worker
 ```
 
-Repeat for `fusion-flow-worker-2` through `fusion-flow-worker-5`.
+Repeat for `heddle-worker-2` through `heddle-worker-5`.
 
 The image is the same. What changes is only the container mode:
 
-- `fusion_flow ui`
-- `fusion_flow worker`
+- `heddle ui`
+- `heddle worker`
 
 ## Separate releases without Docker
 
 If you deploy directly on VMs or bare metal, build both releases:
 
 ```bash
-mix release fusion_flow_ui
-mix release fusion_flow_worker
+mix release heddle_ui
+mix release heddle_worker
 ```
 
 Then distribute them separately.
@@ -112,19 +112,19 @@ Then distribute them separately.
 On the UI host:
 
 ```bash
-_build/prod/rel/fusion_flow_ui/bin/fusion_flow_ui start
+_build/prod/rel/heddle_ui/bin/heddle_ui start
 ```
 
 On each worker host:
 
 ```bash
-_build/prod/rel/fusion_flow_worker/bin/fusion_flow_worker start
+_build/prod/rel/heddle_worker/bin/heddle_worker start
 ```
 
 To reach **1 UI and 5 workers**, you start:
 
-- 1 host or process running `fusion_flow_ui`
-- 5 hosts or processes running `fusion_flow_worker`
+- 1 host or process running `heddle_ui`
+- 5 hosts or processes running `heddle_worker`
 
 ## Capacity planning
 

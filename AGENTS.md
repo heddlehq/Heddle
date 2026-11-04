@@ -23,11 +23,11 @@ The visual editor is built with a modern stack designed for interactivity and cu
 
 This is a web application written using the Phoenix web framework.
 
-> **Naming note:** the web layer of this project is the app `fusion_flow_ui`, and its
-> root module is **`FusionFlowUI`** — **not** `FusionFlowWeb`. Wherever the Phoenix
+> **Naming note:** the web layer of this project is the app `heddle_ui`, and its
+> root module is **`HeddleUI`** — **not** `HeddleWeb`. Wherever the Phoenix
 > conventions below show a `...Web` module (e.g. `MyAppWeb`, `AppWeb`), the real
-> equivalent here is `FusionFlowUI` (e.g. `FusionFlowUI.UserAuth`, `FusionFlowUI.Layouts`,
-> `FusionFlowUI.ConnCase`). Mirror this in test paths too (use `test/fusion_flow_ui/...`).
+> equivalent here is `HeddleUI` (e.g. `HeddleUI.UserAuth`, `HeddleUI.Layouts`,
+> `HeddleUI.ConnCase`). Mirror this in test paths too (use `test/heddle_ui/...`).
 
 ## Project guidelines
 
@@ -75,7 +75,7 @@ The application uses a specific color palette defined in `app.css`. You **MUST**
     -   Usage: Primary text color. Be careful with contrast. Dark mode uses `text-gray-400` for secondary and `text-white` for primary.
 
 -   **Node & Component Specifics**:
-    -   **Global Sidebar**: The app uses a global Sidebar layout (`layouts.ex`) which holds the main navigation and the FusionFlow logo (`/images/logo.png`).
+    -   **Global Sidebar**: The app uses a global Sidebar layout (`layouts.ex`) which holds the main navigation and the Heddle logo (`/images/logo.png`).
     -   **Page Background**: `bg-gray-50 dark:bg-slate-950` for the main page wrapper.
     -   **Sidebar**: `bg-white dark:bg-slate-900` with `border-gray-200 dark:border-slate-800`.
     -   **Node Editor Background**: `bg-white dark:bg-slate-900` combined with custom `rete-bg-grid` for the dotted canvas.
@@ -132,7 +132,7 @@ LiveViews that require login should **always be placed inside the __existing__ `
       pipe_through [:browser, :require_authenticated_user]
 
       live_session :require_authenticated_user,
-        on_mount: [{FusionFlowUI.UserAuth, :require_authenticated}] do
+        on_mount: [{HeddleUI.UserAuth, :require_authenticated}] do
         # phx.gen.auth generated routes
         live "/users/settings", UserLive.Settings, :edit
         live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
@@ -157,7 +157,7 @@ LiveViews that can work with or without authentication, **always use the __exist
       pipe_through [:browser]
 
       live_session :current_user,
-        on_mount: [{FusionFlowUI.UserAuth, :mount_current_scope}] do
+        on_mount: [{HeddleUI.UserAuth, :mount_current_scope}] do
         # our own routes that work with or without authentication
         live "/", PublicLive
       end
@@ -440,7 +440,7 @@ After implementing any new module, **always create corresponding tests**. Follow
 ### LiveView organization & business logic
 
 - **Keep orchestration and business logic in core contexts, not in LiveViews.** A `handle_event` should call **one** context function that returns a tagged tuple (`{:ok, ...} | {:error, stage, reason}`), and then branch on the result. **Never** chain multiple context calls (e.g. update → create → enqueue) with nested `case` inside the LiveView — push that sequence into a context function.
-- **Extract function components when a LiveView grows.** When a LiveView module exceeds ~400 lines, or a `render/1` contains a self-contained UI block larger than ~40 lines, extract it into a function component (follow the existing `FusionFlowUI.Components.Modals.*` pattern). Do **not** let one LiveView accumulate dozens of `handle_event`/`handle_info` clauses for unrelated concerns.
+- **Extract function components when a LiveView grows.** When a LiveView module exceeds ~400 lines, or a `render/1` contains a self-contained UI block larger than ~40 lines, extract it into a function component (follow the existing `HeddleUI.Components.Modals.*` pattern). Do **not** let one LiveView accumulate dozens of `handle_event`/`handle_info` clauses for unrelated concerns.
 - **DRY across LiveViews.** Before duplicating a `handle_event`, `handle_async`, streaming loop, or data-normalization block into a second LiveView, extract it to a shared module. Two copies that drift apart are a bug waiting to happen.
 - **Prefer supervised async.** In LiveViews use `start_async/3` (or a `Task.Supervisor`) for background work, **never** a bare `Task.start/1`: failures must be handled and the task must die with the LiveView. Reserve `Task.async_stream/3` for concurrent enumeration with back-pressure.
 
