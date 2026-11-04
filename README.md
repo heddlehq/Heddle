@@ -11,8 +11,8 @@
 <p align="center">
   <a href="https://hex.pm/packages/fusion_flow"><img src="https://img.shields.io/hexpm/v/fusion_flow?style=flat-square&color=6e4a7e&label=hex.pm" alt="Hex.pm" /></a>&nbsp;
   <a href="https://hexdocs.pm/fusion_flow"><img src="https://img.shields.io/badge/docs-hexdocs-8b5cf6?style=flat-square&logo=elixir&logoColor=white" alt="Docs" /></a>&nbsp;
-  <a href="https://github.com/FusionFlow-app/heddle/blob/main/LICENSE"><img src="https://img.shields.io/github/license/FusionFlow-app/heddle?style=flat-square&color=blue" alt="License" /></a>&nbsp;
-  <a href="https://github.com/FusionFlow-app/heddle/stargazers"><img src="https://img.shields.io/github/stars/FusionFlow-app/heddle?style=flat-square&color=f5a623&logo=github&cacheSeconds=86400" alt="GitHub Stars" /></a>&nbsp;
+  <a href="https://github.com/heddlehq/heddle/blob/main/LICENSE"><img src="https://img.shields.io/github/license/heddlehq/heddle?style=flat-square&color=blue" alt="License" /></a>&nbsp;
+  <a href="https://github.com/heddlehq/heddle/stargazers"><img src="https://img.shields.io/github/stars/heddlehq/heddle?style=flat-square&color=f5a623&logo=github&cacheSeconds=86400" alt="GitHub Stars" /></a>&nbsp;
   <a href="https://discord.gg/7zjnpna239"><img src="https://img.shields.io/discord/1474594465225117740?style=flat-square&color=5865F2&logo=discord&logoColor=white&label=community" alt="Discord" /></a>
 </p>
 
@@ -51,8 +51,8 @@ mix run --no-halt
 We believe in building in public. Join our community to discuss ideas, track our vision, or help us build:
 
 - **Contributing**: Check our [Contributing Guide](CONTRIBUTING.md) to get started.
-- **Public Roadmap**: Long-term vision and goals on our [Roadmap Repository](https://github.com/FusionFlow-app/roadmap).
-- **Project Board**: Live active tasks on our [GitHub Project Board](https://github.com/orgs/FusionFlow-app/projects/2).
+- **Public Roadmap**: Long-term vision and goals on our [Roadmap Repository](https://github.com/heddlehq/roadmap).
+- **Project Board**: Live active tasks on our [GitHub Project Board](https://github.com/orgs/heddlehq/projects/2).
 - **Discord Server**: Real-time chat and support in our [Discord Server](https://discord.gg/7zjnpna239).
 
 ## License
