@@ -6,8 +6,6 @@ set -euo pipefail
 
 archive="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 
-# A space and an accent, because that's what real Windows usernames look like.
-export HEDDLE_HOME="${RUNNER_TEMP:-$(mktemp -d)}/Instalação Heddle"
 export HEDDLE_NO_BROWSER=1
 
 case "$(uname -s)" in
@@ -15,8 +13,15 @@ case "$(uname -s)" in
   *) windows=false ;;
 esac
 
-app="$HEDDLE_HOME/app"
-log="$HEDDLE_HOME/smoke.log"
+temp="${RUNNER_TEMP:-$(mktemp -d)}"
+# GNU tar reads the colon in D:\ as a remote host.
+[ "$windows" = true ] && temp="$(cygpath -u "$temp")"
+
+# A space and an accent, because that's what real Windows usernames look like.
+# The launcher finds this folder by itself, as it does after a real install.
+home="$temp/Instalação Heddle"
+app="$home/app"
+log="$home/smoke.log"
 mkdir -p "$app"
 tar -xzf "$archive" -C "$app"
 
