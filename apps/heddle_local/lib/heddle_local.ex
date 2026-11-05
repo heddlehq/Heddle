@@ -15,11 +15,21 @@ defmodule HeddleLocal do
   @doc """
   Prepares the database and returns the environment the release runs with.
 
-  Halts with a readable message when the database can't start, because at this
-  point in the boot an exception would only print an Erlang crash report.
+  Halts with a readable message when it can't go on, because at this point in the
+  boot an exception would only print an Erlang crash report.
   """
   def boot do
     home = home()
+
+    unless supported_path?(home) do
+      halt("""
+      Heddle can't run from #{home}.
+
+      Postgres and Python don't load from a folder with accents in its name.
+      Install again with HEDDLE_HOME set to a folder without them.
+      """)
+    end
+
     data = Path.join(home, "data")
     File.mkdir_p!(data)
 
@@ -36,16 +46,18 @@ defmodule HeddleLocal do
         })
 
       {:error, message} ->
-        IO.puts(:stderr, "\nHeddle could not start its database.\n\n#{message}\n")
-        System.halt(1)
+        halt("Heddle could not start its database.\n\n#{message}")
     end
   end
+
+  @doc "Whether Postgres and Python can load from this folder."
+  def supported_path?(path), do: path == for(<<c <- path>>, c < 128, into: "", do: <<c>>)
 
   @doc """
   Keeps Python inside `home`, so removing that folder removes everything.
 
-  Python also fails to load from a path with an accent on Windows, which the
-  default cache under the user's folder may have.
+  The default cache lives under the user's folder, which on Windows may have an
+  accent even when `home` doesn't, and Python can't load from there.
   """
   def python_env(home) do
     %{
@@ -94,6 +106,11 @@ defmodule HeddleLocal do
       {:error, _reason} ->
         free_port(port + 1, attempts - 1)
     end
+  end
+
+  defp halt(message) do
+    IO.puts(:stderr, "\n#{message}\n")
+    System.halt(1)
   end
 
   defp first_port do

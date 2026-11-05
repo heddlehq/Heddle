@@ -18,15 +18,14 @@ temp="${RUNNER_TEMP:-$(mktemp -d)}"
 [ "$windows" = true ] && temp="$(cygpath -u "$temp")"
 
 # The launcher finds this folder by itself, as it does after a real install.
-# Awkward on purpose. Windows gets no accent here, since install.ps1 steers clear
-# of it: Postgres can't initialize under one. Its user folder still has one.
+home="$temp/Heddle Install"
+
+# install.ps1 keeps Heddle out of a user folder with an accent. Nothing in it may
+# depend on that folder either.
 if [ "$windows" = true ]; then
-  home="$temp/Instalacao Heddle"
   LOCALAPPDATA="$(cygpath -w "$temp/Usuário João")"
   export LOCALAPPDATA
   mkdir -p "$temp/Usuário João"
-else
-  home="$temp/Instalação Heddle"
 fi
 
 app="$home/app"

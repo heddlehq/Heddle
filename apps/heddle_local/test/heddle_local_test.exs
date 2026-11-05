@@ -15,6 +15,16 @@ defmodule HeddleLocalTest do
     end
   end
 
+  describe "supported_path?/1" do
+    test "accepts spaces" do
+      assert HeddleLocal.supported_path?("C:/Users/Ana Maria/AppData/Local/Heddle")
+    end
+
+    test "refuses accents" do
+      refute HeddleLocal.supported_path?("/home/joão/.heddle")
+    end
+  end
+
   describe "python_env/1" do
     test "keeps every cache inside the install folder" do
       for {_name, path} <- HeddleLocal.python_env("/home/ana/.heddle") do
