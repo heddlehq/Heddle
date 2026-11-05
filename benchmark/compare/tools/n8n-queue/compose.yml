@@ -1,0 +1,36 @@
+# n8n's documented way to scale: webhooks on the main process, runs on a worker.
+# This is the closest match to Heddle, which also splits the two by default.
+x-n8n: &n8n
+  image: n8nio/n8n:2.46.6
+  extra_hosts: ["host.docker.internal:host-gateway"]
+  depends_on:
+    db: { condition: service_healthy }
+    redis: { condition: service_started }
+x-env: &env
+  DB_TYPE: postgresdb
+  DB_POSTGRESDB_HOST: db
+  DB_POSTGRESDB_DATABASE: n8n
+  DB_POSTGRESDB_USER: postgres
+  DB_POSTGRESDB_PASSWORD: postgres
+  N8N_ENCRYPTION_KEY: bench-key-bench-key
+  N8N_DIAGNOSTICS_ENABLED: "false"
+  EXECUTIONS_MODE: queue
+  QUEUE_BULL_REDIS_HOST: redis
+services:
+  n8n:
+    <<: *n8n
+    environment: *env
+    ports: ["18080:5678"]
+  worker:
+    <<: *n8n
+    command: worker
+    environment: *env
+  db:
+    image: postgres:17-alpine
+    environment: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: n8n }
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d n8n"]
+      interval: 2s
+      retries: 30
+  redis:
+    image: redis:7-alpine

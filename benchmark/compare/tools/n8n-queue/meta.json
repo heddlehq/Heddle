@@ -1,0 +1,10 @@
+{
+  "name": "n8n (queue mode)",
+  "version": "2.46.6",
+  "health": "http://127.0.0.1:18080/healthz",
+  "processes": "n8n, worker, Postgres, Redis",
+  "app": [
+    "n8n",
+    "worker"
+  ]
+}

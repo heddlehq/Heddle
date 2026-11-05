@@ -1,0 +1,9 @@
+{
+  "name": "n8n",
+  "version": "2.46.6",
+  "health": "http://127.0.0.1:18080/healthz",
+  "processes": "n8n, Postgres",
+  "app": [
+    "n8n"
+  ]
+}

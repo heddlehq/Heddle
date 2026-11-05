@@ -1,0 +1,35 @@
+# Mirrors the official docker-compose.yml: a server, three workers and a native worker.
+x-windmill: &windmill
+  image: ghcr.io/windmill-labs/windmill:1.862.0
+  extra_hosts: ["host.docker.internal:host-gateway"]
+  depends_on:
+    db: { condition: service_healthy }
+services:
+  server:
+    <<: *windmill
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db/windmill?sslmode=disable
+      MODE: server
+    ports: ["18080:8000"]
+  worker:
+    <<: *windmill
+    deploy: { replicas: 3 }
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db/windmill?sslmode=disable
+      MODE: worker
+      WORKER_GROUP: default
+  worker_native:
+    <<: *windmill
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db/windmill?sslmode=disable
+      MODE: worker
+      WORKER_GROUP: native
+      NUM_WORKERS: 8
+      SLEEP_QUEUE: 200
+  db:
+    image: postgres:17-alpine
+    environment: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: windmill }
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d windmill"]
+      interval: 2s
+      retries: 30

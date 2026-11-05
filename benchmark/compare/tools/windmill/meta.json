@@ -1,0 +1,11 @@
+{
+  "name": "Windmill",
+  "version": "1.862.0",
+  "health": "http://127.0.0.1:18080/api/version",
+  "processes": "Server, 3 workers, native worker, Postgres",
+  "app": [
+    "server",
+    "worker",
+    "worker_native"
+  ]
+}
