@@ -87,6 +87,12 @@ if config_env() == :prod do
         default: env_int.("OBAN_DEFAULT_CONCURRENCY", 2),
         executions: env_int.("OBAN_EXECUTIONS_CONCURRENCY", 5)
       ],
+      # A worker that dies leaves its jobs marked as executing forever. Without this,
+      # those runs stay "running" and never finish.
+      plugins: [
+        {Oban.Plugins.Lifeline,
+         rescue_after: :timer.minutes(env_int.("OBAN_RESCUE_AFTER_MINUTES", 60))}
+      ],
       repo: HeddleCore.Repo
   end
 

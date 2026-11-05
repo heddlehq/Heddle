@@ -1,0 +1,27 @@
+name: Crash test (temporary)
+on:
+  push:
+    branches: ["fix/rescue-stuck-executions"]
+jobs:
+  crash:
+    name: Crash round ${{ matrix.round }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        round: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: docker build -t heddle:bench .
+      - run: node benchmark/compare/crash.mjs
+        env:
+          ROUND: ${{ matrix.round }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: crash-${{ matrix.round }}
+          path: benchmark/compare/results/crash/

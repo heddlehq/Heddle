@@ -26,7 +26,7 @@ Most of these tools answer a webhook before doing the work, so requests per seco
 
 To run it, start the `Benchmark` workflow, or run `node benchmark/compare/run.mjs` on a machine that has Docker. `node benchmark/compare/summarize.mjs` prints the medians.
 
-`crash.mjs` is a separate test: it kills each tool in the middle of a load, restarts it and checks, call by call, whether the work it had accepted was lost or repeated.
+`crash.mjs` is a separate test: it kills each tool in the middle of a load, restarts it and checks, call by call, whether the work it had accepted was lost or repeated, and whether any run stayed unfinished. The target takes 100 ms to answer, so that work piles up. Heddle runs with `OBAN_RESCUE_AFTER_MINUTES=1` here instead of its default of 60, because the test can't wait an hour.
 
 ## What it does not tell you
 
