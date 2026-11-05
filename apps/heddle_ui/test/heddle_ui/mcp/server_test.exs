@@ -96,6 +96,7 @@ defmodule HeddleUI.MCP.ServerTest do
 
       assert "update_flow" in names
       assert "run_flow" in names
+      assert "chat" in names
       refute Enum.any?(names, &(&1 =~ "delete"))
     end
   end
