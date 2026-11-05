@@ -7,12 +7,15 @@ defmodule HeddleCore.Dependencies do
   alias HeddleCore.Repo
   alias HeddleCore.Dependencies.Dependency
 
+  # Read while compiling, because releases do not ship Mix.
+  @mix_deps Mix.Project.config()[:deps]
+
   def list_dependencies do
     Repo.all(Dependency)
   end
 
   def list_installed_mix_deps do
-    Mix.Project.config()[:deps]
+    @mix_deps
     |> Enum.map(fn
       {app, requirement} when is_binary(requirement) ->
         %{name: Atom.to_string(app), version: requirement, language: "elixir"}
