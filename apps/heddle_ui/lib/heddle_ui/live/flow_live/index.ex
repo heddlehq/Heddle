@@ -1,6 +1,8 @@
 defmodule HeddleUI.FlowLive.Index do
   use HeddleUI, :live_view
 
+  on_mount {HeddleUI.UserAuth, :require_system_admin}
+
   alias HeddleCore.Flows
 
   @impl true
@@ -58,7 +60,7 @@ defmodule HeddleUI.FlowLive.Index do
           <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-12 text-center shadow-sm">
             <div class="mx-auto w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
               <svg
-                class="w-8 h-8 text-gray-400 dark:text-gray-500"
+                class="w-8 h-8 text-gray-400 dark:text-gray-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -98,7 +100,7 @@ defmodule HeddleUI.FlowLive.Index do
                     class="flex items-center justify-between px-6 py-4"
                   >
                     <div class="flex items-center gap-4">
-                      <div class="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                      <div class="p-2 bg-primary/10 text-primary rounded-lg">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path
                             stroke-linecap="round"

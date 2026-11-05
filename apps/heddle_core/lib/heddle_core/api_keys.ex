@@ -158,10 +158,10 @@ defmodule HeddleCore.ApiKeys do
       end
     end
 
-    if Mix.env() == :test do
-      task.()
-    else
+    if Application.get_env(:heddle_core, :async_api_key_touch?, true) do
       Task.Supervisor.start_child(HeddleCore.TaskSupervisor, task)
+    else
+      task.()
     end
   end
 end

@@ -45,17 +45,12 @@ defmodule HeddleUI.Router do
   scope "/", HeddleUI do
     pipe_through [:browser, :require_authenticated_user]
 
+    # One live_session for the whole app: crossing sessions forces a full page reload.
+    # Admin-only LiveViews declare `on_mount {HeddleUI.UserAuth, :require_system_admin}`.
     live_session :require_authenticated_user,
       on_mount: [{HeddleUI.UserAuth, :require_authenticated}] do
       live "/users/settings", UserLive.Settings, :edit
       live "/", DashboardLive.Index
-    end
-
-    live_session :require_system_admin,
-      on_mount: [
-        {HeddleUI.UserAuth, :require_authenticated},
-        {HeddleUI.UserAuth, :require_system_admin}
-      ] do
       live "/users", UserLive.Index, :index
       live "/flows", FlowLive.Index
       live "/flows/new/ai", FlowLive.AICreator

@@ -1,6 +1,8 @@
 defmodule HeddleUI.ExecutionLive.Index do
   use HeddleUI, :live_view
 
+  on_mount {HeddleUI.UserAuth, :require_system_admin}
+
   alias HeddleCore.Executions
 
   @impl true
@@ -85,7 +87,7 @@ defmodule HeddleUI.ExecutionLive.Index do
                   class={[
                     "block px-5 py-4 transition hover:bg-gray-50 dark:hover:bg-slate-800/60",
                     @selected_execution && @selected_execution.id == execution.id &&
-                      "bg-indigo-50/70 dark:bg-indigo-950/30"
+                      "bg-primary/5"
                   ]}
                 >
                   <div class="flex items-center justify-between gap-3">
@@ -99,7 +101,7 @@ defmodule HeddleUI.ExecutionLive.Index do
                     {execution.flow && execution.flow.name}
                   </p>
 
-                  <div class="mt-2 flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500">
+                  <div class="mt-2 flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-400">
                     <span>{get_trigger(execution)}</span>
                     <span>{format_datetime(execution.inserted_at)}</span>
                   </div>
@@ -150,13 +152,13 @@ defmodule HeddleUI.ExecutionLive.Index do
 
                 <div class="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400">
                   <div>
-                    <span class="block font-medium text-gray-400 dark:text-gray-500">
+                    <span class="block font-medium text-gray-400 dark:text-gray-400">
                       {gettext("Started")}
                     </span>
                     <span>{format_datetime(@selected_execution.started_at)}</span>
                   </div>
                   <div>
-                    <span class="block font-medium text-gray-400 dark:text-gray-500">
+                    <span class="block font-medium text-gray-400 dark:text-gray-400">
                       {gettext("Completed")}
                     </span>
                     <span>{format_datetime(@selected_execution.finished_at)}</span>

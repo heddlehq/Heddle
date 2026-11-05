@@ -1,6 +1,7 @@
 defmodule HeddleUI.AIChatTest do
   use ExUnit.Case, async: true
 
+  alias HeddleCore.Flows.GraphValidator
   alias HeddleUI.AIChat
 
   describe "to_api_messages/1" do
@@ -66,6 +67,74 @@ defmodule HeddleUI.AIChatTest do
     test "returns :error for non create_flow content" do
       assert :error = AIChat.extract_create_flow_json("just a normal reply")
       assert :error = AIChat.extract_create_flow_json(~s({"action": "something_else"}))
+    end
+  end
+
+  describe "persistable_nodes/1" do
+    test "keeps only the fields a saved flow accepts" do
+      [node] =
+        [%{"id" => "a", "name" => "Logger", "type" => "Logger"}]
+        |> AIChat.normalize_nodes()
+        |> AIChat.persistable_nodes()
+
+      assert node |> Map.keys() |> Enum.sort() == ~w(controls id label position type)
+    end
+
+    test "produces nodes the graph validator accepts" do
+      nodes =
+        [%{"id" => "a", "type" => "Logger", "label" => "Log"}]
+        |> AIChat.normalize_nodes()
+        |> AIChat.persistable_nodes()
+
+      assert GraphValidator.validate(nodes, []) == :ok
+    end
+  end
+
+  describe "plan_proposed?/1" do
+    test "finds the marker with or without brackets" do
+      assert AIChat.plan_proposed?("Does that work? [PLAN_PROPOSED]")
+      assert AIChat.plan_proposed?("Does that work? plan_proposed")
+    end
+
+    test "is false for a regular reply" do
+      refute AIChat.plan_proposed?("Hello! How can I help?")
+    end
+  end
+
+  describe "display_text/1" do
+    test "removes the marker" do
+      assert AIChat.display_text("Does that work? [PLAN_PROPOSED]") == "Does that work?"
+    end
+
+    test "removes the start of a marker still streaming" do
+      assert AIChat.display_text("Does that work? [PLAN_PRO") == "Does that work?"
+      assert AIChat.display_text("Does that work? [") == "Does that work?"
+    end
+
+    test "drops Markdown bold but keeps a lone operator" do
+      assert AIChat.display_text("- **Add a Logger**: logs it") == "- Add a Logger: logs it"
+      assert AIChat.display_text("Computes 2 ** 3") == "Computes 2 ** 3"
+    end
+
+    test "keeps line breaks and brackets inside the text" do
+      text = "- Add [Logger]\n- Add Webhook"
+
+      assert AIChat.display_text(text) == text
+    end
+  end
+
+  describe "flow_json?/1" do
+    test "recognizes JSON from its first characters" do
+      assert AIChat.flow_json?(~s({"act))
+      assert AIChat.flow_json?("  ```json\n{")
+    end
+
+    test "recognizes the action inside surrounding text" do
+      assert AIChat.flow_json?(~s(Here it is: {"action": "create_flow"}))
+    end
+
+    test "is false for a plan" do
+      refute AIChat.flow_json?("- Add a Logger node")
     end
   end
 

@@ -58,7 +58,7 @@ defmodule HeddleUI.DashboardLive.Index do
               <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">
                 {gettext("Total Workflows")}
               </h3>
-              <div class="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg">
+              <div class="p-2 bg-primary/10 text-primary rounded-lg">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     stroke-linecap="round"
@@ -152,7 +152,7 @@ defmodule HeddleUI.DashboardLive.Index do
                       class="flex items-center justify-between px-6 py-4"
                     >
                       <div class="flex items-center gap-4">
-                        <div class="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                        <div class="p-2 bg-primary/10 text-primary rounded-lg">
                           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path
                               stroke-linecap="round"

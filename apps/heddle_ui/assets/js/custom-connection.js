@@ -24,12 +24,12 @@ export class CustomConnectionElement extends LitElement {
       path.visible {
         fill: none;
         stroke-width: 5px;
-        stroke: #4338ca;
+        stroke: var(--editor-wire);
         pointer-events: none;
         transition: stroke-width 0.15s ease, stroke 0.15s ease;
       }
       path.visible.selected {
-        stroke: oklch(58% 0.233 277.117);
+        stroke: var(--color-primary);
         stroke-width: 7px;
       }
       path.visible:hover {

@@ -54,6 +54,7 @@ defmodule HeddleUI do
         layout: {HeddleUI.Layouts, :app}
 
       on_mount HeddleUI.Plugs.SetLocale
+      on_mount HeddleUI.CurrentPath
 
       unquote(html_helpers())
     end

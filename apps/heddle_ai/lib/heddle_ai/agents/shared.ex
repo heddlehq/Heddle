@@ -84,7 +84,8 @@ defmodule HeddleAI.Agents.Shared do
     -   Ensure `sourceOutput` and `targetInput` match the defined inputs/outputs.
     -   **CRITICAL:** Position nodes using a `position` object with `x` and `y`.
     -   **CRITICAL:** Space nodes FAR APART (x increment >= 400).
-    -   **CRITICAL:** ALWAYS start the flow with a `Start` node and end with an `Output` node.
+    -   **CRITICAL:** A flow begins at exactly ONE entry node, which has no inputs: a `Webhook` when an HTTP call triggers the flow, otherwise a `Start`. NEVER use both, and NEVER connect anything into an entry node.
+    -   **CRITICAL:** End the flow with an `Output` node.
     """
   end
 

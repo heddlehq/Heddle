@@ -1,6 +1,8 @@
 defmodule HeddleUI.FlowLive.Editor do
   use HeddleUI, :live_view
 
+  on_mount {HeddleUI.UserAuth, :require_system_admin}
+
   alias HeddleCore.{Executions, Flows}
   alias HeddleUI.AIChat
   alias HeddleUI.FlowLive.{CodeEditorManager, DependencyManager, NodePaletteManager}

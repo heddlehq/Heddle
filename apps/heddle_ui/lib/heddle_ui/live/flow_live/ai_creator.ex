@@ -1,6 +1,8 @@
 defmodule HeddleUI.FlowLive.AICreator do
   use HeddleUI, :live_view
 
+  on_mount {HeddleUI.UserAuth, :require_system_admin}
+
   alias HeddleCore.Flows
   alias HeddleAI.Agents.FlowPlanner
   alias HeddleUI.AIChat
@@ -15,8 +17,7 @@ defmodule HeddleUI.FlowLive.AICreator do
          page_title: gettext("Create Flow with AI"),
          messages: [],
          loading: false,
-         ai_awaiting_approval: false,
-         temp_flow_data: nil,
+         plan_ready: false,
          ai_configured: true
        )}
     else
@@ -34,82 +35,25 @@ defmodule HeddleUI.FlowLive.AICreator do
   end
 
   @impl true
+  def handle_event("send_message", %{"content" => ""}, socket) do
+    {:noreply, socket}
+  end
+
   def handle_event("send_message", %{"content" => content}, socket) do
-    if content == "" do
-      {:noreply, socket}
-    else
-      messages = socket.assigns.messages ++ [{:user, content}, {:ai, ""}]
-      ai_messages = AIChat.to_api_messages(messages)
-
-      socket =
-        assign(socket,
-          messages: messages,
-          loading: true,
-          ai_awaiting_approval: false,
-          temp_flow_data: nil
-        )
-
-      parent = self()
-      locale = socket.assigns.locale
-
-      socket =
-        start_async(socket, :ai_stream, fn ->
-          {:ok, result} = FlowPlanner.chat(ai_messages, nil, locale)
-          AIChat.consume_stream(result.stream, parent)
-        end)
-
-      {:noreply, socket}
-    end
+    {:noreply, ask_planner(socket, content)}
   end
 
   @impl true
-  def handle_event("approve_flow", _params, socket) do
-    case socket.assigns.temp_flow_data do
-      %{"name" => name, "nodes" => raw_nodes} = flow_data ->
-        connections = Map.get(flow_data, "connections", [])
-        nodes = AIChat.normalize_nodes(raw_nodes)
-
-        case Flows.create_flow(socket.assigns.current_scope, %{
-               name: name || "AI Generated Flow",
-               nodes: nodes,
-               connections: connections
-             }) do
-          {:ok, flow} ->
-            {:noreply,
-             socket
-             |> put_flash(:info, gettext("Flow created successfully!"))
-             |> push_navigate(to: ~p"/flows/#{flow.id}")}
-
-          {:error, _changeset} ->
-            {:noreply, put_flash(socket, :error, gettext("Failed to create flow from AI."))}
-        end
-
-      _ ->
-        {:noreply, put_flash(socket, :error, gettext("No flow data to approve."))}
-    end
+  def handle_event("approve_plan", _params, socket) do
+    {:noreply, ask_planner(socket, gettext("Looks good! Please build this flow."))}
   end
 
   @impl true
   def handle_async(:ai_stream, {:ok, _result}, socket) do
-    socket =
-      case List.last(socket.assigns.messages) do
-        {:ai, content} ->
-          case AIChat.extract_create_flow_json(content) do
-            {:ok, json} ->
-              assign(socket,
-                ai_awaiting_approval: true,
-                temp_flow_data: json
-              )
-
-            :error ->
-              socket
-          end
-
-        _ ->
-          socket
-      end
-
-    {:noreply, assign(socket, loading: false)}
+    case List.last(socket.assigns.messages) do
+      {:ai, content} -> {:noreply, finish_reply(socket, content)}
+      _ -> {:noreply, assign(socket, loading: false)}
+    end
   end
 
   @impl true
@@ -133,14 +77,57 @@ defmodule HeddleUI.FlowLive.AICreator do
      |> assign(loading: false)}
   end
 
+  defp ask_planner(socket, content) do
+    messages = socket.assigns.messages ++ [{:user, content}, {:ai, ""}]
+    ai_messages = AIChat.to_api_messages(messages)
+    parent = self()
+    locale = socket.assigns.locale
+    planner = Application.get_env(:heddle_ui, :flow_planner, FlowPlanner)
+
+    socket
+    |> assign(messages: messages, loading: true, plan_ready: false)
+    |> start_async(:ai_stream, fn ->
+      {:ok, result} = planner.chat(ai_messages, nil, locale)
+      AIChat.consume_stream(result.stream, parent)
+    end)
+  end
+
+  defp finish_reply(socket, content) do
+    case AIChat.extract_create_flow_json(content) do
+      {:ok, json} -> create_flow(socket, json)
+      :error -> assign(socket, loading: false, plan_ready: AIChat.plan_proposed?(content))
+    end
+  end
+
+  defp create_flow(socket, json) do
+    attrs = %{
+      name: json["name"] || "AI Generated Flow",
+      nodes:
+        json |> Map.get("nodes", []) |> AIChat.normalize_nodes() |> AIChat.persistable_nodes(),
+      connections: Map.get(json, "connections", [])
+    }
+
+    case Flows.create_flow(socket.assigns.current_scope, attrs) do
+      {:ok, flow} ->
+        socket
+        |> put_flash(:info, gettext("Flow created successfully!"))
+        |> push_navigate(to: ~p"/flows/#{flow.id}")
+
+      {:error, _changeset} ->
+        socket
+        |> put_flash(:error, gettext("Failed to create flow from AI."))
+        |> assign(loading: false)
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="h-[calc(100vh-4rem)] flex flex-col bg-gray-50 dark:bg-slate-950 overflow-hidden">
+    <div class="flex-1 min-h-0 flex flex-col bg-gray-50 dark:bg-slate-950 overflow-hidden">
       <!-- Top header -->
       <div class="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between shadow-sm">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 stroke-linecap="round"
@@ -172,7 +159,7 @@ defmodule HeddleUI.FlowLive.AICreator do
       >
         <%= if Enum.empty?(@messages) do %>
           <div class="h-full flex flex-col items-center justify-center text-center py-12">
-            <div class="w-16 h-16 rounded-full bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4">
+            <div class="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
               <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   stroke-linecap="round"
@@ -196,7 +183,7 @@ defmodule HeddleUI.FlowLive.AICreator do
                 phx-value-content={
                   gettext("Create a flow with a webhook that receives data, and logs the output")
                 }
-                class="p-3 text-left bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl hover:border-purple-500 dark:hover:border-purple-500 transition-colors text-xs text-gray-700 dark:text-gray-300 shadow-sm"
+                class="p-3 text-left bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl hover:border-primary transition-colors text-xs text-gray-700 dark:text-gray-300 shadow-sm"
               >
                 "{gettext("Create a flow with a webhook that receives data, and logs the output")}"
               </button>
@@ -205,7 +192,7 @@ defmodule HeddleUI.FlowLive.AICreator do
                 phx-value-content={
                   gettext("Fetch data via HTTP request and run Python evaluation logic")
                 }
-                class="p-3 text-left bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl hover:border-purple-500 dark:hover:border-purple-500 transition-colors text-xs text-gray-700 dark:text-gray-300 shadow-sm"
+                class="p-3 text-left bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl hover:border-primary transition-colors text-xs text-gray-700 dark:text-gray-300 shadow-sm"
               >
                 "{gettext("Fetch data via HTTP request and run Python evaluation logic")}"
               </button>
@@ -215,38 +202,32 @@ defmodule HeddleUI.FlowLive.AICreator do
           <%= for {sender, content} <- @messages do %>
             <div class={"flex gap-4 #{if sender == :user, do: "justify-end", else: "justify-start"}"}>
               <%= if sender == :ai do %>
-                <div class="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white shrink-0 text-xs font-bold">
+                <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-content shrink-0 text-xs font-bold">
                   AI
                 </div>
               <% end %>
-              <div class={"max-w-[80%] rounded-2xl px-5 py-3.5 shadow-sm #{if sender == :user, do: "bg-indigo-600 text-white rounded-br-none", else: "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-800 dark:text-gray-200 rounded-bl-none"}"}>
+              <div class={"max-w-[80%] rounded-2xl px-5 py-3.5 shadow-sm #{if sender == :user, do: "bg-primary text-primary-content rounded-br-none", else: "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-800 dark:text-gray-200 rounded-bl-none"}"}>
                 <%= if sender == :ai do %>
                   <div class="prose dark:prose-invert text-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-800 prose-pre:text-gray-100">
                     <%= cond do %>
                       <% content == "" and @loading -> %>
                         <div class="flex items-center gap-2 text-gray-400">
-                          <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                            <circle
-                              class="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              stroke-width="4"
-                              fill="none"
-                            >
-                            </circle>
-                            <path
-                              class="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            >
-                            </path>
-                          </svg>
+                          <.icon name="hero-arrow-path" class="w-4 h-4 animate-spin" />
                           <span>{gettext("Thinking and designing your flow...")}</span>
                         </div>
+                      <% @loading and AIChat.flow_json?(content) -> %>
+                        <div class="flex items-center gap-2 text-gray-400">
+                          <.icon name="hero-arrow-path" class="w-4 h-4 animate-spin" />
+                          <span>{gettext("Building flow and rendering graph...")}</span>
+                        </div>
+                      <% AIChat.flow_json?(content) -> %>
+                        <p>
+                          {gettext(
+                            "I couldn't build this flow. Tell me what to change and I'll try again."
+                          )}
+                        </p>
                       <% true -> %>
-                        {content}
+                        <p class="whitespace-pre-wrap">{AIChat.display_text(content)}</p>
                     <% end %>
                   </div>
                 <% else %>
@@ -261,35 +242,29 @@ defmodule HeddleUI.FlowLive.AICreator do
               <% end %>
             </div>
           <% end %>
-          
-    <!-- Approval action bar if JSON ready -->
-          <%= if @ai_awaiting_approval do %>
-            <div class="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-fade-in">
+
+          <%= if @plan_ready and not @loading do %>
+            <div
+              id="ai-plan-approval"
+              class="bg-primary/10 border border-primary/30 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-fade-in"
+            >
               <div>
-                <h4 class="font-bold text-purple-950 dark:text-purple-200 text-sm">
-                  {gettext("Flow blueprint is ready!")}
+                <h4 class="font-bold text-gray-900 dark:text-white text-sm">
+                  {gettext("Are you happy with this implementation plan?")}
                 </h4>
-                <p class="text-xs text-purple-800 dark:text-purple-300 mt-0.5">
-                  {gettext("Click approve to create this flow and open the visual canvas.")}
+                <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                  {gettext("Or reply below with adjustments")}
                 </p>
               </div>
-              <div class="flex gap-2 w-full sm:w-auto">
-                <.button
-                  phx-click="approve_flow"
-                  variant="primary"
-                  class="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
-                >
-                  <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  {gettext("Approve & Create Flow")}
-                </.button>
-              </div>
+              <.button
+                id="ai-approve-plan"
+                phx-click="approve_plan"
+                variant="primary"
+                class="w-full sm:w-auto shrink-0"
+              >
+                <.icon name="hero-check" class="w-4 h-4 mr-1.5" />
+                {gettext("Yes, Build This Flow")}
+              </.button>
             </div>
           <% end %>
         <% end %>
@@ -307,42 +282,20 @@ defmodule HeddleUI.FlowLive.AICreator do
               autocomplete="off"
               disabled={@loading}
               placeholder={gettext("Describe changes or explain what the flow should do...")}
-              class="flex-1 bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-purple-500 focus:border-purple-500 dark:text-white"
+              class="flex-1 bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:text-white"
             />
             <.button
+              id="ai-flow-send-button"
               type="submit"
               variant="primary"
               disabled={@loading}
-              class="bg-purple-600 hover:bg-purple-700 px-5 rounded-xl"
+              title={gettext("Send")}
+              class="px-5 rounded-xl"
             >
               <%= if @loading do %>
-                <svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                    fill="none"
-                  >
-                  </circle>
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  >
-                  </path>
-                </svg>
+                <.icon name="hero-arrow-path" class="w-5 h-5 animate-spin" />
               <% else %>
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                  />
-                </svg>
+                <.icon name="hero-paper-airplane-solid" class="w-5 h-5" />
               <% end %>
             </.button>
           </form>

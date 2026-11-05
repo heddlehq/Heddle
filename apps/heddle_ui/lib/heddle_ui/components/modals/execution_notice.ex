@@ -42,7 +42,7 @@ defmodule HeddleUI.Components.Modals.ExecutionNotice do
               {@notice.message}
             </p>
             <%= if @notice.execution_id do %>
-              <p class="mt-2 truncate font-mono text-xs text-gray-500 dark:text-gray-500">
+              <p class="mt-2 truncate font-mono text-xs text-gray-500 dark:text-gray-400">
                 execution: {@notice.public_id || @notice.execution_id}
               </p>
               <%= if execution_notice_ready?(@notice) do %>
@@ -51,14 +51,14 @@ defmodule HeddleUI.Components.Modals.ExecutionNotice do
                   type="button"
                   phx-click="open_execution_result"
                   phx-value-id={@notice.execution_id}
-                  class="mt-3 inline-flex h-8 items-center gap-2 rounded-md bg-primary px-3 text-xs font-semibold text-white transition hover:opacity-90"
+                  class="mt-3 inline-flex h-8 items-center gap-2 rounded-md bg-primary px-3 text-xs font-semibold text-primary-content transition hover:opacity-90"
                 >
                   <.icon name="hero-magnifying-glass-plus" class="h-4 w-4" /> View result
                 </button>
               <% else %>
                 <.link
                   navigate={~p"/executions/#{@notice.public_id}"}
-                  class="mt-3 inline-flex h-8 items-center gap-2 rounded-md bg-primary px-3 text-xs font-semibold text-white transition hover:opacity-90"
+                  class="mt-3 inline-flex h-8 items-center gap-2 rounded-md bg-primary px-3 text-xs font-semibold text-primary-content transition hover:opacity-90"
                 >
                   <.icon name="hero-arrow-top-right-on-square" class="h-4 w-4" /> View execution
                 </.link>
@@ -85,7 +85,7 @@ defmodule HeddleUI.Components.Modals.ExecutionNotice do
 
   defp notice_border_class(:error), do: "border-red-200 dark:border-red-900/60"
   defp notice_border_class(:success), do: "border-emerald-200 dark:border-emerald-900/60"
-  defp notice_border_class(_kind), do: "border-indigo-200 dark:border-indigo-900/60"
+  defp notice_border_class(_kind), do: "border-primary/30"
 
   defp notice_icon_class(:error),
     do: "bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-300"
@@ -95,7 +95,7 @@ defmodule HeddleUI.Components.Modals.ExecutionNotice do
   end
 
   defp notice_icon_class(_kind) do
-    "bg-indigo-50 text-primary dark:bg-indigo-950/60 dark:text-indigo-300"
+    "bg-primary/10 text-primary"
   end
 
   defp notice_icon(:error), do: "hero-exclamation-triangle"

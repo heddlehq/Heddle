@@ -11,17 +11,35 @@
   --color-scheme: light dark;
   --dark-mode-selector: [data-theme="dark"];
 
-  /* Near-black with big jumps between each depth layer */
-  --color-slate-950: oklch(3% 0 0);    /* ~#050505 – deepest */
-  --color-slate-900: oklch(5% 0 0);    /* ~#080808 – page bg  */
-  --color-slate-800: oklch(16% 0 0);   /* ~#222 – sidebar/header */
-  --color-slate-700: oklch(26% 0 0);   /* ~#363636 – buttons/hover */
-  --color-slate-600: oklch(38% 0 0);   /* ~#545454 – visible borders */
-  --color-slate-500: oklch(50% 0 0);   /* ~#737373 – muted borders */
-  --color-slate-400: oklch(62% 0 0);   /* ~#959595 – muted text */
-  --color-slate-300: oklch(78% 0 0);   /* ~#c0c0c0 – body text */
-  --color-slate-200: oklch(90% 0 0);   /* ~#e0e0e0 – strong text */
-  --color-slate-100: oklch(96% 0 0);   /* ~#f5f5f5 – bright text */
+  /* Heddle palette: paper, ink and ribbon. The named anchors match the logo and
+     web/src/styles/global.css; keep them in sync. */
+  --color-white: #fbf7ef;    /* cards and sidebar on top of the paper */
+
+  /* Light mode ramp, from paper to ink */
+  --color-gray-50: #f3ebdc;  /* paper – page bg */
+  --color-gray-100: #e9dfca; /* paper-deep – hover/subtle fills */
+  --color-gray-200: #d3c6ac; /* rule – borders */
+  --color-gray-300: #bfb298;
+  --color-gray-400: #aca391; /* muted text in dark mode */
+  --color-gray-500: #6e695e; /* muted text in light mode */
+  --color-gray-600: #57544c; /* ink-soft */
+  --color-gray-700: #45443f;
+  --color-gray-800: #33353a;
+  --color-gray-900: #23262b; /* ink – primary text */
+  --color-gray-950: #181a1e;
+
+  /* Dark mode ramp, from deep ink up to paper */
+  --color-slate-950: #181a1e; /* page bg */
+  --color-slate-900: #23262b; /* ink – cards and sidebar */
+  --color-slate-800: #33363c; /* elevated surfaces */
+  --color-slate-700: #45474c; /* borders/hover */
+  --color-slate-600: #5c5b56; /* visible borders */
+  --color-slate-500: #8f887a; /* muted borders and text */
+  --color-slate-400: #aca391; /* muted text */
+  --color-slate-300: #c9bfac; /* body text */
+  --color-slate-200: #e3dac8; /* strong text */
+  --color-slate-100: #f3ebdc; /* paper – bright text */
+  --color-slate-50: #f8f2e7;  /* light mode input bg */
 }
 
 
@@ -45,26 +63,26 @@
   default: false;
   prefersdark: true;
   color-scheme: "dark";
-  --color-base-100: oklch(8% 0 0);
-  --color-base-200: oklch(5% 0 0);
-  --color-base-300: oklch(3% 0 0);
-  --color-base-content: oklch(90% 0 0);
-  --color-primary: oklch(58% 0.233 277.117);
-  --color-primary-content: oklch(96% 0.018 272.314);
-  --color-secondary: oklch(58% 0.233 277.117);
-  --color-secondary-content: oklch(96% 0.018 272.314);
-  --color-accent: oklch(60% 0.25 292.717);
-  --color-accent-content: oklch(96% 0.016 293.756);
-  --color-neutral: oklch(15% 0.018 257);
-  --color-neutral-content: oklch(92% 0.003 247.858);
-  --color-info: oklch(58% 0.158 241.966);
-  --color-info-content: oklch(97% 0.013 236.62);
+  --color-base-100: #23262b;
+  --color-base-200: #1d2024;
+  --color-base-300: #181a1e;
+  --color-base-content: #f3ebdc;
+  --color-primary: #e8907d;
+  --color-primary-content: #181a1e;
+  --color-secondary: #aca391;
+  --color-secondary-content: #181a1e;
+  --color-accent: #f3ebdc;
+  --color-accent-content: #181a1e;
+  --color-neutral: #33363c;
+  --color-neutral-content: #f3ebdc;
+  --color-info: #7db3bf;
+  --color-info-content: #181a1e;
   --color-success: oklch(60% 0.118 184.704);
   --color-success-content: oklch(98% 0.014 180.72);
   --color-warning: oklch(66% 0.179 58.318);
   --color-warning-content: oklch(98% 0.022 95.277);
-  --color-error: oklch(58% 0.253 17.585);
-  --color-error-content: oklch(96% 0.015 12.422);
+  --color-error: #f0788a;
+  --color-error-content: #181a1e;
   --radius-selector: 0.25rem;
   --radius-field: 0.25rem;
   --radius-box: 0.5rem;
@@ -80,26 +98,26 @@
   default: true;
   prefersdark: false;
   color-scheme: "light";
-  --color-base-100: oklch(98% 0 0);
-  --color-base-200: oklch(96% 0.001 286.375);
-  --color-base-300: oklch(92% 0.004 286.32);
-  --color-base-content: oklch(21% 0.006 285.885);
-  --color-primary: oklch(45% 0.24 277); /* Indigo 600 */
-  --color-primary-content: oklch(98% 0.016 272.314);
-  --color-secondary: oklch(55% 0.027 264.364);
-  --color-secondary-content: oklch(98% 0.002 247.839);
-  --color-accent: oklch(0% 0 0);
-  --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(44% 0.017 285.786);
-  --color-neutral-content: oklch(98% 0 0);
-  --color-info: oklch(62% 0.214 259.815);
-  --color-info-content: oklch(97% 0.014 254.604);
+  --color-base-100: #f3ebdc;
+  --color-base-200: #e9dfca;
+  --color-base-300: #d3c6ac;
+  --color-base-content: #23262b;
+  --color-primary: #a63a2b;
+  --color-primary-content: #fbf7ef;
+  --color-secondary: #57544c;
+  --color-secondary-content: #fbf7ef;
+  --color-accent: #23262b;
+  --color-accent-content: #fbf7ef;
+  --color-neutral: #45443f;
+  --color-neutral-content: #fbf7ef;
+  --color-info: #2f6f7e;
+  --color-info-content: #fbf7ef;
   --color-success: oklch(70% 0.14 182.503);
   --color-success-content: oklch(98% 0.014 180.72);
   --color-warning: oklch(66% 0.179 58.318);
   --color-warning-content: oklch(98% 0.022 95.277);
-  --color-error: oklch(58% 0.253 17.585);
-  --color-error-content: oklch(96% 0.015 12.422);
+  --color-error: #c2173c;
+  --color-error-content: #fbf7ef;
   --radius-selector: 0.25rem;
   --radius-field: 0.25rem;
   --radius-box: 0.5rem;

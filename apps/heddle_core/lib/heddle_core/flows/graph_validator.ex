@@ -10,6 +10,9 @@ defmodule HeddleCore.Flows.GraphValidator do
   @node_keys ~w(id type label controls position)
   @connection_keys ~w(source sourceOutput target targetInput)
 
+  @doc "The fields a persisted node may have."
+  def node_keys, do: @node_keys
+
   def validate(nodes, connections, opts \\ []) do
     with :ok <- validate_list(:nodes, nodes),
          :ok <- validate_list(:connections, connections) do

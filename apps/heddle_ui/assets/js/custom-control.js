@@ -9,17 +9,10 @@ export class CustomControlElement extends LitElement {
       }
       
       :host {
-        --input-bg: #f8fafc;
-        --input-border: #e2e8f0;
-        --input-text: #1e293b;
-        --input-placeholder: #94a3b8;
-      }
-
-      :host-context(.dark) {
-        --input-bg: #334155;
-        --input-border: #475569;
-        --input-text: #f1f5f9;
-        --input-placeholder: #94a3b8;
+        --input-bg: var(--editor-input-bg);
+        --input-border: var(--editor-input-border);
+        --input-text: var(--color-base-content);
+        --input-placeholder: var(--editor-muted);
       }
       
       input, textarea, select {
@@ -42,8 +35,8 @@ export class CustomControlElement extends LitElement {
       }
 
       input:focus, textarea:focus, select:focus {
-        border-color: #6366f1;
-        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 15%, transparent);
       }
 
       textarea {
@@ -54,7 +47,7 @@ export class CustomControlElement extends LitElement {
       
       .label {
         font-size: 11px;
-        color: var(--input-label, #64748b);
+        color: var(--input-label, var(--editor-muted));
         margin-bottom: 2px;
         font-weight: 600;
         text-transform: uppercase;
@@ -102,7 +95,7 @@ export class CustomControlElement extends LitElement {
                 @click=${(e) => {
           if (this.onClick) this.onClick();
         }}
-                style="width: 100%; box-sizing: border-box; background: #4338ca; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer;"
+                style="width: 100%; box-sizing: border-box; background: var(--color-primary); color: var(--color-primary-content); border: none; padding: 6px; border-radius: 4px; cursor: pointer;"
             >
                 ${this.label || (window.Translations && window.Translations["Edit Code"]) || 'Edit Code'}
             </button>

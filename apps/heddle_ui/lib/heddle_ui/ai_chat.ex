@@ -8,14 +8,21 @@ defmodule HeddleUI.AIChat do
       `%{role: ..., content: ...}` shape the agents expect;
     * consuming an agent stream while forwarding chunks/errors to the LiveView;
     * appending a streamed chunk to the running assistant message;
-    * extracting the `create_flow` JSON out of an assistant reply; and
+    * extracting the `create_flow` JSON out of an assistant reply;
+    * reading the planner's plan marker and hiding it from the user; and
     * normalizing the AI-generated nodes into the single canonical shape the
       Rete editor consumes (whether pushed to the client or persisted first).
   """
 
+  alias HeddleCore.Flows.GraphValidator
+
   @node_default_x 100
   @node_default_y 100
   @node_x_spacing 500
+
+  @plan_marker ~r/\[?PLAN_PROPOSED\]?/i
+  @partial_marker ~r/\[[A-Z_]*\z/
+  @bold ~r/\*\*(.+?)\*\*/
 
   @output_default_code "ui do\n  text :status, label: \"Final Status\", default: \"success\"\nend\n"
 
@@ -79,6 +86,39 @@ defmodule HeddleUI.AIChat do
   end
 
   @doc """
+  Tells whether an assistant reply proposes a plan the user can approve.
+
+  The planner signals it by ending the reply with the `[PLAN_PROPOSED]` marker.
+  """
+  def plan_proposed?(content) when is_binary(content) do
+    Regex.match?(@plan_marker, content)
+  end
+
+  @doc """
+  Returns the text of an assistant reply as the user should see it.
+
+  Removes the plan marker, including the start of it while it is still streaming.
+  Replies render as plain text, so it also drops the Markdown bold the model uses.
+  The stored message keeps the marker, so the model still sees it in the history.
+  """
+  def display_text(content) when is_binary(content) do
+    content
+    |> String.replace(@plan_marker, "")
+    |> String.replace(@partial_marker, "")
+    |> String.replace(@bold, "\\1")
+    |> String.trim_trailing()
+  end
+
+  @doc """
+  Tells whether an assistant reply is flow JSON, even a partial one still streaming.
+  """
+  def flow_json?(content) when is_binary(content) do
+    trimmed = String.trim_leading(content)
+
+    String.starts_with?(trimmed, ["{", "```"]) or String.contains?(content, ~s("create_flow"))
+  end
+
+  @doc """
   Extracts a `create_flow` payload from an assistant reply.
 
   Handles both a reply that is pure JSON (optionally fenced with ```json) and a
@@ -109,6 +149,16 @@ defmodule HeddleUI.AIChat do
     raw_nodes
     |> Enum.map(&normalize_node/1)
     |> reposition_horizontally()
+  end
+
+  @doc """
+  Reduces normalized nodes to the fields a saved flow may have.
+
+  `normalize_nodes/1` also returns the fields the Rete editor needs to draw a node,
+  which `HeddleCore.Flows.GraphValidator` rejects when persisting.
+  """
+  def persistable_nodes(nodes) when is_list(nodes) do
+    Enum.map(nodes, &Map.take(&1, GraphValidator.node_keys()))
   end
 
   defp normalize_node(node) do

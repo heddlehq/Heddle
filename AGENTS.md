@@ -58,12 +58,17 @@ The application uses a specific color palette defined in `app.css`. You **MUST**
     -   Variable: `--color-primary`
     -   Tailwind: `primary`, `text-primary`, `bg-primary`
     -   Usage: Main actions, active states, highlights.
-    -   *Note*: In Dark mode, this is a Purple/Indigo shade (`oklch(58% 0.233 277.117)`). In Light mode, it is Indigo 600 (`oklch(45% 0.24 277)`).
-    -   *Rule*: **Never** hardcode `indigo-*` for brand color — use `primary`/`bg-primary`/`text-primary`. This applies to **shared components too** (e.g. `core_components.button` variants), so a theme change propagates everywhere.
+    -   *Note*: In Light mode, this is the brand ribbon (`#a63a2b`). In Dark mode, it is a lighter tint of it (`#e8907d`), because the ribbon itself is unreadable on ink.
+    -   *Rule*: **Never** hardcode a hue for brand color — use `primary`/`bg-primary`/`text-primary`. This applies to **shared components too** (e.g. `core_components.button` variants), so a theme change propagates everywhere.
+    -   *Rule*: Text on a solid `bg-primary` **must** use `text-primary-content`, never `text-white`: in Dark mode the primary is light and takes dark text.
+
+-   **Brand Palette**:
+    -   Paper (`#f3ebdc`), ink (`#23262b`) and ribbon (`#a63a2b`), shared with the logo and the landing page (`web/src/styles/global.css`). Keep them in sync.
+    -   The `gray`, `slate` and `white` scales are overridden in `app.css` with warm tones, so `bg-gray-50` is paper and `bg-white` is the cream used for cards.
 
 -   **Dark Mode Implementation**:
     -   Dark mode is driven by the `data-theme="dark"` attribute, **not** `prefers-color-scheme`. The `dark:` Tailwind variant is remapped via `@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *))` in `app.css`.
-    -   The slate scale is overridden in `app.css` to near-black values (e.g. `slate-950` = `oklch(3% 0 0)`, `slate-900` = `oklch(5% 0 0)`).
+    -   The slate scale is overridden in `app.css` to an ink ramp (e.g. `slate-950` = `#181a1e`, `slate-900` = `#23262b`).
 
 -   **Backgrounds**:
     -   Variable: `--color-base-100` (Main bg), `--color-base-200` (Secondary/Card bg), `--color-base-300` (Borders/Dividers)
@@ -72,7 +77,7 @@ The application uses a specific color palette defined in `app.css`. You **MUST**
 
 -   **Text**:
     -   Variable: `--color-base-content`
-    -   Usage: Primary text color. Be careful with contrast. Dark mode uses `text-gray-400` for secondary and `text-white` for primary.
+    -   Usage: Primary text color. Be careful with contrast. Dark mode uses `text-gray-400` for secondary and `text-white` for primary. `text-gray-500` is for Light mode only: it fails contrast on the dark surfaces.
 
 -   **Node & Component Specifics**:
     -   **Global Sidebar**: The app uses a global Sidebar layout (`layouts.ex`) which holds the main navigation and the Heddle logo (`/images/logo.png`).
@@ -80,7 +85,8 @@ The application uses a specific color palette defined in `app.css`. You **MUST**
     -   **Sidebar**: `bg-white dark:bg-slate-900` with `border-gray-200 dark:border-slate-800`.
     -   **Node Editor Background**: `bg-white dark:bg-slate-900` combined with custom `rete-bg-grid` for the dotted canvas.
     -   **Node Border**: `border-gray-200 dark:border-slate-700` or `border-base-300`.
-    -   **Node Selected**: active ring using `ring-indigo-500/50`.
+    -   **Node Selected**: active ring using `--color-primary`.
+    -   **Editor Tokens**: the Lit components take their colors from the `--editor-*` and `--node-*` variables in `rete_custom.css`. **Never** hardcode colors in them or add `.dark` overrides: change the tokens.
 
 -   **Use Tailwind CSS classes and custom CSS rules** to create polished, responsive, and visually stunning interfaces.
 - Tailwindcss v4 **no longer needs a tailwind.config.js** and uses a new import syntax in `app.css`:
@@ -148,6 +154,8 @@ Controller routes must be placed in a scope that sets the `:require_authenticate
 
       get "/", MyControllerThatRequiresAuth, :index
     end
+
+Keep every authenticated LiveView in that **single** `live_session`: navigating between two sessions forces a full page reload. Restrict admin-only pages inside the LiveView itself, with `on_mount {HeddleUI.UserAuth, :require_system_admin}`, **not** with a separate `live_session`.
 
 ### Routes that work with or without authentication
 

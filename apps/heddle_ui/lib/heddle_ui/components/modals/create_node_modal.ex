@@ -68,7 +68,7 @@ defmodule HeddleUI.Components.Modals.CreateNodeModal do
                         {node.description}
                       </div>
                     <% else %>
-                      <div class="text-sm text-gray-400 dark:text-gray-500 capitalize">
+                      <div class="text-sm text-gray-400 dark:text-gray-400 capitalize">
                         {node.category}
                       </div>
                     <% end %>
@@ -76,7 +76,7 @@ defmodule HeddleUI.Components.Modals.CreateNodeModal do
 
                   <.icon
                     name="hero-chevron-right"
-                    class="w-5 h-5 text-gray-300 dark:text-gray-600 group-hover:text-primary-500 group-hover:translate-x-1 transition-all duration-200 flex-shrink-0"
+                    class="w-5 h-5 text-gray-300 dark:text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all duration-200 flex-shrink-0"
                   />
                 </button>
               <% end %>

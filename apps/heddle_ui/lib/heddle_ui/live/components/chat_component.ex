@@ -29,7 +29,7 @@ defmodule HeddleUI.Components.ChatComponent do
       <div class={"fixed top-0 right-0 h-full w-[350px] bg-white dark:bg-slate-900 shadow-2xl z-[100] transform transition-transform duration-300 ease-in-out flex flex-col border-l border-gray-200 dark:border-slate-800 " <> if(@open, do: "translate-x-0", else: "translate-x-full")}>
         <div class="p-4 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between bg-gray-50 dark:bg-slate-800">
           <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+            <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center text-primary">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="h-5 w-5"
@@ -57,10 +57,10 @@ defmodule HeddleUI.Components.ChatComponent do
             <div class={"flex " <> if(role == :user, do: "justify-end", else: "justify-start")}>
               <div class={"max-w-[85%] rounded-2xl px-4 py-3 text-sm " <>
                 if(role == :user,
-                  do: "bg-indigo-600 text-white rounded-br-none shadow-sm dark:shadow-none",
+                  do: "bg-primary text-primary-content rounded-br-none shadow-sm dark:shadow-none",
                   else: "bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200 rounded-bl-none border border-gray-200 dark:border-slate-700 shadow-sm dark:shadow-none")}>
                 <%= if String.contains?(content, "\"action\": \"create_flow\"") or String.starts_with?(String.trim(content), "{") do %>
-                  <div class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-medium italic animate-pulse">
+                  <div class="flex items-center gap-2 text-primary font-medium italic animate-pulse">
                     <svg
                       class="animate-spin h-4 w-4"
                       xmlns="http://www.w3.org/2000/svg"
@@ -96,7 +96,7 @@ defmodule HeddleUI.Components.ChatComponent do
           <%= if @loading and (List.last(@messages) |> elem(1)) == "" do %>
             <div class="flex justify-start">
               <div class="max-w-[85%] rounded-2xl px-4 py-3 text-sm bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200 rounded-bl-none border border-gray-200 dark:border-slate-700 shadow-sm dark:shadow-none">
-                <div class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-medium italic animate-pulse">
+                <div class="flex items-center gap-2 text-primary font-medium italic animate-pulse">
                   <svg
                     class="animate-spin h-4 w-4"
                     xmlns="http://www.w3.org/2000/svg"
@@ -127,7 +127,7 @@ defmodule HeddleUI.Components.ChatComponent do
           <% end %>
 
           <%= if not @ai_configured do %>
-            <div class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 px-6">
+            <div class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-400 px-6">
               <div class="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mb-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -157,7 +157,7 @@ defmodule HeddleUI.Components.ChatComponent do
             </div>
           <% else %>
             <%= if Enum.empty?(@messages) do %>
-              <div class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 text-sm italic">
+              <div class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-400 text-sm italic">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   class="h-12 w-12 mb-2 opacity-50"
@@ -200,7 +200,7 @@ defmodule HeddleUI.Components.ChatComponent do
                 <%= if @loading do %>
                   <.icon name="hero-arrow-path" class="w-4 h-4 animate-spin" />
                 <% else %>
-                  <.icon name="hero-chevron-right" class="w-5 h-5 stroke-2" />
+                  <.icon name="hero-paper-airplane-solid" class="w-5 h-5" />
                 <% end %>
               </.button>
             </form>
