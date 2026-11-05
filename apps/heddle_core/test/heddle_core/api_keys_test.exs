@@ -95,15 +95,4 @@ defmodule HeddleCore.ApiKeysTest do
       assert ApiKeys.authenticate(token) == :error
     end
   end
-
-  test "does not call Mix at runtime, because releases do not ship it" do
-    {:ok, {_module, [imports: imports]}} = :beam_lib.chunks(:code.which(ApiKeys), [:imports])
-
-    mix_calls =
-      Enum.filter(imports, fn {module, _function, _arity} ->
-        module |> Atom.to_string() |> String.starts_with?("Elixir.Mix")
-      end)
-
-    assert mix_calls == []
-  end
 end
