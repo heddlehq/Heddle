@@ -31,7 +31,7 @@ To run it, start the `Benchmark` workflow, or run `node benchmark/compare/run.mj
 - **The flow is trivial.** Two steps and a tiny body. It says nothing about long flows, big payloads, code steps, or runs that fail.
 - **These tools don't do the same things.** Heddle has eight kinds of step and no ready-made connectors. n8n has more than 500 integrations and years in production. A tool that does more per run may pay for it here.
 - **Node-RED wins, and it is doing less.** It keeps no run history and holds work in memory, so a crash loses what was in flight.
-- **Defaults aren't limits.** Any of these can be tuned. We tested one worker, so the numbers say nothing about how each tool scales when you add more.
+- **Defaults aren't limits.** Any of these can be tuned. We added no workers beyond each tool's default, which is one for Heddle and n8n in queue mode and several for Windmill, so the numbers say nothing about how each tool scales.
 - **Shared machines are noisy.** Results change between rounds, and the machines weren't identical. Small differences mean nothing.
 - **Zapier and Make are missing,** because a hosted service can't run on the same machine.
 
