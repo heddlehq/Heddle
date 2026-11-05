@@ -17,9 +17,18 @@ temp="${RUNNER_TEMP:-$(mktemp -d)}"
 # GNU tar reads the colon in D:\ as a remote host.
 [ "$windows" = true ] && temp="$(cygpath -u "$temp")"
 
-# A space and an accent, because that's what real Windows usernames look like.
 # The launcher finds this folder by itself, as it does after a real install.
-home="$temp/Instalação Heddle"
+# Awkward on purpose. Windows gets no accent here, since install.ps1 steers clear
+# of it: Postgres can't initialize under one. Its user folder still has one.
+if [ "$windows" = true ]; then
+  home="$temp/Instalacao Heddle"
+  LOCALAPPDATA="$(cygpath -w "$temp/Usuário João")"
+  export LOCALAPPDATA
+  mkdir -p "$temp/Usuário João"
+else
+  home="$temp/Instalação Heddle"
+fi
+
 app="$home/app"
 log="$home/smoke.log"
 mkdir -p "$app"

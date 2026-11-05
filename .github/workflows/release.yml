@@ -72,6 +72,29 @@ jobs:
 
       - run: scripts/smoke_release.sh dist/heddle-${{ matrix.target }}.tar.gz
 
+      # TEMPORARY: first run of install.ps1 on real Windows, as a user with an accent.
+      - if: runner.os == 'Windows'
+        uses: actions/checkout@v4
+        with:
+          repository: heddlehq/website
+          ref: feat/one-line-install
+          path: website
+
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Start-Process python -ArgumentList '-m','http.server','8931','--bind','127.0.0.1','--directory','dist' -WindowStyle Hidden
+          Start-Sleep 3
+          $env:HEDDLE_DOWNLOAD_URL = 'http://127.0.0.1:8931'
+          $env:HEDDLE_NO_START = '1'
+          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP 'Usuário João'
+          New-Item -ItemType Directory -Force $env:LOCALAPPDATA | Out-Null
+          Get-Content website/web/public/install.ps1 -Raw | Invoke-Expression
+          $installed = Join-Path $env:ProgramData 'Heddle'
+          & cmd /c "`"$installed\app\heddle.cmd`" version"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          icacls $installed
+
       - uses: actions/upload-artifact@v4
         with:
           name: heddle-${{ matrix.target }}

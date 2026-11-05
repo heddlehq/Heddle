@@ -18,7 +18,7 @@ irm https://heddlehq.github.io/website/install.ps1 | iex
 
 Heddle then starts and opens in your browser, where you create the admin account. To use it again later, open a new terminal and run `heddle`. Press `Ctrl+C` to stop it.
 
-- **Where it lives:** `~/.heddle`, or `%LOCALAPPDATA%\Heddle` on Windows. Your data is in the `data` folder inside it.
+- **Where it lives:** `~/.heddle`, or `%LOCALAPPDATA%\Heddle` on Windows. If your Windows user folder has an accent in its name, it's `%ProgramData%\Heddle` instead, because Postgres can't install under one. Your data is in the `data` folder inside it.
 - **Updating:** run the install command again. Your data stays.
 - **Removing:** delete that folder and remove it from your `PATH`.
 - **Network access:** this install answers on your computer only. Flows can run code with your account's permissions, so run only the ones you trust.
