@@ -100,12 +100,20 @@ defmodule HeddleLocal.Postgres do
   defp run(root, name, args) do
     case System.cmd(binary(root, name), args, stderr_to_stdout: true) do
       {_output, 0} -> :ok
-      {output, _status} -> {:error, output}
+      {output, _status} -> {:error, readable(output)}
     end
   end
 
   defp pg_ctl(root, args) do
-    System.cmd(binary(root, "pg_ctl"), args, stderr_to_stdout: true)
+    {output, status} = System.cmd(binary(root, "pg_ctl"), args, stderr_to_stdout: true)
+    {readable(output), status}
+  end
+
+  @doc false
+  # On Windows the tools print in the system's code page, and a path with an
+  # accent then isn't valid UTF-8.
+  def readable(output) do
+    if String.valid?(output), do: output, else: :unicode.characters_to_binary(output, :latin1)
   end
 
   defp binary(root, name) do
