@@ -301,11 +301,6 @@ msgstr ""
 msgid "Inspect Full Context"
 msgstr ""
 
-#: lib/heddle_ui/components/modals/dependencies_modal.ex:131
-#, elixir-autogen, elixir-format
-msgid "Install"
-msgstr ""
-
 #: lib/heddle_ui/live/user_live/login.ex:72
 #, elixir-autogen, elixir-format
 msgid "Log in"
@@ -338,12 +333,7 @@ msgstr ""
 msgid "Profile Information"
 msgstr ""
 
-#: lib/heddle_ui/components/modals/dependencies_modal.ex:121
-#, elixir-autogen, elixir-format
-msgid "Restart Required"
-msgstr ""
-
-#: lib/heddle_ui/components/flow/flow_header.ex:109
+#: lib/heddle_ui/components/flow/flow_header.ex:101
 #: lib/heddle_ui/components/modals/code_editor_modal.ex:96
 #, elixir-autogen, elixir-format
 msgid "Save Changes"
@@ -1146,7 +1136,7 @@ msgstr ""
 msgid "Don't run"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/editor.ex:252
+#: lib/heddle_ui/live/flow_live/editor.ex:251
 #, elixir-autogen, elixir-format
 msgid "Failed to save graph data."
 msgstr ""

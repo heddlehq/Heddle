@@ -79,14 +79,6 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
         <div class="h-5 w-px bg-gray-200 dark:bg-slate-700 mx-1"></div>
 
         <.button
-          phx-click="open_dependencies_modal"
-          variant="outline"
-          class="h-9 px-3"
-        >
-          <.icon name="hero-cube" class="w-4 h-4" />
-          <span class="hidden sm:inline">Dependencies</span>
-        </.button>
-        <.button
           phx-click="run_flow"
           variant="success"
           class="h-9 px-4"

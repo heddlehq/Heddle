@@ -7,7 +7,7 @@ defmodule HeddleUI.FlowLive.Editor do
   alias HeddleUI.AIChat
   alias HeddleUI.AgentChat
   alias HeddleUI.FlowLive.AgentManager
-  alias HeddleUI.FlowLive.{CodeEditorManager, DependencyManager, NodePaletteManager}
+  alias HeddleUI.FlowLive.{CodeEditorManager, NodePaletteManager}
 
   @notice_dismiss_timeout 6_000
 
@@ -47,8 +47,7 @@ defmodule HeddleUI.FlowLive.Editor do
     ] ++
       AgentManager.initial_assigns() ++
       CodeEditorManager.initial_assigns() ++
-      NodePaletteManager.initial_assigns() ++
-      DependencyManager.initial_assigns()
+      NodePaletteManager.initial_assigns()
   end
 
   # Locale & Client Lifecycle
@@ -344,27 +343,6 @@ defmodule HeddleUI.FlowLive.Editor do
     {:reply, %{ui_fields: ui_fields}, socket}
   end
 
-  # Dependencies (delegated to DependencyManager)
-  @impl true
-  def handle_event("open_dependencies_modal", _params, socket),
-    do: {:noreply, DependencyManager.open(socket)}
-
-  @impl true
-  def handle_event("close_dependencies_modal", _params, socket),
-    do: {:noreply, DependencyManager.close(socket)}
-
-  @impl true
-  def handle_event("switch_dependencies_tab", %{"tab" => tab}, socket),
-    do: {:noreply, DependencyManager.switch_tab(socket, tab)}
-
-  @impl true
-  def handle_event("search_dependency", %{"query" => query}, socket),
-    do: {:noreply, DependencyManager.search(socket, query)}
-
-  @impl true
-  def handle_event("install_dependency", %{"name" => name, "version" => version}, socket),
-    do: {:noreply, DependencyManager.install(socket, name, version)}
-
   # AI Chat & Assistants
   @impl true
   def handle_event("toggle_chat", _params, socket) do
@@ -443,18 +421,6 @@ defmodule HeddleUI.FlowLive.Editor do
   def handle_info({:execution_updated, execution}, socket) do
     {:noreply, assign(socket, execution_notice: execution_notice(execution.status, execution))}
   end
-
-  @impl true
-  def handle_info({:dep_log, message}, socket),
-    do: {:noreply, DependencyManager.log(socket, message)}
-
-  @impl true
-  def handle_info({:dep_install_finished, name}, socket),
-    do: {:noreply, DependencyManager.install_finished(socket, name)}
-
-  @impl true
-  def handle_info({:dep_install_failed, name, reason}, socket),
-    do: {:noreply, DependencyManager.install_failed(socket, name, reason)}
 
   @impl true
   def handle_info({:chat_stream_chunk, chunk}, socket) do
