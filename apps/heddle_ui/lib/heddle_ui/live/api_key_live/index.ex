@@ -1,6 +1,8 @@
 defmodule HeddleUI.ApiKeyLive.Index do
   use HeddleUI, :live_view
 
+  on_mount {HeddleUI.UserAuth, :require_system_admin}
+
   alias HeddleCore.ApiKeys
   alias HeddleCore.ApiKeys.ApiKey
 
@@ -226,14 +228,14 @@ defmodule HeddleUI.ApiKeyLive.Index do
                       <%= if key.expires_at do %>
                         {Calendar.strftime(key.expires_at, "%Y-%m-%d %H:%M")}
                       <% else %>
-                        <span class="text-gray-400 dark:text-gray-500">{gettext("Never")}</span>
+                        <span class="text-gray-400 dark:text-gray-400">{gettext("Never")}</span>
                       <% end %>
                     </td>
                     <td class="px-6 py-4 text-xs text-gray-500 dark:text-gray-400">
                       <%= if key.last_used_at do %>
                         {Calendar.strftime(key.last_used_at, "%Y-%m-%d %H:%M")}
                       <% else %>
-                        <span class="text-gray-400 dark:text-gray-500">{gettext("Never")}</span>
+                        <span class="text-gray-400 dark:text-gray-400">{gettext("Never")}</span>
                       <% end %>
                     </td>
                     <td class="px-6 py-4 text-right">

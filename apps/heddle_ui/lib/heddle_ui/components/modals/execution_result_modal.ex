@@ -27,7 +27,7 @@ defmodule HeddleUI.Components.Modals.ExecutionResultModal do
               <%= if @inspecting_result do %>
                 <div class="space-y-4 text-left">
                   <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold text-indigo-500 uppercase tracking-widest">
+                    <span class="text-xs font-bold text-primary uppercase tracking-widest">
                       Full Context JSON
                     </span>
                     <.button
@@ -46,12 +46,12 @@ defmodule HeddleUI.Components.Modals.ExecutionResultModal do
                     <span class="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] block mb-2">
                       Output
                     </span>
-                    <div class="max-h-80 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-4 font-mono text-sm leading-6 text-gray-900 selection:bg-indigo-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:selection:bg-indigo-900">
+                    <div class="max-h-80 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-4 font-mono text-sm leading-6 text-gray-900 selection:bg-primary/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
                       <% # Try result, then fallback to status as the user manually changed to that
                       output_val =
                         Map.get(@execution_result, "result") || Map.get(@execution_result, "status") %>
                       <%= if is_nil(output_val) do %>
-                        <span class="italic text-gray-400 dark:text-slate-600 font-sans text-base">
+                        <span class="italic text-gray-400 dark:text-slate-500 font-sans text-base">
                           No output produced
                         </span>
                       <% else %>
@@ -68,7 +68,7 @@ defmodule HeddleUI.Components.Modals.ExecutionResultModal do
                     <.button
                       phx-click="toggle_inspect_result"
                       variant="ghost"
-                      class="flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400 transition-all group p-1"
+                      class="flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-primary dark:text-slate-500 dark:hover:text-primary transition-all group p-1"
                     >
                       <.icon
                         name="hero-magnifying-glass-plus"

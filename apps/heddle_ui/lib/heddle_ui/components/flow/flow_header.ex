@@ -37,7 +37,7 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
                 value={@flow.name}
                 id="flow-name-input"
                 phx-mounted={JS.focus()}
-                class="px-2 py-1 text-sm font-bold text-gray-900 dark:text-white bg-white dark:bg-slate-900 border border-indigo-500 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                class="px-2 py-1 text-sm font-bold text-gray-900 dark:text-white bg-white dark:bg-slate-900 border border-primary rounded focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
               <.button
                 type="submit"

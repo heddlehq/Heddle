@@ -80,7 +80,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
                               <% end %>
                             <% end %>
                           </select>
-                          <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
+                          <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400">
                             <.icon name="hero-chevron-down" class="w-4 h-4" />
                           </span>
                         </div>
@@ -95,7 +95,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
                               <option value={var} selected={var == control["value"]}>{var}</option>
                             <% end %>
                           </select>
-                          <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
+                          <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400">
                             <.icon name="hero-chevron-down" class="w-4 h-4" />
                           </span>
                         </div>
@@ -170,7 +170,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
             </button>
             <button
               type="submit"
-              class="text-sm font-medium text-white bg-primary hover:bg-primary/90 px-5 py-2.5 rounded-lg transition-colors shadow-sm active:scale-[0.98]"
+              class="text-sm font-medium text-primary-content bg-primary hover:bg-primary/90 px-5 py-2.5 rounded-lg transition-colors shadow-sm active:scale-[0.98]"
             >
               {gettext("Save")}
             </button>

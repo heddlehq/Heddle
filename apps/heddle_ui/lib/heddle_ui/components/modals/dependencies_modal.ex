@@ -29,21 +29,21 @@ defmodule HeddleUI.Components.Modals.DependenciesModal do
             <button
               phx-click="switch_dependencies_tab"
               phx-value-tab="elixir"
-              class={"px-4 py-2.5 text-sm font-medium border-b-2 -mb-px #{if @dependencies_tab == "elixir", do: "border-indigo-500 text-indigo-600 dark:text-indigo-400", else: "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}"}
+              class={"px-4 py-2.5 text-sm font-medium border-b-2 -mb-px #{if @dependencies_tab == "elixir", do: "border-primary text-primary", else: "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}"}
             >
               Elixir (Hex)
             </button>
             <button
               phx-click="switch_dependencies_tab"
               phx-value-tab="python"
-              class={"px-4 py-2.5 text-sm font-medium border-b-2 -mb-px #{if @dependencies_tab == "python", do: "border-indigo-500 text-indigo-600 dark:text-indigo-400", else: "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}"}
+              class={"px-4 py-2.5 text-sm font-medium border-b-2 -mb-px #{if @dependencies_tab == "python", do: "border-primary text-primary", else: "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}"}
             >
               Python (Pip)
             </button>
             <button
               phx-click="switch_dependencies_tab"
               phx-value-tab="javascript"
-              class={"px-4 py-2.5 text-sm font-medium border-b-2 -mb-px #{if @dependencies_tab == "javascript", do: "border-indigo-500 text-indigo-600 dark:text-indigo-400", else: "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}"}
+              class={"px-4 py-2.5 text-sm font-medium border-b-2 -mb-px #{if @dependencies_tab == "javascript", do: "border-primary text-primary", else: "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}"}
             >
               JavaScript (NPM)
             </button>
@@ -104,7 +104,7 @@ defmodule HeddleUI.Components.Modals.DependenciesModal do
                           <div>
                             <div class="flex items-center gap-2">
                               <span class="font-bold text-gray-900 dark:text-white">{pkg.name}</span>
-                              <span class="text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
+                              <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                                 {pkg.latest_version}
                               </span>
                             </div>
@@ -141,7 +141,7 @@ defmodule HeddleUI.Components.Modals.DependenciesModal do
                   <div class="border border-gray-200 dark:border-slate-800 rounded-lg overflow-hidden flex flex-col mt-4">
                     <div class="px-4 py-3 bg-gray-50 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-800 flex items-center gap-2">
                       <svg
-                        class="animate-spin h-4 w-4 text-indigo-500"
+                        class="animate-spin h-4 w-4 text-primary"
                         fill="none"
                         viewBox="0 0 24 24"
                       >

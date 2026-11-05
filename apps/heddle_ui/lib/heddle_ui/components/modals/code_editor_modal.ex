@@ -14,7 +14,7 @@ defmodule HeddleUI.Components.Modals.CodeEditorModal do
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl w-full max-w-4xl flex flex-col h-[80vh] border border-gray-200 dark:border-slate-700 animate-in fade-in zoom-in duration-200">
           <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-700">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
-              <span class="p-1 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+              <span class="p-1 rounded bg-primary/10 text-primary">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     stroke-linecap="round"
@@ -41,7 +41,7 @@ defmodule HeddleUI.Components.Modals.CodeEditorModal do
               type="button"
               phx-click="switch_code_tab"
               phx-value-tab="elixir"
-              class={"px-4 py-3 text-sm font-medium border-b-2 -mb-px #{if @current_code_tab == "elixir", do: "border-indigo-500 text-indigo-600 dark:text-indigo-400", else: "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}"}
+              class={"px-4 py-3 text-sm font-medium border-b-2 -mb-px #{if @current_code_tab == "elixir", do: "border-primary text-primary", else: "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}"}
             >
               <span class="flex items-center gap-2">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -54,7 +54,7 @@ defmodule HeddleUI.Components.Modals.CodeEditorModal do
               type="button"
               phx-click="switch_code_tab"
               phx-value-tab="python"
-              class={"px-4 py-3 text-sm font-medium border-b-2 -mb-px #{if @current_code_tab == "python", do: "border-indigo-500 text-indigo-600 dark:text-indigo-400", else: "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}"}
+              class={"px-4 py-3 text-sm font-medium border-b-2 -mb-px #{if @current_code_tab == "python", do: "border-primary text-primary", else: "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}"}
             >
               <span class="flex items-center gap-2">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">

@@ -65,7 +65,7 @@ defmodule HeddleUI.UserLive.Login do
           <div class="pt-2">
             <.button
               variant="primary"
-              class="w-full py-4 text-base font-bold shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 active:scale-[0.98]"
+              class="w-full py-4 text-base font-bold shadow-lg shadow-primary/25 transition-all hover:shadow-primary/40 active:scale-[0.98]"
               name={f[:remember_me].name}
               value="true"
             >

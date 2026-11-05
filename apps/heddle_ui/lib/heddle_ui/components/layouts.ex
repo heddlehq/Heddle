@@ -32,11 +32,15 @@ defmodule HeddleUI.Layouts do
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
   attr :locale, :string, default: nil
+  attr :current_path, :string, default: nil, doc: "the path of the page being rendered"
 
   slot :inner_block, required: false
 
   def app(assigns) do
-    assigns = assign_new(assigns, :locale, fn -> Gettext.get_locale(HeddleUI.Gettext) end)
+    assigns =
+      assigns
+      |> assign_new(:locale, fn -> Gettext.get_locale(HeddleUI.Gettext) end)
+      |> assign(:section, nav_section(assigns.current_path))
 
     ~H"""
     <div class="flex h-screen w-full bg-gray-50 dark:bg-slate-950 overflow-hidden">
@@ -59,114 +63,60 @@ defmodule HeddleUI.Layouts do
           </div>
 
           <nav class="flex-1 w-full px-3 lg:px-4 space-y-2">
-            <.link
+            <.nav_link
+              id="nav-dashboard"
               navigate={~p"/"}
-              class="flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-all group"
-            >
-              <svg
-                class="w-6 h-6 lg:w-5 lg:h-5 text-gray-500 dark:text-gray-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                />
-              </svg>
-              <span class="hidden lg:block font-medium text-sm">{gettext("Dashboard")}</span>
-            </.link>
-            <%= if @current_scope && @current_scope.user && HeddleCore.Accounts.User.system_admin?(@current_scope.user) do %>
-              <.link
+              icon="hero-home"
+              label={gettext("Dashboard")}
+              active={@section == :dashboard}
+            />
+            <%= if HeddleCore.Accounts.User.system_admin?(@current_scope.user) do %>
+              <.nav_link
+                id="nav-flows"
                 navigate={~p"/flows"}
-                class="flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-all group"
-              >
-                <svg
-                  class="w-6 h-6 lg:w-5 lg:h-5 text-gray-500 dark:text-gray-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                  />
-                </svg>
-                <span class="hidden lg:block font-medium text-sm">{gettext("My Flows")}</span>
-              </.link>
-              <.link
+                icon="hero-squares-2x2"
+                label={gettext("My Flows")}
+                active={@section == :flows}
+              />
+              <.nav_link
+                id="nav-executions"
                 navigate={~p"/executions"}
-                class="flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-all group"
-              >
-                <.icon
-                  name="hero-queue-list"
-                  class="w-6 h-6 lg:w-5 lg:h-5 text-gray-500 dark:text-gray-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"
-                />
-                <span class="hidden lg:block font-medium text-sm">{gettext("Executions")}</span>
-              </.link>
-              <.link
+                icon="hero-queue-list"
+                label={gettext("Executions")}
+                active={@section == :executions}
+              />
+              <.nav_link
+                id="nav-ai"
                 navigate={~p"/flows/new/ai"}
-                class="flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-all group"
-              >
-                <svg
-                  class="w-6 h-6 lg:w-5 lg:h-5 text-gray-500 dark:text-gray-500 group-hover:text-purple-600 dark:group-hover:text-purple-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-                  />
-                </svg>
-                <span class="hidden lg:block font-medium text-sm">{gettext("Create with AI")}</span>
-              </.link>
-              <.link
+                icon="hero-beaker"
+                label={gettext("Create with AI")}
+                active={@section == :ai}
+              />
+              <.nav_link
+                id="nav-api-keys"
                 navigate={~p"/api-keys"}
-                class="flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-all group"
-              >
-                <.icon
-                  name="hero-key"
-                  class="w-6 h-6 lg:w-5 lg:h-5 text-gray-500 dark:text-gray-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"
-                />
-                <span class="hidden lg:block font-medium text-sm">{gettext("API keys")}</span>
-              </.link>
-              <.link
+                icon="hero-key"
+                label={gettext("API keys")}
+                active={@section == :api_keys}
+              />
+              <.nav_link
+                id="nav-users"
                 navigate={~p"/users"}
-                class="flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-all group"
-              >
-                <svg
-                  class="w-6 h-6 lg:w-5 lg:h-5 text-gray-500 dark:text-gray-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                  />
-                </svg>
-                <span class="hidden lg:block font-medium text-sm">{gettext("Users")}</span>
-              </.link>
+                icon="hero-users"
+                label={gettext("Users")}
+                active={@section == :users}
+              />
             <% end %>
           </nav>
 
           <div class="px-3 lg:px-4 w-full mt-auto">
-            <div class="hidden lg:block w-full text-xs text-gray-500 dark:text-gray-500 px-2 mt-4">
+            <div class="hidden lg:block w-full text-xs text-gray-500 dark:text-gray-400 px-2 mt-4">
               <form id="locale-form" phx-change="change_locale" class="w-full">
                 <label for="locale-select" class="sr-only">Language</label>
                 <select
                   id="locale-select"
                   name="locale"
-                  class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-md text-gray-600 dark:text-gray-400 py-1.5 px-2 text-xs focus:ring-1 focus:ring-indigo-500"
+                  class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-md text-gray-600 dark:text-gray-400 py-1.5 px-2 text-xs focus:ring-1 focus:ring-primary"
                   onchange="window.location.href = '?locale=' + this.value"
                 >
                   <option value="en" selected={@locale == "en"}>English</option>
@@ -176,7 +126,7 @@ defmodule HeddleUI.Layouts do
               </form>
             </div>
 
-            <div class="hidden lg:flex w-full mt-4 justify-between items-center text-xs text-gray-500 dark:text-gray-500 px-2">
+            <div class="hidden lg:flex w-full mt-4 justify-between items-center text-xs text-gray-500 dark:text-gray-400 px-2">
               <span>{gettext("Theme")}</span> <.theme_toggle />
             </div>
 
@@ -200,7 +150,7 @@ defmodule HeddleUI.Layouts do
                 >
                   <div class="flex items-center w-full">
                     <div class="flex-shrink-0">
-                      <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                      <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-content font-bold text-sm shadow-sm">
                         {String.at(@current_scope.user.username || @current_scope.user.email, 0)
                         |> String.upcase()}
                       </div>
@@ -305,6 +255,50 @@ defmodule HeddleUI.Layouts do
     </div>
     """
   end
+
+  attr :id, :string, required: true
+  attr :navigate, :string, required: true
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+  attr :active, :boolean, default: false
+
+  defp nav_link(assigns) do
+    ~H"""
+    <.link
+      id={@id}
+      navigate={@navigate}
+      aria-current={@active && "page"}
+      class={[
+        "flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 rounded-lg transition-all group",
+        if(@active,
+          do: "bg-primary/10 text-primary",
+          else:
+            "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white"
+        )
+      ]}
+    >
+      <.icon
+        name={@icon}
+        class={[
+          "w-6 h-6 lg:w-5 lg:h-5",
+          if(@active,
+            do: "text-primary",
+            else: "text-gray-500 dark:text-gray-400 group-hover:text-primary"
+          )
+        ]}
+      />
+      <span class="hidden lg:block font-medium text-sm">{@label}</span>
+    </.link>
+    """
+  end
+
+  defp nav_section("/"), do: :dashboard
+  defp nav_section("/flows/new/ai"), do: :ai
+  defp nav_section("/flows" <> _), do: :flows
+  defp nav_section("/executions" <> _), do: :executions
+  defp nav_section("/api-keys"), do: :api_keys
+  defp nav_section("/users"), do: :users
+  defp nav_section(_path), do: nil
 
   @doc """
   Provides dark vs light theme toggle based on themes defined in app.css.

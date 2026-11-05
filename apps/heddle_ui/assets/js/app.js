@@ -61,8 +61,8 @@ const hooks = {
             const isDark = document.documentElement.classList.contains('dark');
             dragImage.style.width = '88px';
             dragImage.style.height = '88px';
-            dragImage.style.backgroundColor = isDark ? '#18181b' : 'white';
-            dragImage.style.border = `3px solid ${isDark ? '#27272a' : '#e2e8f0'}`;
+            dragImage.style.backgroundColor = 'var(--editor-surface)';
+            dragImage.style.border = '3px solid var(--editor-border)';
             dragImage.style.borderRadius = '50%';
             dragImage.style.boxShadow = isDark ? '0 4px 6px -1px rgba(0, 0, 0, 0.3)' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
             dragImage.style.position = 'absolute';
@@ -74,7 +74,7 @@ const hooks = {
             const icon = document.createElement('div');
             icon.style.width = '40px';
             icon.style.height = '40px';
-            icon.style.backgroundColor = '#6366f1';
+            icon.style.backgroundColor = 'var(--color-primary)';
             icon.style.maskImage = "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-10.5v10.5\" /></svg>')";
             icon.style.maskRepeat = 'no-repeat';
             icon.style.maskSize = 'contain';
@@ -233,7 +233,8 @@ const liveSocket = new LiveSocket("/live", Socket, {
   hooks: hooks,
 })
 
-topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" })
+const primaryColor = getComputedStyle(document.documentElement).getPropertyValue("--color-primary").trim()
+topbar.config({ barColors: { 0: primaryColor }, shadowColor: "rgba(0, 0, 0, .3)" })
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 

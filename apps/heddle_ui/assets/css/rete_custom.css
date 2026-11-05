@@ -1,3 +1,38 @@
+/* Editor tokens. Custom properties inherit into the Lit components' shadow roots,
+   so the node, socket, connection and control styles switch theme from here. */
+:root {
+    --editor-surface: var(--color-white);
+    --editor-border: var(--color-gray-200);
+    --editor-wire: var(--color-gray-900);
+    --editor-tooltip: var(--color-gray-900);
+    --editor-input-bg: var(--color-slate-50);
+    --editor-input-border: var(--color-gray-200);
+    --editor-muted: var(--color-gray-500);
+
+    --node-trigger: #3f7d5e;
+    --node-flow-control: var(--color-primary);
+    --node-code: #2f6f7e;
+    --node-data: #a8701a;
+    --node-integration: #8a4f7d;
+    --node-utility: var(--color-gray-500);
+}
+
+[data-theme="dark"] {
+    --editor-surface: var(--color-slate-900);
+    --editor-border: var(--color-slate-700);
+    --editor-wire: var(--color-slate-400);
+    --editor-tooltip: var(--color-slate-950);
+    --editor-input-bg: var(--color-slate-800);
+    --editor-input-border: var(--color-slate-600);
+    --editor-muted: var(--color-slate-400);
+
+    --node-trigger: #7fb796;
+    --node-code: #7db3bf;
+    --node-data: #d9a95c;
+    --node-integration: #c795bc;
+    --node-utility: var(--color-slate-400);
+}
+
 /* styles for the grid in the rete background */
 /* .rete-bg-grid sits inside content.holder (the element that receives the Rete transform).
    The inline styles set by custom-background.js (top:0, left:0, 100%×100%) are overridden
@@ -25,8 +60,8 @@
     position: fixed;
     pointer-events: none;
     z-index: 9999;
-    border: 2px solid oklch(58% 0.233 277.117);
-    background: oklch(58% 0.233 277.117 / 0.1);
+    border: 2px solid var(--color-primary);
+    background: color-mix(in oklab, var(--color-primary) 10%, transparent);
     border-radius: 0.5rem;
     display: none;
 }

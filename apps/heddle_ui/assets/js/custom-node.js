@@ -41,8 +41,8 @@ export class CustomNodeElement extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--node-bg, white);
-        border: 3px solid var(--node-border, #e2e8f0);
+        background: var(--editor-surface);
+        border: 3px solid var(--editor-border);
         border-radius: 50%;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         cursor: pointer;
@@ -60,14 +60,9 @@ export class CustomNodeElement extends LitElement {
       }
       .selected .circular-node,
       .circular-node.is-selected {
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.4) !important;
+        box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-primary) 40%, transparent) !important;
         transform: scale(1.05);
-        border-color: rgb(99, 102, 241) !important;
-      }
-      .dark .selected .circular-node,
-      .dark .circular-node.is-selected {
-        box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.5) !important;
-        border-color: rgb(99, 102, 241) !important;
+        border-color: var(--color-primary) !important;
       }
       .selected .selection-indicator {
         opacity: 1;
@@ -78,7 +73,7 @@ export class CustomNodeElement extends LitElement {
         right: -8px;
         width: 20px;
         height: 20px;
-        background: rgb(99, 102, 241);
+        background: var(--color-primary);
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -88,12 +83,7 @@ export class CustomNodeElement extends LitElement {
         transform: scale(0.5);
         z-index: 20;
       }
-      .dark .selection-indicator {
-        background: rgb(129, 140, 248);
-      }
       .dark .circular-node {
-        --node-bg: #18181b;
-        --node-border: #27272a;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
       }
       .icon-container {
@@ -129,9 +119,9 @@ export class CustomNodeElement extends LitElement {
         position: absolute;
         top: -4px;
         left: -4px;
-        background: #ef4444;
-        color: white;
-        border: 2px solid white;
+        background: var(--color-error);
+        color: var(--color-error-content);
+        border: 2px solid var(--editor-surface);
         border-radius: 50%;
         width: 24px;
         height: 24px;
@@ -142,9 +132,9 @@ export class CustomNodeElement extends LitElement {
         animation: node-pulse 2s infinite;
       }
       @keyframes node-pulse {
-        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-        70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-error) 70%, transparent); }
+        70% { box-shadow: 0 0 0 8px transparent; }
+        100% { box-shadow: 0 0 0 0 transparent; }
       }
       .node-actions-container {
         position: absolute;
@@ -154,18 +144,14 @@ export class CustomNodeElement extends LitElement {
         display: flex;
         gap: 8px;
         padding: 4px 8px;
-        background: white;
-        border: 1px solid #e2e8f0;
+        background: var(--editor-surface);
+        border: 1px solid var(--editor-border);
         border-radius: 20px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         opacity: 0;
         transition: opacity 0.2s, transform 0.2s;
         z-index: 50;
         pointer-events: auto;
-      }
-      .dark .node-actions-container {
-        background: #18181b;
-        border-color: #27272a;
       }
       custom-node:hover .node-actions-container,
       .node-actions-container:hover {
@@ -182,25 +168,26 @@ export class CustomNodeElement extends LitElement {
         cursor: pointer;
         transition: transform 0.1s, filter 0.2s;
         border: none;
-        color: white;
       }
       .node-action-btn:hover {
         transform: scale(1.1);
         filter: brightness(1.1);
       }
       .node-action-btn.delete {
-        background: #f87171;
+        background: var(--color-error);
+        color: var(--color-error-content);
       }
       .node-action-btn.config {
-        background: #6366f1;
+        background: var(--color-primary);
+        color: var(--color-primary-content);
       }
       .node-name-hover {
         position: absolute;
         top: -32px;
         left: 50%;
         transform: translateX(-50%);
-        background: rgba(31, 41, 55, 0.9);
-        color: white;
+        background: var(--editor-tooltip);
+        color: var(--color-white);
         padding: 4px 10px;
         border-radius: 6px;
         font-size: 12px;
@@ -213,8 +200,7 @@ export class CustomNodeElement extends LitElement {
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
       }
       .dark .node-name-hover {
-        background: rgba(24, 24, 27, 0.95);
-        border: 1px solid rgba(63, 63, 70, 0.5);
+        border: 1px solid var(--editor-border);
       }
       custom-node:hover .node-name-hover {
         opacity: 1;
@@ -224,20 +210,17 @@ export class CustomNodeElement extends LitElement {
         position: absolute;
         bottom: 4px;
         right: 4px;
-        background: #4f46e5;
-        color: white;
+        background: var(--color-primary);
+        color: var(--color-primary-content);
         font-size: 9px;
         font-weight: 800;
         padding: 2px 4px;
         border-radius: 4px;
         text-transform: uppercase;
-        border: 1px solid white;
+        border: 1px solid var(--editor-surface);
         line-height: 1;
         z-index: 20;
         pointer-events: none;
-      }
-      .dark .language-badge {
-        border-color: #18181b;
       }
     `;
   }
@@ -259,13 +242,13 @@ export class CustomNodeElement extends LitElement {
 
     const category = this.data.category || 'default';
     const colors = {
-      'trigger': '#10b981',
-      'flow_control': '#6366f1',
-      'code': '#818cf8',
-      'data_manipulation': '#f59e0b',
-      'integration': '#ec4899',
-      'utility': '#64748b',
-      'default': '#64748b'
+      'trigger': 'var(--node-trigger)',
+      'flow_control': 'var(--node-flow-control)',
+      'code': 'var(--node-code)',
+      'data_manipulation': 'var(--node-data)',
+      'integration': 'var(--node-integration)',
+      'utility': 'var(--node-utility)',
+      'default': 'var(--node-utility)'
     };
     const nodeColor = colors[category] || colors['default'];
     const language = this.data.controls?.language?.value;
@@ -276,7 +259,7 @@ export class CustomNodeElement extends LitElement {
 
       <div 
         class="circular-node ${this.selected ? 'is-selected' : ''}" 
-        style="border-color: ${nodeColor}aa"
+        style="border-color: color-mix(in oklab, ${nodeColor} 67%, transparent)"
         @pointerdown=${(e) => {
           if (e.shiftKey) {
             e.preventDefault();
@@ -300,7 +283,7 @@ export class CustomNodeElement extends LitElement {
       >
         ${this.selected ? html`
           <div class="selection-indicator">
-            <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <svg class="w-3 h-3 text-primary-content" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
             </svg>
           </div>
@@ -308,7 +291,7 @@ export class CustomNodeElement extends LitElement {
         ${this.error ? html`
           <div 
             class="error-node-btn"
-            style="position: absolute; top: -4px; left: -4px; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; z-index: 50; animation: node-pulse 2s infinite;"
+            style="position: absolute; top: -4px; left: -4px; background: var(--color-error); color: var(--color-error-content); border: 2px solid var(--editor-surface); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; z-index: 50; animation: node-pulse 2s infinite;"
             @click=${(e) => {
               e.stopPropagation();
               if (this.onErrorDetails) this.onErrorDetails();

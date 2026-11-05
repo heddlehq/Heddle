@@ -94,7 +94,7 @@ defmodule HeddleUI.UserLive.Setup do
               disabled
               phx-connected={JS.remove_attribute("disabled")}
               phx-disconnected={JS.set_attribute({"disabled", ""})}
-              class="w-full py-4 text-base font-bold shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 active:scale-[0.98]"
+              class="w-full py-4 text-base font-bold shadow-lg shadow-primary/25 transition-all hover:shadow-primary/40 active:scale-[0.98]"
             >
               {gettext("Create account")}
             </.button>

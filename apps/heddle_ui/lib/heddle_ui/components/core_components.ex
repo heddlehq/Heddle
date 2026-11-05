@@ -96,15 +96,15 @@ defmodule HeddleUI.CoreComponents do
 
   def button(assigns) do
     variants = %{
-      "primary" => "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm focus:ring-indigo-500",
-      "outline" =>
-        "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border-none",
+      "primary" =>
+        "bg-primary hover:bg-primary/90 text-primary-content shadow-sm focus:ring-primary",
+      "outline" => "bg-primary/10 text-primary hover:bg-primary/20 border-none",
       "ghost" =>
         "bg-transparent hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 border-none shadow-none",
       "success" =>
         "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm focus:ring-emerald-500",
       "danger" => "bg-rose-600 hover:bg-rose-700 text-white shadow-sm focus:ring-rose-500",
-      nil => "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm focus:ring-indigo-500"
+      nil => "bg-primary hover:bg-primary/90 text-primary-content shadow-sm focus:ring-primary"
     }
 
     base_classes =
@@ -274,7 +274,7 @@ defmodule HeddleUI.CoreComponents do
           id={@id}
           value={Phoenix.HTML.Form.normalize_value(@type, @value)}
           class={[
-            "w-full bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl px-5 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-sm",
+            "w-full bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl px-5 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition shadow-sm",
             @errors != [] && (@error_class || "border-red-500 focus:ring-red-500")
           ]}
           {@rest}
@@ -324,7 +324,7 @@ defmodule HeddleUI.CoreComponents do
           id={@id}
           name={@name}
           class={[
-            "w-full bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl px-5 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-sm resize-none",
+            "w-full bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl px-5 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition shadow-sm resize-none",
             @errors != [] && (@error_class || "border-red-500 focus:ring-red-500")
           ]}
           {@rest}

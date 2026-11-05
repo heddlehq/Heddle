@@ -1,6 +1,8 @@
 defmodule HeddleUI.UserLive.Index do
   use HeddleUI, :live_view
 
+  on_mount {HeddleUI.UserAuth, :require_system_admin}
+
   alias HeddleCore.Accounts
   alias HeddleCore.Accounts.Invite
 
@@ -167,7 +169,7 @@ defmodule HeddleUI.UserLive.Index do
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       <%= if user.is_system_admin do %>
-                        <span class="text-indigo-600 dark:text-indigo-400">{gettext("Yes")}</span>
+                        <span class="text-primary">{gettext("Yes")}</span>
                       <% else %>
                         {gettext("No")}
                       <% end %>

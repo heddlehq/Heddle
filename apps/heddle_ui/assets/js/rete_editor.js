@@ -433,8 +433,8 @@ export async function createEditor(container) {
             top: ${top}px;
             width: ${width}px;
             height: ${height}px;
-            border: 2px solid oklch(58% 0.233 277.117);
-            background: oklch(58% 0.233 277.117 / 0.1);
+            border: 2px solid var(--color-primary);
+            background: color-mix(in oklab, var(--color-primary) 10%, transparent);
             border-radius: 0.5rem;
             z-index: 9999;
             pointer-events: none;
