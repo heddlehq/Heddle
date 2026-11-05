@@ -1,1 +1,9 @@
-{ "name": "Node-RED", "version": "5.0.9", "health": "http://127.0.0.1:18080/", "processes": "Node-RED" }
+{
+  "name": "Node-RED",
+  "version": "5.0.9",
+  "health": "http://127.0.0.1:18080/",
+  "processes": "Node-RED",
+  "app": [
+    "node-red"
+  ]
+}

@@ -1,1 +1,9 @@
-{ "name": "Kestra", "version": "2.0.9", "health": "http://127.0.0.1:18080/ping", "processes": "Kestra standalone, Postgres" }
+{
+  "name": "Kestra",
+  "version": "2.0.9",
+  "health": "http://127.0.0.1:18080/ping",
+  "processes": "Kestra standalone, Postgres",
+  "app": [
+    "kestra"
+  ]
+}

@@ -21,15 +21,16 @@ http_version="$(piece_version piece-http)"
 webhook_version="$(piece_version piece-webhook)"
 flow="$(curl -fsS -X POST $base/flows -H "$auth" -H "$json" -d "{\"displayName\":\"bench\",\"projectId\":\"$project\"}" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 python3 - "$http_version" "$webhook_version" > /tmp/ap-flow.json <<'PY'
-import json, sys
+import json, os, sys
 http_version, webhook_version = sys.argv[1:3]
+url = "http://host.docker.internal:9099/hit" + ("?id={{trigger['body']['id']}}" if os.environ.get("CRASH") else "")
 print(json.dumps({"type": "IMPORT_FLOW", "request": {"displayName": "bench", "schemaVersion": None, "trigger": {
   "name": "trigger", "displayName": "Webhook", "type": "PIECE_TRIGGER", "valid": True,
   "settings": {"pieceName": "@activepieces/piece-webhook", "pieceVersion": webhook_version, "triggerName": "catch_webhook",
                "input": {"authType": "none", "authFields": {}}, "propertySettings": {}},
   "nextAction": {"name": "step_1", "displayName": "HTTP", "type": "PIECE", "valid": True, "skip": False,
     "settings": {"pieceName": "@activepieces/piece-http", "pieceVersion": http_version, "actionName": "send_request",
-      "input": {"method": "POST", "url": "http://host.docker.internal:9099/hit", "headers": {}, "queryParams": {},
+      "input": {"method": "POST", "url": url, "headers": {}, "queryParams": {},
                 "body_type": "none", "body": {}, "response_is_binary": False, "use_proxy": False, "authType": "NONE", "authFields": {}},
       "propertySettings": {}, "errorHandlingOptions": {}}}}}}))
 PY

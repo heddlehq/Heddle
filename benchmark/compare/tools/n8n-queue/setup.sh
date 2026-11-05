@@ -1,5 +1,10 @@
 set -euo pipefail
-$COMPOSE cp workflow.json n8n:/tmp/workflow.json
+if [ -n "${CRASH:-}" ]; then
+  sed 's#"url": "http://host.docker.internal:9099/hit"#"url": "=http://host.docker.internal:9099/hit?id={{ $json.body.id }}"#' workflow.json > /tmp/workflow.json
+else
+  cp workflow.json /tmp/workflow.json
+fi
+$COMPOSE cp /tmp/workflow.json n8n:/tmp/workflow.json
 $COMPOSE exec -T n8n n8n import:workflow --input=/tmp/workflow.json >&2
 $COMPOSE exec -T n8n n8n publish:workflow --id=bench00000000001 >&2 ||
   $COMPOSE exec -T n8n n8n update:workflow --id=bench00000000001 --active=true >&2

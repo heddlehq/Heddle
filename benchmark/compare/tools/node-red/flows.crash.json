@@ -1,0 +1,69 @@
+[
+  {
+    "id": "tab1",
+    "type": "tab",
+    "label": "bench"
+  },
+  {
+    "id": "in1",
+    "type": "http in",
+    "z": "tab1",
+    "url": "/bench",
+    "method": "post",
+    "wires": [
+      [
+        "res1",
+        "clean1"
+      ]
+    ]
+  },
+  {
+    "id": "res1",
+    "type": "http response",
+    "z": "tab1",
+    "statusCode": "200",
+    "wires": []
+  },
+  {
+    "id": "clean1",
+    "type": "change",
+    "z": "tab1",
+    "rules": [
+      {
+        "t": "delete",
+        "p": "headers",
+        "pt": "msg"
+      },
+      {
+        "t": "set",
+        "p": "url",
+        "pt": "msg",
+        "to": "'http://host.docker.internal:9099/hit?id=' & $string(payload.id)",
+        "tot": "jsonata"
+      },
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "{}",
+        "tot": "json"
+      }
+    ],
+    "wires": [
+      [
+        "req1"
+      ]
+    ]
+  },
+  {
+    "id": "req1",
+    "type": "http request",
+    "z": "tab1",
+    "method": "POST",
+    "ret": "txt",
+    "url": "",
+    "wires": [
+      []
+    ]
+  }
+]

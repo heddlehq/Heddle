@@ -1,1 +1,10 @@
-{ "name": "Heddle", "version": "0.4.0", "health": "http://127.0.0.1:18080/users/log-in", "processes": "UI, worker, Postgres" }
+{
+  "name": "Heddle",
+  "version": "0.4.0",
+  "health": "http://127.0.0.1:18080/users/log-in",
+  "processes": "UI, worker, Postgres",
+  "app": [
+    "ui",
+    "worker"
+  ]
+}
