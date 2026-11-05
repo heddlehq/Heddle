@@ -5,6 +5,8 @@ defmodule HeddleUI.FlowLive.Editor do
 
   alias HeddleCore.{Executions, Flows}
   alias HeddleUI.AIChat
+  alias HeddleUI.AgentChat
+  alias HeddleUI.FlowLive.AgentManager
   alias HeddleUI.FlowLive.{CodeEditorManager, DependencyManager, NodePaletteManager}
 
   @notice_dismiss_timeout 6_000
@@ -12,6 +14,8 @@ defmodule HeddleUI.FlowLive.Editor do
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     flow = Flows.get_flow!(socket.assigns.current_scope, id)
+
+    if connected?(socket), do: Flows.subscribe_to_flow(flow.id)
 
     {:ok, assign(socket, initial_assigns(flow)), layout: false}
   end
@@ -39,8 +43,9 @@ defmodule HeddleUI.FlowLive.Editor do
       chat_messages: [],
       pending_ai_trigger: false,
       chat_loading: false,
-      ai_configured: HeddleAI.LLM.configured?()
+      ai_configured: HeddleAI.LLM.configured?() or AgentChat.active?()
     ] ++
+      AgentManager.initial_assigns() ++
       CodeEditorManager.initial_assigns() ++
       NodePaletteManager.initial_assigns() ++
       DependencyManager.initial_assigns()
@@ -54,14 +59,7 @@ defmodule HeddleUI.FlowLive.Editor do
 
   @impl true
   def handle_event("client_ready", _params, socket) do
-    flow = socket.assigns.current_flow
-
-    {:noreply,
-     push_event(socket, "load_graph_data", %{
-       nodes: flow.nodes || [],
-       connections: flow.connections || [],
-       definitions: AIChat.node_definitions()
-     })}
+    {:noreply, load_graph(socket, socket.assigns.current_flow)}
   end
 
   @impl true
@@ -242,10 +240,16 @@ defmodule HeddleUI.FlowLive.Editor do
   def handle_event("save_graph_data", %{"data" => data}, socket) do
     case Flows.update_flow(socket.assigns.current_scope, socket.assigns.current_flow, data) do
       {:ok, updated_flow} ->
-        {:noreply, assign(socket, current_flow: updated_flow, has_changes: false)}
+        {:noreply,
+         socket
+         |> assign(current_flow: updated_flow, has_changes: false)
+         |> AgentManager.resume_pending()}
 
       {:error, _changeset} ->
-        {:noreply, put_flash(socket, :error, "Failed to save graph data.")}
+        {:noreply,
+         socket
+         |> AgentManager.abort_pending()
+         |> put_flash(:error, gettext("Failed to save graph data."))}
     end
   end
 
@@ -369,41 +373,39 @@ defmodule HeddleUI.FlowLive.Editor do
 
   @impl true
   def handle_event("send_message", %{"content" => content}, socket) do
-    if content == "" do
-      {:noreply, socket}
-    else
-      messages = socket.assigns.chat_messages ++ [{:user, content}, {:ai, ""}]
-      ai_messages = AIChat.to_api_messages(messages)
+    cond do
+      content == "" ->
+        {:noreply, socket}
 
-      socket = assign(socket, chat_messages: messages, chat_loading: true)
-      parent = self()
-      current_flow = socket.assigns.current_flow
+      AgentChat.active?() ->
+        {:noreply, AgentManager.send_message(socket, content)}
 
-      socket =
-        start_async(socket, :ai_stream, fn ->
-          {:ok, result} = HeddleAI.Agents.FlowCreator.chat(ai_messages, current_flow)
-          AIChat.consume_stream(result.stream, parent)
-        end)
-
-      {:noreply, socket}
+      true ->
+        {:noreply, ask_llm(socket, content)}
     end
   end
 
   @impl true
-  def handle_async(:ai_stream, {:ok, _result}, socket) do
+  def handle_event("agent_run_decision", %{"decision" => decision}, socket) do
+    {:noreply, AgentManager.decide(socket, decision == "approve")}
+  end
+
+  @impl true
+  def handle_async(:ai_stream, {:ok, result}, socket) do
     socket =
       case List.last(socket.assigns.chat_messages) do
         {:ai, content} -> apply_ai_flow(socket, content)
         _ -> socket
       end
 
-    {:noreply, assign(socket, chat_loading: false)}
+    {:noreply, socket |> AgentManager.finish(result) |> assign(chat_loading: false)}
   end
 
   @impl true
   def handle_async(:ai_stream, {:exit, reason}, socket) do
     {:noreply,
      socket
+     |> AgentManager.finish({:error, reason})
      |> put_flash(:error, "AI Stream failed: #{inspect(reason)}")
      |> assign(chat_loading: false)}
   end
@@ -465,7 +467,51 @@ defmodule HeddleUI.FlowLive.Editor do
     {:noreply, put_flash(socket, :error, "AI Error: #{inspect(reason)}")}
   end
 
+  @impl true
+  def handle_info({:agent_run_confirmation, confirmation}, socket) do
+    {:noreply, AgentManager.request_confirmation(socket, confirmation)}
+  end
+
+  @impl true
+  def handle_info({:flow_updated, flow}, socket) do
+    if same_graph?(flow, socket.assigns.current_flow) do
+      {:noreply, assign(socket, current_flow: flow)}
+    else
+      {:noreply,
+       socket
+       |> assign(current_flow: flow, has_changes: false)
+       |> load_graph(flow)}
+    end
+  end
+
   # Private Helpers
+  defp ask_llm(socket, content) do
+    messages = socket.assigns.chat_messages ++ [{:user, content}, {:ai, ""}]
+    ai_messages = AIChat.to_api_messages(messages)
+    parent = self()
+    current_flow = socket.assigns.current_flow
+
+    socket
+    |> assign(chat_messages: messages, chat_loading: true)
+    |> start_async(:ai_stream, fn ->
+      {:ok, result} = HeddleAI.Agents.FlowCreator.chat(ai_messages, current_flow)
+      AIChat.consume_stream(result.stream, parent)
+    end)
+  end
+
+  defp load_graph(socket, flow) do
+    push_event(socket, "load_graph_data", %{
+      nodes: flow.nodes || [],
+      connections: flow.connections || [],
+      definitions: AIChat.node_definitions()
+    })
+  end
+
+  # The editor hears its own saves too, and those must not reload the canvas.
+  defp same_graph?(flow, current) do
+    flow.nodes == current.nodes and flow.connections == current.connections
+  end
+
   defp sync_node_sockets(socket, node_id, config_data) do
     Enum.reduce(config_data, socket, fn {_key, value}, acc_socket ->
       if String.starts_with?(value, "ui do") do

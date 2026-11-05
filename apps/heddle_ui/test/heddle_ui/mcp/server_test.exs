@@ -3,10 +3,11 @@ defmodule HeddleUI.MCP.ServerTest do
 
   import HeddleCore.AccountsFixtures
 
+  alias HeddleCore.Accounts.Scope
   alias HeddleCore.ApiKeys
   alias HeddleCore.Executions
   alias HeddleCore.Flows
-  alias HeddleCore.Accounts.Scope
+  alias HeddleUI.AgentChat
 
   @all_scopes ~w(workflows:read workflows:write nodes:read executions:read executions:write)
 
@@ -177,6 +178,92 @@ defmodule HeddleUI.MCP.ServerTest do
       call(conn, token(user), "update_flow", %{flow_id: to_string(flow.id), name: "Renamed"})
 
       assert %{name: "Renamed", nodes: [_node]} = Flows.get_flow(scope, flow.id)
+    end
+  end
+
+  describe "run_flow with an agent key" do
+    setup %{user: user, scope: scope} do
+      {:ok, flow} = Flows.create_flow(scope, %{name: "Flow", nodes: [], connections: []})
+      {:ok, %{api_key: api_key, token: token}} = ApiKeys.create_agent_key(user)
+
+      %{flow: flow, api_key: api_key, token: token}
+    end
+
+    # The tool blocks until someone decides, so the call needs its own process.
+    defp run_async(conn, token, flow) do
+      session = open_session(conn, token)
+      arguments = %{flow_id: to_string(flow.id)}
+
+      Task.async(fn ->
+        conn
+        |> rpc(token, session, "tools/call", %{name: "run_flow", arguments: arguments}, 2)
+        |> decode()
+        |> Map.fetch!("result")
+      end)
+    end
+
+    test "runs once the person approves", context do
+      %{conn: conn, token: token, flow: flow, api_key: api_key} = context
+      Registry.register(AgentChat.registry(), api_key.id, nil)
+
+      task = run_async(conn, token, flow)
+
+      assert_receive {:agent_run_confirmation, %{ref: ref, reply_to: pid, flow_name: "Flow"}},
+                     2_000
+
+      assert Executions.list_executions_for_flow(flow) == []
+
+      send(pid, {:agent_run_decision, ref, true})
+
+      assert %{"id" => _public_id} = payload(Task.await(task))
+      assert [_execution] = Executions.list_executions_for_flow(flow)
+    end
+
+    test "doesn't run if the person refuses", context do
+      %{conn: conn, token: token, flow: flow, api_key: api_key} = context
+      Registry.register(AgentChat.registry(), api_key.id, nil)
+
+      task = run_async(conn, token, flow)
+
+      assert_receive {:agent_run_confirmation, %{ref: ref, reply_to: pid}}, 2_000
+      send(pid, {:agent_run_decision, ref, false})
+
+      result = Task.await(task)
+
+      assert result["isError"]
+      assert text(result) =~ "refused"
+      assert Executions.list_executions_for_flow(flow) == []
+    end
+
+    test "doesn't run with nobody to ask", %{conn: conn, token: token, flow: flow} do
+      result = call(conn, token, "run_flow", %{flow_id: to_string(flow.id)})
+
+      assert result["isError"]
+      assert text(result) =~ "Nobody"
+      assert Executions.list_executions_for_flow(flow) == []
+    end
+
+    test "doesn't run if the person leaves", context do
+      %{conn: conn, token: token, flow: flow, api_key: api_key} = context
+      test = self()
+
+      owner =
+        spawn(fn ->
+          Registry.register(AgentChat.registry(), api_key.id, nil)
+          send(test, :registered)
+
+          receive do
+            {:agent_run_confirmation, _confirmation} -> exit(:left)
+          end
+        end)
+
+      assert_receive :registered
+
+      result = conn |> run_async(token, flow) |> Task.await()
+
+      refute Process.alive?(owner)
+      assert result["isError"]
+      assert Executions.list_executions_for_flow(flow) == []
     end
   end
 

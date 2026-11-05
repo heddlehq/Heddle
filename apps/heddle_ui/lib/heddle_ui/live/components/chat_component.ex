@@ -5,6 +5,7 @@ defmodule HeddleUI.Components.ChatComponent do
   attr :messages, :list, default: []
   attr :loading, :boolean, default: false
   attr :ai_configured, :boolean, default: true
+  attr :confirmation, :map, default: nil
   attr :on_toggle, :string, default: "toggle_chat"
   attr :on_send, :string, default: "send_message"
   attr :node_config_open, :boolean, default: false
@@ -172,6 +173,37 @@ defmodule HeddleUI.Components.ChatComponent do
               </div>
             <% end %>
           <% end %>
+        </div>
+
+        <div
+          :if={assigns[:confirmation]}
+          id="agent-run-confirmation"
+          class="p-4 border-t border-gray-200 dark:border-slate-800 bg-amber-50 dark:bg-amber-900/20"
+        >
+          <p class="text-sm font-medium text-gray-900 dark:text-white">
+            {gettext("Run \"%{flow}\"?", flow: @confirmation.flow_name)}
+          </p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {gettext("The agent wants to run this flow, which can have real side effects.")}
+          </p>
+          <div class="mt-3 flex items-center gap-2">
+            <.button
+              id="agent-run-approve"
+              phx-click="agent_run_decision"
+              phx-value-decision="approve"
+              variant="primary"
+            >
+              {gettext("Run")}
+            </.button>
+            <.button
+              id="agent-run-deny"
+              phx-click="agent_run_decision"
+              phx-value-decision="deny"
+              variant="ghost"
+            >
+              {gettext("Don't run")}
+            </.button>
+          </div>
         </div>
 
         <%= if @ai_configured do %>

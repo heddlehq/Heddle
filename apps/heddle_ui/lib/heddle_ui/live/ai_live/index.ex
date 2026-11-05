@@ -3,15 +3,38 @@ defmodule HeddleUI.AILive.Index do
 
   on_mount {HeddleUI.UserAuth, :require_system_admin}
 
+  alias HeddleAI.ClaudeAgent
   alias HeddleAI.LLM
+  alias HeddleCore.Settings
 
   @impl true
   def mount(_params, _session, socket) do
+    agent = ClaudeAgent.status()
+
     {:ok,
      socket
      |> assign(:page_title, gettext("LLM & Agents"))
      |> assign(:llm, LLM.status())
-     |> assign(:mcp_command, mcp_command())}
+     |> assign(:agent, agent)
+     |> assign(:agent_enabled, Settings.claude_agent_enabled?())
+     |> assign(:mcp_command, mcp_command())
+     |> assign_async(:agent_version, fn -> {:ok, %{agent_version: version(agent)}} end)}
+  end
+
+  @impl true
+  def handle_event("toggle_claude_agent", _params, socket) do
+    enabled = not socket.assigns.agent_enabled
+
+    case set_agent_enabled(socket.assigns.agent, enabled) do
+      {:ok, _setting} ->
+        {:noreply, assign(socket, :agent_enabled, enabled)}
+
+      :unavailable ->
+        {:noreply, put_flash(socket, :error, gettext("The Claude Agent is not available."))}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, gettext("Could not save this setting."))}
+    end
   end
 
   @impl true
@@ -79,6 +102,76 @@ defmodule HeddleUI.AILive.Index do
       </section>
 
       <section
+        id="claude-agent"
+        class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-6"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+              {gettext("Claude Agent")}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {gettext("Copilot in the editor chat. It can read, edit and run your flows.")}
+            </p>
+          </div>
+          <button
+            id="claude-agent-toggle"
+            type="button"
+            role="switch"
+            aria-checked={to_string(agent_on?(@agent, @agent_enabled))}
+            aria-label={gettext("Use in the editor chat")}
+            disabled={@agent.state != :ready}
+            phx-click="toggle_claude_agent"
+            class={[
+              "relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed",
+              if(agent_on?(@agent, @agent_enabled),
+                do: "bg-primary",
+                else: "bg-gray-200 dark:bg-slate-700"
+              )
+            ]}
+          >
+            <span class={[
+              "inline-block h-5 w-5 mt-0.5 rounded-full bg-white shadow transition-transform",
+              if(agent_on?(@agent, @agent_enabled),
+                do: "translate-x-[22px]",
+                else: "translate-x-0.5"
+              )
+            ]} />
+          </button>
+        </div>
+
+        <dl class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <dt class="text-xs text-gray-500 dark:text-gray-400">{gettext("Binary")}</dt>
+            <dd id="claude-agent-binary" class="font-mono text-sm text-gray-900 dark:text-white">
+              <%= if @agent.binary do %>
+                {gettext("Found")}
+                <span :if={@agent_version.ok? && @agent_version.result}>
+                  ({@agent_version.result})
+                </span>
+              <% else %>
+                {gettext("Not found")}
+              <% end %>
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs text-gray-500 dark:text-gray-400">{gettext("API key")}</dt>
+            <dd id="claude-agent-key" class="font-mono text-sm text-gray-900 dark:text-white">
+              {if @agent.key?, do: gettext("Set"), else: gettext("Not set")}
+            </dd>
+          </div>
+        </dl>
+
+        <p
+          :if={@agent.state != :ready}
+          id="claude-agent-help"
+          class="mt-4 text-xs text-gray-500 dark:text-gray-400"
+        >
+          {agent_help(@agent.state)}
+        </p>
+      </section>
+
+      <section
         id="mcp-server"
         class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-6"
       >
@@ -133,6 +226,26 @@ defmodule HeddleUI.AILive.Index do
   defp status_label(:ready), do: gettext("Active")
   defp status_label(:invalid), do: gettext("Incomplete")
   defp status_label(:not_configured), do: gettext("Not configured")
+
+  defp set_agent_enabled(%{state: :ready}, enabled) do
+    Settings.set_claude_agent_enabled(enabled)
+  end
+
+  defp set_agent_enabled(_agent, false), do: Settings.set_claude_agent_enabled(false)
+  defp set_agent_enabled(_agent, true), do: :unavailable
+
+  defp agent_on?(agent, enabled), do: agent.state == :ready and enabled
+
+  defp version(%{binary: nil}), do: nil
+  defp version(%{binary: binary}), do: ClaudeAgent.version(binary)
+
+  defp agent_help(:missing_binary) do
+    gettext("Install claude on this server, or point HEDDLE_CLAUDE_BIN to it.")
+  end
+
+  defp agent_help(:missing_key) do
+    gettext("Set HEDDLE_CLAUDE_API_KEY. Claude subscriptions can't be used here.")
+  end
 
   defp mcp_command do
     "claude mcp add --transport http heddle #{url(~p"/mcp")} \\\n" <>

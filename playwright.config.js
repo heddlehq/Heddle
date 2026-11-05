@@ -21,7 +21,7 @@ export default defineConfig({
   reporter: 'html',
 
   use: {
-    baseURL: 'http://localhost:4000',
+    baseURL: process.env.E2E_BASE_URL || 'http://localhost:4000',
     trace: 'on-first-retry',
   },
 

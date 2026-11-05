@@ -5,7 +5,12 @@ defmodule HeddleUI.AILive.IndexTest do
   import Phoenix.LiveViewTest
   import HeddleCore.AccountsFixtures
 
-  @variables ~w(HEDDLE_LLM_PROVIDER HEDDLE_LLM_MODEL HEDDLE_LLM_API_KEY OPENAI_API_KEY OPENAI_MODEL)
+  alias HeddleCore.Settings
+
+  @variables ~w(
+    HEDDLE_LLM_PROVIDER HEDDLE_LLM_MODEL HEDDLE_LLM_API_KEY OPENAI_API_KEY OPENAI_MODEL
+    HEDDLE_CLAUDE_BIN HEDDLE_CLAUDE_API_KEY
+  )
 
   setup do
     previous = System.get_env() |> Map.take(@variables)
@@ -75,6 +80,71 @@ defmodule HeddleUI.AILive.IndexTest do
 
       assert has_element?(view, "#llm-provider-name", "openai")
       assert has_element?(view, "#llm-legacy-notice")
+    end
+  end
+
+  describe "Claude Agent" do
+    defp agent_ready do
+      System.put_env(%{"HEDDLE_CLAUDE_BIN" => "/bin/true", "HEDDLE_CLAUDE_API_KEY" => "sk-ant"})
+    end
+
+    test "can't be turned on without the binary", %{conn: conn} do
+      System.put_env("HEDDLE_CLAUDE_BIN", "/no/such/claude")
+
+      view = open(conn)
+
+      assert has_element?(view, "#claude-agent-toggle[disabled]")
+      assert has_element?(view, "#claude-agent-help", "HEDDLE_CLAUDE_BIN")
+    end
+
+    test "asks for a key, and says subscriptions don't work", %{conn: conn} do
+      System.put_env("HEDDLE_CLAUDE_BIN", "/bin/true")
+
+      view = open(conn)
+
+      assert has_element?(view, "#claude-agent-toggle[disabled]")
+      assert has_element?(view, "#claude-agent-help", "HEDDLE_CLAUDE_API_KEY")
+    end
+
+    test "is saved for the whole instance", %{conn: conn} do
+      agent_ready()
+      view = open(conn)
+
+      assert has_element?(view, "#claude-agent-toggle[aria-checked=false]")
+
+      view |> element("#claude-agent-toggle") |> render_click()
+
+      assert has_element?(view, "#claude-agent-toggle[aria-checked=true]")
+      assert Settings.claude_agent_enabled?()
+
+      view |> element("#claude-agent-toggle") |> render_click()
+
+      refute Settings.claude_agent_enabled?()
+    end
+
+    test "refuses a forged event while unavailable", %{conn: conn} do
+      System.put_env("HEDDLE_CLAUDE_BIN", "/no/such/claude")
+
+      view = open(conn)
+      render_click(view, "toggle_claude_agent")
+
+      refute Settings.claude_agent_enabled?()
+    end
+
+    test "shows as off when it stops being available", %{conn: conn} do
+      Settings.set_claude_agent_enabled(true)
+      System.put_env("HEDDLE_CLAUDE_BIN", "/no/such/claude")
+
+      assert has_element?(open(conn), "#claude-agent-toggle[aria-checked=false]")
+    end
+
+    test "never shows the key", %{conn: conn} do
+      agent_ready()
+
+      view = open(conn)
+
+      assert has_element?(view, "#claude-agent-key")
+      refute render(view) =~ "sk-ant"
     end
   end
 

@@ -56,3 +56,6 @@ node_modules/
 
 # Archives from scripts/package_release.sh
 /dist/
+
+# ExUnit @tmp_dir
+apps/*/tmp/

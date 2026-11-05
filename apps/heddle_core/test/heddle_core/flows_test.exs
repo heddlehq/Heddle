@@ -130,4 +130,28 @@ defmodule HeddleCore.FlowsTest do
       assert {:error, %Ecto.Changeset{}} = Flows.create_execution_log(attrs)
     end
   end
+
+  describe "subscribe_to_flow/1" do
+    import HeddleCore.FlowsFixtures
+
+    test "announces updates, whoever makes them" do
+      flow = flow_fixture()
+      Flows.subscribe_to_flow(flow.id)
+
+      assert {:ok, updated} = Flows.update_flow(flow, %{name: "Renamed"})
+
+      assert_receive {:flow_updated, ^updated}
+    end
+
+    test "stays quiet about other flows and failed updates" do
+      flow = flow_fixture()
+      other = flow_fixture()
+      Flows.subscribe_to_flow(flow.id)
+
+      {:ok, _other} = Flows.update_flow(other, %{name: "Other"})
+      {:error, _changeset} = Flows.update_flow(flow, %{name: nil})
+
+      refute_receive {:flow_updated, _flow}, 50
+    end
+  end
 end

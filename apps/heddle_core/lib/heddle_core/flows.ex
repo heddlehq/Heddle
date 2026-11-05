@@ -126,12 +126,28 @@ defmodule HeddleCore.Flows do
       {:ok, updated_flow} ->
         HeddleCore.Flows.Cache.invalidate(updated_flow.id)
         HeddleCore.Webhooks.register_flow(updated_flow)
+        broadcast_flow_updated(updated_flow)
         {:ok, updated_flow}
 
       error ->
         error
     end
   end
+
+  @doc """
+  Subscribes to changes of a flow, whoever makes them: the editor, the API or an agent.
+
+  Subscribers receive `{:flow_updated, flow}`.
+  """
+  def subscribe_to_flow(flow_id) do
+    Phoenix.PubSub.subscribe(HeddleCore.PubSub, flow_topic(flow_id))
+  end
+
+  defp broadcast_flow_updated(%Flow{} = flow) do
+    Phoenix.PubSub.broadcast(HeddleCore.PubSub, flow_topic(flow.id), {:flow_updated, flow})
+  end
+
+  defp flow_topic(flow_id), do: "flow:#{flow_id}"
 
   def update_flow(%Scope{} = scope, %Flow{} = flow, attrs) do
     flow = get_flow!(scope, flow.id)
