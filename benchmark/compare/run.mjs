@@ -12,14 +12,14 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 const SEQUENTIAL = Number(process.env.SEQUENTIAL ?? 100);
 const WARMUP = Number(process.env.WARMUP ?? 20);
-const BURST = Number(process.env.BURST ?? 3000);
+const BURST = Number(process.env.BURST ?? 20000);
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 50);
 const DRAIN_LIMIT_MS = Number(process.env.DRAIN_LIMIT_MS ?? 300_000);
 const SETTLE_MS = Number(process.env.SETTLE_MS ?? 20_000);
 const BOOT_LIMIT_MS = 300_000;
 const SINK_PORT = 9099;
 const ROUND = process.env.ROUND ?? '0';
-const TOOLS = (process.env.TOOLS ?? 'heddle,n8n,node-red,windmill,activepieces,kestra').split(',');
+const TOOLS = (process.env.TOOLS ?? 'heddle,n8n,n8n-queue,node-red,windmill,activepieces,kestra').split(',');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const sh = (command, options = {}) =>
@@ -209,7 +209,8 @@ const runTool = async (tool) => {
     console.log(`\n=== ${tool}: pulling`);
     sh(`${compose} pull --quiet --ignore-pull-failures`);
 
-    const images = sh(`${compose} config --images`).trim().split('\n');
+    // A service can reuse another's image, and Docker stores it only once.
+    const images = [...new Set(sh(`${compose} config --images`).trim().split('\n'))];
     result.images = images.map((image) => ({
       image,
       id: sh(`docker image inspect --format '{{.Id}}' ${image}`).trim().slice(7, 19),
