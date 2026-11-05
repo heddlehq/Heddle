@@ -5,8 +5,20 @@ signup="$(curl -fsS -X POST $base/authentication/sign-up -H "$json" -d '{"email"
 token="$(echo "$signup" | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')"
 project="$(echo "$signup" | python3 -c 'import json,sys; print(json.load(sys.stdin)["projectId"])')"
 auth="Authorization: Bearer $token"
-http_version="$(curl -fsS "$base/pieces/@activepieces/piece-http" -H "$auth" | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])')"
-webhook_version="$(curl -fsS "$base/pieces/@activepieces/piece-webhook" -H "$auth" | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])')"
+# Pieces sync from the registry after boot, so they take a moment to exist.
+piece_version() {
+  for _ in $(seq 1 120); do
+    if body="$(curl -fsS "$base/pieces/@activepieces/$1" -H "$auth" 2>/dev/null)"; then
+      echo "$body" | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])'
+      return 0
+    fi
+    sleep 2
+  done
+  curl -sS "$base/pieces?limit=3" -H "$auth" | head -c 600 >&2
+  return 1
+}
+http_version="$(piece_version piece-http)"
+webhook_version="$(piece_version piece-webhook)"
 flow="$(curl -fsS -X POST $base/flows -H "$auth" -H "$json" -d "{\"displayName\":\"bench\",\"projectId\":\"$project\"}" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 python3 - "$http_version" "$webhook_version" > /tmp/ap-flow.json <<'PY'
 import json, sys

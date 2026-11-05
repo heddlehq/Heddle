@@ -207,7 +207,7 @@ const runTool = async (tool) => {
 
   try {
     console.log(`\n=== ${tool}: pulling`);
-    sh(`${compose} pull --quiet --ignore-buildable`);
+    sh(`${compose} pull --quiet --ignore-pull-failures`);
 
     const images = sh(`${compose} config --images`).trim().split('\n');
     result.images = images.map((image) => ({
