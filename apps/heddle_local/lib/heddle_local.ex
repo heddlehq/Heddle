@@ -28,17 +28,30 @@ defmodule HeddleLocal do
 
     case Postgres.ensure_running(postgres_root(), data, password) do
       {:ok, database_url} ->
-        %{
+        Map.merge(python_env(home), %{
           "DATABASE_URL" => database_url,
           "SECRET_KEY_BASE" => secret_key_base,
           "PORT" => Integer.to_string(free_port(first_port())),
           "PHX_SERVER" => "true"
-        }
+        })
 
       {:error, message} ->
         IO.puts(:stderr, "\nHeddle could not start its database.\n\n#{message}\n")
         System.halt(1)
     end
+  end
+
+  @doc """
+  Keeps Python inside `home`, so removing that folder removes everything.
+
+  Python also fails to load from a path with an accent on Windows, which the
+  default cache under the user's folder may have.
+  """
+  def python_env(home) do
+    %{
+      "PYTHONX_CACHE_DIR" => Path.join([home, "cache", "pythonx"]),
+      "UV_CACHE_DIR" => Path.join([home, "cache", "uv"])
+    }
   end
 
   @doc "Where the installer puts Heddle. Everything a person creates lives under it."

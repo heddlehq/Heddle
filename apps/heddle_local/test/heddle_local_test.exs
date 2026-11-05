@@ -15,6 +15,14 @@ defmodule HeddleLocalTest do
     end
   end
 
+  describe "python_env/1" do
+    test "keeps every cache inside the install folder" do
+      for {_name, path} <- HeddleLocal.python_env("/home/ana/.heddle") do
+        assert String.starts_with?(path, "/home/ana/.heddle/cache/")
+      end
+    end
+  end
+
   describe "read_or_create/2" do
     test "creates the value once and keeps it", %{tmp_dir: dir} do
       path = Path.join(dir, "secret")
