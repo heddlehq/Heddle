@@ -2,100 +2,43 @@ defmodule HeddleAI.AI do
   @moduledoc """
   LLM streaming entrypoint.
 
-  This currently targets OpenAI directly, but this boundary is intentionally
-  kept in `heddle_ai` so future providers can be added without leaking
-  provider-specific code into UI, core, nodes or worker apps.
+  Provider-specific code stays behind this boundary: `req_llm` does the talking and
+  `HeddleAI.LLM` decides who to talk to, so UI, core, nodes and worker apps never
+  see a provider.
   """
 
+  alias HeddleAI.LLM
+
+  @doc """
+  Streams a reply as `{:text_delta, text}` events.
+
+  Always returns `{:ok, %{stream: stream}}`. A failure to start arrives as an
+  `{:error, message}` event in the stream, which is where consumers already look for
+  one. The message comes from the exception and not from `inspect/1`, which could
+  carry request headers to the screen.
+  """
   def stream_text(messages, opts \\ []) do
-    model = Keyword.get(opts, :model, System.get_env("OPENAI_MODEL") || "gpt-4o-mini")
-    system = Keyword.get(opts, :system)
-    temperature = Keyword.get(opts, :temperature)
-
-    messages =
-      if is_list(messages) and system do
-        [%{role: "system", content: system} | messages]
-      else
-        messages
-      end
-
-    payload =
-      %{
-        model: model,
-        messages: messages,
-        stream: true,
-        temperature: temperature
-      }
-      |> Enum.reject(fn {_, v} -> is_nil(v) end)
-      |> Map.new()
-
-    stream =
-      Stream.resource(
-        fn ->
-          parent = self()
-          ref = make_ref()
-
-          spawn_link(fn ->
-            Req.post!(
-              "https://api.openai.com/v1/chat/completions",
-              auth: {:bearer, System.get_env("OPENAI_API_KEY")},
-              json: payload,
-              finch: HeddleAI.Finch,
-              into: fn {:data, chunk}, acc ->
-                send(parent, {:chunk, ref, chunk})
-                {:cont, acc}
-              end
-            )
-
-            send(parent, {:done, ref})
-          end)
-
-          %{ref: ref, buffer: ""}
-        end,
-        fn state ->
-          receive do
-            {:chunk, ref, chunk} when ref == state.ref ->
-              {deltas, new_buffer} = parse_sse(state.buffer <> chunk)
-              {deltas, %{state | buffer: new_buffer}}
-
-            {:done, ref} when ref == state.ref ->
-              {:halt, state}
-          after
-            30_000 -> {:halt, state}
-          end
-        end,
-        fn _ -> :ok end
-      )
-
-    {:ok, %{stream: stream}}
-  end
-
-  defp parse_sse(buffer) do
-    if String.contains?(buffer, "\n") do
-      lines = String.split(buffer, "\n")
-      {complete, [pending]} = Enum.split(lines, -1)
-
-      deltas =
-        complete
-        |> Enum.map(&String.trim/1)
-        |> Enum.filter(&String.starts_with?(&1, "data: "))
-        |> Enum.map(&String.replace(&1, "data: ", ""))
-        |> Enum.reject(&(&1 == "[DONE]"))
-        |> Enum.map(fn json ->
-          case Jason.decode(json) do
-            {:ok, %{"choices" => [%{"delta" => %{"content" => content}}]}}
-            when is_binary(content) ->
-              {:text_delta, content}
-
-            _ ->
-              nil
-          end
-        end)
-        |> Enum.reject(&is_nil/1)
-
-      {deltas, pending}
+    with {:ok, model, api_key} <- LLM.credentials(),
+         {:ok, response} <- client().stream_text(model, messages, request_opts(opts, api_key)) do
+      {:ok, %{stream: Stream.flat_map(response.stream, &to_events/1)}}
     else
-      {[], buffer}
+      {:error, reason} -> {:ok, %{stream: [{:error, error_message(reason)}]}}
     end
   end
+
+  defp request_opts(opts, api_key) do
+    case Keyword.get(opts, :system) do
+      nil -> [api_key: api_key]
+      system -> [api_key: api_key, system_prompt: system]
+    end
+  end
+
+  defp to_events(%{type: :content, text: text}) when is_binary(text), do: [{:text_delta, text}]
+  defp to_events(_chunk), do: []
+
+  defp error_message(:not_configured), do: "No LLM provider is configured."
+  defp error_message(%{__exception__: true} = error), do: Exception.message(error)
+  defp error_message(reason), do: inspect(reason)
+
+  defp client, do: Application.get_env(:heddle_ai, :llm_client, ReqLLM)
 end

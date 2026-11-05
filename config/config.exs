@@ -35,6 +35,9 @@ config :heddle_core, Oban,
 
 config :heddle_core, :oban_name, HeddleCore.Oban
 
+# Env is read by HeddleAI.LLM. A stray .env must not change what the app talks to.
+config :req_llm, load_dotenv: false
+
 config :heddle_core,
   ecto_repos: [HeddleCore.Repo],
   generators: [timestamp_type: :utc_datetime]

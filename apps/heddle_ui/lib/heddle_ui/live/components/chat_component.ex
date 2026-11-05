@@ -144,15 +144,11 @@ defmodule HeddleUI.Components.ChatComponent do
               </div>
 
               <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                AI Assistant Disabled
+                {gettext("AI Assistant Disabled")}
               </p>
 
               <p class="text-xs text-center text-gray-500 dark:text-gray-400">
-                Set
-                <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded font-mono text-xs">
-                  OPENAI_API_KEY
-                </code>
-                in your environment to enable the chat.
+                {gettext("Set the HEDDLE_LLM_* variables in your environment to enable the chat.")}
               </p>
             </div>
           <% else %>

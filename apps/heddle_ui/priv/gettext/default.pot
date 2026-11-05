@@ -193,17 +193,17 @@ msgstr ""
 msgid "nodes"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:253
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:251
 #, elixir-autogen, elixir-format
 msgid "Are you happy with this implementation plan?"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:221
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:219
 #, elixir-autogen, elixir-format
 msgid "Building flow and rendering graph..."
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:17
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:15
 #, elixir-autogen, elixir-format
 msgid "Create Flow with AI"
 msgstr ""
@@ -213,23 +213,18 @@ msgstr ""
 msgid "Create with AI"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:26
-#, elixir-autogen, elixir-format
-msgid "OpenAI API Key is not configured."
-msgstr ""
-
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:256
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:254
 #, elixir-autogen, elixir-format
 msgid "Or reply below with adjustments"
 msgstr ""
 
-#: lib/heddle_ui/live/components/chat_component.ex:197
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:292
+#: lib/heddle_ui/live/components/chat_component.ex:193
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:290
 #, elixir-autogen, elixir-format
 msgid "Send"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:266
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:264
 #, elixir-autogen, elixir-format
 msgid "Yes, Build This Flow"
 msgstr ""
@@ -247,8 +242,8 @@ msgstr ""
 #: lib/heddle_ui/components/modals/code_editor_modal.ex:90
 #: lib/heddle_ui/components/modals/create_node_modal.ex:92
 #: lib/heddle_ui/components/modals/node_config_modal.ex:169
-#: lib/heddle_ui/controllers/oauth_html.ex:38
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:150
+#: lib/heddle_ui/controllers/oauth_html.ex:39
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:148
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr ""
@@ -625,17 +620,17 @@ msgstr ""
 msgid "Welcome back to Heddle! Contact an administrator to access flows."
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:76
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:74
 #, elixir-autogen, elixir-format
 msgid "AI Error: %{reason}"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:142
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:140
 #, elixir-autogen, elixir-format
 msgid "AI Flow Creator"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:63
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:61
 #, elixir-autogen, elixir-format
 msgid "AI Stream failed: %{reason}"
 msgstr ""
@@ -687,8 +682,8 @@ msgstr ""
 msgid "Could not revoke API key."
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:184
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:188
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:182
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:186
 #, elixir-autogen, elixir-format
 msgid "Create a flow with a webhook that receives data, and logs the output"
 msgstr ""
@@ -713,12 +708,12 @@ msgstr ""
 msgid "Deleted flow"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:284
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:282
 #, elixir-autogen, elixir-format
 msgid "Describe changes or explain what the flow should do..."
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:145
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:143
 #, elixir-autogen, elixir-format
 msgid "Describe the workflow you want, and let AI build the nodes and connections."
 msgstr ""
@@ -761,13 +756,13 @@ msgstr ""
 msgid "Expires"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:118
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:116
 #, elixir-autogen, elixir-format
 msgid "Failed to create flow from AI."
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:193
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:197
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:191
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:195
 #, elixir-autogen, elixir-format
 msgid "Fetch data via HTTP request and run Python evaluation logic"
 msgstr ""
@@ -777,7 +772,7 @@ msgstr ""
 msgid "Flow"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:113
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:111
 #, elixir-autogen, elixir-format
 msgid "Flow created successfully!"
 msgstr ""
@@ -792,7 +787,7 @@ msgstr ""
 msgid "Generate API key"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:173
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:171
 #, elixir-autogen, elixir-format
 msgid "How can I help you automate today?"
 msgstr ""
@@ -812,7 +807,7 @@ msgstr ""
 msgid "LiveView is not connected yet. Check that JavaScript is enabled and that assets loaded correctly before creating the account."
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:48
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:46
 #, elixir-autogen, elixir-format
 msgid "Looks good! Please build this flow."
 msgstr ""
@@ -932,7 +927,7 @@ msgstr ""
 msgid "System admins only"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:216
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:214
 #, elixir-autogen, elixir-format
 msgid "Thinking and designing your flow..."
 msgstr ""
@@ -952,7 +947,7 @@ msgstr ""
 msgid "Trigger workflow executions."
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:176
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:174
 #, elixir-autogen, elixir-format
 msgid "You can say things like \"Fetch data from an API and send a webhook\" or \"Set a variable and evaluate some python code\"."
 msgstr ""
@@ -972,7 +967,7 @@ msgstr ""
 msgid "e.g. Production Webhook"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/ai_creator.ex:225
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:223
 #, elixir-autogen, elixir-format
 msgid "I couldn't build this flow. Tell me what to change and I'll try again."
 msgstr ""
@@ -992,12 +987,12 @@ msgstr ""
 msgid "Allow %{name} to access Heddle?"
 msgstr ""
 
-#: lib/heddle_ui/controllers/oauth_html.ex:67
+#: lib/heddle_ui/controllers/oauth_html.ex:69
 #, elixir-autogen, elixir-format
 msgid "Create and change workflows"
 msgstr ""
 
-#: lib/heddle_ui/controllers/oauth_html.ex:68
+#: lib/heddle_ui/controllers/oauth_html.ex:70
 #, elixir-autogen, elixir-format
 msgid "Delete workflows"
 msgstr ""
@@ -1007,32 +1002,32 @@ msgstr ""
 msgid "It will be able to:"
 msgstr ""
 
-#: lib/heddle_ui/controllers/oauth_html.ex:71
+#: lib/heddle_ui/controllers/oauth_html.ex:73
 #, elixir-autogen, elixir-format
 msgid "Run workflows"
 msgstr ""
 
-#: lib/heddle_ui/controllers/oauth_html.ex:69
+#: lib/heddle_ui/controllers/oauth_html.ex:71
 #, elixir-autogen, elixir-format
 msgid "See the available nodes"
 msgstr ""
 
-#: lib/heddle_ui/controllers/oauth_html.ex:70
+#: lib/heddle_ui/controllers/oauth_html.ex:72
 #, elixir-autogen, elixir-format
 msgid "See workflow runs"
 msgstr ""
 
-#: lib/heddle_ui/controllers/oauth_html.ex:66
+#: lib/heddle_ui/controllers/oauth_html.ex:68
 #, elixir-autogen, elixir-format
 msgid "See your workflows"
 msgstr ""
 
-#: lib/heddle_ui/controllers/oauth_html.ex:58
+#: lib/heddle_ui/controllers/oauth_html.ex:60
 #, elixir-autogen, elixir-format
 msgid "Start the sign-in again from the app."
 msgstr ""
 
-#: lib/heddle_ui/controllers/oauth_html.ex:55
+#: lib/heddle_ui/controllers/oauth_html.ex:57
 #, elixir-autogen, elixir-format
 msgid "This sign-in link isn't valid"
 msgstr ""
@@ -1040,4 +1035,19 @@ msgstr ""
 #: lib/heddle_ui/controllers/oauth_html.ex:30
 #, elixir-autogen, elixir-format
 msgid "You can revoke this at any time on the API keys page."
+msgstr ""
+
+#: lib/heddle_ui/live/components/chat_component.ex:147
+#, elixir-autogen, elixir-format
+msgid "AI Assistant Disabled"
+msgstr ""
+
+#: lib/heddle_ui/live/flow_live/ai_creator.ex:24
+#, elixir-autogen, elixir-format
+msgid "No LLM provider is configured."
+msgstr ""
+
+#: lib/heddle_ui/live/components/chat_component.ex:151
+#, elixir-autogen, elixir-format
+msgid "Set the HEDDLE_LLM_* variables in your environment to enable the chat."
 msgstr ""

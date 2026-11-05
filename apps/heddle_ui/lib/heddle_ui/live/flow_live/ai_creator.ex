@@ -9,9 +9,7 @@ defmodule HeddleUI.FlowLive.AICreator do
 
   @impl true
   def mount(_params, _session, socket) do
-    ai_configured? = System.get_env("OPENAI_API_KEY") not in [nil, ""]
-
-    if ai_configured? do
+    if HeddleAI.LLM.configured?() do
       {:ok,
        assign(socket,
          page_title: gettext("Create Flow with AI"),
@@ -23,7 +21,7 @@ defmodule HeddleUI.FlowLive.AICreator do
     else
       {:ok,
        socket
-       |> put_flash(:error, gettext("OpenAI API Key is not configured."))
+       |> put_flash(:error, gettext("No LLM provider is configured."))
        |> push_navigate(to: ~p"/flows")
        |> assign(ai_configured: false)}
     end

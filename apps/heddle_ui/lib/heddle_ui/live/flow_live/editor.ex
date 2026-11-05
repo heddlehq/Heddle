@@ -39,7 +39,7 @@ defmodule HeddleUI.FlowLive.Editor do
       chat_messages: [],
       pending_ai_trigger: false,
       chat_loading: false,
-      ai_configured: System.get_env("OPENAI_API_KEY") not in [nil, ""]
+      ai_configured: HeddleAI.LLM.configured?()
     ] ++
       CodeEditorManager.initial_assigns() ++
       NodePaletteManager.initial_assigns() ++

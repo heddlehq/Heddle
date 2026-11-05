@@ -5,11 +5,7 @@ defmodule HeddleAI.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [
-      {Finch, name: HeddleAI.Finch}
-    ]
-
     opts = [strategy: :one_for_one, name: HeddleAI.Supervisor]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link([], opts)
   end
 end
