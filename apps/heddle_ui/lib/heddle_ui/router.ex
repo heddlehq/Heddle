@@ -63,6 +63,7 @@ defmodule HeddleUI.Router do
       live "/flows/:id", FlowLive.Editor
       live "/executions", ExecutionLive.Index, :index
       live "/executions/:public_id", ExecutionLive.Index, :show
+      live "/ai", AILive.Index
       live "/api-keys", ApiKeyLive.Index
     end
 

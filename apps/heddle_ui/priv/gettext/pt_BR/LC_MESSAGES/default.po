@@ -43,7 +43,7 @@ msgstr "Configurar Nó"
 msgid "Create Flow"
 msgstr "Criar Fluxo"
 
-#: lib/heddle_ui/live/flow_live/index.ex:90
+#: lib/heddle_ui/live/flow_live/index.ex:101
 #, elixir-autogen, elixir-format
 msgid "Create your first flow"
 msgstr "Crie seu primeiro fluxo"
@@ -66,12 +66,12 @@ msgstr "Arraste para a tela"
 msgid "Edit Code"
 msgstr "Editar Código"
 
-#: lib/heddle_ui/live/flow_live/index.ex:28
+#: lib/heddle_ui/live/flow_live/index.ex:29
 #, elixir-autogen, elixir-format
 msgid "Failed to create flow."
 msgstr "Falha ao criar o fluxo."
 
-#: lib/heddle_ui/live/flow_live/index.ex:46
+#: lib/heddle_ui/live/flow_live/index.ex:47
 #, elixir-autogen, elixir-format
 msgid "Flows available"
 msgstr "Fluxos disponíveis"
@@ -81,7 +81,7 @@ msgstr "Fluxos disponíveis"
 msgid "Get started by creating a new workflow automation."
 msgstr "Comece criando uma nova automação de processo."
 
-#: lib/heddle_ui/live/flow_live/index.ex:82
+#: lib/heddle_ui/live/flow_live/index.ex:93
 #, elixir-autogen, elixir-format
 msgid "Get started by creating your first workflow automation. It's easy!"
 msgstr "Comece criando sua primeira automação. É fácil!"
@@ -93,12 +93,12 @@ msgstr "Gerenciar Fluxos"
 
 #: lib/heddle_ui/components/layouts.ex:78
 #: lib/heddle_ui/live/flow_live/index.ex:13
-#: lib/heddle_ui/live/flow_live/index.ex:43
+#: lib/heddle_ui/live/flow_live/index.ex:44
 #, elixir-autogen, elixir-format
 msgid "My Flows"
 msgstr "Meus Fluxos"
 
-#: lib/heddle_ui/live/flow_live/index.ex:54
+#: lib/heddle_ui/live/flow_live/index.ex:64
 #, elixir-autogen, elixir-format
 msgid "New Flow"
 msgstr "Novo Fluxo"
@@ -108,7 +108,7 @@ msgstr "Novo Fluxo"
 msgid "No flows"
 msgstr "Nenhum fluxo"
 
-#: lib/heddle_ui/live/flow_live/index.ex:78
+#: lib/heddle_ui/live/flow_live/index.ex:89
 #, elixir-autogen, elixir-format
 msgid "No flows created yet"
 msgstr "Nenhum fluxo criado ainda"
@@ -153,7 +153,7 @@ msgstr "Nós Processados"
 msgid "Total Workflows"
 msgstr "Total de Fluxos"
 
-#: lib/heddle_ui/live/flow_live/index.ex:122
+#: lib/heddle_ui/live/flow_live/index.ex:133
 #, elixir-autogen, elixir-format
 msgid "Updated"
 msgstr "Atualizado"
@@ -183,12 +183,12 @@ msgstr "Bem-vindo de volta ao Heddle! Aqui está um resumo da sua lógica automa
 msgid "close"
 msgstr "fechar"
 
-#: lib/heddle_ui/live/flow_live/index.ex:122
+#: lib/heddle_ui/live/flow_live/index.ex:133
 #, elixir-autogen, elixir-format
 msgid "connections"
 msgstr "conexões"
 
-#: lib/heddle_ui/live/flow_live/index.ex:120
+#: lib/heddle_ui/live/flow_live/index.ex:131
 #, elixir-autogen, elixir-format
 msgid "nodes"
 msgstr "nós"
@@ -208,7 +208,7 @@ msgstr "Construindo o fluxo e renderizando o gráfico..."
 msgid "Create Flow with AI"
 msgstr "Criar Fluxo com IA"
 
-#: lib/heddle_ui/components/layouts.ex:92
+#: lib/heddle_ui/live/flow_live/index.ex:58
 #, elixir-autogen, elixir-format
 msgid "Create with AI"
 msgstr "Criar com IA"
@@ -922,10 +922,11 @@ msgstr ""
 msgid "Started"
 msgstr ""
 
+#: lib/heddle_ui/live/ai_live/index.ex:24
 #: lib/heddle_ui/live/api_key_live/index.ex:80
 #, elixir-autogen, elixir-format
 msgid "System admins only"
-msgstr ""
+msgstr "Somente administradores do sistema"
 
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:214
 #, elixir-autogen, elixir-format
@@ -1051,3 +1052,55 @@ msgstr "Nenhum provedor de LLM está configurado."
 #, elixir-autogen, elixir-format
 msgid "Set the HEDDLE_LLM_* variables in your environment to enable the chat."
 msgstr "Defina as variáveis HEDDLE_LLM_* no ambiente para ativar o chat."
+
+#: lib/heddle_ui/live/ai_live/index.ex:101
+#, elixir-autogen, elixir-format
+msgid "Active"
+msgstr "Ativo"
+
+#: lib/heddle_ui/live/ai_live/index.ex:102
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Incomplete"
+msgstr "Incompleto"
+
+#: lib/heddle_ui/components/layouts.ex:92
+#: lib/heddle_ui/live/ai_live/index.ex:12
+#: lib/heddle_ui/live/ai_live/index.ex:22
+#, elixir-autogen, elixir-format
+msgid "LLM & Agents"
+msgstr "LLM e Agentes"
+
+#: lib/heddle_ui/live/ai_live/index.ex:38
+#, elixir-autogen, elixir-format
+msgid "LLM provider"
+msgstr "Provedor de LLM"
+
+#: lib/heddle_ui/live/ai_live/index.ex:52
+#, elixir-autogen, elixir-format
+msgid "Model"
+msgstr "Modelo"
+
+#: lib/heddle_ui/live/ai_live/index.ex:103
+#, elixir-autogen, elixir-format
+msgid "Not configured"
+msgstr "Não configurado"
+
+#: lib/heddle_ui/live/ai_live/index.ex:46
+#, elixir-autogen, elixir-format
+msgid "Provider"
+msgstr "Provedor"
+
+#: lib/heddle_ui/live/ai_live/index.ex:63
+#, elixir-autogen, elixir-format
+msgid "Read from OPENAI_API_KEY. Set the HEDDLE_LLM_* variables to change provider."
+msgstr "Lido de OPENAI_API_KEY. Defina as variáveis HEDDLE_LLM_* para trocar de provedor."
+
+#: lib/heddle_ui/live/ai_live/index.ex:67
+#, elixir-autogen, elixir-format
+msgid "The provider comes from the environment. Set these variables and restart:"
+msgstr "O provedor vem do ambiente. Defina estas variáveis e reinicie:"
+
+#: lib/heddle_ui/live/ai_live/index.ex:28
+#, elixir-autogen, elixir-format
+msgid "What this instance uses to run the AI features."
+msgstr "O que esta instância usa para rodar os recursos de IA."

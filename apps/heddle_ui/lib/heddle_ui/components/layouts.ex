@@ -87,9 +87,9 @@ defmodule HeddleUI.Layouts do
               />
               <.nav_link
                 id="nav-ai"
-                navigate={~p"/flows/new/ai"}
-                icon="hero-beaker"
-                label={gettext("Create with AI")}
+                navigate={~p"/ai"}
+                icon="hero-cpu-chip"
+                label={gettext("LLM & Agents")}
                 active={@section == :ai}
               />
               <.nav_link
@@ -293,7 +293,7 @@ defmodule HeddleUI.Layouts do
   end
 
   defp nav_section("/"), do: :dashboard
-  defp nav_section("/flows/new/ai"), do: :ai
+  defp nav_section("/ai"), do: :ai
   defp nav_section("/flows" <> _), do: :flows
   defp nav_section("/executions" <> _), do: :executions
   defp nav_section("/api-keys"), do: :api_keys

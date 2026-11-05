@@ -10,7 +10,8 @@ defmodule HeddleUI.FlowLive.Index do
     {:ok,
      assign(socket,
        flows: Flows.list_flows(socket.assigns.current_scope),
-       page_title: gettext("My Flows")
+       page_title: gettext("My Flows"),
+       ai_configured: HeddleAI.LLM.configured?()
      )}
   end
 
@@ -47,12 +48,22 @@ defmodule HeddleUI.FlowLive.Index do
           </p>
         </div>
 
-        <.button
-          phx-click="create_flow"
-          variant="primary"
-        >
-          <.icon name="hero-plus" class="h-4 w-4 mr-1" /> {gettext("New Flow")}
-        </.button>
+        <div class="flex items-center gap-2">
+          <.button
+            :if={@ai_configured}
+            id="create-flow-with-ai"
+            navigate={~p"/flows/new/ai"}
+            variant="outline"
+          >
+            <.icon name="hero-sparkles" class="h-4 w-4 mr-1" /> {gettext("Create with AI")}
+          </.button>
+          <.button
+            phx-click="create_flow"
+            variant="primary"
+          >
+            <.icon name="hero-plus" class="h-4 w-4 mr-1" /> {gettext("New Flow")}
+          </.button>
+        </div>
       </div>
 
       <div>
