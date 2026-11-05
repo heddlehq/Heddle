@@ -53,3 +53,6 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 /e2e/.auth/
+
+# Archives from scripts/package_release.sh
+/dist/

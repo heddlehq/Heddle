@@ -24,14 +24,24 @@ Whether you are automating simple tasks or orchestrating complex microservices, 
 
 ## 🚀 Getting Started
 
-To get **Heddle** up and running, please refer to our full **[Installation Guide](https://hexdocs.pm/fusion_flow/installation.html)**.
+Install and start Heddle with one line. Nothing else is required.
 
-For deployment topology and worker scaling, see [guides/scaling.md](guides/scaling.md).
+```bash
+# Linux and macOS
+curl -fsSL https://heddlehq.github.io/website/install.sh | sh
+```
+
+```powershell
+# Windows
+irm https://heddlehq.github.io/website/install.ps1 | iex
+```
+
+For servers and other options, see the **[Installation Guide](guides/installation.md)**. For deployment topology and worker scaling, see [guides/scaling.md](guides/scaling.md).
 
 Quick local start with Docker Compose:
 
 ```bash
-docker compose up -d --build db ui worker
+docker compose up -d --build
 ```
 
 Quick local start from source requires two terminals:

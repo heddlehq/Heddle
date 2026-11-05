@@ -44,6 +44,20 @@ defmodule Heddle.Umbrella.MixProject do
           heddle_ai: :permanent,
           heddle_worker: :permanent
         ]
+      ],
+      # What the install script downloads: UI and worker in one process, with the
+      # Postgres from scripts/package_release.sh. :heddle_local has to come first.
+      heddle: [
+        include_executables_for: [:unix, :windows],
+        applications: [
+          heddle_local: :permanent,
+          heddle_core: :permanent,
+          heddle_runtime: :permanent,
+          heddle_nodes: :permanent,
+          heddle_ai: :permanent,
+          heddle_worker: :permanent,
+          heddle_ui: :permanent
+        ]
       ]
     ]
   end
@@ -67,7 +81,7 @@ defmodule Heddle.Umbrella.MixProject do
       "assets.deploy": [
         "tailwind heddle_ui --minify",
         "esbuild heddle_ui --minify",
-        "phx.digest -o apps/heddle_ui/priv/static"
+        "phx.digest"
       ],
       precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
     ]

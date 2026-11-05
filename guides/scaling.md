@@ -77,7 +77,7 @@ Run the UI:
 docker run -d --name heddle-ui -p 4000:4000 \
   --env-file .env \
   -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/heddle \
-  -e SECRET_KEY_BASE=replace-me \
+  -v heddle_data:/app/data \
   heddle ui
 ```
 
@@ -87,7 +87,6 @@ Run 5 workers:
 docker run -d --name heddle-worker-1 \
   --env-file .env \
   -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal/heddle \
-  -e SECRET_KEY_BASE=replace-me \
   heddle worker
 ```
 
