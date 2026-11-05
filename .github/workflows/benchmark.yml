@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        round: [1]
+        round: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,11 +25,6 @@ jobs:
       - run: node benchmark/compare/run.mjs
         env:
           ROUND: ${{ matrix.round }}
-          TOOLS: heddle
-          SEQUENTIAL: 20
-          WARMUP: 3
-          BURST: 200
-          SETTLE_MS: 3000
       - uses: actions/upload-artifact@v4
         if: always()
         with:
