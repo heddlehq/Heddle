@@ -5,6 +5,7 @@ config :pbkdf2_elixir, :rounds, 1
 config :heddle_core, Oban, testing: :manual
 config :heddle_worker, Oban, testing: :manual
 config :heddle_core, :log_email_notifications?, false
+config :heddle_core, :async_api_key_touch?, false
 config :heddle_runtime, :log_python_execution_errors?, false
 
 # Configure your database
