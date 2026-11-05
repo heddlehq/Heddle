@@ -25,7 +25,7 @@ jobs:
       - run: node benchmark/compare/run.mjs
         env:
           ROUND: ${{ matrix.round }}
-          TOOLS: heddle,activepieces
+          TOOLS: heddle
           SEQUENTIAL: 20
           WARMUP: 3
           BURST: 200

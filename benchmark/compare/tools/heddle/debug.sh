@@ -1,0 +1,1 @@
+$COMPOSE exec -T db psql -U postgres -d heddle -c "select id, status, left(error::text, 300) from executions order by id desc limit 3" -c "select state, attempt, left(errors::text, 600) from oban_jobs order by id desc limit 3"

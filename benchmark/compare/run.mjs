@@ -1,6 +1,6 @@
 // Runs one round of the comparison. See README.md for what it measures and why.
 import { exec as execCb, execSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import { dirname, join } from 'node:path';
@@ -234,7 +234,11 @@ const runTool = async (tool) => {
 
     console.log(`=== ${tool}: warm up`);
     const warm = await sequential(url, WARMUP);
-    if (warm.times.length === 0) throw new Error('no warm up request reached the sink');
+    if (warm.times.length === 0) {
+      const debug = join(dir, 'debug.sh');
+      if (existsSync(debug)) console.log(sh(`bash debug.sh`, { cwd: dir, env: { ...process.env, COMPOSE: compose } }));
+      throw new Error('no warm up request reached the sink');
+    }
 
     console.log(`=== ${tool}: one at a time`);
     const single = await sequential(url, SEQUENTIAL);

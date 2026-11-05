@@ -23,7 +23,12 @@ alias HeddleCore.{Accounts, Flows, Webhooks}
         "type" => "HTTP Request",
         "label" => "HTTP Request",
         "position" => %{"x" => 200, "y" => 0},
-        "controls" => %{"method" => "POST", "url" => "http://host.docker.internal:9099/hit", "body" => "{}"}
+        "controls" => %{
+          "method" => "POST",
+          "url" => "http://host.docker.internal:9099/hit",
+          "headers" => "{}",
+          "body" => "{}"
+        }
       }
     ],
     connections: [
