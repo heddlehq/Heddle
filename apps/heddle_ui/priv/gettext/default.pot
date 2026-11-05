@@ -123,7 +123,7 @@ msgstr ""
 msgid "Remove Node"
 msgstr ""
 
-#: lib/heddle_ui/live/components/chat_component.ex:196
+#: lib/heddle_ui/live/components/chat_component.ex:169
 #: lib/heddle_ui/live/flow_live/editor.html.heex:20
 #, elixir-autogen, elixir-format
 msgid "Run"
@@ -219,7 +219,7 @@ msgstr ""
 msgid "Or reply below with adjustments"
 msgstr ""
 
-#: lib/heddle_ui/live/components/chat_component.ex:225
+#: lib/heddle_ui/live/components/chat_component.ex:197
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:290
 #, elixir-autogen, elixir-format
 msgid "Send"
@@ -1039,19 +1039,9 @@ msgstr ""
 msgid "You can revoke this at any time on the API keys page."
 msgstr ""
 
-#: lib/heddle_ui/live/components/chat_component.ex:148
-#, elixir-autogen, elixir-format
-msgid "AI Assistant Disabled"
-msgstr ""
-
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:24
 #, elixir-autogen, elixir-format
 msgid "No LLM provider is configured."
-msgstr ""
-
-#: lib/heddle_ui/live/components/chat_component.ex:152
-#, elixir-autogen, elixir-format
-msgid "Set the HEDDLE_LLM_* variables in your environment to enable the chat."
 msgstr ""
 
 #: lib/heddle_ui/live/ai_live/index.ex:226
@@ -1151,7 +1141,7 @@ msgstr ""
 msgid "Could not save this setting."
 msgstr ""
 
-#: lib/heddle_ui/live/components/chat_component.ex:204
+#: lib/heddle_ui/live/components/chat_component.ex:177
 #, elixir-autogen, elixir-format
 msgid "Don't run"
 msgstr ""
@@ -1181,7 +1171,7 @@ msgstr ""
 msgid "Not set"
 msgstr ""
 
-#: lib/heddle_ui/live/components/chat_component.ex:184
+#: lib/heddle_ui/live/components/chat_component.ex:157
 #, elixir-autogen, elixir-format
 msgid "Run \"%{flow}\"?"
 msgstr ""
@@ -1201,7 +1191,7 @@ msgstr ""
 msgid "The Claude Agent is not available."
 msgstr ""
 
-#: lib/heddle_ui/live/components/chat_component.ex:187
+#: lib/heddle_ui/live/components/chat_component.ex:160
 #, elixir-autogen, elixir-format
 msgid "The agent wants to run this flow, which can have real side effects."
 msgstr ""

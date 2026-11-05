@@ -4,7 +4,6 @@ defmodule HeddleUI.Components.ChatComponent do
   attr :open, :boolean, default: false
   attr :messages, :list, default: []
   attr :loading, :boolean, default: false
-  attr :ai_configured, :boolean, default: true
   attr :confirmation, :map, default: nil
   attr :on_toggle, :string, default: "toggle_chat"
   attr :on_send, :string, default: "send_message"
@@ -17,6 +16,7 @@ defmodule HeddleUI.Components.ChatComponent do
         <.button
           phx-click={JS.push(@on_toggle) |> JS.focus(to: "#chat-input-field")}
           variant="primary"
+          id="chat-open-button"
           class="fixed bottom-6 right-6 z-[99] p-4 rounded-full shadow-lg group w-14 h-14"
           title="AI Chat"
         >
@@ -127,51 +127,24 @@ defmodule HeddleUI.Components.ChatComponent do
             </div>
           <% end %>
 
-          <%= if not @ai_configured do %>
-            <div class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-400 px-6">
-              <div class="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  class="w-8 h-8 text-amber-600 dark:text-amber-400"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </div>
-
-              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                {gettext("AI Assistant Disabled")}
-              </p>
-
-              <p class="text-xs text-center text-gray-500 dark:text-gray-400">
-                {gettext("Set the HEDDLE_LLM_* variables in your environment to enable the chat.")}
-              </p>
+          <%= if Enum.empty?(@messages) do %>
+            <div class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-400 text-sm italic">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-12 w-12 mb-2 opacity-50"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                />
+              </svg>
+              <p>How can I help you with your flow?</p>
             </div>
-          <% else %>
-            <%= if Enum.empty?(@messages) do %>
-              <div class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-400 text-sm italic">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-12 w-12 mb-2 opacity-50"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.5"
-                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                  />
-                </svg>
-                <p>How can I help you with your flow?</p>
-              </div>
-            <% end %>
           <% end %>
         </div>
 
@@ -206,34 +179,32 @@ defmodule HeddleUI.Components.ChatComponent do
           </div>
         </div>
 
-        <%= if @ai_configured do %>
-          <div class="p-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <form phx-submit={@on_send} class="flex gap-2 items-center">
-              <.textarea
-                name="content"
-                id="chat-input-field"
-                placeholder={if @loading, do: "AI is thinking...", else: "Message AI..."}
-                disabled={@loading}
-                onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); this.form.dispatchEvent(new Event('submit', {bubbles: true, cancelable: true})); }"
-                class={["flex-1 w-full mb-0", if(@loading, do: "cursor-not-allowed opacity-60")]}
-                rows="3"
-              />
-              <.button
-                type="submit"
-                disabled={@loading}
-                variant="primary"
-                title={gettext("Send")}
-                class="!p-0 w-[42px] h-[42px] flex-shrink-0"
-              >
-                <%= if @loading do %>
-                  <.icon name="hero-arrow-path" class="w-4 h-4 animate-spin" />
-                <% else %>
-                  <.icon name="hero-paper-airplane-solid" class="w-5 h-5" />
-                <% end %>
-              </.button>
-            </form>
-          </div>
-        <% end %>
+        <div class="p-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <form phx-submit={@on_send} class="flex gap-2 items-center">
+            <.textarea
+              name="content"
+              id="chat-input-field"
+              placeholder={if @loading, do: "AI is thinking...", else: "Message AI..."}
+              disabled={@loading}
+              onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); this.form.dispatchEvent(new Event('submit', {bubbles: true, cancelable: true})); }"
+              class={["flex-1 w-full mb-0", if(@loading, do: "cursor-not-allowed opacity-60")]}
+              rows="3"
+            />
+            <.button
+              type="submit"
+              disabled={@loading}
+              variant="primary"
+              title={gettext("Send")}
+              class="!p-0 w-[42px] h-[42px] flex-shrink-0"
+            >
+              <%= if @loading do %>
+                <.icon name="hero-arrow-path" class="w-4 h-4 animate-spin" />
+              <% else %>
+                <.icon name="hero-paper-airplane-solid" class="w-5 h-5" />
+              <% end %>
+            </.button>
+          </form>
+        </div>
       </div>
     </div>
     """

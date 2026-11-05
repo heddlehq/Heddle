@@ -123,7 +123,7 @@ msgstr "Fluxos Recentes"
 msgid "Remove Node"
 msgstr "Remover Nó"
 
-#: lib/heddle_ui/live/components/chat_component.ex:196
+#: lib/heddle_ui/live/components/chat_component.ex:169
 #: lib/heddle_ui/live/flow_live/editor.html.heex:20
 #, elixir-autogen, elixir-format
 msgid "Run"
@@ -219,7 +219,7 @@ msgstr "Criar com IA"
 msgid "Or reply below with adjustments"
 msgstr "Ou responda abaixo com ajustes"
 
-#: lib/heddle_ui/live/components/chat_component.ex:225
+#: lib/heddle_ui/live/components/chat_component.ex:197
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:290
 #, elixir-autogen, elixir-format
 msgid "Send"
@@ -1039,20 +1039,10 @@ msgstr "Este link de login não é válido"
 msgid "You can revoke this at any time on the API keys page."
 msgstr "Você pode revogar isso a qualquer momento na página de chaves de API."
 
-#: lib/heddle_ui/live/components/chat_component.ex:148
-#, elixir-autogen, elixir-format
-msgid "AI Assistant Disabled"
-msgstr "Assistente de IA desativado"
-
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:24
 #, elixir-autogen, elixir-format
 msgid "No LLM provider is configured."
 msgstr "Nenhum provedor de LLM está configurado."
-
-#: lib/heddle_ui/live/components/chat_component.ex:152
-#, elixir-autogen, elixir-format
-msgid "Set the HEDDLE_LLM_* variables in your environment to enable the chat."
-msgstr "Defina as variáveis HEDDLE_LLM_* no ambiente para ativar o chat."
 
 #: lib/heddle_ui/live/ai_live/index.ex:226
 #, elixir-autogen, elixir-format
@@ -1151,7 +1141,7 @@ msgstr "Copiloto no chat do editor. Ele pode ler, editar e rodar seus flows."
 msgid "Could not save this setting."
 msgstr "Não foi possível salvar esta configuração."
 
-#: lib/heddle_ui/live/components/chat_component.ex:204
+#: lib/heddle_ui/live/components/chat_component.ex:177
 #, elixir-autogen, elixir-format
 msgid "Don't run"
 msgstr "Não rodar"
@@ -1181,7 +1171,7 @@ msgstr "Não encontrado"
 msgid "Not set"
 msgstr "Não definida"
 
-#: lib/heddle_ui/live/components/chat_component.ex:184
+#: lib/heddle_ui/live/components/chat_component.ex:157
 #, elixir-autogen, elixir-format
 msgid "Run \"%{flow}\"?"
 msgstr "Rodar \"%{flow}\"?"
@@ -1201,7 +1191,7 @@ msgstr "Defina HEDDLE_CLAUDE_API_KEY. Assinaturas do Claude não podem ser usada
 msgid "The Claude Agent is not available."
 msgstr "O Claude Agent não está disponível."
 
-#: lib/heddle_ui/live/components/chat_component.ex:187
+#: lib/heddle_ui/live/components/chat_component.ex:160
 #, elixir-autogen, elixir-format
 msgid "The agent wants to run this flow, which can have real side effects."
 msgstr "O agente quer rodar este flow, o que pode ter efeitos reais."

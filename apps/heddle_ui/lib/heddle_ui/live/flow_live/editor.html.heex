@@ -88,12 +88,12 @@
     search_query={@node_modal_search_query}
   />
   <.live_component
+    :if={@ai_configured}
     module={HeddleUI.Components.ChatComponent}
     id="chat-component"
     open={@chat_open}
     messages={@chat_messages}
     loading={@chat_loading}
-    ai_configured={@ai_configured}
     confirmation={@agent_confirmation}
     on_toggle="toggle_chat"
     on_send="send_message"

@@ -10,7 +10,10 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
   alias HeddleCore.Flows
   alias HeddleCore.Settings
 
-  @variables ~w(HEDDLE_CLAUDE_BIN HEDDLE_CLAUDE_API_KEY OPENAI_API_KEY)
+  @variables ~w(
+    HEDDLE_CLAUDE_BIN HEDDLE_CLAUDE_API_KEY OPENAI_API_KEY
+    HEDDLE_LLM_PROVIDER HEDDLE_LLM_MODEL HEDDLE_LLM_API_KEY
+  )
   @node %{
     "id" => "1",
     "type" => "Logger",
@@ -46,6 +49,29 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
   end
 
   defp say(view, content), do: render_hook(view, "send_message", %{"content" => content})
+
+  describe "chat button" do
+    test "shows when the agent is on", %{view: view} do
+      assert has_element?(view, "#chat-open-button")
+    end
+
+    test "shows with only an LLM", %{conn: conn, admin: admin, flow: flow} do
+      {:ok, _setting} = Settings.set_claude_agent_enabled(false)
+      System.put_env("OPENAI_API_KEY", "sk-test")
+
+      {:ok, view, _html} = conn |> log_in_user(admin) |> live(~p"/flows/#{flow.id}")
+
+      assert has_element?(view, "#chat-open-button")
+    end
+
+    test "is hidden with nothing configured", %{conn: conn, admin: admin, flow: flow} do
+      {:ok, _setting} = Settings.set_claude_agent_enabled(false)
+
+      {:ok, view, _html} = conn |> log_in_user(admin) |> live(~p"/flows/#{flow.id}")
+
+      refute has_element?(view, "#chat-open-button")
+    end
+  end
 
   describe "sending a message" do
     test "goes to the agent, even with no LLM configured", %{view: view} do
