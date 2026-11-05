@@ -8,9 +8,20 @@ env_int = fn name, default ->
 end
 
 release_name = System.get_env("RELEASE_NAME")
+local_install? = release_name == "heddle"
+
+# The installed release brings its own database and stands in for the variables
+# an operator would set, so this comes before anything that reads them.
+if local_install? do
+  System.put_env(HeddleLocal.boot())
+
+  config :heddle_local, enabled: true
+  config :heddle_core, migrate_on_boot: true
+end
 
 runtime_role =
   case release_name do
+    "heddle" -> :all
     "heddle_ui" -> :ui
     "heddle_worker" -> :worker
     _ -> if(System.get_env("PHX_SERVER"), do: :ui, else: :worker)
@@ -57,6 +68,7 @@ if config_env() == :prod do
     case runtime_role do
       :ui -> env_int.("UI_POOL_SIZE", env_int.("POOL_SIZE", 10))
       :worker -> env_int.("WORKER_POOL_SIZE", env_int.("POOL_SIZE", 3))
+      :all -> env_int.("POOL_SIZE", 13)
     end
 
   config :heddle_core, HeddleCore.Repo,
@@ -67,7 +79,7 @@ if config_env() == :prod do
     # pool_count: 4,
     socket_options: maybe_ipv6
 
-  if runtime_role == :worker do
+  if runtime_role in [:worker, :all] do
     config :heddle_worker, Oban,
       engine: Oban.Engines.Basic,
       notifier: Oban.Notifiers.Postgres,
@@ -103,6 +115,10 @@ if config_env() == :prod do
       do: [host: host, port: 443, scheme: "https"],
       else: [host: "localhost", port: port, scheme: "http"]
 
+  # Flows run code with the rights of whoever installed Heddle, so an install on a
+  # personal machine must not be reachable from the network.
+  listen_ip = if local_install?, do: {127, 0, 0, 1}, else: {0, 0, 0, 0, 0, 0, 0, 0}
+
   config :heddle_ui, :force_ssl, public_host?
   config :heddle_ui, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
@@ -114,14 +130,14 @@ if config_env() == :prod do
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
       # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0}
+      ip: listen_ip
     ],
     secret_key_base: secret_key_base
 
   config :heddle_ui, HeddleUI.ApiEndpoint,
     url: url,
     http: [
-      ip: {0, 0, 0, 0, 0, 0, 0, 0}
+      ip: listen_ip
     ],
     secret_key_base: secret_key_base
 

@@ -7,6 +7,7 @@ defmodule HeddleCore.Application do
   def start(_type, _args) do
     children = [
       HeddleCore.Repo,
+      {Ecto.Migrator, repos: [HeddleCore.Repo], skip: !migrate_on_boot?()},
       {Phoenix.PubSub, name: HeddleCore.PubSub},
       {Task.Supervisor, name: HeddleCore.TaskSupervisor},
       HeddleCore.Webhooks.Registry,
@@ -16,4 +17,7 @@ defmodule HeddleCore.Application do
     opts = [strategy: :one_for_one, name: HeddleCore.Supervisor]
     Supervisor.start_link(children, opts)
   end
+
+  # Docker migrates from its entrypoint. The installed release has no such step.
+  defp migrate_on_boot?, do: Application.get_env(:heddle_core, :migrate_on_boot, false)
 end

@@ -1,8 +1,34 @@
 # Installation Guide
 
-This guide will help you get **Heddle** up and running on your local machine.
+This guide will help you get **Heddle** up and running.
 
-## 🛠 Prerequisites
+## ⚡ One-line install
+
+This is the easiest way to try Heddle on your own computer. It needs nothing else: Postgres and everything Heddle runs on come in the download.
+
+On Linux and macOS (Apple Silicon):
+```bash
+curl -fsSL https://heddlehq.github.io/website/install.sh | sh
+```
+
+On Windows 10 or later, in PowerShell:
+```powershell
+irm https://heddlehq.github.io/website/install.ps1 | iex
+```
+
+Heddle then starts and opens in your browser, where you create the admin account. To use it again later, open a new terminal and run `heddle`. Press `Ctrl+C` to stop it.
+
+- **Where it lives:** `~/.heddle`, or `%LOCALAPPDATA%\Heddle` on Windows. Your data is in the `data` folder inside it.
+- **Updating:** run the install command again. Your data stays.
+- **Removing:** delete that folder and remove it from your `PATH`.
+- **Network access:** this install answers on your computer only. Flows can run code with your account's permissions, so run only the ones you trust.
+- **Python:** the first start downloads Python, which needs an internet connection.
+
+This install is for one person on one computer. For a server, or to share Heddle with a team, use Docker below. Linux with musl, like Alpine, also needs Docker.
+
+---
+
+## 🛠 Prerequisites for running from source
 
 Before you begin, ensure you have the following installed:
 

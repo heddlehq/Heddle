@@ -21,6 +21,7 @@ ENV MIX_ENV="prod"
 
 COPY mix.exs mix.lock VERSION ./
 COPY apps/heddle/mix.exs apps/heddle/mix.exs
+COPY apps/heddle_local/mix.exs apps/heddle_local/mix.exs
 COPY apps/heddle_core/mix.exs apps/heddle_core/mix.exs
 COPY apps/heddle_nodes/mix.exs apps/heddle_nodes/mix.exs
 COPY apps/heddle_runtime/mix.exs apps/heddle_runtime/mix.exs
