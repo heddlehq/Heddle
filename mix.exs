@@ -67,7 +67,7 @@ defmodule Heddle.Umbrella.MixProject do
       "assets.deploy": [
         "tailwind heddle_ui --minify",
         "esbuild heddle_ui --minify",
-        "phx.digest -o apps/heddle_ui/priv/static"
+        "phx.digest"
       ],
       precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
     ]

@@ -31,7 +31,7 @@ For deployment topology and worker scaling, see [guides/scaling.md](guides/scali
 Quick local start with Docker Compose:
 
 ```bash
-docker compose up -d --build db ui worker
+docker compose up -d --build
 ```
 
 Quick local start from source requires two terminals:

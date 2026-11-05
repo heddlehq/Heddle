@@ -1,9 +1,11 @@
-ARG ELIXIR_VERSION=1.15.7
-ARG OTP_VERSION=26.1.2
-ARG DEBIAN_VERSION=bullseye-20231009-slim
+ARG ELIXIR_VERSION=1.18.3
+ARG OTP_VERSION=27.3.4.3
+ARG DEBIAN_VERSION=bookworm-20250929-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
-ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
+# Unpinned on purpose: a dated Debian tag stops resolving its apt packages once
+# they rotate out of the mirrors. Keep the suite in sync with the builder's glibc.
+ARG RUNNER_IMAGE="debian:bookworm-slim"
 
 FROM ${BUILDER_IMAGE} AS builder
 
@@ -17,7 +19,8 @@ RUN mix local.hex --force && \
 
 ENV MIX_ENV="prod"
 
-COPY mix.exs mix.lock ./
+COPY mix.exs mix.lock VERSION ./
+COPY apps/heddle/mix.exs apps/heddle/mix.exs
 COPY apps/heddle_core/mix.exs apps/heddle_core/mix.exs
 COPY apps/heddle_nodes/mix.exs apps/heddle_nodes/mix.exs
 COPY apps/heddle_runtime/mix.exs apps/heddle_runtime/mix.exs
@@ -28,11 +31,8 @@ COPY apps/heddle_worker/mix.exs apps/heddle_worker/mix.exs
 RUN mix deps.get --only prod
 RUN mix deps.compile
 
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs
-
-COPY apps/heddle_ui/assets apps/heddle_ui/assets
-RUN cd apps/heddle_ui/assets && npm install
 
 COPY config config
 COPY apps apps
@@ -66,9 +66,14 @@ COPY --from=builder --chown=nobody:root /app/_build/prod/rel/heddle_worker /app/
 COPY scripts/entrypoint.sh /app/entrypoint.sh
 
 RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
-RUN mkdir -p /app/.cache && chown -R nobody:root /app/.cache
+RUN mkdir -p /app/.cache /app/data && chown -R nobody:root /app/.cache /app/data
 
 USER nobody
+
+# Fetch Python now. Otherwise every new container downloads it on boot, and in
+# `all` mode the two releases race to create the same venv and one loses Python.
+RUN DATABASE_URL=ecto://build SECRET_KEY_BASE=build /app/worker/bin/heddle_worker eval \
+    '{:ok, _} = Application.ensure_all_started(:heddle_runtime); Pythonx.eval("1", %{})'
 
 EXPOSE 4000
 

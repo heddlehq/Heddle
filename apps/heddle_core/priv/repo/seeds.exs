@@ -12,7 +12,8 @@
 
 # In development and test, create a system admin (username: admin, password: admin)
 # for local login and e2e tests. Skip if a system admin already exists.
-if Mix.env() in [:dev, :test] do
+# Mix does not exist inside a release, which is where production seeds run.
+if Code.ensure_loaded?(Mix) and Mix.env() in [:dev, :test] do
   alias HeddleCore.Accounts
 
   unless Accounts.has_system_admin?() do

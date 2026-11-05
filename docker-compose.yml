@@ -1,84 +1,76 @@
+# `docker compose up -d --build` is all a local install needs. Settings are
+# optional, see .env.example. For development, docker-compose.dev.yml publishes
+# the database to this machine.
+
+x-heddle: &heddle
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: heddle:latest
+  restart: unless-stopped
+  env_file:
+    - path: .env
+      required: false
+  depends_on:
+    db:
+      condition: service_healthy
+  volumes:
+    - heddle_data:/app/data
+
+x-env: &env
+  DATABASE_URL: ecto://postgres:postgres@db/heddle
+  SECRET_KEY_BASE: ${SECRET_KEY_BASE:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+
+x-ui-env: &ui-env
+  UI_POOL_SIZE: 10
+  PHX_HOST: ${PHX_HOST:-}
+  PORT: 4000
+  PHX_SERVER: "true"
+
+x-worker-env: &worker-env
+  WORKER_POOL_SIZE: 3
+  OBAN_DEFAULT_CONCURRENCY: 2
+  OBAN_EXECUTIONS_CONCURRENCY: 5
+
 services:
   ui:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: heddle:latest
-    restart: always
-    env_file:
-      - path: .env
-        required: false
+    <<: *heddle
     environment:
-      - DATABASE_URL=ecto://postgres:postgres@db/heddle
-      - UI_POOL_SIZE=10
-      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - PHX_HOST=localhost
-      - PORT=4000
-      - PHX_SERVER=true
-      - HEDDLE_MODE=ui
+      <<: [*env, *ui-env]
+      HEDDLE_MODE: ui
     ports:
-      - "4000:4000"
-    depends_on:
-      - db
+      - "${HEDDLE_PORT:-4000}:4000"
 
   worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: heddle:latest
-    restart: always
-    env_file:
-      - path: .env
-        required: false
+    <<: *heddle
     environment:
-      - DATABASE_URL=ecto://postgres:postgres@db/heddle
-      - WORKER_POOL_SIZE=3
-      - OBAN_DEFAULT_CONCURRENCY=2
-      - OBAN_EXECUTIONS_CONCURRENCY=5
-      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - HEDDLE_MODE=worker
-    depends_on:
-      - db
+      <<: [*env, *worker-env]
+      HEDDLE_MODE: worker
 
   all:
+    <<: *heddle
     profiles: ["all"]
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: heddle:latest
-    restart: always
-    env_file:
-      - path: .env
-        required: false
     environment:
-      - DATABASE_URL=ecto://postgres:postgres@db/heddle
-      - UI_POOL_SIZE=10
-      - WORKER_POOL_SIZE=3
-      - OBAN_DEFAULT_CONCURRENCY=2
-      - OBAN_EXECUTIONS_CONCURRENCY=5
-      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - PHX_HOST=localhost
-      - PORT=4000
-      - PHX_SERVER=true
+      <<: [*env, *ui-env, *worker-env]
     ports:
-      - "4000:4000"
-    depends_on:
-      - db
+      - "${HEDDLE_PORT:-4000}:4000"
 
   db:
     image: postgres:17-alpine
-    container_name: heddle_db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: heddle
-    ports:
-      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d heddle"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
     volumes:
       - pgdata:/var/lib/postgresql/data
 
 volumes:
   pgdata:
+  heddle_data:

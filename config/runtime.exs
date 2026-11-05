@@ -90,12 +90,25 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
+  # PHX_HOST is the public domain of a deployment behind TLS, and turns on the
+  # HTTPS redirect and the strict origin check. Without it Heddle answers plain
+  # HTTP on whatever address it was reached at, so a fresh install works the same
+  # on localhost, a LAN IP or a bare server IP.
+  host = System.get_env("PHX_HOST", "")
+  public_host? = host not in ["", "localhost", "127.0.0.1"]
+  port = String.to_integer(System.get_env("PORT", "4000"))
 
+  url =
+    if public_host?,
+      do: [host: host, port: 443, scheme: "https"],
+      else: [host: "localhost", port: port, scheme: "http"]
+
+  config :heddle_ui, :force_ssl, public_host?
   config :heddle_ui, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   config :heddle_ui, HeddleUI.Endpoint,
-    url: [host: host, port: 443, scheme: "https"],
+    url: url,
+    check_origin: if(public_host?, do: true, else: :conn),
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
@@ -106,7 +119,7 @@ if config_env() == :prod do
     secret_key_base: secret_key_base
 
   config :heddle_ui, HeddleUI.ApiEndpoint,
-    url: [host: host, port: 443, scheme: "https"],
+    url: url,
     http: [
       ip: {0, 0, 0, 0, 0, 0, 0, 0}
     ],
