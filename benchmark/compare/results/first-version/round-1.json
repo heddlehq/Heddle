@@ -1,0 +1,272 @@
+{
+  "round": "1",
+  "finishedAt": "2026-11-05T06:09:37.661Z",
+  "order": [
+    "activepieces",
+    "windmill",
+    "node-red",
+    "heddle",
+    "kestra",
+    "n8n"
+  ],
+  "machine": {
+    "cpus": 4,
+    "model": "AMD EPYC 9V74 80-Core Processor",
+    "memoryGb": 16
+  },
+  "settings": {
+    "SEQUENTIAL": 100,
+    "WARMUP": 20,
+    "BURST": 3000,
+    "CONCURRENCY": 50,
+    "DRAIN_LIMIT_MS": 300000
+  },
+  "results": [
+    {
+      "tool": "activepieces",
+      "name": "Activepieces",
+      "version": "0.92.3",
+      "health": "http://127.0.0.1:18080/api/v1/flags",
+      "processes": "App, Postgres, Redis",
+      "images": [
+        {
+          "image": "redis:7-alpine",
+          "id": "98c6ca8f397f"
+        },
+        {
+          "image": "ghcr.io/activepieces/activepieces:0.92.3",
+          "id": "1f8cb530db87"
+        },
+        {
+          "image": "postgres:17-alpine",
+          "id": "ab20e934b27b"
+        }
+      ],
+      "diskMb": 1637,
+      "bootSeconds": 8.6,
+      "idleMemoryMb": 1288,
+      "sequential": {
+        "count": 100,
+        "failed": 0,
+        "p50": 48,
+        "p95": 116.9,
+        "p99": 165.8
+      },
+      "burst": {
+        "sent": 3000,
+        "rejected": 0,
+        "completed": 3000,
+        "ackP50": 98.9,
+        "ackP95": 139.6,
+        "ackP99": 165,
+        "acceptedPerSecond": 481,
+        "completedPerSecond": 28.6,
+        "seconds": 104.9,
+        "peakMemoryMb": 4107
+      }
+    },
+    {
+      "tool": "windmill",
+      "name": "Windmill",
+      "version": "1.862.0",
+      "health": "http://127.0.0.1:18080/api/version",
+      "processes": "Server, 3 workers, native worker, Postgres",
+      "images": [
+        {
+          "image": "ghcr.io/windmill-labs/windmill:1.862.0",
+          "id": "8d22f8ae0440"
+        },
+        {
+          "image": "postgres:17-alpine",
+          "id": "ab20e934b27b"
+        },
+        {
+          "image": "ghcr.io/windmill-labs/windmill:1.862.0",
+          "id": "8d22f8ae0440"
+        },
+        {
+          "image": "ghcr.io/windmill-labs/windmill:1.862.0",
+          "id": "8d22f8ae0440"
+        }
+      ],
+      "diskMb": 13173,
+      "bootSeconds": 6,
+      "idleMemoryMb": 536,
+      "sequential": {
+        "count": 100,
+        "failed": 0,
+        "p50": 60.5,
+        "p95": 201.3,
+        "p99": 227.4
+      },
+      "burst": {
+        "sent": 3000,
+        "rejected": 0,
+        "completed": 3000,
+        "ackP50": 41.7,
+        "ackP95": 144,
+        "ackP99": 500.5,
+        "acceptedPerSecond": 836,
+        "completedPerSecond": 130.1,
+        "seconds": 23.1,
+        "peakMemoryMb": 708
+      }
+    },
+    {
+      "tool": "node-red",
+      "name": "Node-RED",
+      "version": "5.0.9",
+      "health": "http://127.0.0.1:18080/",
+      "processes": "Node-RED",
+      "images": [
+        {
+          "image": "nodered/node-red:5.0.9",
+          "id": "aa2f5375d209"
+        }
+      ],
+      "diskMb": 673,
+      "bootSeconds": 1.3,
+      "idleMemoryMb": 78,
+      "sequential": {
+        "count": 100,
+        "failed": 0,
+        "p50": 1,
+        "p95": 1.5,
+        "p99": 2.9
+      },
+      "burst": {
+        "sent": 3000,
+        "rejected": 0,
+        "completed": 3000,
+        "ackP50": 22.9,
+        "ackP95": 37.2,
+        "ackP99": 53.8,
+        "acceptedPerSecond": 1874,
+        "completedPerSecond": 1872.5,
+        "seconds": 1.6,
+        "peakMemoryMb": 172
+      }
+    },
+    {
+      "tool": "heddle",
+      "name": "Heddle",
+      "version": "0.4.0",
+      "health": "http://127.0.0.1:18080/users/log-in",
+      "processes": "UI, worker, Postgres",
+      "images": [
+        {
+          "image": "postgres:17-alpine",
+          "id": "ab20e934b27b"
+        },
+        {
+          "image": "heddle:bench",
+          "id": "8112867d53a2"
+        },
+        {
+          "image": "heddle:bench",
+          "id": "8112867d53a2"
+        }
+      ],
+      "diskMb": 885,
+      "bootSeconds": 5.4,
+      "idleMemoryMb": 343,
+      "sequential": {
+        "count": 100,
+        "failed": 0,
+        "p50": 9.2,
+        "p95": 10.6,
+        "p99": 54.8
+      },
+      "burst": {
+        "sent": 3000,
+        "rejected": 0,
+        "completed": 3000,
+        "ackP50": 95.6,
+        "ackP95": 190.4,
+        "ackP99": 224.3,
+        "acceptedPerSecond": 528,
+        "completedPerSecond": 275.9,
+        "seconds": 10.9,
+        "peakMemoryMb": 383
+      }
+    },
+    {
+      "tool": "kestra",
+      "name": "Kestra",
+      "version": "2.0.9",
+      "health": "http://127.0.0.1:18080/ping",
+      "processes": "Kestra standalone, Postgres",
+      "images": [
+        {
+          "image": "kestra/kestra:v2.0.9",
+          "id": "002dd1420367"
+        },
+        {
+          "image": "postgres:17-alpine",
+          "id": "ab20e934b27b"
+        }
+      ],
+      "diskMb": 5799,
+      "bootSeconds": 12.7,
+      "idleMemoryMb": 1261,
+      "sequential": {
+        "count": 100,
+        "failed": 0,
+        "p50": 53.9,
+        "p95": 152.1,
+        "p99": 186.8
+      },
+      "burst": {
+        "sent": 3000,
+        "rejected": 0,
+        "completed": 3000,
+        "ackP50": 560.8,
+        "ackP95": 983.1,
+        "ackP99": 1079.2,
+        "acceptedPerSecond": 86,
+        "completedPerSecond": 85.1,
+        "seconds": 35.3,
+        "peakMemoryMb": 1629
+      }
+    },
+    {
+      "tool": "n8n",
+      "name": "n8n",
+      "version": "2.46.6",
+      "health": "http://127.0.0.1:18080/healthz",
+      "processes": "n8n, Postgres",
+      "images": [
+        {
+          "image": "n8nio/n8n:2.46.6",
+          "id": "941cefd8db2e"
+        },
+        {
+          "image": "postgres:17-alpine",
+          "id": "ab20e934b27b"
+        }
+      ],
+      "diskMb": 1393,
+      "bootSeconds": 6.9,
+      "idleMemoryMb": 762,
+      "sequential": {
+        "count": 100,
+        "failed": 0,
+        "p50": 50.6,
+        "p95": 84,
+        "p99": 264.6
+      },
+      "burst": {
+        "sent": 3000,
+        "rejected": 0,
+        "completed": 3000,
+        "ackP50": 1362.8,
+        "ackP95": 1947.5,
+        "ackP99": 2391.5,
+        "acceptedPerSecond": 34,
+        "completedPerSecond": 34.4,
+        "seconds": 87.1,
+        "peakMemoryMb": 1204
+      }
+    }
+  ]
+}

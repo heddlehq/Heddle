@@ -3,9 +3,6 @@ name: Benchmark
 # Compares Heddle with other workflow tools. See benchmark/compare/README.md.
 on:
   workflow_dispatch:
-  push:
-    branches: ["bench/competitors"]
-    paths: ["benchmark/compare/**", ".github/workflows/benchmark.yml"]
 
 jobs:
   round:
