@@ -11,6 +11,9 @@ defmodule HeddleUI.Application do
       HeddleUI.Telemetry,
       {DNSCluster, query: Application.get_env(:heddle_ui, :dns_cluster_query) || :ignore},
       {Oban, Application.fetch_env!(:heddle_core, Oban)},
+      {HeddleUI.MCP.Server,
+       transport: {:streamable_http, start: true},
+       request_timeout: HeddleUI.MCP.Server.request_timeout()},
       endpoint
     ]
 

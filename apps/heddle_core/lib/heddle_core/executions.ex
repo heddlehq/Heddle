@@ -108,6 +108,16 @@ defmodule HeddleCore.Executions do
     end
   end
 
+  @doc """
+  Creates an execution of `flow` with `input` and queues it.
+  """
+  def start_execution(%Flow{id: flow_id}, input) do
+    with {:ok, %Execution{} = execution} <- create_execution(%{flow_id: flow_id, input: input}),
+         {:ok, _job} <- enqueue_execution(execution) do
+      {:ok, execution}
+    end
+  end
+
   def enqueue_execution(%Execution{} = execution) do
     %{execution_id: execution.id}
     |> Oban.Job.new(queue: :executions, worker: @flow_execution_worker, max_attempts: 3)

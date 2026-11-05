@@ -34,9 +34,7 @@ defmodule HeddleUI.PublicAPI.V1.ExecutionController do
       workflow ->
         input = params |> Map.get("input", %{}) |> Map.put_new("trigger", "api")
 
-        with {:ok, %Execution{} = execution} <-
-               Executions.create_execution(%{flow_id: workflow.id, input: input}),
-             {:ok, _job} <- Executions.enqueue_execution(execution) do
+        with {:ok, %Execution{} = execution} <- Executions.start_execution(workflow, input) do
           conn
           |> put_status(:accepted)
           |> put_resp_header(

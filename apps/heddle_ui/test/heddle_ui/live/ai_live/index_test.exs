@@ -78,6 +78,16 @@ defmodule HeddleUI.AILive.IndexTest do
     end
   end
 
+  describe "MCP server" do
+    test "shows how to connect an external agent", %{conn: conn} do
+      view = open(conn)
+
+      assert has_element?(view, "#mcp-command", "claude mcp add")
+      assert has_element?(view, "#mcp-command", "/mcp")
+      assert has_element?(view, "#mcp-api-keys-link[href='/api-keys']")
+    end
+  end
+
   describe "create with AI button on the flow list" do
     test "appears with an LLM configured", %{conn: conn} do
       System.put_env("OPENAI_API_KEY", "sk-test")

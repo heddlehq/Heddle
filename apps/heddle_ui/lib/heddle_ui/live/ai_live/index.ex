@@ -10,7 +10,8 @@ defmodule HeddleUI.AILive.Index do
     {:ok,
      socket
      |> assign(:page_title, gettext("LLM & Agents"))
-     |> assign(:llm, LLM.status())}
+     |> assign(:llm, LLM.status())
+     |> assign(:mcp_command, mcp_command())}
   end
 
   @impl true
@@ -76,6 +77,34 @@ defmodule HeddleUI.AILive.Index do
           </ul>
         <% end %>
       </section>
+
+      <section
+        id="mcp-server"
+        class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-6"
+      >
+        <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+          {gettext("MCP server")}
+        </h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {gettext("Connect an external agent to read, edit and run your flows.")}
+        </p>
+        <pre
+          id="mcp-command"
+          class="mt-4 overflow-x-auto rounded-lg bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 p-3 font-mono text-xs text-gray-900 dark:text-gray-100"
+        >{@mcp_command}</pre>
+        <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+          {gettext(
+            "External agents run flows without asking for confirmation: only the scopes of the API key limit them."
+          )}
+          <.link
+            id="mcp-api-keys-link"
+            navigate={~p"/api-keys"}
+            class="text-primary hover:underline"
+          >
+            {gettext("Manage API keys")}
+          </.link>
+        </p>
+      </section>
     </div>
     """
   end
@@ -104,6 +133,11 @@ defmodule HeddleUI.AILive.Index do
   defp status_label(:ready), do: gettext("Active")
   defp status_label(:invalid), do: gettext("Incomplete")
   defp status_label(:not_configured), do: gettext("Not configured")
+
+  defp mcp_command do
+    "claude mcp add --transport http heddle #{url(~p"/mcp")} \\\n" <>
+      "  --header \"Authorization: Bearer <API key>\""
+  end
 
   defp variables(%{state: :invalid, missing: missing}), do: missing
   defp variables(_llm), do: ~w(HEDDLE_LLM_PROVIDER HEDDLE_LLM_MODEL HEDDLE_LLM_API_KEY)
