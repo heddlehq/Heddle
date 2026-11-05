@@ -247,6 +247,7 @@ msgstr ""
 #: lib/heddle_ui/components/modals/code_editor_modal.ex:90
 #: lib/heddle_ui/components/modals/create_node_modal.ex:92
 #: lib/heddle_ui/components/modals/node_config_modal.ex:169
+#: lib/heddle_ui/controllers/oauth_html.ex:38
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:150
 #, elixir-autogen, elixir-format
 msgid "Cancel"
@@ -974,4 +975,69 @@ msgstr ""
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:225
 #, elixir-autogen, elixir-format
 msgid "I couldn't build this flow. Tell me what to change and I'll try again."
+msgstr ""
+
+#: lib/heddle_ui/controllers/oauth_html.ex:18
+#, elixir-autogen, elixir-format
+msgid "%{name} on this computer is asking to sign in as %{user}."
+msgstr ""
+
+#: lib/heddle_ui/controllers/oauth_html.ex:36
+#, elixir-autogen, elixir-format
+msgid "Allow"
+msgstr ""
+
+#: lib/heddle_ui/controllers/oauth_html.ex:15
+#, elixir-autogen, elixir-format
+msgid "Allow %{name} to access Heddle?"
+msgstr ""
+
+#: lib/heddle_ui/controllers/oauth_html.ex:67
+#, elixir-autogen, elixir-format
+msgid "Create and change workflows"
+msgstr ""
+
+#: lib/heddle_ui/controllers/oauth_html.ex:68
+#, elixir-autogen, elixir-format
+msgid "Delete workflows"
+msgstr ""
+
+#: lib/heddle_ui/controllers/oauth_html.ex:24
+#, elixir-autogen, elixir-format
+msgid "It will be able to:"
+msgstr ""
+
+#: lib/heddle_ui/controllers/oauth_html.ex:71
+#, elixir-autogen, elixir-format
+msgid "Run workflows"
+msgstr ""
+
+#: lib/heddle_ui/controllers/oauth_html.ex:69
+#, elixir-autogen, elixir-format
+msgid "See the available nodes"
+msgstr ""
+
+#: lib/heddle_ui/controllers/oauth_html.ex:70
+#, elixir-autogen, elixir-format
+msgid "See workflow runs"
+msgstr ""
+
+#: lib/heddle_ui/controllers/oauth_html.ex:66
+#, elixir-autogen, elixir-format
+msgid "See your workflows"
+msgstr ""
+
+#: lib/heddle_ui/controllers/oauth_html.ex:58
+#, elixir-autogen, elixir-format
+msgid "Start the sign-in again from the app."
+msgstr ""
+
+#: lib/heddle_ui/controllers/oauth_html.ex:55
+#, elixir-autogen, elixir-format
+msgid "This sign-in link isn't valid"
+msgstr ""
+
+#: lib/heddle_ui/controllers/oauth_html.ex:30
+#, elixir-autogen, elixir-format
+msgid "You can revoke this at any time on the API keys page."
 msgstr ""

@@ -19,6 +19,7 @@ defmodule HeddleUI.PublicAPI.V1.Routes do
         pipe_through [:public_api]
 
         get "/health", HealthController, :show
+        post "/oauth/token", OAuthController, :token
       end
 
       scope "/api/v1", HeddleUI.PublicAPI.V1 do

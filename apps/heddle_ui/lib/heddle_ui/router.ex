@@ -24,6 +24,12 @@ defmodule HeddleUI.Router do
 
   HeddleUI.PublicAPI.V1.Routes.public_api_routes()
 
+  scope "/", HeddleUI do
+    pipe_through :public_api
+
+    get "/.well-known/oauth-authorization-server", OAuthMetadataController, :show
+  end
+
   # Enable LiveDashboard in development
   if Application.compile_env(:heddle_ui, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put
@@ -61,6 +67,9 @@ defmodule HeddleUI.Router do
     end
 
     post "/users/update-password", UserSessionController, :update_password
+
+    get "/oauth/authorize", OAuthController, :new
+    post "/oauth/authorize", OAuthController, :create
   end
 
   scope "/", HeddleUI do
