@@ -3,13 +3,9 @@ name: Benchmark
 # Compares Heddle with other workflow tools. See benchmark/compare/README.md.
 on:
   workflow_dispatch:
-  push:
-    branches: ["bench/competitors"]
-    paths: ["benchmark/compare/**", ".github/workflows/benchmark.yml"]
 
 jobs:
   round:
-    if: github.event_name == 'workflow_dispatch'
     name: Round ${{ matrix.round }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120

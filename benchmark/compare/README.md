@@ -26,6 +26,8 @@ Most of these tools answer a webhook before doing the work, so requests per seco
 
 To run it, start the `Benchmark` workflow, or run `node benchmark/compare/run.mjs` on a machine that has Docker. `node benchmark/compare/summarize.mjs` prints the medians.
 
+`crash.mjs` is a separate test: it kills each tool in the middle of a load, restarts it and checks, call by call, whether the work it had accepted was lost or repeated.
+
 ## What it does not tell you
 
 - **The flow is trivial.** Two steps and a tiny body. It says nothing about long flows, big payloads, code steps, or runs that fail.
