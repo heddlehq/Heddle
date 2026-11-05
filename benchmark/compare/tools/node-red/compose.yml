@@ -1,0 +1,6 @@
+services:
+  node-red:
+    image: nodered/node-red:latest
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    ports: ["18080:1880"]
+    volumes: ["./flows.json:/data/flows.json"]

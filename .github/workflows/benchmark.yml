@@ -1,0 +1,36 @@
+name: Benchmark
+
+# Compares Heddle with other workflow tools. See benchmark/compare/README.md.
+on:
+  workflow_dispatch:
+  push:
+    branches: ["bench/competitors"]
+    paths: ["benchmark/compare/**", ".github/workflows/benchmark.yml"]
+
+jobs:
+  round:
+    name: Round ${{ matrix.round }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        round: [1]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: docker build -t heddle:bench .
+      - run: node benchmark/compare/run.mjs
+        env:
+          ROUND: ${{ matrix.round }}
+          SEQUENTIAL: 20
+          WARMUP: 3
+          BURST: 200
+          SETTLE_MS: 3000
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: round-${{ matrix.round }}
+          path: benchmark/compare/results/

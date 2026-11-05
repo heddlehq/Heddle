@@ -1,0 +1,12 @@
+id: bench
+namespace: bench
+tasks:
+  - id: hit
+    type: io.kestra.plugin.core.http.Request
+    uri: http://host.docker.internal:9099/hit
+    method: POST
+    body: "{}"
+triggers:
+  - id: webhook
+    type: io.kestra.plugin.core.trigger.Webhook
+    key: benchkey

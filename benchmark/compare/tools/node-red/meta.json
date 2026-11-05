@@ -1,0 +1,1 @@
+{ "name": "Node-RED", "version": "latest", "health": "http://127.0.0.1:18080/", "processes": "Node-RED" }
