@@ -1,7 +1,7 @@
 // Kills each tool in the middle of a load and checks, call by call, what happened
 // to the work it had already accepted. See README.md.
 import { execSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,12 +14,14 @@ const CONCURRENCY = Number(process.env.CONCURRENCY ?? 20);
 const TARGET_DELAY_MS = Number(process.env.TARGET_DELAY_MS ?? 100);
 const QUIET_LIMIT_MS = 60_000;
 const RECOVERY_LIMIT_MS = 300_000;
+const STUCK_LIMIT_MS = 180_000;
 const SINK_PORT = 9099;
 const TOOLS = (process.env.TOOLS ?? 'heddle,n8n,n8n-queue,node-red,windmill,activepieces,kestra').split(',');
 const MODES = (process.env.MODES ?? 'process,machine').split(',');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const env = { ...process.env, CRASH: '1', FLOWS: 'flows.crash.json' };
+// Heddle waits 60 minutes before rescuing a run. A test can't, so here it's 1.
+const env = { ...process.env, CRASH: '1', FLOWS: 'flows.crash.json', HEDDLE_RESCUE_MINUTES: '1' };
 const sh = (command, options = {}) =>
   execSync(command, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 26, env, ...options });
 
@@ -153,10 +155,33 @@ const crashTest = async (tool, mode) => {
     result.accepted = accepted.size;
     result.lost = missing();
     result.lostPercent = Math.round((result.lost / accepted.size) * 1000) / 10;
+
+    // Runs the tool still shows as unfinished, whether or not their call got out.
+    if (existsSync(join(dir, 'stuck.sh'))) {
+      const stuck = () => {
+        try {
+          return Number(sh('bash stuck.sh', { cwd: dir, env: { ...env, COMPOSE: compose } }).trim());
+        } catch (error) {
+          console.log(`stuck check failed: ${String(error.stderr || error.message).slice(0, 300)}`);
+          return null;
+        }
+      };
+
+      const checking = performance.now();
+      result.stuck = stuck();
+      while (result.stuck > 0 && performance.now() - checking < STUCK_LIMIT_MS) {
+        await sleep(5000);
+        result.stuck = stuck();
+      }
+      await sleep(3000);
+    }
+
+    result.lost = missing();
+    result.lostPercent = Math.round((result.lost / accepted.size) * 1000) / 10;
     result.duplicated = [...seen.values()].filter((count) => count > 1).length;
     console.log(JSON.stringify(result));
 
-    if (result.lost > 0) {
+    if (result.lost > 0 || result.stuck > 0) {
       try {
         console.log(sh('bash debug.sh', { cwd: dir, env: { ...env, COMPOSE: compose } }));
       } catch {}

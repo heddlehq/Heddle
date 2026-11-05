@@ -20,6 +20,7 @@ services:
       WORKER_POOL_SIZE: 3
       OBAN_DEFAULT_CONCURRENCY: 2
       OBAN_EXECUTIONS_CONCURRENCY: 5
+      OBAN_RESCUE_AFTER_MINUTES: ${HEDDLE_RESCUE_MINUTES:-60}
       HEDDLE_MODE: worker
     depends_on:
       db: { condition: service_healthy }
