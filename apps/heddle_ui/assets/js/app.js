@@ -2,7 +2,7 @@ import "phoenix_html"
 import { Socket } from "phoenix"
 import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
-import { CodeEditorHook } from "./code_editor"
+import { CodeEditorHook, loadMonaco } from "./code_editor"
 
 const hooks = {
   CodeEditor: CodeEditorHook,
@@ -18,6 +18,10 @@ const hooks = {
       const { createEditor } = await import("./rete_editor.js");
       const container = this.el;
       const editor = await createEditor(container);
+
+      // Loads ahead of time, so the code modal doesn't wait for it.
+      const whenIdle = window.requestIdleCallback || setTimeout;
+      whenIdle(() => loadMonaco().catch(() => {}));
 
       this.handleEvent("add_node", async ({ name, definition, data }) => {
         if (editor.addNode) {
@@ -141,8 +145,8 @@ const hooks = {
       }
 
       if (editor.onCodeEdit) {
-        editor.onCodeEdit((nodeId, code_elixir, code_python, fieldName, language, variables) => {
-          this.pushEvent("open_code_editor", { nodeId, code_elixir, code_python, fieldName, language, variables });
+        editor.onCodeEdit((nodeId, code_elixir, code_python, fieldName, language, variables, code) => {
+          this.pushEvent("open_code_editor", { nodeId, code_elixir, code_python, fieldName, language, variables, code });
         });
       }
 

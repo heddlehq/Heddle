@@ -6,9 +6,9 @@
   "dependencies": {
     "@retejs/lit-plugin": "^2.0.0",
     "lit": "^3.1.0",
+    "monaco-editor": "0.45.0",
     "rete": "^2.0.0",
     "rete-area-plugin": "^2.0.0",
     "rete-connection-plugin": "^2.0.0"
-  },
-  "devDependencies": {}
+  }
 }

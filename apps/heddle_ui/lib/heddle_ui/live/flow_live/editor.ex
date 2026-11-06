@@ -162,6 +162,11 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   @impl true
+  def handle_event("node_config_changed", params, socket) do
+    {:noreply, update(socket, :editing_node_data, &put_control_values(&1, params))}
+  end
+
+  @impl true
   def handle_event("close_config_modal", _params, socket) do
     {:noreply,
      assign(socket, config_modal_open: false, editing_node_data: nil, current_node_id: nil)}
@@ -466,6 +471,19 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   # Private Helpers
+  # Keeps what is typed in the drawer, which redraws when a control changes.
+  defp put_control_values(%{"controls" => controls} = node_data, params) do
+    controls =
+      Map.new(controls, fn {key, control} ->
+        {key, Map.put(control, "value", Map.get(params, key, control["value"]))}
+      end)
+
+    %{node_data | "controls" => controls}
+    |> Map.put("label", params["node_label"] || node_data["label"])
+  end
+
+  defp put_control_values(node_data, _params), do: node_data
+
   defp sync_node_sockets(socket, node_id, config_data) do
     Enum.reduce(config_data, socket, fn {_key, value}, acc_socket ->
       if String.starts_with?(value, "ui do") do

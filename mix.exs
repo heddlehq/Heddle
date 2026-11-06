@@ -74,17 +74,48 @@ defmodule Heddle.Umbrella.MixProject do
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": [
         &install_ui_assets/1,
+        &copy_monaco/1,
         "tailwind.install --if-missing",
         "esbuild.install --if-missing"
       ],
-      "assets.build": ["compile", "tailwind heddle_ui", "esbuild heddle_ui"],
+      "assets.build": ["compile", &copy_monaco/1, "tailwind heddle_ui", "esbuild heddle_ui"],
       "assets.deploy": [
+        &copy_monaco/1,
         "tailwind heddle_ui --minify",
         "esbuild heddle_ui --minify",
         "phx.digest"
       ],
       precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
     ]
+  end
+
+  # Monaco loads its own files at run time, so it can't go through esbuild. This
+  # copies only what the code modal uses: the package is 13 MB, most of it for
+  # languages Heddle doesn't run.
+  defp copy_monaco(_args) do
+    assets_path = Path.expand("apps/heddle_ui", File.cwd!())
+    source = Path.join(assets_path, "assets/node_modules/monaco-editor/min/vs")
+    target = Path.join(assets_path, "priv/static/assets/vendor/monaco/vs")
+
+    if !File.dir?(source) do
+      Mix.raise("Monaco is missing from #{source}. Run `mix assets.setup` first.")
+    end
+
+    File.rm_rf!(target)
+
+    for path <- ~w(
+          loader.js
+          base
+          basic-languages/elixir
+          basic-languages/python
+          editor/editor.main.js
+          editor/editor.main.css
+          editor/editor.main.nls.js
+        ) do
+      destination = Path.join(target, path)
+      File.mkdir_p!(Path.dirname(destination))
+      File.cp_r!(Path.join(source, path), destination)
+    end
   end
 
   defp install_ui_assets(_args) do

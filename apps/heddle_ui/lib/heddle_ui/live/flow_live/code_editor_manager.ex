@@ -6,6 +6,8 @@ defmodule HeddleUI.FlowLive.CodeEditorManager do
   import Phoenix.Component, only: [assign: 2]
   import Phoenix.LiveView, only: [push_event: 3]
 
+  alias HeddleUI.FlowLive.NodeCode
+
   @doc """
   Returns the default socket assigns for the code editor modal.
   """
@@ -27,22 +29,11 @@ defmodule HeddleUI.FlowLive.CodeEditorManager do
   """
   def open_from_event(
         socket,
-        %{"nodeId" => node_id, "fieldName" => field_name, "language" => language} = params
+        %{"nodeId" => node_id, "fieldName" => field_name, "language" => _language} = params
       ) do
-    variables = params["variables"] || []
-    code_elixir = params["code_elixir"] || params["code"] || ""
-    code_python = params["code_python"] || ""
-
-    assign(socket,
-      modal_open: true,
-      current_node_id: node_id,
-      current_code_elixir: code_elixir,
-      current_code_python: code_python,
-      current_code_tab: language,
-      current_field_name: field_name,
-      current_language: language,
-      available_variables: variables
-    )
+    socket
+    |> open(NodeCode.resolve(params), field_name)
+    |> assign(current_node_id: node_id, available_variables: params["variables"] || [])
   end
 
   def open_from_event(socket, %{"nodeId" => node_id, "code" => code}) do
@@ -58,22 +49,20 @@ defmodule HeddleUI.FlowLive.CodeEditorManager do
   @doc """
   Opens the code editor modal triggered from the node configuration drawer.
   """
-  def open_from_config(socket, %{"field-name" => field_name, "language" => language}) do
-    editing_data = socket.assigns.editing_node_data
+  def open_from_config(socket, %{"field-name" => field_name}) do
+    code = NodeCode.from_controls(socket.assigns.editing_node_data["controls"] || %{})
 
-    code_elixir =
-      get_in(editing_data, ["controls", "code_elixir", "value"]) ||
-        get_in(editing_data, ["controls", "code", "value"]) || ""
+    open(socket, code, field_name)
+  end
 
-    code_python = get_in(editing_data, ["controls", "code_python", "value"]) || ""
-
+  defp open(socket, code, field_name) do
     assign(socket,
       modal_open: true,
-      current_code_elixir: code_elixir,
-      current_code_python: code_python,
-      current_code_tab: language,
+      current_code_elixir: code.code_elixir,
+      current_code_python: code.code_python,
+      current_code_tab: code.language,
       current_field_name: field_name,
-      current_language: language
+      current_language: code.language
     )
   end
 
@@ -113,22 +102,11 @@ defmodule HeddleUI.FlowLive.CodeEditorManager do
     field_name = socket.assigns.current_field_name
 
     if socket.assigns.config_modal_open do
-      editing_node_data = socket.assigns.editing_node_data
-
-      current_code =
-        if socket.assigns.current_language == "python", do: code_python, else: code_elixir
-
       updated_node_data =
-        editing_node_data
+        socket.assigns.editing_node_data
         |> put_in(["controls", "code_elixir", "value"], code_elixir)
         |> put_in(["controls", "code_python", "value"], code_python)
-
-      updated_node_data =
-        if field_name && get_in(updated_node_data, ["controls", field_name]) do
-          put_in(updated_node_data, ["controls", field_name, "value"], current_code)
-        else
-          updated_node_data
-        end
+        |> clear_older_code()
 
       assign(socket,
         modal_open: false,
@@ -154,4 +132,12 @@ defmodule HeddleUI.FlowLive.CodeEditorManager do
       )
     end
   end
+
+  # The code now lives in the fields of each language. Left in place, the older
+  # field would come back at run time if that code were cleared.
+  defp clear_older_code(%{"controls" => %{"code" => _control}} = node_data) do
+    put_in(node_data, ["controls", "code", "value"], "")
+  end
+
+  defp clear_older_code(node_data), do: node_data
 end

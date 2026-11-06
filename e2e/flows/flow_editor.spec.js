@@ -192,6 +192,80 @@ test.describe('Flow Editor', () => {
       await expect(page.locator('custom-node')).toHaveCount(0, { timeout: 5000 });
     });
   });
+
+  test.describe('Code Editor', () => {
+    const openCodeEditor = async (page) => {
+      const node = page.locator('custom-node').first();
+      await node.hover();
+      await node.locator('.node-action-btn.config').click();
+      await page.locator('#edit-code-code').click();
+      await expect(page.locator('#code-editor-wrapper .monaco-editor')).toBeVisible({ timeout: 5000 });
+    };
+
+    const typeCode = async (page, code) => {
+      await page.locator('#code-editor-wrapper .monaco-editor').click();
+      await page.keyboard.type(code);
+    };
+
+    test('loads the editor from the app itself', async ({ page }) => {
+      const external = [];
+      page.on('request', (request) => {
+        if (request.url().includes('monaco') && !request.url().startsWith('http://localhost')) {
+          external.push(request.url());
+        }
+      });
+
+      await addNodeViaContextMenu(page, 'Evaluate Code');
+      await openCodeEditor(page);
+
+      expect(external).toEqual([]);
+    });
+
+    test('keeps the code of each language when switching tabs', async ({ page }) => {
+      await addNodeViaContextMenu(page, 'Evaluate Code');
+      await openCodeEditor(page);
+      await typeCode(page, '3 + 3');
+
+      await page.locator('button[phx-value-tab=python]').click();
+      await expect(page.locator('#code-editor-wrapper')).toHaveAttribute('data-language', 'python');
+      await typeCode(page, 'print(42)');
+
+      await page.locator('button[phx-value-tab=elixir]').click();
+      await expect(page.locator('#code-editor-wrapper')).toHaveAttribute('data-language', 'elixir');
+
+      await expect(page.locator('#code_elixir_textarea')).toHaveValue('3 + 3');
+      await expect(page.locator('#code_python_textarea')).toHaveValue('print(42)');
+    });
+
+    test('shows the saved code in the node drawer', async ({ page }) => {
+      await addNodeViaContextMenu(page, 'Evaluate Code');
+      await openCodeEditor(page);
+      await typeCode(page, '3 + 3');
+
+      await page.locator('#code-editor-form').getByRole('button', { name: 'Save Changes' }).click();
+
+      await expect(page.locator('#node-code-preview-code')).toContainText('3 + 3');
+    });
+
+    test('still shows the code when the editor cannot load', async ({ page }) => {
+      await page.route('**/vendor/monaco/**', (route) => route.abort());
+      await page.reload();
+      await waitForLiveView(page);
+
+      await addNodeViaContextMenu(page, 'Evaluate Code');
+      const node = page.locator('custom-node').first();
+      await node.hover();
+      await node.locator('.node-action-btn.config').click();
+      await page.locator('#edit-code-code').click();
+
+      const field = page.locator('#code_elixir_textarea');
+      await expect(field).toBeVisible({ timeout: 5000 });
+      await field.fill('1 + 1');
+      await page.locator('#code-editor-form').getByRole('button', { name: 'Save Changes' }).click();
+
+      await expect(page.locator('#node-code-preview-code')).toContainText('1 + 1');
+    });
+  });
 });
 
 async function addNodeViaContextMenu(page, nodeName) {

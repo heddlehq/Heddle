@@ -985,8 +985,9 @@ export async function createEditor(container) {
                         const language = node.controls.language?.value || control.language;
                         const code_elixir = node.controls.code_elixir?.value || '';
                         const code_python = node.controls.code_python?.value || '';
+                        const code = node.controls.code?.value || '';
                         const variables = getUpstreamVariables(node.id);
-                        editor.triggerCodeEdit(node.id, code_elixir, code_python, field.name, language, variables);
+                        editor.triggerCodeEdit(node.id, code_elixir, code_python, field.name, language, variables, code);
                     }
                 };
             } else {
@@ -1129,6 +1130,9 @@ export async function createEditor(container) {
 
             node.controls.code_elixir.value = code_elixir;
             node.controls.code_python.value = code_python;
+            // The code now lives in the fields above. Left here, the older field
+            // would come back at run time if the code were cleared.
+            if (node.controls.code) node.controls.code.value = '';
 
             await area.update('node', nodeId);
             processChange();
