@@ -131,16 +131,18 @@ Scaling workers is not only "add more containers". You also need to watch the da
 
 Current default worker configuration:
 
-- `WORKER_POOL_SIZE=3`
-- Oban queue `executions: 5`
+- `WORKER_POOL_SIZE=10`
+- Oban queue `executions: 50`
 - Oban queue `default: 2`
 
 That means each worker instance can execute up to roughly:
 
-- 5 jobs concurrently in `executions`
+- 50 jobs concurrently in `executions`
 - plus up to 2 jobs concurrently in `default`, if that queue is used
 
-So with **5 workers**, the `executions` queue alone can reach about **25 concurrent jobs**.
+So with **5 workers**, the `executions` queue alone can reach about **250 concurrent jobs**.
+
+Most of a run is spent waiting on other services, and a waiting run holds no database connection, so the queue can be much larger than the pool. Lower it if your flows are heavy on CPU or memory, or if the services they call can't take that many calls at once.
 
 Because of that, review these settings before scaling up:
 
