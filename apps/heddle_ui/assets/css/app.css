@@ -5,6 +5,7 @@
 @source "../css";
 @source "../js";
 @source "../../lib/heddle_ui";
+@source "../../../heddle_nodes/lib";
 @import "./rete_custom.css";
 
 @theme {
