@@ -9,7 +9,8 @@ defmodule HeddleNodes.Nodes.S3 do
       title: "S3",
       category: :integration,
       color: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
-      description: "Reads, writes, lists or deletes files in a bucket on S3 or a compatible service.",
+      description:
+        "Reads, writes, lists or deletes files in a bucket on S3 or a compatible service.",
       icon: "hero-archive-box-solid",
       inputs: [:exec],
       outputs: Integration.outputs(),
@@ -54,7 +55,8 @@ defmodule HeddleNodes.Nodes.S3 do
   defp run("put", s3, context) do
     url = object_url(s3, context)
 
-    with {:ok, _response} <- request(s3, context, :put, url, body: Integration.field(context, "content")) do
+    with {:ok, _response} <-
+           request(s3, context, :put, url, body: Integration.field(context, "content")) do
       {:ok, %{"key" => Integration.field(context, "key")}}
     end
   end
@@ -68,7 +70,8 @@ defmodule HeddleNodes.Nodes.S3 do
   defp run("list", s3, context) do
     params = ["list-type": 2, prefix: Integration.field(context, "key")]
 
-    with {:ok, %{body: body}} <- request(s3, context, :get, bucket_url(s3, context), params: params) do
+    with {:ok, %{body: body}} <-
+           request(s3, context, :get, bucket_url(s3, context), params: params) do
       {:ok, %{"keys" => keys(body)}}
     end
   end

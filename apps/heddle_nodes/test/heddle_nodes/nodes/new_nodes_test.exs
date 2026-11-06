@@ -1,15 +1,8 @@
 defmodule HeddleNodes.Nodes.NewNodesTest do
   use ExUnit.Case, async: false
 
-  alias HeddleNodes.Nodes.{AIAgent, ForEach, RespondToWebhook, Schedule}
+  alias HeddleNodes.Nodes.{ForEach, RespondToWebhook, Schedule}
   alias HeddleNodes.Runner
-
-  defmodule LLMStub do
-    def run(prompt, opts) do
-      send(self(), {:llm, prompt, opts})
-      Application.get_env(:heddle_nodes, :llm_stub_reply)
-    end
-  end
 
   defp graph_node(id, type, controls \\ %{}) do
     %{"id" => id, "type" => type, "label" => type, "controls" => controls}
@@ -56,57 +49,6 @@ defmodule HeddleNodes.Nodes.NewNodesTest do
       assert {:ok, context} = Runner.run(graph, %{"trigger" => "schedule", "node_id" => "b"})
       assert [%{"node_id" => "b"}] = context["logs"]
       refute Map.has_key?(context, "node_id")
-    end
-  end
-
-  describe "AI Agent" do
-    setup do
-      previous = Application.get_env(:heddle_nodes, :llm_client)
-      Application.put_env(:heddle_nodes, :llm_client, LLMStub)
-      Application.put_env(:heddle_nodes, :llm_stub_reply, {:ok, "Olá"})
-
-      on_exit(fn ->
-        Application.delete_env(:heddle_nodes, :llm_stub_reply)
-
-        if previous,
-          do: Application.put_env(:heddle_nodes, :llm_client, previous),
-          else: Application.delete_env(:heddle_nodes, :llm_client)
-      end)
-    end
-
-    test "sends the prompt with the context filled in and keeps the reply" do
-      context = %{"prompt" => "Translate {{word}}", "system" => "Be brief", "word" => "hi"}
-
-      assert {:ok, result, "success"} = AIAgent.handler(context, nil)
-      assert result["result"] == "Olá"
-      assert_received {:llm, "Translate hi", opts}
-      assert opts[:system] == "Be brief"
-      assert opts[:tools] == []
-    end
-
-    test "leaves the system prompt out when it's blank" do
-      assert {:ok, _result, "success"} =
-               AIAgent.handler(%{"prompt" => "Hi", "system" => " "}, nil)
-
-      assert_received {:llm, "Hi", opts}
-      assert opts[:system] == nil
-    end
-
-    test "takes the error output when the model fails" do
-      Application.put_env(
-        :heddle_nodes,
-        :llm_stub_reply,
-        {:error, "No LLM provider is configured."}
-      )
-
-      assert {:ok, result, "error"} = AIAgent.handler(%{"prompt" => "Hi"}, nil)
-      assert result["result"] == %{"error" => "No LLM provider is configured."}
-    end
-
-    test "takes the error output with nothing to ask" do
-      assert {:ok, result, "error"} = AIAgent.handler(%{"prompt" => "  "}, nil)
-      refute_received {:llm, _, _}
-      assert result["result"] == %{"error" => "The prompt is empty."}
     end
   end
 

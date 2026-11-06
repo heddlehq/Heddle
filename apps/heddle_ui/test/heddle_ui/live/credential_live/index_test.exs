@@ -53,7 +53,11 @@ defmodule HeddleUI.CredentialLive.IndexTest do
 
   test "edits without showing the secret, and keeps it when left blank", %{conn: conn} do
     {:ok, credential} =
-      Credentials.create_credential(%{name: "main", kind: "slack", values: %{"token" => "xoxb-old"}})
+      Credentials.create_credential(%{
+        name: "main",
+        kind: "slack",
+        values: %{"token" => "xoxb-old"}
+      })
 
     {:ok, lv, _html} = live(conn, ~p"/credentials")
 

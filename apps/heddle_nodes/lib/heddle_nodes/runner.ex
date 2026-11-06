@@ -1,4 +1,5 @@
 defmodule HeddleNodes.Runner do
+  alias HeddleNodes.Agent
   alias HeddleNodes.Nodes
 
   @internal_keys ["flow_id", "logs"]
@@ -86,6 +87,9 @@ defmodule HeddleNodes.Runner do
           {:each, items} ->
             run_each(items, step)
 
+          {:agent, request} ->
+            run_agent(request, step)
+
           {:error, reason} ->
             error_context =
               finish_node(
@@ -146,6 +150,47 @@ defmodule HeddleNodes.Runner do
     Enum.filter(flow.connections, fn connection ->
       connection["source"] == node["id"] && connection["sourceOutput"] == output_name
     end)
+  end
+
+  defp run_agent(request, step) do
+    tools =
+      step.flow
+      |> connections_from(step.node, "tools")
+      |> Enum.flat_map(fn connection ->
+        Enum.filter(step.flow.nodes, &(&1["id"] == connection["target"]))
+      end)
+
+    run_tool = fn node, input ->
+      execute_node(node, tool_context(step.context, input), step.flow)
+    end
+
+    case Agent.run(request, step.context["flow_id"], tools, run_tool) do
+      {:ok, value, calls, logs} ->
+        step.context
+        |> agent_result(value, calls, logs)
+        |> follow("success", step)
+
+      {:error, error, calls, logs} ->
+        error = if is_binary(error), do: %{"error" => error}, else: error
+
+        step.context
+        |> agent_result(error, calls, logs)
+        |> follow("error", step)
+    end
+  end
+
+  defp tool_context(context, input) do
+    context
+    |> Map.put("logs", [])
+    |> Map.put("input", input)
+  end
+
+  defp agent_result(context, value, calls, logs) do
+    Map.merge(context, %{
+      "result" => value,
+      "tool_calls" => calls,
+      "logs" => Map.get(context, "logs", []) ++ logs
+    })
   end
 
   # What a branch changes stays in that iteration, apart from its result and logs.

@@ -5,13 +5,17 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
 
   defmodule Vault do
     def fetch("main", "slack"), do: {:ok, %{"token" => "xoxb-1"}}
-    def fetch("mail", "smtp"), do: {:ok, %{"host" => "127.0.0.1", "port" => "1", "from" => "a@b.co"}}
+
+    def fetch("mail", "smtp"),
+      do: {:ok, %{"host" => "127.0.0.1", "port" => "1", "from" => "a@b.co"}}
+
     def fetch("aws", "s3") do
       {:ok, %{"access_key_id" => "AK", "secret_access_key" => "SK", "region" => "sa-east-1"}}
     end
 
     def fetch("minio", "s3") do
-      {:ok, %{"access_key_id" => "AK", "secret_access_key" => "SK", "endpoint" => "http://m:9000/"}}
+      {:ok,
+       %{"access_key_id" => "AK", "secret_access_key" => "SK", "endpoint" => "http://m:9000/"}}
     end
 
     def fetch("down", "ftp") do
@@ -28,7 +32,12 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
   end
 
   describe "Slack" do
-    @context %{"credential" => "main", "channel" => "#ops", "text" => "Hi {{name}}", "name" => "Ana"}
+    @context %{
+      "credential" => "main",
+      "channel" => "#ops",
+      "text" => "Hi {{name}}",
+      "name" => "Ana"
+    }
 
     test "posts with the token and fills in the message" do
       Req.Test.stub(HttpRequest, fn conn ->
@@ -45,7 +54,10 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
     end
 
     test "takes the error output when Slack refuses it" do
-      Req.Test.stub(HttpRequest, &Req.Test.json(&1, %{"ok" => false, "error" => "channel_not_found"}))
+      Req.Test.stub(
+        HttpRequest,
+        &Req.Test.json(&1, %{"ok" => false, "error" => "channel_not_found"})
+      )
 
       assert {:ok, result, "error"} = Slack.handler(@context, nil)
       assert result["result"]["error"] =~ "channel_not_found"
@@ -67,7 +79,11 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
 
   describe "CSV" do
     test "reads rows by their headers" do
-      context = %{"operation" => "parse", "source" => "body", "body" => "name,age\nAna,30\n\"B, C\",40\n"}
+      context = %{
+        "operation" => "parse",
+        "source" => "body",
+        "body" => "name,age\nAna,30\n\"B, C\",40\n"
+      }
 
       assert {:ok, %{"result" => rows}, "success"} = Csv.handler(context, nil)
       assert rows == [%{"name" => "Ana", "age" => "30"}, %{"name" => "B, C", "age" => "40"}]
@@ -76,7 +92,8 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
     test "uses the separator picked" do
       context = %{"source" => "x", "x" => "a;b\n1;2\n", "separator" => "semicolon"}
 
-      assert {:ok, %{"result" => [%{"a" => "1", "b" => "2"}]}, "success"} = Csv.handler(context, nil)
+      assert {:ok, %{"result" => [%{"a" => "1", "b" => "2"}]}, "success"} =
+               Csv.handler(context, nil)
     end
 
     test "writes rows back, quoting what needs it" do
@@ -98,6 +115,7 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
 
     test "takes the error output with the wrong data" do
       assert {:ok, _context, "error"} = Csv.handler(%{"source" => "x", "x" => 1}, nil)
+
       assert {:ok, _context, "error"} =
                Csv.handler(%{"operation" => "generate", "source" => "x", "x" => "text"}, nil)
     end
@@ -131,7 +149,12 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
     test "signs the request and reads a file on AWS" do
       capture_s3(&Plug.Conn.send_resp(&1, 200, "hello"))
 
-      context = %{"credential" => "aws", "operation" => "get", "bucket" => "b", "key" => "a b/c.txt"}
+      context = %{
+        "credential" => "aws",
+        "operation" => "get",
+        "bucket" => "b",
+        "key" => "a b/c.txt"
+      }
 
       assert {:ok, %{"result" => %{"content" => "hello"}}, "success"} = S3.handler(context, nil)
       assert_received {:s3, conn, ""}
@@ -176,7 +199,9 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
 
       context = %{"credential" => "aws", "operation" => "list", "bucket" => "b", "key" => "x/"}
 
-      assert {:ok, %{"result" => %{"keys" => ["a.txt", "b&c"]}}, "success"} = S3.handler(context, nil)
+      assert {:ok, %{"result" => %{"keys" => ["a.txt", "b&c"]}}, "success"} =
+               S3.handler(context, nil)
+
       assert_received {:s3, conn, ""}
       assert conn.query_string =~ "list-type=2"
     end

@@ -185,7 +185,11 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
       class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
     >
       <option value="">{gettext("Pick a credential")}</option>
-      <option :for={credential <- @options} value={credential.name} selected={credential.name == @value}>
+      <option
+        :for={credential <- @options}
+        value={credential.name}
+        selected={credential.name == @value}
+      >
         {credential.name}
       </option>
     </select>

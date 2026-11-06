@@ -55,7 +55,10 @@ defmodule HeddleCore.CredentialsTest do
       {:ok, credential} = Credentials.create_credential(@slack)
 
       assert {:ok, _credential} =
-               Credentials.update_credential(credential, %{name: "renamed", values: %{"token" => ""}})
+               Credentials.update_credential(credential, %{
+                 name: "renamed",
+                 values: %{"token" => ""}
+               })
 
       assert Credentials.fetch("renamed", "slack") == {:ok, %{"token" => "xoxb-secret"}}
     end

@@ -5,6 +5,18 @@ defmodule HeddleAI.AITest do
   alias HeddleAI.AI
 
   defmodule FakeClient do
+    def generate_text(model, context, opts) do
+      send(self(), {:generate_text, model, opts})
+
+      {:ok,
+       %ReqLLM.Response{
+         id: "1",
+         model: "m",
+         context: context,
+         message: ReqLLM.Context.assistant("Hi")
+       }}
+    end
+
     def stream_text(model, messages, opts) do
       send(self(), {:stream_text, model, messages, opts})
 
@@ -76,6 +88,27 @@ defmodule HeddleAI.AITest do
 
       assert [{:error, "No LLM provider is configured."}] = Enum.to_list(stream)
       refute_received {:stream_text, _model, _messages, _opts}
+    end
+  end
+
+  describe "run/2" do
+    test "uses the instance's model by default" do
+      assert {:ok, "Hi"} = AI.run("hello", tools: [])
+
+      assert_received {:generate_text, {:openai, "gpt-4o-mini", []}, opts}
+      refute Keyword.has_key?(opts, :temperature)
+    end
+
+    test "takes a model and a temperature" do
+      assert {:ok, "Hi"} = AI.run("hello", tools: [], model: "gpt-x", temperature: 0.2)
+
+      assert_received {:generate_text, {:openai, "gpt-x", []}, opts}
+      assert opts[:temperature] == 0.2
+    end
+
+    test "stops at the step limit" do
+      assert {:error, message} = AI.run("hello", tools: [], max_steps: 0)
+      assert message =~ "too many steps"
     end
   end
 end

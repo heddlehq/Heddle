@@ -46,6 +46,9 @@ defmodule HeddleAI.AI do
   @doc """
   Answers `messages`, calling `:tools` for as long as the model asks for them.
 
+  `:model` and `:temperature` override what the instance uses, and `:max_steps` limits
+  how many times the model can come back for tools.
+
   Returns `{:ok, text}` with its final reply, or `{:error, message}`.
   """
   def run(messages, opts) do
@@ -53,11 +56,28 @@ defmodule HeddleAI.AI do
 
     with {:ok, model, api_key} <- LLM.credentials(),
          {:ok, context} <- Context.normalize(messages, system_prompt: opts[:system]) do
-      step(context, model, [api_key: api_key, tools: tools], @max_tool_rounds)
+      request = request(api_key, tools, opts)
+
+      step(
+        context,
+        pick_model(model, opts[:model]),
+        request,
+        opts[:max_steps] || @max_tool_rounds
+      )
     else
       {:error, reason} -> {:error, error_message(reason)}
     end
   end
+
+  defp request(api_key, tools, opts) do
+    case opts[:temperature] do
+      nil -> [api_key: api_key, tools: tools]
+      temperature -> [api_key: api_key, tools: tools, temperature: temperature]
+    end
+  end
+
+  defp pick_model(model, nil), do: model
+  defp pick_model({provider, _model, options}, name), do: {provider, name, options}
 
   defp step(_context, _model, _request, 0), do: {:error, "The agent took too many steps."}
 
