@@ -100,6 +100,13 @@ defmodule HeddleUI.Layouts do
                 active={@section == :api_keys}
               />
               <.nav_link
+                id="nav-credentials"
+                navigate={~p"/credentials"}
+                icon="hero-lock-closed"
+                label={gettext("Credentials")}
+                active={@section == :credentials}
+              />
+              <.nav_link
                 id="nav-users"
                 navigate={~p"/users"}
                 icon="hero-users"
@@ -297,6 +304,7 @@ defmodule HeddleUI.Layouts do
   defp nav_section("/flows" <> _), do: :flows
   defp nav_section("/executions" <> _), do: :executions
   defp nav_section("/api-keys"), do: :api_keys
+  defp nav_section("/credentials"), do: :credentials
   defp nav_section("/users"), do: :users
   defp nav_section(_path), do: nil
 

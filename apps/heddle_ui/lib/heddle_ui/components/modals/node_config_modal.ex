@@ -5,6 +5,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
 
   attr :config_modal_open, :boolean, required: true
   attr :editing_node_data, :map, default: nil
+  attr :credentials, :list, default: []
 
   def node_config_modal(assigns) do
     ~H"""
@@ -106,6 +107,13 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
                             <.icon name="hero-chevron-down" class="w-4 h-4" />
                           </span>
                         </div>
+                      <% "credential" -> %>
+                        <.credential_field
+                          key={key}
+                          value={control["value"]}
+                          kind={control["credential_kind"]}
+                          credentials={@credentials}
+                        />
                       <% type when type in ["code-icon", "code-button"] -> %>
                         <.code_field
                           key={key}
@@ -158,6 +166,35 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
         </form>
       <% end %>
     </div>
+    """
+  end
+
+  attr :key, :string, required: true
+  attr :value, :any, required: true
+  attr :kind, :string, default: nil
+  attr :credentials, :list, required: true
+
+  defp credential_field(assigns) do
+    assigns =
+      assign(assigns, :options, Enum.filter(assigns.credentials, &(&1.kind == assigns.kind)))
+
+    ~H"""
+    <select
+      id={"node-credential-#{@key}"}
+      name={@key}
+      class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+    >
+      <option value="">{gettext("Pick a credential")}</option>
+      <option :for={credential <- @options} value={credential.name} selected={credential.name == @value}>
+        {credential.name}
+      </option>
+    </select>
+    <.link
+      navigate={~p"/credentials"}
+      class="mt-1.5 inline-block text-xs text-primary hover:underline"
+    >
+      {gettext("Manage credentials")}
+    </.link>
     """
   end
 

@@ -109,6 +109,8 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
+  config :heddle_core, :credentials_secret, secret_key_base
+
   # PHX_HOST is the public domain of a deployment behind TLS, and turns on the
   # HTTPS redirect and the strict origin check. Without it Heddle answers plain
   # HTTP on whatever address it was reached at, so a fresh install works the same

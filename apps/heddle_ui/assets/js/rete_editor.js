@@ -115,7 +115,8 @@ export async function createEditor(container) {
                                                 value: control.value,
                                                 label: control.label || key,
                                                 type: control.type || 'text',
-                                                options: control.options || []
+                                                options: control.options || [],
+                                                credential_kind: control.credentialKind
                                             };
                                         });
                                     }
@@ -991,8 +992,9 @@ export async function createEditor(container) {
                     }
                 };
             } else {
-                control.type = field.type === 'select' ? 'select' : 'text';
+                control.type = field.type === 'select' || field.type === 'credential' ? field.type : 'text';
                 control.label = field.label;
+                control.credentialKind = field.kind;
                 if (field.options) control.options = field.options;
             }
 

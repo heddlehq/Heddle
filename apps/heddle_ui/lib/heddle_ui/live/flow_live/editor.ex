@@ -30,6 +30,7 @@ defmodule HeddleUI.FlowLive.Editor do
       # Node config drawer
       config_modal_open: false,
       editing_node_data: nil,
+      credentials: [],
       current_node_id: nil,
       # Execution result / notice
       execution_result: nil,
@@ -156,6 +157,7 @@ defmodule HeddleUI.FlowLive.Editor do
      assign(socket,
        config_modal_open: true,
        editing_node_data: node_data,
+       credentials: HeddleCore.Credentials.list_credentials(),
        current_node_id: node_data["id"]
      )}
   end
