@@ -38,7 +38,6 @@ defmodule HeddleCore.MixProject do
       {:jason, "~> 1.2"},
       {:oban, "~> 2.0"},
       {:req, "~> 0.5"},
-      {:igniter, "~> 0.6"},
       {:phoenix_pubsub, "~> 2.1"}
     ]
   end

@@ -95,4 +95,53 @@ defmodule HeddleCore.ApiKeysTest do
       assert ApiKeys.authenticate(token) == :error
     end
   end
+
+  describe "agent keys" do
+    setup do
+      %{user: HeddleCore.AccountsFixtures.user_fixture()}
+    end
+
+    test "expire within the hour", %{user: user} do
+      assert {:ok, %{api_key: api_key}} = ApiKeys.create_agent_key(user)
+
+      limit = DateTime.add(DateTime.utc_now(), 3601)
+      assert DateTime.compare(api_key.expires_at, limit) == :lt
+    end
+
+    test "can't delete flows", %{user: user} do
+      {:ok, %{api_key: api_key}} = ApiKeys.create_agent_key(user)
+
+      refute "workflows:delete" in api_key.scopes
+    end
+
+    test "are recognized", %{user: user} do
+      {:ok, %{api_key: agent_key}} = ApiKeys.create_agent_key(user)
+      {:ok, %{api_key: regular_key}} = ApiKeys.create_api_key(user, %{name: "mine"})
+
+      assert ApiKeys.agent_key?(agent_key)
+      refute ApiKeys.agent_key?(regular_key)
+    end
+
+    test "stay out of the listings", %{user: user} do
+      {:ok, _agent_key} = ApiKeys.create_agent_key(user)
+      {:ok, %{api_key: regular_key}} = ApiKeys.create_api_key(user, %{name: "mine"})
+
+      assert Enum.map(ApiKeys.list_api_keys(user), & &1.id) == [regular_key.id]
+      refute Enum.any?(ApiKeys.list_api_keys(), &ApiKeys.agent_key?/1)
+    end
+
+    test "stop authenticating once deleted", %{user: user} do
+      {:ok, %{api_key: api_key, token: token}} = ApiKeys.create_agent_key(user)
+
+      assert {:ok, _api_key} = ApiKeys.delete_api_key(api_key)
+      assert ApiKeys.authenticate(token) == :error
+    end
+
+    test "can be deleted twice", %{user: user} do
+      {:ok, %{api_key: api_key}} = ApiKeys.create_agent_key(user)
+
+      assert {:ok, _api_key} = ApiKeys.delete_api_key(api_key)
+      assert {:ok, _api_key} = ApiKeys.delete_api_key(api_key)
+    end
+  end
 end

@@ -40,7 +40,14 @@ defmodule HeddleUI.NavigationTest do
     test "send a regular user back to the dashboard", %{conn: conn} do
       conn = log_in_user(conn, user_fixture())
 
-      for path <- [~p"/flows", ~p"/flows/new/ai", ~p"/executions", ~p"/api-keys", ~p"/users"] do
+      for path <- [
+            ~p"/flows",
+            ~p"/flows/new/ai",
+            ~p"/ai",
+            ~p"/executions",
+            ~p"/api-keys",
+            ~p"/users"
+          ] do
         {:ok, view, _html} = live(conn, ~p"/")
 
         assert {:error, {:redirect, %{to: "/"}}} = live_redirect(view, to: path)
@@ -68,7 +75,7 @@ defmodule HeddleUI.NavigationTest do
       end
     end
 
-    test "tells the AI creator apart from the flow pages" do
+    test "keeps My Flows active on the AI creator" do
       scope = Scope.for_user(system_admin_fixture())
 
       html =
@@ -76,6 +83,22 @@ defmodule HeddleUI.NavigationTest do
           flash: %{},
           current_scope: scope,
           current_path: "/flows/new/ai"
+        )
+
+      document = LazyHTML.from_fragment(html)
+
+      assert document |> LazyHTML.query("#nav-flows[aria-current=page]") |> Enum.count() == 1
+      assert current_pages(document) == 1
+    end
+
+    test "marks LLM & Agents on its own page" do
+      scope = Scope.for_user(system_admin_fixture())
+
+      html =
+        render_component(&Layouts.app/1,
+          flash: %{},
+          current_scope: scope,
+          current_path: "/ai"
         )
 
       document = LazyHTML.from_fragment(html)

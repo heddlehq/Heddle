@@ -7,6 +7,11 @@ defmodule HeddleUI.PublicAPI.V1.Routes do
         plug :accepts, ["json"]
       end
 
+      # No :accepts here: MCP clients ask for text/event-stream as well as JSON.
+      pipeline :mcp do
+        plug HeddleUI.Plugs.ApiKeyAuth
+      end
+
       pipeline :public_api_authenticated do
         plug HeddleUI.Plugs.ApiKeyAuth
       end
@@ -15,6 +20,14 @@ defmodule HeddleUI.PublicAPI.V1.Routes do
 
   defmacro public_api_routes do
     quote do
+      scope "/mcp" do
+        pipe_through [:mcp]
+
+        forward "/", Anubis.Server.Transport.StreamableHTTP.Plug,
+          server: HeddleUI.MCP.Server,
+          request_timeout: HeddleUI.MCP.Server.request_timeout()
+      end
+
       scope "/api/v1", HeddleUI.PublicAPI.V1 do
         pipe_through [:public_api]
 

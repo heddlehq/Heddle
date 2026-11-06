@@ -66,16 +66,6 @@
     current_error_node_id={@current_error_node_id}
     current_error_message={@current_error_message}
   />
-  <HeddleUI.Components.Modals.DependenciesModal.dependencies_modal
-    dependencies_modal_open={@dependencies_modal_open}
-    dependencies_tab={@dependencies_tab}
-    pending_restart_deps={@pending_restart_deps}
-    search_query={@search_query}
-    search_results={@search_results}
-    installed_deps={@installed_deps}
-    installing_dep={@installing_dep}
-    terminal_logs={@terminal_logs}
-  />
   <HeddleUI.Components.Modals.ExecutionResultModal.execution_result_modal
     show_result_modal={@show_result_modal}
     execution_result={@execution_result}
@@ -88,12 +78,13 @@
     search_query={@node_modal_search_query}
   />
   <.live_component
+    :if={@ai_configured}
     module={HeddleUI.Components.ChatComponent}
     id="chat-component"
     open={@chat_open}
     messages={@chat_messages}
     loading={@chat_loading}
-    ai_configured={@ai_configured}
+    confirmation={@agent_confirmation}
     on_toggle="toggle_chat"
     on_send="send_message"
     node_config_open={@config_modal_open}

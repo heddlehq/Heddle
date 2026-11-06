@@ -37,6 +37,7 @@ defmodule HeddleUI.MixProject do
       {:heddle_nodes, in_umbrella: true},
       {:heddle_runtime, in_umbrella: true},
       {:heddle_ai, in_umbrella: true},
+      {:anubis_mcp, "~> 2.2"},
       {:phoenix, "~> 1.8.3"},
       {:phoenix_ecto, "~> 4.5"},
       {:phoenix_html, "~> 4.1"},

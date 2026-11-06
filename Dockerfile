@@ -71,6 +71,18 @@ RUN mkdir -p /app/.cache /app/data && chown -R nobody:root /app/.cache /app/data
 
 USER nobody
 
+# The Claude Agent needs the claude binary. It stays out of the default image: build
+# with --build-arg INSTALL_CLAUDE=true to include it.
+ARG INSTALL_CLAUDE=false
+ENV PATH="/app/.local/bin:${PATH}"
+USER root
+RUN if [ "$INSTALL_CLAUDE" = "true" ]; then \
+      apt-get update -y && apt-get install -y curl \
+      && apt-get clean && rm -f /var/lib/apt/lists/*_* \
+      && su -s /bin/bash nobody -c 'HOME=/app curl -fsSL https://claude.ai/install.sh | HOME=/app bash'; \
+    fi
+USER nobody
+
 # Fetch Python now. Otherwise every new container downloads it on boot, and in
 # `all` mode the two releases race to create the same venv and one loses Python.
 RUN DATABASE_URL=ecto://build SECRET_KEY_BASE=build /app/worker/bin/heddle_worker eval \

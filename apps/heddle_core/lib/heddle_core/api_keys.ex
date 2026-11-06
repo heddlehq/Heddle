@@ -13,6 +13,10 @@ defmodule HeddleCore.ApiKeys do
   @secret_size 32
   @max_create_attempts 5
 
+  @agent_key_name "Claude Agent session"
+  @agent_key_scopes ~w(workflows:read workflows:write nodes:read executions:read executions:write)
+  @agent_key_lifetime_seconds 3600
+
   def create_api_key(%User{id: user_id}, attrs \\ %{}) do
     create_api_key(user_id, Map.new(attrs), @max_create_attempts)
   end
@@ -74,6 +78,30 @@ defmodule HeddleCore.ApiKeys do
 
   def authenticate(_token), do: :error
 
+  @doc """
+  Creates the short-lived key the Claude Agent uses during one message.
+
+  It is hidden from `list_api_keys/0,1`: it belongs to a run, not to the user.
+  """
+  def create_agent_key(%User{} = user) do
+    expires_at = DateTime.add(DateTime.utc_now(:second), @agent_key_lifetime_seconds)
+
+    create_api_key(user, %{
+      name: @agent_key_name,
+      scopes: @agent_key_scopes,
+      expires_at: expires_at
+    })
+  end
+
+  @doc """
+  Whether a key can only run flows after a person confirms it.
+
+  A user can name their own key the same way, which only makes it stricter.
+  """
+  def agent_key?(%ApiKey{name: name}), do: name == @agent_key_name
+
+  def delete_api_key(%ApiKey{} = api_key), do: Repo.delete(api_key, allow_stale: true)
+
   def revoke_api_key(%ApiKey{} = api_key) do
     api_key
     |> ApiKey.revoke_changeset()
@@ -87,13 +115,18 @@ defmodule HeddleCore.ApiKeys do
   end
 
   def list_api_keys do
-    Repo.all(from key in ApiKey, preload: [:user], order_by: [desc: key.inserted_at])
+    Repo.all(
+      from key in ApiKey,
+        where: key.name != ^@agent_key_name,
+        preload: [:user],
+        order_by: [desc: key.inserted_at]
+    )
   end
 
   def list_api_keys(%User{id: user_id}) do
     Repo.all(
       from key in ApiKey,
-        where: key.user_id == ^user_id,
+        where: key.user_id == ^user_id and key.name != ^@agent_key_name,
         preload: [:user],
         order_by: [desc: key.inserted_at]
     )

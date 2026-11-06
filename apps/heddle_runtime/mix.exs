@@ -23,7 +23,7 @@ defmodule HeddleRuntime.MixProject do
   def application do
     [
       mod: {HeddleRuntime.Application, []},
-      extra_applications: [:logger]
+      extra_applications: [:logger, :inets, :ssl]
     ]
   end
 

@@ -34,8 +34,9 @@ defmodule HeddleAI.MixProject do
     [
       {:heddle_nodes, in_umbrella: true},
       {:jason, "~> 1.2"},
-      {:req, "~> 0.5"},
-      {:finch, "~> 0.21"}
+      {:req, "~> 0.7"},
+      {:finch, "~> 0.24"},
+      {:req_llm, "~> 1.30"}
     ]
   end
 end

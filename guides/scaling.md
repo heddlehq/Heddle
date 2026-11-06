@@ -28,7 +28,8 @@ At minimum, every instance needs:
 
 - `DATABASE_URL`
 - `SECRET_KEY_BASE`
-- `OPENAI_API_KEY` when your flows depend on it
+- `HEDDLE_LLM_PROVIDER`, `HEDDLE_LLM_MODEL` and `HEDDLE_LLM_API_KEY` to enable the AI chats (`OPENAI_API_KEY` still works when the provider is unset)
+- `HEDDLE_CLAUDE_API_KEY` on the UI instances to use the Claude Agent, which also needs the `claude` binary there: build the image with `--build-arg INSTALL_CLAUDE=true`
 
 ## Docker Compose
 

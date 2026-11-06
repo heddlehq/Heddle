@@ -40,11 +40,6 @@ test.describe('Flow Editor', () => {
     await expect(page).toHaveURL(/\/flows$/, { timeout: 10000 });
   });
 
-  test('opens dependencies modal', async ({ page }) => {
-    await page.getByRole('button', { name: 'Dependencies' }).click();
-    await expect(page.getByText('Project Dependencies')).toBeVisible({ timeout: 5000 });
-  });
-
   test.describe('Context Menu', () => {
     test('shows Undo, Redo and Create Node on empty canvas right-click', async ({ page }) => {
       const rete = page.locator('#rete');

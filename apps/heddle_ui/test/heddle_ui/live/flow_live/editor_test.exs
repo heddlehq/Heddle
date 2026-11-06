@@ -132,7 +132,6 @@ defmodule HeddleUI.FlowLive.EditorTest do
       {:ok, _lv, html} = live(conn, ~p"/flows/#{flow.id}")
 
       assert html =~ "Run Flow"
-      assert html =~ "Dependencies"
       assert html =~ "Flows"
     end
   end
@@ -1007,29 +1006,6 @@ defmodule HeddleUI.FlowLive.EditorTest do
         end
         """
       })
-    end
-  end
-
-  describe "dependencies modal" do
-    test "opens and closes dependencies modal", %{conn: conn} do
-      flow = flow_fixture()
-
-      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
-
-      html = render_click(lv, "open_dependencies_modal")
-      assert html =~ "Project Dependencies"
-
-      render_click(lv, "close_dependencies_modal")
-    end
-
-    test "switches dependencies tab", %{conn: conn} do
-      flow = flow_fixture()
-
-      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
-
-      render_click(lv, "open_dependencies_modal")
-      render_click(lv, "switch_dependencies_tab", %{"tab" => "python"})
-      render_click(lv, "switch_dependencies_tab", %{"tab" => "elixir"})
     end
   end
 
