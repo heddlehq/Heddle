@@ -28,6 +28,32 @@ jobs:
           name: round-${{ matrix.round }}
           path: benchmark/compare/results/
 
+  slow:
+    name: Slow target round ${{ matrix.round }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        round: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: docker build -t heddle:bench .
+      - run: node benchmark/compare/run.mjs
+        env:
+          ROUND: ${{ matrix.round }}
+          BURST: 3000
+          TARGET_DELAY_MS: 100
+          RESULTS_DIR: slow
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: slow-${{ matrix.round }}
+          path: benchmark/compare/results/slow/
+
   crash:
     name: Crash round ${{ matrix.round }}
     runs-on: ubuntu-24.04

@@ -150,8 +150,8 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db
 The default Docker setup now separates the main scaling knobs:
 
 - `UI_POOL_SIZE=10`
-- `WORKER_POOL_SIZE=3`
-- `OBAN_EXECUTIONS_CONCURRENCY=5`
+- `WORKER_POOL_SIZE=10`
+- `OBAN_EXECUTIONS_CONCURRENCY=50`
 - `OBAN_DEFAULT_CONCURRENCY=2`
 - `OBAN_RESCUE_AFTER_MINUTES=60`
 
