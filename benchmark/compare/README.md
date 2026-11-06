@@ -59,7 +59,7 @@ Running this test showed two problems in Heddle, and we fixed both:
 
 Running more flows at once has a cost. A crash now repeats up to 50 runs instead of 5, because that many can be in progress.
 
-The earlier results are in [`results/second-version/`](results/second-version/). Don't compare them with the current ones: the rounds landed on different hardware, and every tool's numbers moved with it. The current results ran on Heddle 0.4.4 plus these two changes, though the files still say 0.4.0.
+The earlier results are in [`results/second-version/`](results/second-version/). Don't compare them with the current ones: the rounds landed on different hardware, and every tool's numbers moved with it. The current results ran on the code released as Heddle 0.4.5, though the files still say 0.4.0.
 
 ## Details worth knowing
 
