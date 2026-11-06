@@ -43,6 +43,24 @@ defmodule HeddleUI.CredentialLive.IndexTest do
 
     assert has_element?(lv, "#credential-value-host")
     refute has_element?(lv, "#credential-value-token")
+    assert has_element?(lv, ~s(#credential_kind option[value="smtp"][selected]))
+  end
+
+  test "saves a credential of the chosen service", %{conn: conn} do
+    {:ok, lv, _html} = live(conn, ~p"/credentials")
+
+    lv |> form("#credential-form", %{"credential" => %{"kind" => "smtp"}}) |> render_change()
+
+    lv
+    |> form("#credential-form", %{
+      "credential" => %{
+        "name" => "mail",
+        "values" => %{"host" => "smtp.x.co", "from" => "a@x.co"}
+      }
+    })
+    |> render_submit()
+
+    assert {:ok, %{"host" => "smtp.x.co"}} = Credentials.fetch("mail", "smtp")
   end
 
   test "says what's missing", %{conn: conn} do

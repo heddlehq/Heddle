@@ -263,7 +263,7 @@ test.describe('Flow Editor', () => {
   });
 
   test.describe('New nodes', () => {
-    for (const name of ['Schedule', 'AI Agent', 'For Each', 'Respond to Webhook']) {
+    for (const name of ['Schedule', 'AI Agent', 'For Each', 'Respond to Webhook', 'Slack', 'Send Email', 'Google Sheets', 'CSV', 'S3', 'FTP']) {
       test(`adds ${name} from the context menu and saves it`, async ({ page }) => {
         await addNodeViaContextMenu(page, name);
 
@@ -273,6 +273,31 @@ test.describe('Flow Editor', () => {
         await expect(page.getByText('You have unsaved changes')).toBeHidden({ timeout: 5000 });
       });
     }
+
+    test('offers the stored credentials on a node', async ({ page }) => {
+      const name = `slack-${Date.now()}`;
+      const editor = page.url();
+
+      await page.goto('/credentials');
+      await waitForLiveView(page);
+      await page.getByLabel('Name').fill(name);
+      await page.getByLabel('Bot token').fill('xoxb-e2e');
+      await page.locator('#credential-save').click();
+      await expect(page.locator('#credentials').getByText(name)).toBeVisible({ timeout: 5000 });
+
+      await page.goto(editor);
+      await waitForLiveView(page);
+      await addNodeViaContextMenu(page, 'Slack');
+
+      const node = page.locator('custom-node').first();
+      await node.hover();
+      await node.locator('.node-action-btn.config').click();
+
+      const select = page.locator('#node-credential-credential');
+      await expect(select.locator('option', { hasText: name })).toHaveCount(1, { timeout: 5000 });
+      await select.selectOption(name);
+      await expect(select).toHaveValue(name);
+    });
 
     test('shows the outputs of For Each', async ({ page }) => {
       await addNodeViaContextMenu(page, 'For Each');

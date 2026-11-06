@@ -159,7 +159,13 @@ Increase worker replicas carefully and tune these values together with your Post
 
 `OBAN_RESCUE_AFTER_MINUTES` is how long a run can go on before Heddle assumes its worker died and starts it again from the beginning. Keep it longer than your longest flow, or a flow that is still running gets started twice.
 
-### 7. API-only UI mode
+### 7. Credentials
+
+The **Credentials** page stores what nodes like Slack, S3 and FTP need to reach other services. Values are encrypted with a key derived from `SECRET_KEY_BASE`, and flows only keep the credential's name.
+
+The UI and the workers must share that secret. If it changes, every credential stops working and has to be entered again, so back it up with your data.
+
+### 8. API-only UI mode
 
 The UI release can run as an HTTP API gateway without the visual interface:
 

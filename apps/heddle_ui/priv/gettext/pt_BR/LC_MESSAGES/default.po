@@ -22,8 +22,8 @@ msgstr "Ações"
 msgid "Active Integrations"
 msgstr "Integrações Ativas"
 
-#: lib/heddle_ui/components/layouts.ex:240
-#: lib/heddle_ui/components/layouts.ex:252
+#: lib/heddle_ui/components/layouts.ex:247
+#: lib/heddle_ui/components/layouts.ex:259
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr "Tentando reconectar"
@@ -61,7 +61,7 @@ msgid "Drag to canvas"
 msgstr "Arraste para a tela"
 
 #: lib/heddle_ui/components/modals/code_editor_modal.ex:20
-#: lib/heddle_ui/components/modals/node_config_modal.ex:183
+#: lib/heddle_ui/components/modals/node_config_modal.ex:224
 #: lib/heddle_ui/live/flow_live/editor.html.heex:25
 #, elixir-autogen, elixir-format
 msgid "Edit Code"
@@ -124,7 +124,7 @@ msgstr "Fluxos Recentes"
 msgid "Remove Node"
 msgstr "Remover Nó"
 
-#: lib/heddle_ui/live/components/chat_component.ex:154
+#: lib/heddle_ui/live/components/chat_component.ex:152
 #: lib/heddle_ui/live/flow_live/editor.html.heex:20
 #, elixir-autogen, elixir-format
 msgid "Run"
@@ -135,12 +135,12 @@ msgstr "Executar"
 msgid "Select Integration"
 msgstr "Selecione a Integração"
 
-#: lib/heddle_ui/components/layouts.ex:247
+#: lib/heddle_ui/components/layouts.ex:254
 #, elixir-autogen, elixir-format
 msgid "Something went wrong!"
 msgstr "Algo deu errado!"
 
-#: lib/heddle_ui/components/layouts.ex:130
+#: lib/heddle_ui/components/layouts.ex:137
 #, elixir-autogen, elixir-format
 msgid "Theme"
 msgstr "Tema"
@@ -170,7 +170,7 @@ msgstr "Ver Erro"
 msgid "Waiting..."
 msgstr "Aguardando..."
 
-#: lib/heddle_ui/components/layouts.ex:235
+#: lib/heddle_ui/components/layouts.ex:242
 #, elixir-autogen, elixir-format
 msgid "We can't find the internet"
 msgstr "Não conseguimos conectar à internet"
@@ -220,7 +220,7 @@ msgstr "Criar com IA"
 msgid "Or reply below with adjustments"
 msgstr "Ou responda abaixo com ajustes"
 
-#: lib/heddle_ui/live/components/chat_component.ex:182
+#: lib/heddle_ui/live/components/chat_component.ex:180
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:290
 #, elixir-autogen, elixir-format
 msgid "Send"
@@ -243,8 +243,9 @@ msgstr "Voltar ao Resultado"
 
 #: lib/heddle_ui/components/modals/code_editor_modal.ex:93
 #: lib/heddle_ui/components/modals/create_node_modal.ex:92
-#: lib/heddle_ui/components/modals/node_config_modal.ex:149
+#: lib/heddle_ui/components/modals/node_config_modal.ex:157
 #: lib/heddle_ui/controllers/oauth_html.ex:39
+#: lib/heddle_ui/live/credential_live/index.ex:158
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:148
 #, elixir-autogen, elixir-format
 msgid "Cancel"
@@ -307,7 +308,7 @@ msgstr "Inspecionar Contexto Completo"
 msgid "Log in"
 msgstr "Entrar"
 
-#: lib/heddle_ui/components/layouts.ex:194
+#: lib/heddle_ui/components/layouts.ex:201
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr "Sair"
@@ -346,7 +347,7 @@ msgstr "Salvar Alterações"
 msgid "Saving..."
 msgstr "Salvando..."
 
-#: lib/heddle_ui/components/layouts.ex:187
+#: lib/heddle_ui/components/layouts.ex:194
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr "Configurações"
@@ -575,7 +576,7 @@ msgstr ""
 msgid "Undo"
 msgstr "Desfazer"
 
-#: lib/heddle_ui/components/layouts.ex:106
+#: lib/heddle_ui/components/layouts.ex:113
 #: lib/heddle_ui/live/user_live/index.ex:18
 #: lib/heddle_ui/live/user_live/index.ex:64
 #, elixir-autogen, elixir-format
@@ -816,9 +817,10 @@ msgstr ""
 
 #: lib/heddle_ui/live/api_key_live/index.ex:119
 #: lib/heddle_ui/live/api_key_live/index.ex:201
+#: lib/heddle_ui/live/credential_live/index.ex:125
 #, elixir-autogen, elixir-format
 msgid "Name"
-msgstr ""
+msgstr "Nome"
 
 #: lib/heddle_ui/live/api_key_live/index.ex:231
 #: lib/heddle_ui/live/api_key_live/index.ex:238
@@ -888,7 +890,7 @@ msgstr ""
 msgid "Revoked"
 msgstr ""
 
-#: lib/heddle_ui/components/modals/node_config_modal.ex:155
+#: lib/heddle_ui/components/modals/node_config_modal.ex:163
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr ""
@@ -1133,12 +1135,12 @@ msgstr "Copiloto no chat do editor. Ele pode ler, editar e rodar seus flows."
 msgid "Could not save this setting."
 msgstr "Não foi possível salvar esta configuração."
 
-#: lib/heddle_ui/live/components/chat_component.ex:162
+#: lib/heddle_ui/live/components/chat_component.ex:160
 #, elixir-autogen, elixir-format
 msgid "Don't run"
 msgstr "Não rodar"
 
-#: lib/heddle_ui/live/flow_live/editor.ex:258
+#: lib/heddle_ui/live/flow_live/editor.ex:260
 #, elixir-autogen, elixir-format
 msgid "Failed to save graph data."
 msgstr "Não foi possível salvar o grafo."
@@ -1163,7 +1165,7 @@ msgstr "Não encontrado"
 msgid "Not set"
 msgstr "Não definida"
 
-#: lib/heddle_ui/live/components/chat_component.ex:142
+#: lib/heddle_ui/live/components/chat_component.ex:140
 #, elixir-autogen, elixir-format
 msgid "Run \"%{flow}\"?"
 msgstr "Rodar \"%{flow}\"?"
@@ -1183,7 +1185,7 @@ msgstr "Defina HEDDLE_CLAUDE_API_KEY. Assinaturas do Claude não podem ser usada
 msgid "The Claude Agent is not available."
 msgstr "O Claude Agent não está disponível."
 
-#: lib/heddle_ui/live/components/chat_component.ex:145
+#: lib/heddle_ui/live/components/chat_component.ex:143
 #, elixir-autogen, elixir-format
 msgid "The agent wants to run this flow, which can have real side effects."
 msgstr "O agente quer rodar este flow, o que pode ter efeitos reais."
@@ -1193,7 +1195,7 @@ msgstr "O agente quer rodar este flow, o que pode ter efeitos reais."
 msgid "Use in the editor chat"
 msgstr "Usar no chat do editor"
 
-#: lib/heddle_ui/components/modals/node_config_modal.ex:174
+#: lib/heddle_ui/components/modals/node_config_modal.ex:215
 #, elixir-autogen, elixir-format
 msgid "No code yet"
 msgstr "Sem código ainda"
@@ -1203,12 +1205,84 @@ msgstr "Sem código ainda"
 msgid "Constructing flow..."
 msgstr "Montando o fluxo..."
 
-#: lib/heddle_ui/live/flow_live/editor.ex:548
+#: lib/heddle_ui/live/flow_live/editor.ex:550
 #, elixir-autogen, elixir-format
 msgid "Flow created successfully! You can see it on the canvas."
 msgstr "Fluxo criado com sucesso!"
 
-#: lib/heddle_ui/live/flow_live/editor.ex:556
+#: lib/heddle_ui/live/flow_live/editor.ex:558
 #, elixir-autogen, elixir-format
 msgid "I couldn't build this flow: it %{reason}. Tell me what to change and I'll try again."
 msgstr "Não consegui montar este fluxo: ele %{reason}. Diga o que mudar e eu tento de novo."
+
+#: lib/heddle_ui/live/credential_live/index.ex:149
+#, elixir-autogen, elixir-format
+msgid "Add credential"
+msgstr "Adicionar credencial"
+
+#: lib/heddle_ui/live/credential_live/index.ex:66
+#, elixir-autogen, elixir-format
+msgid "Credential deleted."
+msgstr "Credencial excluída."
+
+#: lib/heddle_ui/live/credential_live/index.ex:33
+#, elixir-autogen, elixir-format
+msgid "Credential saved."
+msgstr "Credencial salva."
+
+#: lib/heddle_ui/components/layouts.ex:106
+#: lib/heddle_ui/live/credential_live/index.ex:13
+#: lib/heddle_ui/live/credential_live/index.ex:110
+#, elixir-autogen, elixir-format
+msgid "Credentials"
+msgstr "Credenciais"
+
+#: lib/heddle_ui/live/credential_live/index.ex:200
+#, elixir-autogen, elixir-format
+msgid "Delete"
+msgstr "Excluir"
+
+#: lib/heddle_ui/live/credential_live/index.ex:188
+#, elixir-autogen, elixir-format
+msgid "Edit"
+msgstr "Editar"
+
+#: lib/heddle_ui/live/credential_live/index.ex:198
+#, elixir-autogen, elixir-format
+msgid "Flows that use this credential will stop working. Delete it?"
+msgstr "Os fluxos que usam esta credencial vão parar de funcionar. Excluir?"
+
+#: lib/heddle_ui/live/credential_live/index.ex:104
+#, elixir-autogen, elixir-format
+msgid "Leave blank to keep the current value"
+msgstr "Deixe em branco para manter o valor atual"
+
+#: lib/heddle_ui/components/modals/node_config_modal.ex:200
+#, elixir-autogen, elixir-format
+msgid "Manage credentials"
+msgstr "Gerenciar credenciais"
+
+#: lib/heddle_ui/live/credential_live/index.ex:165
+#, elixir-autogen, elixir-format
+msgid "No credentials yet."
+msgstr "Nenhuma credencial ainda."
+
+#: lib/heddle_ui/components/modals/node_config_modal.ex:187
+#, elixir-autogen, elixir-format
+msgid "Pick a credential"
+msgstr "Escolha uma credencial"
+
+#: lib/heddle_ui/live/credential_live/index.ex:149
+#, elixir-autogen, elixir-format
+msgid "Save changes"
+msgstr "Salvar alterações"
+
+#: lib/heddle_ui/live/credential_live/index.ex:112
+#, elixir-autogen, elixir-format
+msgid "Secrets your flows use to reach other services. They are stored encrypted and never shown again."
+msgstr "Segredos que seus fluxos usam para acessar outros serviços. Ficam guardados com criptografia e nunca são exibidos de novo."
+
+#: lib/heddle_ui/live/credential_live/index.ex:129
+#, elixir-autogen, elixir-format
+msgid "Service"
+msgstr "Serviço"
