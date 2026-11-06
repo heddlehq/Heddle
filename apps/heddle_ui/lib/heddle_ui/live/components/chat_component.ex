@@ -1,6 +1,8 @@
 defmodule HeddleUI.Components.ChatComponent do
   use HeddleUI, :live_component
 
+  alias HeddleUI.AIChat
+
   attr :open, :boolean, default: false
   attr :messages, :list, default: []
   attr :loading, :boolean, default: false
@@ -60,35 +62,16 @@ defmodule HeddleUI.Components.ChatComponent do
                 if(role == :user,
                   do: "bg-primary text-primary-content rounded-br-none shadow-sm dark:shadow-none",
                   else: "bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200 rounded-bl-none border border-gray-200 dark:border-slate-700 shadow-sm dark:shadow-none")}>
-                <%= if String.contains?(content, "\"action\": \"create_flow\"") or String.starts_with?(String.trim(content), "{") do %>
-                  <div class="flex items-center gap-2 text-primary font-medium italic animate-pulse">
-                    <svg
-                      class="animate-spin h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"
-                      >
-                      </circle>
-
-                      <path
-                        class="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      >
-                      </path>
-                    </svg>
-                    Constructing flow...
-                  </div>
-                <% else %>
-                  {content}
+                <%= cond do %>
+                  <% role == :ai and streaming_flow?({role, content}, @messages, @loading) -> %>
+                    <div class="flex items-center gap-2 text-primary font-medium italic animate-pulse">
+                      <.icon name="hero-arrow-path" class="h-4 w-4 animate-spin" />
+                      {gettext("Constructing flow...")}
+                    </div>
+                  <% role == :ai and AIChat.flow_json?(content) -> %>
+                    {gettext("I couldn't build this flow. Tell me what to change and I'll try again.")}
+                  <% true -> %>
+                    {content}
                 <% end %>
               </div>
             </div>
@@ -208,5 +191,11 @@ defmodule HeddleUI.Components.ChatComponent do
       </div>
     </div>
     """
+  end
+
+  # Only the last reply can still be coming in. One that ended without becoming a flow
+  # must not keep spinning.
+  defp streaming_flow?({_role, content} = message, messages, loading) do
+    loading and message == List.last(messages) and AIChat.flow_json?(content)
   end
 end

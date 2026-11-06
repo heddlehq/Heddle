@@ -124,7 +124,7 @@ msgstr ""
 msgid "Remove Node"
 msgstr ""
 
-#: lib/heddle_ui/live/components/chat_component.ex:169
+#: lib/heddle_ui/live/components/chat_component.ex:154
 #: lib/heddle_ui/live/flow_live/editor.html.heex:20
 #, elixir-autogen, elixir-format
 msgid "Run"
@@ -220,7 +220,7 @@ msgstr ""
 msgid "Or reply below with adjustments"
 msgstr ""
 
-#: lib/heddle_ui/live/components/chat_component.ex:197
+#: lib/heddle_ui/live/components/chat_component.ex:182
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:290
 #, elixir-autogen, elixir-format
 msgid "Send"
@@ -960,6 +960,7 @@ msgstr ""
 msgid "e.g. Production Webhook"
 msgstr ""
 
+#: lib/heddle_ui/live/components/chat_component.ex:72
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:223
 #, elixir-autogen, elixir-format
 msgid "I couldn't build this flow. Tell me what to change and I'll try again."
@@ -1132,12 +1133,12 @@ msgstr ""
 msgid "Could not save this setting."
 msgstr ""
 
-#: lib/heddle_ui/live/components/chat_component.ex:177
+#: lib/heddle_ui/live/components/chat_component.ex:162
 #, elixir-autogen, elixir-format
 msgid "Don't run"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/editor.ex:256
+#: lib/heddle_ui/live/flow_live/editor.ex:258
 #, elixir-autogen, elixir-format
 msgid "Failed to save graph data."
 msgstr ""
@@ -1162,7 +1163,7 @@ msgstr ""
 msgid "Not set"
 msgstr ""
 
-#: lib/heddle_ui/live/components/chat_component.ex:157
+#: lib/heddle_ui/live/components/chat_component.ex:142
 #, elixir-autogen, elixir-format
 msgid "Run \"%{flow}\"?"
 msgstr ""
@@ -1182,7 +1183,7 @@ msgstr ""
 msgid "The Claude Agent is not available."
 msgstr ""
 
-#: lib/heddle_ui/live/components/chat_component.ex:160
+#: lib/heddle_ui/live/components/chat_component.ex:145
 #, elixir-autogen, elixir-format
 msgid "The agent wants to run this flow, which can have real side effects."
 msgstr ""
@@ -1195,4 +1196,19 @@ msgstr ""
 #: lib/heddle_ui/components/modals/node_config_modal.ex:174
 #, elixir-autogen, elixir-format
 msgid "No code yet"
+msgstr ""
+
+#: lib/heddle_ui/live/components/chat_component.ex:69
+#, elixir-autogen, elixir-format
+msgid "Constructing flow..."
+msgstr ""
+
+#: lib/heddle_ui/live/flow_live/editor.ex:548
+#, elixir-autogen, elixir-format
+msgid "Flow created successfully! You can see it on the canvas."
+msgstr ""
+
+#: lib/heddle_ui/live/flow_live/editor.ex:556
+#, elixir-autogen, elixir-format
+msgid "I couldn't build this flow: it %{reason}. Tell me what to change and I'll try again."
 msgstr ""
