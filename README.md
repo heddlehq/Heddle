@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://hex.pm/packages/fusion_flow"><img src="https://img.shields.io/hexpm/v/fusion_flow?style=flat-square&color=6e4a7e&label=hex.pm" alt="Hex.pm" /></a>&nbsp;
-  <a href="https://hexdocs.pm/fusion_flow"><img src="https://img.shields.io/badge/docs-hexdocs-8b5cf6?style=flat-square&logo=elixir&logoColor=white" alt="Docs" /></a>&nbsp;
+  <a href="https://hex.pm/packages/heddle"><img src="https://img.shields.io/hexpm/v/heddle?style=flat-square&color=6e4a7e&label=hex.pm" alt="Hex.pm" /></a>&nbsp;
+  <a href="https://hexdocs.pm/heddle"><img src="https://img.shields.io/badge/docs-hexdocs-8b5cf6?style=flat-square&logo=elixir&logoColor=white" alt="Docs" /></a>&nbsp;
   <a href="https://github.com/heddlehq/heddle/blob/main/LICENSE"><img src="https://img.shields.io/github/license/heddlehq/heddle?style=flat-square&color=blue" alt="License" /></a>&nbsp;
   <a href="https://github.com/heddlehq/heddle/stargazers"><img src="https://img.shields.io/github/stars/heddlehq/heddle?style=flat-square&color=f5a623&logo=github&cacheSeconds=86400" alt="GitHub Stars" /></a>&nbsp;
   <a href="https://discord.gg/7zjnpna239"><img src="https://img.shields.io/discord/1474594465225117740?style=flat-square&color=5865F2&logo=discord&logoColor=white&label=community" alt="Discord" /></a>
@@ -55,6 +55,41 @@ mix phx.server
 cd apps/heddle_worker
 mix run --no-halt
 ```
+
+## 🧩 Building your own nodes
+
+Nodes are written in Elixir with **[Bobbin](https://github.com/heddlehq/Bobbin)**, the SDK for extending Heddle. It's on [Hex](https://hex.pm/packages/bobbin), and Heddle's own nodes are built with it:
+
+```elixir
+def deps do
+  [
+    {:bobbin, "~> 0.2"}
+  ]
+end
+```
+
+```elixir
+defmodule MyNodes.Greet do
+  use Bobbin.Node
+
+  definition do
+    %{
+      name: "Greet",
+      title: "Greet",
+      category: :utility,
+      inputs: [:exec],
+      outputs: [:exec]
+    }
+  end
+
+  @impl true
+  def handler(context, _input) do
+    {:ok, Map.put(context, "result", "Hello!"), :exec}
+  end
+end
+```
+
+The API docs are on [HexDocs](https://hexdocs.pm/bobbin). Heddle can't load outside nodes yet, so for now a new node goes in [`apps/heddle_nodes`](apps/heddle_nodes).
 
 ## 🤝 Community & Contributing
 

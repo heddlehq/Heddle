@@ -40,7 +40,10 @@ defmodule Heddle.MixProject do
     [
       name: "heddle",
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/hubs/heddle"}
+      links: %{
+        "GitHub" => "https://github.com/heddlehq/Heddle",
+        "Website" => "https://heddlehq.github.io/website/"
+      }
     ]
   end
 
