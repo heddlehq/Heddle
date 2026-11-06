@@ -16,6 +16,7 @@ Most of these tools answer a webhook before doing the work, so requests per seco
 | Peak memory | The same sum, sampled every second during the 20,000 calls. |
 | Disk | Size of the images, each counted once. |
 | Boot | From `docker compose up` to the first healthy answer, on an empty database. |
+| Runs per second, slow target | A second pass with a target that takes 100 ms to answer, 3,000 calls. Results are in [`results/slow/`](results/slow/). |
 
 ## How it runs
 
@@ -25,6 +26,8 @@ Most of these tools answer a webhook before doing the work, so requests per seco
 - A tool gets 5 minutes. Anything still queued then is not counted, and is not treated as lost either.
 
 To run it, start the `Benchmark` workflow, or run `node benchmark/compare/run.mjs` on a machine that has Docker. `node benchmark/compare/summarize.mjs` prints the medians.
+
+An instant target hides how many runs a tool keeps going at once, because no run ever waits. A real API takes a while, and a tool that runs five at a time then does five per round trip. That's why the slow target is there: `TARGET_DELAY_MS=100 BURST=3000 RESULTS_DIR=slow node benchmark/compare/run.mjs`, and `node benchmark/compare/summarize.mjs slow` for its medians.
 
 `crash.mjs` is a separate test: it kills each tool in the middle of a load, restarts it and checks, call by call, whether the work it had accepted was lost or repeated, and whether any run stayed unfinished. The target takes 100 ms to answer, so that work piles up. Heddle runs with `OBAN_RESCUE_AFTER_MINUTES=1` here instead of its default of 60, because the test can't wait an hour.
 
@@ -53,3 +56,4 @@ The first version's raw results are in [`results/first-version/`](results/first-
 - In one round, n8n's server received 19,996 of the 20,000 calls.
 - Windmill runs a TypeScript script on its native worker, its fast path for this kind of job, instead of a visual flow.
 - Heddle's HTTP step sets `headers` the way the editor saves it. Leaving it out made the run fail with nothing in the worker's log, which is a Heddle bug we found here.
+- The ratios on the site come from `heddleTimes` in `summarize.mjs`, compared inside each round. Rounds can land on different hardware, so dividing medians from different rounds overstates or understates the gap.
