@@ -6,10 +6,10 @@ defmodule HeddleNodes.Nodes.Condition do
       name: "Condition",
       title: "Condition",
       category: :flow_control,
-      color: "bg-yellow-100 text-yellow-600",
+      color: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
       description:
         "Routes execution through true or false outputs based on a variable comparison.",
-      icon: "hero-arrows-right-left",
+      icon: "hero-share-solid",
       inputs: [:exec],
       outputs: ["true", "false"],
       show: true,

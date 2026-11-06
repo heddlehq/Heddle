@@ -100,10 +100,10 @@ defmodule HeddleUI.Components.Flow.NodeSidebar do
     >
       <div class="flex min-w-0 items-center gap-3">
         <span class={[
-          "w-5 h-5 rounded flex items-center justify-center shrink-0",
+          "size-7 rounded-md flex items-center justify-center shrink-0",
           @color_class
         ]}>
-          <span class={[Map.get(@node, :icon, "hero-square-3-stack-3d"), "w-3.5 h-3.5"]} />
+          <.icon name={Map.get(@node, :icon, "hero-square-3-stack-3d")} class="size-4" />
         </span>
         <span class="truncate">{@node.name}</span>
       </div>

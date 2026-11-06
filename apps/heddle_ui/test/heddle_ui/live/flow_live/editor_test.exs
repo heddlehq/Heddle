@@ -301,6 +301,95 @@ defmodule HeddleUI.FlowLive.EditorTest do
     end
   end
 
+  describe "code of a node in the config drawer" do
+    defp code_node(controls) do
+      fields = %{
+        "language" => %{
+          "value" => "elixir",
+          "label" => "Language",
+          "type" => "select",
+          "options" => ["elixir", "python"]
+        },
+        "code" => %{"value" => "", "label" => "Code Editor", "type" => "code-button"},
+        "code_elixir" => %{"value" => "", "type" => "hidden"},
+        "code_python" => %{"value" => "", "type" => "hidden"}
+      }
+
+      controls =
+        Enum.reduce(controls, fields, fn {key, value}, acc ->
+          put_in(acc, [key, "value"], value)
+        end)
+
+      %{"id" => "n1", "label" => "Eval", "type" => "Evaluate Code", "controls" => controls}
+    end
+
+    defp open_drawer(conn, controls) do
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow_fixture().id}")
+      render_hook(lv, "open_node_config", %{"nodeId" => "n1", "nodeData" => code_node(controls)})
+      lv
+    end
+
+    test "previews the code saved by the editor", %{conn: conn} do
+      lv = open_drawer(conn, %{"code_elixir" => "3 + 3"})
+
+      assert lv |> element("#node-code-preview-code") |> render() =~ "3 + 3"
+    end
+
+    test "previews the code of the node's language", %{conn: conn} do
+      lv =
+        open_drawer(conn, %{
+          "language" => "python",
+          "code_elixir" => "3 + 3",
+          "code_python" => "print(42)"
+        })
+
+      preview = lv |> element("#node-code-preview-code") |> render()
+
+      assert preview =~ "print(42)"
+      refute preview =~ "3 + 3"
+    end
+
+    test "follows the language picked in the drawer", %{conn: conn} do
+      lv = open_drawer(conn, %{"code_elixir" => "3 + 3", "code_python" => "print(42)"})
+
+      lv |> form("#node-config-form", %{"language" => "python"}) |> render_change()
+
+      assert lv |> element("#node-code-preview-code") |> render() =~ "print(42)"
+
+      lv |> element("#edit-code-code") |> render_click()
+
+      assert has_element?(lv, "#code-editor-wrapper[data-language=python]")
+    end
+
+    test "opens a Python node on its own tab with its code", %{conn: conn} do
+      lv = open_drawer(conn, %{"language" => "python", "code_python" => "print(42)"})
+
+      lv |> element("#edit-code-code") |> render_click()
+
+      assert has_element?(lv, "#code-editor-wrapper[data-language=python]")
+      assert lv |> element("#code_python_textarea") |> render() =~ "print(42)"
+    end
+
+    test "opens a node that only has the older code field", %{conn: conn} do
+      lv = open_drawer(conn, %{"code" => "1 + 1"})
+
+      assert lv |> element("#node-code-preview-code") |> render() =~ "1 + 1"
+
+      lv |> element("#edit-code-code") |> render_click()
+
+      assert lv |> element("#code_elixir_textarea") |> render() =~ "1 + 1"
+    end
+
+    test "saving drops the older field, so cleared code doesn't come back", %{conn: conn} do
+      lv = open_drawer(conn, %{"code" => "1 + 1"})
+
+      lv |> element("#edit-code-code") |> render_click()
+      render_submit(lv, "save_code", %{"code_elixir" => "", "code_python" => ""})
+
+      refute lv |> element("#node-code-preview-code") |> render() =~ "1 + 1"
+    end
+  end
+
   describe "open_code_editor event" do
     test "opens code editor modal with full params", %{conn: conn} do
       flow = flow_fixture()
