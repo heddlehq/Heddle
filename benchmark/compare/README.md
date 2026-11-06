@@ -50,10 +50,21 @@ The first version ran 3,000 calls, and Heddle's lead over n8n looked too good. H
 
 The first version's raw results are in [`results/first-version/`](results/first-version/).
 
+## What we changed after publishing
+
+Running this test showed two problems in Heddle, and we fixed both:
+
+- Run ids came from a list of 1,716 word combinations. Past that, nearly every run failed about eight inserts before one went through, around 150,000 failed inserts over 20,000 runs.
+- A worker ran 5 flows at a time. That didn't show against an instant target, but a target taking 100 ms held it to about 42 runs per second, behind Kestra, Windmill and n8n. The default is now 50 flows and 10 database connections per worker.
+
+Running more flows at once has a cost. A crash now repeats up to 50 runs instead of 5, because that many can be in progress.
+
+The earlier results are in [`results/second-version/`](results/second-version/). Don't compare them with the current ones: the rounds landed on different hardware, and every tool's numbers moved with it. The current results ran on Heddle 0.4.4 plus these two changes, though the files still say 0.4.0.
+
 ## Details worth knowing
 
 - Activepieces and n8n in queue mode hit the 5-minute limit in all three rounds, so their runs per second reflect that window.
-- In one round, n8n's server received 19,996 of the 20,000 calls.
+- Activepieces finished 236 to 448 of the 20,000 calls, about 1 per second, yet did 22 per second with 3,000 calls and a slow target. It falls behind under a long load, so don't read its speed row as its pace on lighter work.
 - Windmill runs a TypeScript script on its native worker, its fast path for this kind of job, instead of a visual flow.
 - Heddle's HTTP step sets `headers` the way the editor saves it. Leaving it out made the run fail with nothing in the worker's log, which is a Heddle bug we found here.
 - The ratios on the site come from `heddleTimes` in `summarize.mjs`, compared inside each round. Rounds can land on different hardware, so dividing medians from different rounds overstates or understates the gap.
