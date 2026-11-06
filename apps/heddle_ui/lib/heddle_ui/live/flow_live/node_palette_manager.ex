@@ -184,9 +184,10 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
   defp category_sort_index(:flow_control), do: 1
   defp category_sort_index(:data_manipulation), do: 2
   defp category_sort_index(:code), do: 3
-  defp category_sort_index(:integration), do: 4
-  defp category_sort_index(:utility), do: 5
-  defp category_sort_index(_), do: 6
+  defp category_sort_index(:ai), do: 4
+  defp category_sort_index(:integration), do: 5
+  defp category_sort_index(:utility), do: 6
+  defp category_sort_index(_), do: 7
 
   @doc """
   Finds matching category atom from string param.

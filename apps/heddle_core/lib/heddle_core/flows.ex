@@ -23,6 +23,13 @@ defmodule HeddleCore.Flows do
     Repo.all(Flow)
   end
 
+  @doc """
+  Returns every flow with a node of `type`, whoever owns it.
+  """
+  def list_flows_with_node(type) do
+    Repo.all(from f in Flow, where: fragment("? @> ?::jsonb", f.nodes, ^[%{type: type}]))
+  end
+
   def list_flows(%Scope{} = scope) do
     scope
     |> scope_query()

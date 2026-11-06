@@ -1,5 +1,5 @@
 defmodule HeddleNodes.Nodes.Start do
-  use FusionKit.Node
+  use Bobbin.Node
 
   definition do
     %{

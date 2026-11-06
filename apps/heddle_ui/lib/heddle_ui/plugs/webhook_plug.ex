@@ -50,17 +50,11 @@ defmodule HeddleUI.Plugs.WebhookPlug do
 
     with {:ok, execution} <- create_webhook_execution(flow, conn),
          {:ok, _job} <- HeddleCore.Executions.enqueue_execution(execution) do
-      conn
-      |> put_resp_content_type("application/json")
-      |> send_resp(
-        202,
-        Jason.encode!(%{
-          status: "accepted",
-          execution_id: execution.public_id,
-          execution_status: execution.status
-        })
-      )
-      |> halt()
+      if responds?(flow) do
+        respond_from_flow(conn, execution)
+      else
+        send_accepted(conn, execution)
+      end
     else
       {:error, _reason} ->
         conn
@@ -74,6 +68,52 @@ defmodule HeddleUI.Plugs.WebhookPlug do
       |> put_resp_content_type("application/json")
       |> send_resp(404, Jason.encode!(%{error: "Flow not found"}))
       |> halt()
+  end
+
+  defp responds?(flow) do
+    Enum.any?(flow.nodes || [], &(&1["type"] == "Respond to Webhook"))
+  end
+
+  defp respond_from_flow(conn, execution) do
+    case HeddleCore.Executions.await_response(execution, await_options()) do
+      {:ok, response} ->
+        conn
+        |> put_resp_content_type(response["content_type"])
+        |> send_resp(response["status"], response["body"])
+        |> halt()
+
+      {:error, :no_response} ->
+        send_accepted(conn, execution)
+
+      {:error, :failed} ->
+        send_error(conn, 500, "The flow failed before responding", execution)
+
+      {:error, :timeout} ->
+        send_error(conn, 504, "The flow did not respond in time", execution)
+    end
+  end
+
+  defp await_options, do: Application.get_env(:heddle_ui, :webhook_response, [])
+
+  defp send_accepted(conn, execution) do
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(
+      202,
+      Jason.encode!(%{
+        status: "accepted",
+        execution_id: execution.public_id,
+        execution_status: execution.status
+      })
+    )
+    |> halt()
+  end
+
+  defp send_error(conn, status, message, execution) do
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(status, Jason.encode!(%{error: message, execution_id: execution.public_id}))
+    |> halt()
   end
 
   defp create_webhook_execution(flow, conn) do

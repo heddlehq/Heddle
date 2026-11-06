@@ -7,6 +7,8 @@ defmodule HeddleCore.Flows.GraphValidator do
   runtime-configured manifest or `HeddleNodes` is used when available.
   """
 
+  alias HeddleCore.Flows.Schedule
+
   @node_keys ~w(id type label controls position)
   @connection_keys ~w(source sourceOutput target targetInput)
 
@@ -86,11 +88,20 @@ defmodule HeddleCore.Flows.GraphValidator do
         not Map.has_key?(definitions, node_type(node)) ->
           {:halt, {:error, :nodes, "contains unknown node type"}}
 
+        invalid_schedule?(node) ->
+          {:halt, {:error, :nodes, "contains a Schedule node with an invalid cron expression"}}
+
         true ->
           {:cont, :ok}
       end
     end)
   end
+
+  defp invalid_schedule?(%{"type" => "Schedule", "controls" => %{"cron" => cron}}) do
+    not Schedule.valid?(cron)
+  end
+
+  defp invalid_schedule?(_node), do: false
 
   defp validate_connections(connections, nodes, definitions) do
     nodes_by_id = Map.new(nodes, fn node -> {to_string(node["id"]), node} end)

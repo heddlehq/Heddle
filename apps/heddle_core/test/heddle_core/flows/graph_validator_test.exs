@@ -15,6 +15,11 @@ defmodule HeddleCore.Flows.GraphValidatorTest do
           name: "Output",
           inputs: ["exec"],
           outputs: []
+        },
+        %{
+          name: "Schedule",
+          inputs: [],
+          outputs: ["exec"]
         }
       ]
     end
@@ -53,6 +58,29 @@ defmodule HeddleCore.Flows.GraphValidatorTest do
 
     test "accepts valid Rete graph payload" do
       assert GraphValidator.validate(@valid_nodes, @valid_connections, manifest: Manifest) == :ok
+    end
+
+    test "rejects a Schedule node with an invalid cron expression" do
+      schedule = fn cron ->
+        [
+          %{
+            "id" => "s",
+            "type" => "Schedule",
+            "label" => "Schedule",
+            "position" => %{"x" => 0, "y" => 0},
+            "controls" => %{"cron" => cron}
+          }
+        ]
+      end
+
+      assert GraphValidator.validate(schedule.("0 9 * * 1-5"), [], manifest: Manifest) == :ok
+
+      for cron <- ["", "soon", "61 * * * *", "@reboot"] do
+        assert {:error, :nodes, message} =
+                 GraphValidator.validate(schedule.(cron), [], manifest: Manifest)
+
+        assert message =~ "cron"
+      end
     end
 
     test "rejects node types missing from manifest" do

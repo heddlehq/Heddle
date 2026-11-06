@@ -1,5 +1,7 @@
 defmodule HeddleNodes.Nodes.HttpRequest do
-  use FusionKit.Node
+  use Bobbin.Node
+
+  alias HeddleNodes.Template
 
   definition do
     %{
@@ -53,9 +55,9 @@ defmodule HeddleNodes.Nodes.HttpRequest do
     context = if is_map(input), do: Map.merge(context, input), else: context
 
     method = String.to_atom(String.downcase(context["method"] || "get"))
-    url = interpolate(context["url"] || "", context)
-    headers_str = interpolate(context["headers"] || "{}", context)
-    body_str = interpolate(context["body"] || "", context)
+    url = Template.render(context["url"] || "", context)
+    headers_str = Template.render(context["headers"] || "{}", context)
+    body_str = Template.render(context["body"] || "", context)
 
     headers =
       case Jason.decode(headers_str) do
@@ -92,19 +94,5 @@ defmodule HeddleNodes.Nodes.HttpRequest do
       {:error, reason} ->
         {:ok, Map.put(context, "result", %{"error" => inspect(reason)}), "error"}
     end
-  end
-
-  defp interpolate(string, context) do
-    Regex.replace(~r/\{\{(.*?)\}\}/, string, fn _, key ->
-      trimmed_key = String.trim(key)
-      val = get_context_value(context, trimmed_key)
-      to_string(val || "")
-    end)
-  end
-
-  defp get_context_value(context, key) do
-    context
-    |> Map.get("variables", %{})
-    |> Map.get(key, Map.get(context, key))
   end
 end

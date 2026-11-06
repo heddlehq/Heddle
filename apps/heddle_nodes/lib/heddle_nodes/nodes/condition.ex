@@ -1,5 +1,5 @@
 defmodule HeddleNodes.Nodes.Condition do
-  use FusionKit.Node
+  use Bobbin.Node
 
   definition do
     %{

@@ -14,6 +14,7 @@ defmodule HeddleCore.Executions.Execution do
     field :result, :map
     field :error, :map
     field :logs, {:array, :map}, default: []
+    field :response, :map
     field :started_at, :utc_datetime
     field :finished_at, :utc_datetime
 

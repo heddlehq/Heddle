@@ -116,6 +116,47 @@ defmodule HeddleWorker.FlowExecutionWorkerTest do
     end
   end
 
+  describe "Respond to Webhook" do
+    test "saves the answer before the flow ends" do
+      flow =
+        flow_fixture(%{
+          nodes: [
+            %{
+              "id" => "1",
+              "type" => "Webhook",
+              "label" => "Webhook",
+              "controls" => %{"path" => "/hi", "method" => "POST"}
+            },
+            %{
+              "id" => "2",
+              "type" => "Respond to Webhook",
+              "label" => "Reply",
+              "controls" => %{"response_status" => "201", "response_body" => "{{body.name}}"}
+            }
+          ],
+          connections: [
+            %{
+              "source" => "1",
+              "sourceOutput" => "exec",
+              "target" => "2",
+              "targetInput" => "exec"
+            }
+          ]
+        })
+
+      execution =
+        execution_fixture(%{
+          flow: flow,
+          input: %{"trigger" => "webhook", "request" => %{"body" => %{"name" => "Ana"}}}
+        })
+
+      assert :ok = perform_execution(execution)
+
+      assert %{status: "succeeded", response: response} = Executions.get_execution!(execution.id)
+      assert %{"status" => 201, "body" => "Ana", "content_type" => "text/plain"} = response
+    end
+  end
+
   defp perform_execution(execution) do
     FlowExecutionWorker.perform(%Oban.Job{args: %{"execution_id" => execution.id}})
   end

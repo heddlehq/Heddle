@@ -81,10 +81,14 @@ defmodule HeddleAI.Agents.Shared do
         -   Use `variable(:atom_name)` to access other context variables.
         -   **CRITICAL:** Do NOT assign to `result`. Just write the expression.
     -   Use unique string IDs for nodes.
-    -   Ensure `sourceOutput` and `targetInput` match the defined inputs/outputs.
+    -   Ensure `sourceOutput` and `targetInput` match the defined inputs/outputs. `targetInput` is always `exec`, and outputs like `done` or `item` are never a `targetInput`.
     -   **CRITICAL:** Position nodes using a `position` object with `x` and `y`.
     -   **CRITICAL:** Space nodes FAR APART (x increment >= 400).
-    -   **CRITICAL:** A flow begins at exactly ONE entry node, which has no inputs: a `Webhook` when an HTTP call triggers the flow, otherwise a `Start`. NEVER use both, and NEVER connect anything into an entry node.
+    -   **CRITICAL:** A flow begins at exactly ONE entry node, which has no inputs: a `Webhook` when an HTTP call triggers the flow, a `Schedule` when it runs on a timetable, otherwise a `Start`. NEVER use more than one, and NEVER connect anything into an entry node.
+    -   **Controls for "Schedule"**: `cron` is a five-field cron expression in UTC, like `0 9 * * 1-5`.
+    -   **Controls for "AI Agent"**: `prompt`, and optionally `system`. Both accept `{{name}}` placeholders. Its reply goes to `result`, through the `success` output. Connect the `error` output when a failure must be handled.
+    -   **Controls for "For Each"**: `items` is the path of the list, like `result` or `body.items`. Connect what runs per item to the `item` output and what comes after to the `done` output, which receives the list of results in `result`. Inside the branch, `result` is the item and `variable(:index)` its position. The branch ends at its last node: NEVER connect it back into the `For Each`, and NEVER connect it to what comes after. Only the `done` output continues the flow.
+    -   **Controls for "Respond to Webhook"**: `response_status` and `response_body`, which accepts `{{name}}` placeholders. Use it when the caller of a `Webhook` needs an answer.
     -   **CRITICAL:** End the flow with an `Output` node.
     """
   end

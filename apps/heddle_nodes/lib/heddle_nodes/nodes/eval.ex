@@ -1,5 +1,5 @@
 defmodule HeddleNodes.Nodes.Eval do
-  use FusionKit.Node
+  use Bobbin.Node
 
   alias HeddleRuntime.Runtime
 

@@ -3,26 +3,50 @@ defmodule HeddleNodes.Runner do
 
   @internal_keys ["flow_id", "logs"]
 
-  def run(flow, input \\ %{}) do
-    start_node =
-      Enum.find(flow.nodes, fn node -> node["type"] == "Start" || node["label"] == "Start" end)
+  @doc """
+  Runs `flow` from its Start node, or from a Schedule node when it has none. The
+  Schedule that fired comes in `input` as `"node_id"`.
 
-    if start_node do
+  `:on_respond` is called with what a Respond to Webhook node answers.
+  """
+  def run(flow, input \\ %{}, opts \\ []) do
+    input = normalize_input(input)
+
+    if start_node = start_node(flow, input) do
       initial_context =
         input
-        |> normalize_input()
+        |> Map.delete("node_id")
         |> Map.merge(%{
           "flow_id" => flow.id,
           "logs" => []
         })
 
-      case execute_node(start_node, initial_context, flow) do
+      case execute_node(start_node, initial_context, graph(flow, opts)) do
         {:ok, execution_result} -> {:ok, execution_result}
         {:error, reason, node_id} -> {:error, reason, node_id}
       end
     else
       {:error, "No Start node found", nil}
     end
+  end
+
+  defp start_node(flow, %{"node_id" => node_id}) do
+    Enum.find(flow.nodes, &(to_string(&1["id"]) == to_string(node_id))) || start_node(flow, %{})
+  end
+
+  defp start_node(flow, _input) do
+    Enum.find(flow.nodes, &node_type?(&1, "Start")) ||
+      Enum.find(flow.nodes, &node_type?(&1, "Schedule"))
+  end
+
+  defp node_type?(node, type), do: node["type"] == type || node["label"] == type
+
+  defp graph(flow, opts) do
+    %{
+      nodes: flow.nodes,
+      connections: flow.connections,
+      on_respond: Keyword.get(opts, :on_respond, fn _response -> :ok end)
+    }
   end
 
   defp execute_node(node, context, flow) do
@@ -36,56 +60,31 @@ defmodule HeddleNodes.Runner do
       control_keys = Map.keys(node["controls"] || %{}) -- preserved_control_keys(node_type)
       node_context = Map.merge(context, node["controls"] || %{})
 
+      step = %{
+        node: node,
+        type: node_type,
+        context: context,
+        control_keys: control_keys,
+        flow: flow
+      }
+
       try do
         case apply(module, :handler, [node_context, nil]) do
           {:ok, result, output_name} ->
-            result =
-              finish_node(result, context, control_keys, node, node_type, output_name, :success)
-
-            connections =
-              flow.connections
-              |> Enum.filter(fn c ->
-                c["source"] == node["id"] && c["sourceOutput"] == to_string(output_name)
-              end)
-
-            process_connections(connections, result, flow)
+            follow(result, to_string(output_name), step)
 
           {:ok, result} ->
-            output_name = List.first(definition[:outputs]) || "exec"
-
-            result =
-              finish_node(result, context, control_keys, node, node_type, output_name, :success)
-
-            connections =
-              flow.connections
-              |> Enum.filter(fn c ->
-                c["source"] == node["id"] && c["sourceOutput"] == to_string(output_name)
-              end)
-
-            process_connections(connections, result, flow)
+            follow(result, first_output(definition), step)
 
           {:result, value} ->
-            output_name = List.first(definition[:outputs]) || "exec"
-            new_context = Map.put(context, "result", value)
+            follow(Map.put(context, "result", value), first_output(definition), step)
 
-            new_context =
-              finish_node(
-                new_context,
-                context,
-                control_keys,
-                node,
-                node_type,
-                output_name,
-                :success
-              )
+          {:respond, response, result} ->
+            flow.on_respond.(response)
+            follow(result, first_output(definition), step)
 
-            connections =
-              flow.connections
-              |> Enum.filter(fn c ->
-                c["source"] == node["id"] && c["sourceOutput"] == to_string(output_name)
-              end)
-
-            process_connections(connections, new_context, flow)
+          {:each, items} ->
+            run_each(items, step)
 
           {:error, reason} ->
             error_context =
@@ -101,13 +100,9 @@ defmodule HeddleNodes.Runner do
               )
 
             if "error" in (definition[:outputs] || []) do
-              connections =
-                flow.connections
-                |> Enum.filter(fn c ->
-                  c["source"] == node["id"] && c["sourceOutput"] == "error"
-                end)
-
-              process_connections(connections, error_context, flow)
+              flow
+              |> connections_from(node, "error")
+              |> process_connections(error_context, flow)
             else
               {:error, reason, to_string(node["id"])}
             end
@@ -122,6 +117,64 @@ defmodule HeddleNodes.Runner do
       end
     else
       {:ok, context}
+    end
+  end
+
+  defp first_output(definition), do: to_string(List.first(definition[:outputs]) || "exec")
+
+  defp follow(result, output_name, step) do
+    result = finish_step(result, output_name, step)
+
+    step.flow
+    |> connections_from(step.node, output_name)
+    |> process_connections(result, step.flow)
+  end
+
+  defp finish_step(result, output_name, step) do
+    finish_node(
+      result,
+      step.context,
+      step.control_keys,
+      step.node,
+      step.type,
+      output_name,
+      :success
+    )
+  end
+
+  defp connections_from(flow, node, output_name) do
+    Enum.filter(flow.connections, fn connection ->
+      connection["source"] == node["id"] && connection["sourceOutput"] == output_name
+    end)
+  end
+
+  # What a branch changes stays in that iteration, apart from its result and logs.
+  defp run_each(items, step) do
+    base = finish_step(step.context, "item", step)
+    branch = connections_from(step.flow, step.node, "item")
+
+    items
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, base["logs"], []}, fn {item, index}, {:ok, logs, results} ->
+      iteration =
+        Map.merge(base, %{"logs" => logs, "item" => item, "index" => index, "result" => item})
+
+      case process_connections(branch, iteration, step.flow) do
+        {:ok, finished} -> {:cont, {:ok, finished["logs"], [finished["result"] | results]}}
+        {:error, reason, node_id} -> {:halt, {:error, reason, node_id}}
+      end
+    end)
+    |> case do
+      {:ok, logs, results} ->
+        results = Enum.reverse(results)
+        done = Map.merge(base, %{"logs" => logs, "results" => results, "result" => results})
+
+        step.flow
+        |> connections_from(step.node, "done")
+        |> process_connections(done, step.flow)
+
+      error ->
+        error
     end
   end
 
@@ -197,7 +250,7 @@ defmodule HeddleNodes.Runner do
     end)
   end
 
-  def run_from_webhook(flow, webhook_request) do
+  def run_from_webhook(flow, webhook_request, opts \\ []) do
     webhook_node =
       Enum.find(flow.nodes, fn node ->
         (node["type"] || node["label"]) == "Webhook"
@@ -214,7 +267,7 @@ defmodule HeddleNodes.Runner do
         "request_path" => webhook_request["path"]
       }
 
-      execute_node(webhook_node, initial_context, flow)
+      execute_node(webhook_node, initial_context, graph(flow, opts))
     else
       {:error, "No Webhook node found in flow", nil}
     end

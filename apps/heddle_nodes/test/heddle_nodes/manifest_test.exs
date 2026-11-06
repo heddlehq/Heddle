@@ -6,12 +6,16 @@ defmodule HeddleNodes.ManifestTest do
       assert HeddleNodes.available_nodes() == [
                HeddleNodes.Nodes.Start,
                HeddleNodes.Nodes.Webhook,
+               HeddleNodes.Nodes.Schedule,
                HeddleNodes.Nodes.Variable,
                HeddleNodes.Nodes.Eval,
                HeddleNodes.Nodes.HttpRequest,
+               HeddleNodes.Nodes.AIAgent,
                HeddleNodes.Nodes.Condition,
+               HeddleNodes.Nodes.ForEach,
                HeddleNodes.Nodes.Logger,
-               HeddleNodes.Nodes.Output
+               HeddleNodes.Nodes.Output,
+               HeddleNodes.Nodes.RespondToWebhook
              ]
     end
 

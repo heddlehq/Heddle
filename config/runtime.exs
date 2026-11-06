@@ -91,7 +91,8 @@ if config_env() == :prod do
       # those runs stay "running" and never finish.
       plugins: [
         {Oban.Plugins.Lifeline,
-         rescue_after: :timer.minutes(env_int.("OBAN_RESCUE_AFTER_MINUTES", 60))}
+         rescue_after: :timer.minutes(env_int.("OBAN_RESCUE_AFTER_MINUTES", 60))},
+        {Oban.Plugins.Cron, crontab: [{"* * * * *", HeddleWorker.ScheduleWorker}]}
       ],
       repo: HeddleCore.Repo
   end

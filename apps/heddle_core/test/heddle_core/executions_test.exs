@@ -200,4 +200,52 @@ defmodule HeddleCore.ExecutionsTest do
   rescue
     _ -> false
   end
+
+  describe "webhook responses" do
+    @response %{"status" => 201, "body" => "ok", "content_type" => "text/plain"}
+
+    test "await_response/2 returns what the flow answered" do
+      execution = execution_fixture()
+      :ok = Executions.put_response(execution, @response)
+
+      assert Executions.await_response(execution, timeout: 200, poll: 5) == {:ok, @response}
+    end
+
+    test "await_response/2 sees a response that comes later" do
+      execution = execution_fixture()
+
+      Task.start_link(fn -> Executions.put_response(execution, @response) end)
+
+      assert Executions.await_response(execution, timeout: 1000, poll: 5) == {:ok, @response}
+    end
+
+    test "await_response/2 stops when the run fails" do
+      execution = execution_fixture()
+      {:ok, _execution} = Executions.mark_failed(execution, %{"message" => "boom"})
+
+      assert Executions.await_response(execution, timeout: 200, poll: 5) == {:error, :failed}
+    end
+
+    test "await_response/2 stops when the run ends without answering" do
+      execution = execution_fixture()
+      {:ok, _execution} = Executions.mark_succeeded(execution, %{})
+
+      assert Executions.await_response(execution, timeout: 200, poll: 5) ==
+               {:error, :no_response}
+    end
+
+    test "await_response/2 gives up after the timeout" do
+      execution = execution_fixture()
+
+      assert Executions.await_response(execution, timeout: 20, poll: 5) == {:error, :timeout}
+    end
+
+    test "a response survives the run finishing" do
+      execution = execution_fixture()
+      :ok = Executions.put_response(execution, @response)
+      {:ok, _execution} = Executions.mark_succeeded(execution, %{})
+
+      assert Executions.get_execution!(execution.id).response == @response
+    end
+  end
 end
