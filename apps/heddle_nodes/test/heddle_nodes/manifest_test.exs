@@ -13,6 +13,7 @@ defmodule HeddleNodes.ManifestTest do
                HeddleNodes.Nodes.HttpRequest,
                HeddleNodes.Nodes.Slack,
                HeddleNodes.Nodes.Email,
+               HeddleNodes.Nodes.GoogleSheets,
                HeddleNodes.Nodes.S3,
                HeddleNodes.Nodes.Ftp,
                HeddleNodes.Nodes.AIAgent,
