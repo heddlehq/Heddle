@@ -1,6 +1,8 @@
 defmodule HeddleUI.Components.Modals.NodeConfigModal do
   use HeddleUI, :html
 
+  alias HeddleUI.FlowLive.NodeCode
+
   attr :config_modal_open, :boolean, required: true
   attr :editing_node_data, :map, default: nil
 
@@ -35,7 +37,12 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
           </button>
         </div>
 
-        <form phx-submit="save_node_config" class="flex-1 flex flex-col overflow-hidden">
+        <form
+          id="node-config-form"
+          phx-change="node_config_changed"
+          phx-submit="save_node_config"
+          class="flex-1 flex flex-col overflow-hidden"
+        >
           <div class="flex-1 p-6 overflow-y-auto space-y-5">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
@@ -99,41 +106,14 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
                             <.icon name="hero-chevron-down" class="w-4 h-4" />
                           </span>
                         </div>
-                      <% "code-icon" -> %>
-                        <div class="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700">
-                          <pre class="p-3 text-xs font-mono text-gray-300 bg-slate-800 dark:bg-slate-950 overflow-hidden leading-relaxed min-h-[72px]"><code>{String.slice(to_string(control["value"]), 0, 150)}</code></pre>
-                          <.button
-                            type="button"
-                            variant="primary"
-                            phx-click="open_code_editor_from_config"
-                            phx-value-field-name={key}
-                            phx-value-code={control["value"]}
-                            phx-value-language={control["language"] || "elixir"}
-                            class="absolute bottom-2 right-2 px-3 py-1.5 text-xs h-auto"
-                            title="Open Code Editor"
-                          >
-                            <.icon name="hero-code-bracket" class="w-3.5 h-3.5 mr-1" /> Edit Code
-                          </.button>
-                          <input type="hidden" name={key} value={control["value"]} />
-                        </div>
-                      <% "code-button" -> %>
-                        <div class="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700">
-                          <pre class="p-3 text-xs font-mono text-gray-300 bg-slate-800 dark:bg-slate-950 overflow-hidden leading-relaxed min-h-[72px]"><code>{String.slice(to_string(control["value"]), 0, 150)}</code></pre>
-                          <.button
-                            type="button"
-                            variant="primary"
-                            phx-click="open_code_editor_from_config"
-                            phx-value-field-name={key}
-                            phx-value-code={control["value"]}
-                            phx-value-language={control["language"] || "elixir"}
-                            class="absolute bottom-2 right-2 px-3 py-1.5 text-xs h-auto"
-                          >
-                            <.icon name="hero-code-bracket" class="w-3.5 h-3.5 mr-1" /> {gettext(
-                              "Edit Code"
-                            )}
-                          </.button>
-                          <input type="hidden" name={key} value={control["value"]} />
-                        </div>
+                      <% type when type in ["code-icon", "code-button"] -> %>
+                        <.code_field
+                          key={key}
+                          value={control["value"]}
+                          code={
+                            NodeCode.current(NodeCode.from_controls(@editing_node_data["controls"]))
+                          }
+                        />
                       <% _ -> %>
                         <%= if String.length(to_string(control["value"])) > 50 do %>
                           <textarea
@@ -177,6 +157,32 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
           </div>
         </form>
       <% end %>
+    </div>
+    """
+  end
+
+  attr :key, :string, required: true
+  attr :value, :any, required: true
+  attr :code, :string, required: true
+
+  defp code_field(assigns) do
+    ~H"""
+    <div class="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700">
+      <pre
+        id={"node-code-preview-#{@key}"}
+        class="p-3 text-xs font-mono text-gray-300 bg-slate-800 dark:bg-slate-950 overflow-hidden leading-relaxed min-h-[72px]"
+      ><code :if={@code != ""}>{String.slice(@code, 0, 150)}</code><span :if={@code == ""} class="text-gray-400">{gettext("No code yet")}</span></pre>
+      <.button
+        id={"edit-code-#{@key}"}
+        type="button"
+        variant="primary"
+        phx-click="open_code_editor_from_config"
+        phx-value-field-name={@key}
+        class="absolute bottom-2 right-2 px-3 py-1.5 text-xs h-auto"
+      >
+        <.icon name="hero-code-bracket" class="w-3.5 h-3.5 mr-1" /> {gettext("Edit Code")}
+      </.button>
+      <input type="hidden" name={@key} value={@value} />
     </div>
     """
   end

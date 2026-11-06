@@ -67,8 +67,8 @@ if config_env() == :prod do
   pool_size =
     case runtime_role do
       :ui -> env_int.("UI_POOL_SIZE", env_int.("POOL_SIZE", 10))
-      :worker -> env_int.("WORKER_POOL_SIZE", env_int.("POOL_SIZE", 3))
-      :all -> env_int.("POOL_SIZE", 13)
+      :worker -> env_int.("WORKER_POOL_SIZE", env_int.("POOL_SIZE", 10))
+      :all -> env_int.("POOL_SIZE", 20)
     end
 
   config :heddle_core, HeddleCore.Repo,
@@ -85,7 +85,13 @@ if config_env() == :prod do
       notifier: Oban.Notifiers.Postgres,
       queues: [
         default: env_int.("OBAN_DEFAULT_CONCURRENCY", 2),
-        executions: env_int.("OBAN_EXECUTIONS_CONCURRENCY", 5)
+        executions: env_int.("OBAN_EXECUTIONS_CONCURRENCY", 50)
+      ],
+      # A worker that dies leaves its jobs marked as executing forever. Without this,
+      # those runs stay "running" and never finish.
+      plugins: [
+        {Oban.Plugins.Lifeline,
+         rescue_after: :timer.minutes(env_int.("OBAN_RESCUE_AFTER_MINUTES", 60))}
       ],
       repo: HeddleCore.Repo
   end

@@ -5,9 +5,9 @@ import { repeat } from "lit/directives/repeat.js";
  * Since node icons are used dynamically via classes, we need to list them here
  * so Tailwind doesn't purge them during build.
  * 
- * hero-play hero-code-bracket hero-arrows-right-left hero-globe-alt 
- * hero-chat-bubble-bottom-center-text hero-variable hero-check-circle 
- * hero-cube hero-link hero-circle-stack hero-arrows-pointing-out 
+ * hero-bolt-solid hero-play-solid hero-share-solid hero-flag-solid hero-variable-solid
+ * hero-code-bracket-solid hero-globe-alt-solid hero-document-text-solid
+ * hero-cube hero-circle-stack hero-arrows-pointing-out
  * hero-arrows-pointing-in hero-magnifying-glass hero-clock 
  * hero-adjustments-horizontal hero-tag
  */

@@ -150,11 +150,14 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db
 The default Docker setup now separates the main scaling knobs:
 
 - `UI_POOL_SIZE=10`
-- `WORKER_POOL_SIZE=3`
-- `OBAN_EXECUTIONS_CONCURRENCY=5`
+- `WORKER_POOL_SIZE=10`
+- `OBAN_EXECUTIONS_CONCURRENCY=50`
 - `OBAN_DEFAULT_CONCURRENCY=2`
+- `OBAN_RESCUE_AFTER_MINUTES=60`
 
 Increase worker replicas carefully and tune these values together with your Postgres limits.
+
+`OBAN_RESCUE_AFTER_MINUTES` is how long a run can go on before Heddle assumes its worker died and starts it again from the beginning. Keep it longer than your longest flow, or a flow that is still running gets started twice.
 
 ### 7. API-only UI mode
 

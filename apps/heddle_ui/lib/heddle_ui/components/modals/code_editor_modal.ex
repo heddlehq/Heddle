@@ -15,16 +15,9 @@ defmodule HeddleUI.Components.Modals.CodeEditorModal do
           <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-700">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
               <span class="p-1 rounded bg-primary/10 text-primary">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-                  />
-                </svg>
+                <.icon name="hero-code-bracket" class="w-5 h-5" />
               </span>
-              Edit Code
+              {gettext("Edit Code")}
             </h3>
 
             <.button
@@ -65,7 +58,11 @@ defmodule HeddleUI.Components.Modals.CodeEditorModal do
             </button>
           </div>
 
-          <form phx-submit="save_code" class="flex-1 flex flex-col overflow-hidden">
+          <form
+            id="code-editor-form"
+            phx-submit="save_code"
+            class="flex-1 flex flex-col overflow-hidden"
+          >
             <div
               class="flex-1 p-0 overflow-hidden relative bg-[#1e1e1e]"
               id="code-editor-wrapper"
@@ -74,10 +71,16 @@ defmodule HeddleUI.Components.Modals.CodeEditorModal do
               data-variables={Jason.encode!(@available_variables)}
               data-language={@current_code_tab}
             >
-              <textarea id="code_elixir_textarea" name="code_elixir" class="w-full h-full hidden"><%= @current_code_elixir %></textarea> <textarea
+              <textarea
+                id="code_elixir_textarea"
+                name="code_elixir"
+                spellcheck="false"
+                class={[code_field_class(), @current_code_tab != "elixir" && "hidden"]}
+              ><%= @current_code_elixir %></textarea> <textarea
                 id="code_python_textarea"
                 name="code_python"
-                class="w-full h-full hidden"
+                spellcheck="false"
+                class={[code_field_class(), @current_code_tab != "python" && "hidden"]}
               ><%= @current_code_python %></textarea>
             </div>
 
@@ -101,5 +104,10 @@ defmodule HeddleUI.Components.Modals.CodeEditorModal do
       </div>
     <% end %>
     """
+  end
+
+  # What shows until Monaco is ready, and if it can't load at all.
+  defp code_field_class do
+    "absolute inset-0 w-full h-full resize-none border-0 bg-transparent p-4 font-mono text-sm text-gray-200 outline-none"
   end
 end

@@ -23,7 +23,7 @@ config :heddle_ui, :scopes,
 config :heddle_worker, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
-  queues: [default: 2, executions: 5],
+  queues: [default: 2, executions: 50],
   repo: HeddleCore.Repo
 
 config :heddle_core, Oban,

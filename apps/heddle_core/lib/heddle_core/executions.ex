@@ -235,43 +235,25 @@ defmodule HeddleCore.Executions do
     append_log(execution, %{"message" => to_string(log_entry)})
   end
 
+  # The words alone give only 1,716 ids, so the suffix is always there. Without
+  # it, every run past that number fails several inserts before one goes through.
   def generate_public_id do
     [
       random_word(@public_id_first_words),
       random_word(@public_id_middle_words),
-      random_word(@public_id_last_words)
+      random_word(@public_id_last_words),
+      random_suffix()
     ]
     |> Enum.join("-")
   end
 
-  defp insert_with_public_id(attrs, attempts_remaining) when attempts_remaining > 0 do
+  defp insert_with_public_id(attrs, attempts_remaining) do
     attrs = Map.put(attrs, :public_id, generate_public_id())
 
     case insert_execution(attrs) do
       {:error, changeset} ->
-        cond do
-          public_id_collision?(changeset) && attempts_remaining > 1 ->
-            insert_with_public_id(Map.delete(attrs, :public_id), attempts_remaining - 1)
-
-          public_id_collision?(changeset) ->
-            insert_with_public_id(Map.delete(attrs, :public_id), 0)
-
-          true ->
-            {:error, changeset}
-        end
-
-      result ->
-        result
-    end
-  end
-
-  defp insert_with_public_id(attrs, 0) do
-    attrs = Map.put(attrs, :public_id, "#{generate_public_id()}-#{random_suffix()}")
-
-    case insert_execution(attrs) do
-      {:error, changeset} ->
-        if public_id_collision?(changeset),
-          do: insert_with_public_id(Map.delete(attrs, :public_id), 0),
+        if public_id_collision?(changeset) && attempts_remaining > 1,
+          do: insert_with_public_id(attrs, attempts_remaining - 1),
           else: {:error, changeset}
 
       result ->

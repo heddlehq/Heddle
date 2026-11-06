@@ -1,231 +1,196 @@
-export const CodeEditorHook = {
-    mounted() {
-        const container = this.el;
-        const elixirTextarea = container.querySelector('#code_elixir_textarea');
-        const pythonTextarea = container.querySelector('#code_python_textarea');
+// Monaco is served by the app itself, so the editor works without internet access.
+// It only runs on the flow editor page, which starts loading it ahead of time.
+const MONACO_PATH = "/assets/vendor/monaco/vs";
 
-        if (!elixirTextarea && !pythonTextarea) return;
+let monacoLoading = null;
 
-        const editorContainer = document.createElement('div');
-        editorContainer.style.height = '100%';
-        editorContainer.style.width = '100%';
-        editorContainer.style.minHeight = '400px';
-
-        container.appendChild(editorContainer);
-
-        const currentVariables = JSON.parse(container.dataset.variables || "[]");
-        window.__heddleCurrentVariables = currentVariables;
-
-        const initMonaco = () => {
-            if (window.require) {
-                window.require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
-
-                window.require(['vs/editor/editor.main'], () => {
-                    if (!window.__elixirCompletionRegistered) {
-                        try {
-                            monaco.languages.registerCompletionItemProvider('elixir', {
-                                provideCompletionItems: (model, position) => {
-                                    const suggestions = [
-                                        {
-                                            label: 'variable',
-                                            kind: monaco.languages.CompletionItemKind.Function,
-                                            insertText: 'variable',
-                                            documentation: 'Get a variable from context (returns nil if missing)',
-                                            detail: 'HeddleRuntime.Runtime.Elixir.variable/1'
-                                        },
-                                        {
-                                            label: 'variable!',
-                                            kind: monaco.languages.CompletionItemKind.Function,
-                                            insertText: 'variable!',
-                                            documentation: 'Get a variable from context (raises if missing)',
-                                            detail: 'HeddleRuntime.Runtime.Elixir.variable!/1'
-                                        },
-                                        {
-                                            label: 'set_result',
-                                            kind: monaco.languages.CompletionItemKind.Function,
-                                            insertText: 'set_result',
-                                            documentation: 'Set the value passed to the next node (overrides last expression)',
-                                            detail: 'HeddleRuntime.Runtime.Elixir.set_result/1'
-                                        }
-                                    ];
-
-                                    const availableVars = window.__heddleCurrentVariables || [];
-                                    availableVars.forEach(varName => {
-                                        suggestions.push({
-                                            label: `:${varName}`,
-                                            kind: monaco.languages.CompletionItemKind.Constant,
-                                            insertText: `:${varName}`,
-                                            documentation: `Variable from flow: ${varName}`,
-                                            detail: 'Atom'
-                                        });
-                                    });
-
-                                    return { suggestions: suggestions };
-                                }
-                            });
-                            window.__elixirCompletionRegistered = true;
-                        } catch (e) {
-                            console.error("Failed to register Elixir completion provider:", e);
-                        }
+const registerCompletions = (monaco) => {
+    try {
+        monaco.languages.registerCompletionItemProvider('elixir', {
+            provideCompletionItems: (model, position) => {
+                const suggestions = [
+                    {
+                        label: 'variable',
+                        kind: monaco.languages.CompletionItemKind.Function,
+                        insertText: 'variable',
+                        documentation: 'Get a variable from context (returns nil if missing)',
+                        detail: 'HeddleRuntime.Runtime.Elixir.variable/1'
+                    },
+                    {
+                        label: 'variable!',
+                        kind: monaco.languages.CompletionItemKind.Function,
+                        insertText: 'variable!',
+                        documentation: 'Get a variable from context (raises if missing)',
+                        detail: 'HeddleRuntime.Runtime.Elixir.variable!/1'
+                    },
+                    {
+                        label: 'set_result',
+                        kind: monaco.languages.CompletionItemKind.Function,
+                        insertText: 'set_result',
+                        documentation: 'Set the value passed to the next node (overrides last expression)',
+                        detail: 'HeddleRuntime.Runtime.Elixir.set_result/1'
                     }
+                ];
 
-                    if (!window.__pythonCompletionRegistered) {
-                        try {
-                            monaco.languages.registerCompletionItemProvider('python', {
-                                provideCompletionItems: (model, position) => {
-                                    const suggestions = [
-                                        {
-                                            label: 'variable',
-                                            kind: monaco.languages.CompletionItemKind.Function,
-                                            insertText: 'variable',
-                                            documentation: 'Get a variable from context (returns None if missing)',
-                                            detail: 'HeddleRuntime.Runtime.Python.variable(name, default=None)'
-                                        },
-                                        {
-                                            label: 'variable_required',
-                                            kind: monaco.languages.CompletionItemKind.Function,
-                                            insertText: 'variable_required',
-                                            documentation: 'Get a variable from context (raises KeyError if missing)',
-                                            detail: 'HeddleRuntime.Runtime.Python.variable_required(name)'
-                                        },
-                                        {
-                                            label: 'set_result',
-                                            kind: monaco.languages.CompletionItemKind.Function,
-                                            insertText: 'set_result',
-                                            documentation: 'Set the value passed to the next node (overrides last expression)',
-                                            detail: 'HeddleRuntime.Runtime.Python.set_result(value)'
-                                        }
-                                    ];
-
-                                    const availableVars = window.__heddleCurrentVariables || [];
-                                    availableVars.forEach(varName => {
-                                        suggestions.push({
-                                            label: varName,
-                                            kind: monaco.languages.CompletionItemKind.Variable,
-                                            insertText: varName,
-                                            documentation: `Variable from flow: ${varName}`,
-                                            detail: 'Flow variable'
-                                        });
-                                    });
-
-                                    return { suggestions: suggestions };
-                                }
-                            });
-                            window.__pythonCompletionRegistered = true;
-                        } catch (e) {
-                            console.error("Failed to register Python completion provider:", e);
-                        }
-                    }
-
-                    // Get initial language from data attribute
-                    const currentLang = container.dataset.language || 'elixir';
-                    const initialValue = currentLang === 'python'
-                        ? (pythonTextarea ? pythonTextarea.value : '')
-                        : (elixirTextarea ? elixirTextarea.value : '');
-
-                    this.editor = monaco.editor.create(editorContainer, {
-                        value: initialValue,
-                        language: currentLang,
-                        theme: 'vs-dark',
-                        automaticLayout: true,
-                        minimap: { enabled: false },
-                        scrollBeyondLastLine: false,
-                        fontSize: 14,
-                        fontFamily: "'Fira Code', Consolas, 'Courier New', monospace"
+                const availableVars = window.__heddleCurrentVariables || [];
+                availableVars.forEach(varName => {
+                    suggestions.push({
+                        label: `:${varName}`,
+                        kind: monaco.languages.CompletionItemKind.Constant,
+                        insertText: `:${varName}`,
+                        documentation: `Variable from flow: ${varName}`,
+                        detail: 'Atom'
                     });
-
-                    // Store current language
-                    this.currentLanguage = currentLang;
-
-                    // Update the appropriate textarea when content changes
-                    this.editor.onDidChangeModelContent(() => {
-                        const value = this.editor.getValue();
-                        if (this.currentLanguage === 'python' && pythonTextarea) {
-                            pythonTextarea.value = value;
-                            pythonTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-                        } else if (elixirTextarea) {
-                            elixirTextarea.value = value;
-                            elixirTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-                        }
-                    });
-
-                    // Watch for language changes via MutationObserver
-                    this.observer = new MutationObserver((mutations) => {
-                        mutations.forEach((mutation) => {
-                            if (mutation.type === 'attributes' && mutation.attributeName === 'data-language') {
-                                const newLang = container.dataset.language;
-                                if (newLang !== this.currentLanguage) {
-                                    // Save current content to appropriate textarea
-                                    const currentValue = this.editor.getValue();
-                                    if (this.currentLanguage === 'python' && pythonTextarea) {
-                                        pythonTextarea.value = currentValue;
-                                    } else if (elixirTextarea) {
-                                        elixirTextarea.value = currentValue;
-                                    }
-
-                                    // Load new language content
-                                    const newValue = newLang === 'python'
-                                        ? (pythonTextarea ? pythonTextarea.value : '')
-                                        : (elixirTextarea ? elixirTextarea.value : '');
-
-                                    this.editor.setValue(newValue);
-                                    monaco.editor.setModelLanguage(this.editor.getModel(), newLang);
-                                    this.currentLanguage = newLang;
-                                }
-                            }
-                        });
-                    });
-
-                    this.observer.observe(container, { attributes: true });
                 });
+
+                return { suggestions: suggestions };
             }
+        });
+    } catch (e) {
+        console.error("Failed to register Elixir completion provider:", e);
+    }
+
+    try {
+        monaco.languages.registerCompletionItemProvider('python', {
+            provideCompletionItems: (model, position) => {
+                const suggestions = [
+                    {
+                        label: 'variable',
+                        kind: monaco.languages.CompletionItemKind.Function,
+                        insertText: 'variable',
+                        documentation: 'Get a variable from context (returns None if missing)',
+                        detail: 'HeddleRuntime.Runtime.Python.variable(name, default=None)'
+                    },
+                    {
+                        label: 'variable_required',
+                        kind: monaco.languages.CompletionItemKind.Function,
+                        insertText: 'variable_required',
+                        documentation: 'Get a variable from context (raises KeyError if missing)',
+                        detail: 'HeddleRuntime.Runtime.Python.variable_required(name)'
+                    },
+                    {
+                        label: 'set_result',
+                        kind: monaco.languages.CompletionItemKind.Function,
+                        insertText: 'set_result',
+                        documentation: 'Set the value passed to the next node (overrides last expression)',
+                        detail: 'HeddleRuntime.Runtime.Python.set_result(value)'
+                    }
+                ];
+
+                const availableVars = window.__heddleCurrentVariables || [];
+                availableVars.forEach(varName => {
+                    suggestions.push({
+                        label: varName,
+                        kind: monaco.languages.CompletionItemKind.Variable,
+                        insertText: varName,
+                        documentation: `Variable from flow: ${varName}`,
+                        detail: 'Flow variable'
+                    });
+                });
+
+                return { suggestions: suggestions };
+            }
+        });
+    } catch (e) {
+        console.error("Failed to register Python completion provider:", e);
+    }
+};
+
+export const loadMonaco = () => {
+    if (monacoLoading) return monacoLoading;
+
+    monacoLoading = new Promise((resolve, reject) => {
+        const start = () => {
+            window.require.config({ paths: { vs: MONACO_PATH } });
+            window.require(["vs/editor/editor.main"], () => {
+                registerCompletions(window.monaco);
+                resolve(window.monaco);
+            }, reject);
         };
 
-        if (!window.require) {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js';
-            script.async = true;
-            script.onload = initMonaco;
-            document.body.appendChild(script);
-        } else {
-            initMonaco();
-        }
+        if (window.require) return start();
+
+        const script = document.createElement("script");
+        script.src = `${MONACO_PATH}/loader.js`;
+        script.async = true;
+        script.onload = start;
+        script.onerror = reject;
+        document.body.appendChild(script);
+    }).catch((error) => {
+        monacoLoading = null;
+        throw error;
+    });
+
+    return monacoLoading;
+};
+
+export const CodeEditorHook = {
+    mounted() {
+        this.language = this.el.dataset.language || "elixir";
+        this.showField();
+
+        window.__heddleCurrentVariables = JSON.parse(this.el.dataset.variables || "[]");
+
+        // The field already shows the code, so a slow or failed load never leaves
+        // the modal empty. Monaco takes over when it is ready.
+        loadMonaco()
+            .then((monaco) => {
+                if (!this.gone) this.createEditor(monaco);
+            })
+            .catch((error) => console.error("Could not load the code editor:", error));
     },
 
     updated() {
-        // Update data-language attribute when tab changes
-        const container = this.el;
-        const newLang = container.dataset.language;
+        const language = this.el.dataset.language;
+        if (!language || language === this.language) return;
 
-        if (this.editor && newLang && newLang !== this.currentLanguage) {
-            const elixirTextarea = container.querySelector('#code_elixir_textarea');
-            const pythonTextarea = container.querySelector('#code_python_textarea');
+        // The language changes first: setValue fires the change listener, which
+        // would otherwise write the new text over the code of the old language.
+        this.language = language;
+        this.showField();
 
-            // Save current content
-            const currentValue = this.editor.getValue();
-            if (this.currentLanguage === 'python' && pythonTextarea) {
-                pythonTextarea.value = currentValue;
-            } else if (elixirTextarea) {
-                elixirTextarea.value = currentValue;
-            }
-
-            // Load new language content
-            const newValue = newLang === 'python'
-                ? (pythonTextarea ? pythonTextarea.value : '')
-                : (elixirTextarea ? elixirTextarea.value : '');
-
-            this.editor.setValue(newValue);
-            monaco.editor.setModelLanguage(this.editor.getModel(), newLang);
-            this.currentLanguage = newLang;
+        if (this.editor) {
+            this.editor.setValue(this.field().value);
+            window.monaco.editor.setModelLanguage(this.editor.getModel(), language);
         }
     },
 
     destroyed() {
-        if (this.observer) {
-            this.observer.disconnect();
+        this.gone = true;
+        if (this.editor) this.editor.dispose();
+    },
+
+    field(language = this.language) {
+        return this.el.querySelector(`#code_${language}_textarea`);
+    },
+
+    showField() {
+        for (const language of ["elixir", "python"]) {
+            this.field(language).classList.toggle("hidden", !!this.editor || language !== this.language);
         }
-        if (this.editor) {
-            this.editor.dispose();
-        }
-    }
+    },
+
+    createEditor(monaco) {
+        const container = document.createElement("div");
+        container.className = "absolute inset-0";
+        this.el.appendChild(container);
+
+        this.editor = monaco.editor.create(container, {
+            value: this.field().value,
+            language: this.language,
+            theme: "vs-dark",
+            automaticLayout: true,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            fontSize: 14,
+            fontFamily: "'Fira Code', Consolas, 'Courier New', monospace",
+        });
+
+        this.editor.onDidChangeModelContent(() => {
+            this.field().value = this.editor.getValue();
+        });
+
+        this.showField();
+        this.editor.focus();
+    },
 };

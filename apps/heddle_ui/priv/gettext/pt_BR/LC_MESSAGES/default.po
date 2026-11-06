@@ -60,7 +60,8 @@ msgstr "Painel"
 msgid "Drag to canvas"
 msgstr "Arraste para a tela"
 
-#: lib/heddle_ui/components/modals/node_config_modal.ex:131
+#: lib/heddle_ui/components/modals/code_editor_modal.ex:20
+#: lib/heddle_ui/components/modals/node_config_modal.ex:183
 #: lib/heddle_ui/live/flow_live/editor.html.heex:25
 #, elixir-autogen, elixir-format
 msgid "Edit Code"
@@ -240,9 +241,9 @@ msgstr "Configurações de Conta"
 msgid "Back to Result"
 msgstr "Voltar ao Resultado"
 
-#: lib/heddle_ui/components/modals/code_editor_modal.ex:90
+#: lib/heddle_ui/components/modals/code_editor_modal.ex:93
 #: lib/heddle_ui/components/modals/create_node_modal.ex:92
-#: lib/heddle_ui/components/modals/node_config_modal.ex:169
+#: lib/heddle_ui/components/modals/node_config_modal.ex:149
 #: lib/heddle_ui/controllers/oauth_html.ex:39
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:148
 #, elixir-autogen, elixir-format
@@ -334,7 +335,7 @@ msgid "Profile Information"
 msgstr "Informações do Perfil"
 
 #: lib/heddle_ui/components/flow/flow_header.ex:101
-#: lib/heddle_ui/components/modals/code_editor_modal.ex:96
+#: lib/heddle_ui/components/modals/code_editor_modal.ex:99
 #, elixir-autogen, elixir-format
 msgid "Save Changes"
 msgstr "Salvar Alterações"
@@ -887,7 +888,7 @@ msgstr ""
 msgid "Revoked"
 msgstr ""
 
-#: lib/heddle_ui/components/modals/node_config_modal.ex:175
+#: lib/heddle_ui/components/modals/node_config_modal.ex:155
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr ""
@@ -1136,7 +1137,7 @@ msgstr "Não foi possível salvar esta configuração."
 msgid "Don't run"
 msgstr "Não rodar"
 
-#: lib/heddle_ui/live/flow_live/editor.ex:251
+#: lib/heddle_ui/live/flow_live/editor.ex:256
 #, elixir-autogen, elixir-format
 msgid "Failed to save graph data."
 msgstr "Não foi possível salvar o grafo."
@@ -1190,3 +1191,8 @@ msgstr "O agente quer rodar este flow, o que pode ter efeitos reais."
 #, elixir-autogen, elixir-format
 msgid "Use in the editor chat"
 msgstr "Usar no chat do editor"
+
+#: lib/heddle_ui/components/modals/node_config_modal.ex:174
+#, elixir-autogen, elixir-format
+msgid "No code yet"
+msgstr "Sem código ainda"

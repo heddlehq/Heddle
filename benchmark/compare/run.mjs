@@ -18,6 +18,8 @@ const DRAIN_LIMIT_MS = Number(process.env.DRAIN_LIMIT_MS ?? 300_000);
 const SETTLE_MS = Number(process.env.SETTLE_MS ?? 20_000);
 const BOOT_LIMIT_MS = 300_000;
 const SINK_PORT = 9099;
+const TARGET_DELAY_MS = Number(process.env.TARGET_DELAY_MS ?? 0);
+const RESULTS = join(here, 'results', process.env.RESULTS_DIR ?? '');
 const ROUND = process.env.ROUND ?? '0';
 const TOOLS = (process.env.TOOLS ?? 'heddle,n8n,n8n-queue,node-red,windmill,activepieces,kestra').split(',');
 
@@ -35,8 +37,12 @@ http
       sink.hits += 1;
       sink.last = performance.now();
       if (!sink.first) sink.first = sink.last;
-      response.writeHead(200, { 'content-type': 'application/json' });
-      response.end('{}');
+      const answer = () => {
+        response.writeHead(200, { 'content-type': 'application/json' });
+        response.end('{}');
+      };
+      if (TARGET_DELAY_MS > 0) setTimeout(answer, TARGET_DELAY_MS);
+      else answer();
       sink.waiter?.();
     });
   })
@@ -278,16 +284,16 @@ const shuffled = TOOLS.map((tool) => [Math.random(), tool])
 const results = [];
 for (const tool of shuffled) results.push(await runTool(tool));
 
-mkdirSync(join(here, 'results'), { recursive: true });
+mkdirSync(RESULTS, { recursive: true });
 writeFileSync(
-  join(here, 'results', `round-${ROUND}.json`),
+  join(RESULTS, `round-${ROUND}.json`),
   JSON.stringify(
     {
       round: ROUND,
       finishedAt: new Date().toISOString(),
       order: shuffled,
       machine: { cpus: os.cpus().length, model: os.cpus()[0]?.model, memoryGb: Math.round(os.totalmem() / 1024 ** 3) },
-      settings: { SEQUENTIAL, WARMUP, BURST, CONCURRENCY, DRAIN_LIMIT_MS },
+      settings: { SEQUENTIAL, WARMUP, BURST, CONCURRENCY, DRAIN_LIMIT_MS, TARGET_DELAY_MS },
       results,
     },
     null,

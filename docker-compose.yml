@@ -36,9 +36,9 @@ x-ui-env: &ui-env
   PHX_SERVER: "true"
 
 x-worker-env: &worker-env
-  WORKER_POOL_SIZE: 3
+  WORKER_POOL_SIZE: 10
   OBAN_DEFAULT_CONCURRENCY: 2
-  OBAN_EXECUTIONS_CONCURRENCY: 5
+  OBAN_EXECUTIONS_CONCURRENCY: 50
 
 services:
   ui:

@@ -15,7 +15,7 @@ defmodule HeddleCore.ExecutionsTest do
                Executions.create_execution(%{flow_id: flow.id, input: %{"trigger" => "manual"}})
 
       assert execution.flow_id == flow.id
-      assert execution.public_id =~ ~r/^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$/
+      assert execution.public_id =~ ~r/^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]{4}$/
       assert execution.status == "queued"
       assert execution.input == %{"trigger" => "manual"}
       assert execution.result == nil
@@ -23,6 +23,19 @@ defmodule HeddleCore.ExecutionsTest do
       assert execution.logs == []
       assert execution.started_at == nil
       assert execution.finished_at == nil
+    end
+
+    test "create_execution/1 keeps generating unique ids past the word combinations" do
+      flow = flow_fixture()
+
+      public_ids =
+        for _ <- 1..2000 do
+          {:ok, execution} = Executions.create_execution(%{flow_id: flow.id})
+          execution.public_id
+        end
+
+      assert public_ids |> Enum.uniq() |> length() == 2000
+      assert Enum.all?(public_ids, &(&1 =~ ~r/-[a-z0-9]{4}$/))
     end
 
     test "get_execution_by_public_id!/1 returns an execution by readable id" do
