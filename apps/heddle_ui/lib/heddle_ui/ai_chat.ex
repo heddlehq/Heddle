@@ -139,6 +139,24 @@ defmodule HeddleUI.AIChat do
   end
 
   @doc """
+  Turns a `create_flow` payload into what the canvas loads, checking it first.
+
+  The canvas drops what it can't draw without saying so, which leaves a broken flow.
+  Returns `{:ok, %{nodes: nodes, connections: connections}}` or `{:error, message}`.
+  """
+  def prepare_flow(%{"nodes" => raw_nodes} = json) when is_list(raw_nodes) do
+    nodes = normalize_nodes(raw_nodes)
+    connections = Map.get(json, "connections", [])
+
+    case GraphValidator.validate(persistable_nodes(nodes), connections) do
+      :ok -> {:ok, %{nodes: nodes, connections: connections}}
+      {:error, _field, message} -> {:error, message}
+    end
+  end
+
+  def prepare_flow(_json), do: {:error, "has no nodes"}
+
+  @doc """
   Normalizes AI-generated nodes into the canonical shape the Rete editor expects.
 
   Reconciles the two previously divergent implementations: flattens `{value: ...}`

@@ -33,7 +33,7 @@ defmodule HeddleNodes.MixProject do
     [
       {:heddle_core, in_umbrella: true, only: :test},
       {:heddle_runtime, in_umbrella: true},
-      {:fusion_kit, "~> 0.2.0"},
+      {:bobbin, "~> 0.2.1"},
       {:req, "~> 0.5"},
       {:jason, "~> 1.2"}
     ]

@@ -124,7 +124,7 @@ msgstr "Fluxos Recentes"
 msgid "Remove Node"
 msgstr "Remover Nó"
 
-#: lib/heddle_ui/live/components/chat_component.ex:169
+#: lib/heddle_ui/live/components/chat_component.ex:154
 #: lib/heddle_ui/live/flow_live/editor.html.heex:20
 #, elixir-autogen, elixir-format
 msgid "Run"
@@ -220,7 +220,7 @@ msgstr "Criar com IA"
 msgid "Or reply below with adjustments"
 msgstr "Ou responda abaixo com ajustes"
 
-#: lib/heddle_ui/live/components/chat_component.ex:197
+#: lib/heddle_ui/live/components/chat_component.ex:182
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:290
 #, elixir-autogen, elixir-format
 msgid "Send"
@@ -960,6 +960,7 @@ msgstr ""
 msgid "e.g. Production Webhook"
 msgstr ""
 
+#: lib/heddle_ui/live/components/chat_component.ex:72
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:223
 #, elixir-autogen, elixir-format
 msgid "I couldn't build this flow. Tell me what to change and I'll try again."
@@ -1132,12 +1133,12 @@ msgstr "Copiloto no chat do editor. Ele pode ler, editar e rodar seus flows."
 msgid "Could not save this setting."
 msgstr "Não foi possível salvar esta configuração."
 
-#: lib/heddle_ui/live/components/chat_component.ex:177
+#: lib/heddle_ui/live/components/chat_component.ex:162
 #, elixir-autogen, elixir-format
 msgid "Don't run"
 msgstr "Não rodar"
 
-#: lib/heddle_ui/live/flow_live/editor.ex:256
+#: lib/heddle_ui/live/flow_live/editor.ex:258
 #, elixir-autogen, elixir-format
 msgid "Failed to save graph data."
 msgstr "Não foi possível salvar o grafo."
@@ -1162,7 +1163,7 @@ msgstr "Não encontrado"
 msgid "Not set"
 msgstr "Não definida"
 
-#: lib/heddle_ui/live/components/chat_component.ex:157
+#: lib/heddle_ui/live/components/chat_component.ex:142
 #, elixir-autogen, elixir-format
 msgid "Run \"%{flow}\"?"
 msgstr "Rodar \"%{flow}\"?"
@@ -1182,7 +1183,7 @@ msgstr "Defina HEDDLE_CLAUDE_API_KEY. Assinaturas do Claude não podem ser usada
 msgid "The Claude Agent is not available."
 msgstr "O Claude Agent não está disponível."
 
-#: lib/heddle_ui/live/components/chat_component.ex:160
+#: lib/heddle_ui/live/components/chat_component.ex:145
 #, elixir-autogen, elixir-format
 msgid "The agent wants to run this flow, which can have real side effects."
 msgstr "O agente quer rodar este flow, o que pode ter efeitos reais."
@@ -1196,3 +1197,18 @@ msgstr "Usar no chat do editor"
 #, elixir-autogen, elixir-format
 msgid "No code yet"
 msgstr "Sem código ainda"
+
+#: lib/heddle_ui/live/components/chat_component.ex:69
+#, elixir-autogen, elixir-format
+msgid "Constructing flow..."
+msgstr "Montando o fluxo..."
+
+#: lib/heddle_ui/live/flow_live/editor.ex:548
+#, elixir-autogen, elixir-format
+msgid "Flow created successfully! You can see it on the canvas."
+msgstr "Fluxo criado com sucesso!"
+
+#: lib/heddle_ui/live/flow_live/editor.ex:556
+#, elixir-autogen, elixir-format
+msgid "I couldn't build this flow: it %{reason}. Tell me what to change and I'll try again."
+msgstr "Não consegui montar este fluxo: ele %{reason}. Diga o que mudar e eu tento de novo."

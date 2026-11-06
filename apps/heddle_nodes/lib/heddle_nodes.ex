@@ -1,16 +1,20 @@
 defmodule HeddleNodes do
   @moduledoc """
-  FusionKit manifest for the built-in Heddle nodes.
+  Bobbin manifest for the built-in Heddle nodes.
   """
 
-  use FusionKit.Manifest
+  use Bobbin.Manifest
 
   alias HeddleNodes.Nodes.{
+    AIAgent,
     Condition,
     Eval,
+    ForEach,
     HttpRequest,
     Logger,
     Output,
+    RespondToWebhook,
+    Schedule,
     Start,
     Variable,
     Webhook
@@ -20,12 +24,16 @@ defmodule HeddleNodes do
     nodes([
       Start,
       Webhook,
+      Schedule,
       Variable,
       Eval,
       HttpRequest,
+      AIAgent,
       Condition,
+      ForEach,
       Logger,
-      Output
+      Output,
+      RespondToWebhook
     ])
   end
 end

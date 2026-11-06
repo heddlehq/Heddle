@@ -1,5 +1,5 @@
 defmodule HeddleNodes.Nodes.Webhook do
-  use FusionKit.Node
+  use Bobbin.Node
 
   definition do
     %{

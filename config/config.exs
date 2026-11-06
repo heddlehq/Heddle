@@ -24,6 +24,7 @@ config :heddle_worker, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
   queues: [default: 2, executions: 50],
+  plugins: [{Oban.Plugins.Cron, crontab: [{"* * * * *", HeddleWorker.ScheduleWorker}]}],
   repo: HeddleCore.Repo
 
 config :heddle_core, Oban,
@@ -34,6 +35,8 @@ config :heddle_core, Oban,
   repo: HeddleCore.Repo
 
 config :heddle_core, :oban_name, HeddleCore.Oban
+
+config :heddle_nodes, :llm_client, HeddleAI.AI
 
 # Env is read by HeddleAI.LLM. A stray .env must not change what the app talks to.
 config :req_llm, load_dotenv: false

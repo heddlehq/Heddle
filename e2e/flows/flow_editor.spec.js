@@ -261,6 +261,26 @@ test.describe('Flow Editor', () => {
       await expect(page.locator('#node-code-preview-code')).toContainText('1 + 1');
     });
   });
+
+  test.describe('New nodes', () => {
+    for (const name of ['Schedule', 'AI Agent', 'For Each', 'Respond to Webhook']) {
+      test(`adds ${name} from the context menu and saves it`, async ({ page }) => {
+        await addNodeViaContextMenu(page, name);
+
+        await expect(page.locator('custom-node')).toHaveCount(1, { timeout: 5000 });
+
+        await page.getByRole('button', { name: 'Save Changes' }).click();
+        await expect(page.getByText('You have unsaved changes')).toBeHidden({ timeout: 5000 });
+      });
+    }
+
+    test('shows the outputs of For Each', async ({ page }) => {
+      await addNodeViaContextMenu(page, 'For Each');
+
+      const node = page.locator('custom-node').first();
+      await expect(node.locator('custom-socket')).toHaveCount(3, { timeout: 5000 });
+    });
+  });
 });
 
 async function addNodeViaContextMenu(page, nodeName) {

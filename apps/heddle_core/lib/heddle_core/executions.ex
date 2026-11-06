@@ -11,6 +11,9 @@ defmodule HeddleCore.Executions do
   alias HeddleCore.Repo
 
   @flow_execution_worker "HeddleWorker.FlowExecutionWorker"
+  @response_channel :webhook_responses
+  @response_timeout :timer.seconds(30)
+  @response_poll 250
   @public_id_retry_attempts 8
   @public_id_first_words ~w(blue bright calm clear crisp fresh green lean quiet rapid sharp steady swift)
   @public_id_middle_words ~w(axis beacon bridge circuit engine gate grid matrix orbit pulse signal vector)
@@ -118,10 +121,82 @@ defmodule HeddleCore.Executions do
     end
   end
 
+  @doc """
+  Saves what a Respond to Webhook node answered, for the call waiting on it.
+
+  The answer goes through the database because the call can be on another node, and
+  a Postgres notification only carries 8 KB.
+  """
+  def put_response(%Execution{id: id}, response) when is_map(response) do
+    {1, nil} =
+      Repo.update_all(from(e in Execution, where: e.id == ^id), set: [response: response])
+
+    with name when not is_nil(name) <- running_oban() do
+      Oban.Notifier.notify(name, @response_channel, %{id: id})
+    end
+
+    :ok
+  end
+
+  @doc """
+  Waits for a run to answer its webhook.
+
+  Returns `{:ok, response}`, or `{:error, reason}` with `:failed`, `:no_response` when
+  the run ended without answering, or `:timeout`. The notification only makes this
+  quicker: it also reads the row every `:poll` ms, so a lost one costs nothing.
+
+  It runs in a task because the connection's process outlives the request, and the
+  notifications must not reach it.
+  """
+  def await_response(%Execution{id: id}, opts \\ []) do
+    timeout = Keyword.get(opts, :timeout, @response_timeout)
+    poll = Keyword.get(opts, :poll, @response_poll)
+
+    fn ->
+      if Oban.whereis(oban_name()), do: Oban.Notifier.listen(oban_name(), @response_channel)
+      wait_for_response(id, System.monotonic_time(:millisecond) + timeout, poll)
+    end
+    |> Task.async()
+    |> Task.await(:infinity)
+  end
+
+  defp wait_for_response(id, deadline, poll) do
+    query = from e in Execution, where: e.id == ^id, select: {e.status, e.response}
+
+    case Repo.one(query) do
+      {_status, %{} = response} ->
+        {:ok, response}
+
+      {"failed", _response} ->
+        {:error, :failed}
+
+      {"succeeded", _response} ->
+        {:error, :no_response}
+
+      _still_going ->
+        remaining = deadline - System.monotonic_time(:millisecond)
+
+        if remaining <= 0 do
+          {:error, :timeout}
+        else
+          receive do
+            {:notification, @response_channel, %{"id" => ^id}} -> :ok
+          after
+            min(poll, remaining) -> :ok
+          end
+
+          wait_for_response(id, deadline, poll)
+        end
+    end
+  end
+
+  # The UI and the worker each run their own Oban, under different names.
+  defp running_oban, do: Enum.find([oban_name(), Oban], &Oban.whereis/1)
+
   def enqueue_execution(%Execution{} = execution) do
     %{execution_id: execution.id}
     |> Oban.Job.new(queue: :executions, worker: @flow_execution_worker, max_attempts: 3)
-    |> then(&Oban.insert(oban_name(), &1))
+    |> then(&Oban.insert(running_oban() || oban_name(), &1))
   end
 
   @doc """

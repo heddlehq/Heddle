@@ -17,7 +17,7 @@ defmodule HeddleWorker.FlowExecutionWorker do
     flow = Flows.get_flow!(execution.flow_id)
 
     with {:ok, running_execution} <- Executions.mark_running(execution) do
-      case run_flow(flow, running_execution.input) do
+      case run_flow(flow, running_execution) do
         {:ok, context} ->
           persist_success(running_execution, context)
 
@@ -31,12 +31,16 @@ defmodule HeddleWorker.FlowExecutionWorker do
     {:error, {:missing_execution_id, args}}
   end
 
-  defp run_flow(flow, %{"trigger" => "webhook", "request" => request}) do
-    Runner.run_from_webhook(flow, request)
-  end
+  defp run_flow(flow, execution) do
+    opts = [on_respond: &Executions.put_response(execution, &1)]
 
-  defp run_flow(flow, input) do
-    Runner.run(flow, input)
+    case execution.input do
+      %{"trigger" => "webhook", "request" => request} ->
+        Runner.run_from_webhook(flow, request, opts)
+
+      input ->
+        Runner.run(flow, input, opts)
+    end
   end
 
   defp persist_success(execution, context) do

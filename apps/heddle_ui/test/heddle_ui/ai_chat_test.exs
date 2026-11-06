@@ -199,4 +199,46 @@ defmodule HeddleUI.AIChatTest do
       assert node["position"] == %{"x" => 100, "y" => 9}
     end
   end
+
+  describe "prepare_flow/1" do
+    @node_a %{"id" => "a", "type" => "Start", "label" => "Start", "controls" => %{}}
+    @node_b %{
+      "id" => "b",
+      "type" => "For Each",
+      "label" => "Each",
+      "controls" => %{"items" => "x"}
+    }
+    @node_c %{"id" => "c", "type" => "Logger", "label" => "Log", "controls" => %{}}
+
+    defp link(source, output, target, input \\ "exec") do
+      %{"source" => source, "sourceOutput" => output, "target" => target, "targetInput" => input}
+    end
+
+    test "returns a valid graph ready for the canvas" do
+      json = %{
+        "nodes" => [@node_a, @node_b, @node_c],
+        "connections" => [link("a", "exec", "b"), link("b", "item", "c")]
+      }
+
+      assert {:ok, %{nodes: [%{"id" => "a"} | _rest], connections: [_first, _second]}} =
+               AIChat.prepare_flow(json)
+    end
+
+    test "refuses a connection into an input that doesn't exist" do
+      json = %{
+        "nodes" => [@node_a, @node_b, @node_c],
+        "connections" => [link("a", "exec", "b"), link("c", "exec", "b", "done")]
+      }
+
+      assert {:error, message} = AIChat.prepare_flow(json)
+      assert message =~ "input"
+    end
+
+    test "refuses a node type that doesn't exist" do
+      json = %{"nodes" => [%{"id" => "a", "type" => "Nope", "controls" => %{}}]}
+
+      assert {:error, message} = AIChat.prepare_flow(json)
+      assert message =~ "unknown node type"
+    end
+  end
 end

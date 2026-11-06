@@ -68,6 +68,94 @@ defmodule HeddleUI.Plugs.WebhookPlugTest do
     end
   end
 
+  describe "a flow with Respond to Webhook" do
+    setup do
+      path = unique_webhook_path()
+      flow = responding_flow_fixture(path)
+      :ok = Webhooks.register_flow(flow)
+
+      %{flow: flow, url: "/api/flows/#{flow.id}/webhook/#{Webhooks.normalize_path(path)}"}
+    end
+
+    # Stands in for the worker, which runs elsewhere.
+    defp when_it_runs(flow, fun) do
+      Task.async(fn ->
+        execution = next_execution(flow)
+        fun.(execution)
+      end)
+    end
+
+    defp next_execution(flow) do
+      case Executions.list_executions_for_flow(flow) do
+        [execution | _] ->
+          execution
+
+        [] ->
+          Process.sleep(2)
+          next_execution(flow)
+      end
+    end
+
+    test "answers with what the flow says", %{conn: conn, flow: flow, url: url} do
+      task =
+        when_it_runs(flow, fn execution ->
+          Executions.put_response(execution, %{
+            "status" => 201,
+            "body" => ~s({"ok":true}),
+            "content_type" => "application/json"
+          })
+        end)
+
+      conn = post(conn, url, %{})
+      Task.await(task)
+
+      assert json_response(conn, 201) == %{"ok" => true}
+    end
+
+    test "answers 202 when the run ends without responding", %{conn: conn, flow: flow, url: url} do
+      task = when_it_runs(flow, &Executions.mark_succeeded(&1, %{}))
+
+      conn = post(conn, url, %{})
+      Task.await(task)
+
+      assert %{"status" => "accepted"} = json_response(conn, 202)
+    end
+
+    test "answers 500 when the run fails", %{conn: conn, flow: flow, url: url} do
+      task = when_it_runs(flow, &Executions.mark_failed(&1, %{"message" => "boom"}))
+
+      conn = post(conn, url, %{})
+      Task.await(task)
+
+      assert %{"error" => error, "execution_id" => _id} = json_response(conn, 500)
+      assert error =~ "failed"
+    end
+
+    test "answers 504 when the flow takes too long", %{conn: conn, url: url} do
+      conn = post(conn, url, %{})
+
+      assert %{"error" => error} = json_response(conn, 504)
+      assert error =~ "in time"
+    end
+  end
+
+  defp responding_flow_fixture(path) do
+    flow_fixture(%{
+      nodes: [
+        %{
+          "id" => "1",
+          "type" => "Webhook",
+          "label" => "Webhook",
+          "controls" => %{"path" => path, "method" => "POST"}
+        },
+        %{"id" => "2", "type" => "Respond to Webhook", "label" => "Reply", "controls" => %{}}
+      ],
+      connections: [
+        %{"source" => "1", "sourceOutput" => "exec", "target" => "2", "targetInput" => "exec"}
+      ]
+    })
+  end
+
   defp webhook_flow_fixture(opts) do
     path = Keyword.fetch!(opts, :path)
     method = Keyword.fetch!(opts, :method)

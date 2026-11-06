@@ -26,6 +26,8 @@ defmodule HeddleNodes.Nodes do
     |> Enum.filter(fn node -> Map.get(node, :show, true) end)
   end
 
+  def category_label(:ai), do: "AI"
+
   def category_label(category) do
     category
     |> to_string()
