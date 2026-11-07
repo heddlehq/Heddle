@@ -36,6 +36,15 @@ This is a web application written using the Phoenix web framework.
 - **Git Commit Messages**: MUST ALWAYS be written in English using Conventional Commits format (`feat:`, `fix:`, `refactor:`, `chore:`, etc.)
 - **Commit Attribution**: NEVER add AI assistant signatures or `Co-authored-by` trailers. Commits must attribute exclusively the user
 
+### Installer and CLI
+
+The `heddle` command in `cli/` is the installer and the CLI, in Go with Bubble Tea. The `install.sh` and `install.ps1` on the site only fetch it and run `heddle install`.
+
+- It ships with each release as `heddle-cli-<target>`, built by `scripts/package_release.sh`. **Publish the release before deploying the site**: the site's scripts download that file.
+- A new setting read from the environment that a person should choose belongs in the wizard (`cli/internal/wizard/screens.go`) and as a flag of `heddle install`.
+- All its text goes through `text.T("English", "Português")`.
+- Run `go test ./...` in `cli/` after changing it. To try it without touching a real install: `HOME=/tmp/try go run ./cmd/heddle install`.
+
 ### Phoenix v1.8 guidelines
 
 - **Always** begin your LiveView templates with `<Layouts.app flash={@flash} ...>` which wraps all inner content

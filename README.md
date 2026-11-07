@@ -24,7 +24,7 @@ Whether you are automating simple tasks or orchestrating complex microservices, 
 
 ## 🚀 Getting Started
 
-Install and start Heddle with one line. Nothing else is required.
+Install Heddle with one line. Nothing else is required: it asks what you want, including your AI provider and whether to add [Treadle](https://github.com/heddlehq/Treadle), the terminal editor.
 
 ```bash
 # Linux and macOS
@@ -35,6 +35,8 @@ curl -fsSL https://heddlehq.github.io/website/install.sh | sh
 # Windows
 irm https://heddlehq.github.io/website/install.ps1 | iex
 ```
+
+Then `heddle status`, `heddle logs -f`, `heddle doctor` and `heddle update` take it from there: `heddle --help` lists everything.
 
 For servers and other options, see the **[Installation Guide](guides/installation.md)**. For deployment topology and worker scaling, see [guides/scaling.md](guides/scaling.md).
 
