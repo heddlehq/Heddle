@@ -246,7 +246,12 @@ export class CustomNodeElement extends LitElement {
       'flow_control': 'var(--node-flow-control)',
       'code': 'var(--node-code)',
       'data_manipulation': 'var(--node-data)',
-      'integration': 'var(--node-integration)',
+      'http': 'var(--node-integration)',
+      'email': 'var(--node-integration)',
+      'ftp': 'var(--node-integration)',
+      'google_sheets': 'var(--node-integration)',
+      's3': 'var(--node-integration)',
+      'slack': 'var(--node-integration)',
       'utility': 'var(--node-utility)',
       'default': 'var(--node-utility)'
     };

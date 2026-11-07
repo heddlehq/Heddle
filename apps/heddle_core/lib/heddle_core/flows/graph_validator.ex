@@ -11,6 +11,9 @@ defmodule HeddleCore.Flows.GraphValidator do
 
   @node_keys ~w(id type label controls position)
   @connection_keys ~w(source sourceOutput target targetInput)
+  @comment_keys ~w(id kind color text position width height)
+  @comment_kinds ~w(title text note section)
+  @comment_colors ~w(default yellow green blue red)
 
   @doc "The fields a persisted node may have."
   def node_keys, do: @node_keys
@@ -20,6 +23,31 @@ defmodule HeddleCore.Flows.GraphValidator do
          :ok <- validate_list(:connections, connections) do
       validate_graph(nodes, connections, opts)
     end
+  end
+
+  @doc "Validates what is written on the canvas, which isn't part of the graph."
+  def validate_comments(comments) do
+    with :ok <- validate_list(:comments, comments) do
+      ids = Enum.map(comments, &to_string(&1["id"]))
+
+      cond do
+        length(Enum.uniq(ids)) != length(ids) ->
+          {:error, :comments, "contains duplicate comment ids"}
+
+        Enum.all?(comments, &valid_comment?/1) ->
+          :ok
+
+        true ->
+          {:error, :comments, "contains an invalid comment"}
+      end
+    end
+  end
+
+  defp valid_comment?(comment) do
+    not unknown_keys?(comment, @comment_keys) and present_id?(comment["id"]) and
+      comment["kind"] in @comment_kinds and comment["color"] in @comment_colors and
+      is_binary(comment["text"]) and valid_position?(comment["position"]) and
+      positive_number?(comment["width"]) and positive_number?(comment["height"])
   end
 
   defp validate_graph([], [], _opts), do: :ok
@@ -167,6 +195,8 @@ defmodule HeddleCore.Flows.GraphValidator do
   defp valid_position?(_position), do: false
 
   defp number?(value), do: is_integer(value) or is_float(value)
+
+  defp positive_number?(value), do: number?(value) and value > 0
 
   defp present_id?(value) when is_binary(value), do: String.trim(value) != ""
   defp present_id?(value) when is_integer(value), do: true

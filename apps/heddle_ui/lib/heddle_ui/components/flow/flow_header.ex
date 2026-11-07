@@ -88,20 +88,23 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
       </div>
     </header>
 
-    <%= if @has_changes do %>
-      <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white dark:bg-slate-800 px-6 py-3 rounded-full shadow-lg dark:shadow-black/50 border border-gray-200 dark:border-slate-700 z-50 flex items-center gap-4 animate-bounce-in">
-        <span class="text-sm font-medium text-gray-700 dark:text-slate-200">
-          You have unsaved changes
-        </span>
-        <.button
-          phx-click="save_graph"
-          variant="success"
-          class="px-6 py-2 rounded-full"
-        >
-          {gettext("Save Changes")}
-        </.button>
-      </div>
-    <% end %>
+    <%!-- Always here: a sibling appearing would make LiveView move the canvas, and whatever is being typed on it would lose focus. --%>
+    <div id="unsaved-changes">
+      <%= if @has_changes do %>
+        <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white dark:bg-slate-800 px-6 py-3 rounded-full shadow-lg dark:shadow-black/50 border border-gray-200 dark:border-slate-700 z-50 flex items-center gap-4 animate-bounce-in">
+          <span class="text-sm font-medium text-gray-700 dark:text-slate-200">
+            You have unsaved changes
+          </span>
+          <.button
+            phx-click="save_graph"
+            variant="success"
+            class="px-6 py-2 rounded-full"
+          >
+            {gettext("Save Changes")}
+          </.button>
+        </div>
+      <% end %>
+    </div>
     """
   end
 end

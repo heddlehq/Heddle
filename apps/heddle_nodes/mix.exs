@@ -22,7 +22,7 @@ defmodule HeddleNodes.MixProject do
 
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :ftp, :public_key]
     ]
   end
 
@@ -34,6 +34,8 @@ defmodule HeddleNodes.MixProject do
       {:heddle_core, in_umbrella: true, only: :test},
       {:heddle_runtime, in_umbrella: true},
       {:bobbin, "~> 0.2.1"},
+      {:gen_smtp, "~> 1.3"},
+      {:nimble_csv, "~> 1.3"},
       {:req, "~> 0.5"},
       {:jason, "~> 1.2"}
     ]

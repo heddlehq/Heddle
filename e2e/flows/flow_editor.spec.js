@@ -101,7 +101,7 @@ test.describe('Flow Editor', () => {
     test('second right-click replaces the context menu', async ({ page }) => {
       const rete = page.locator('#rete');
 
-      await rete.click({ button: 'right', position: { x: 50, y: 50 } });
+      await rete.click({ button: 'right', position: { x: 200, y: 150 } });
       const menu = page.locator('.fixed.z-\\[200\\]');
       await expect(menu).toBeVisible({ timeout: 3000 });
 
@@ -188,6 +188,289 @@ test.describe('Flow Editor', () => {
     });
   });
 
+  test.describe('Create node shortcut', () => {
+    test('A opens the search, and Enter adds the first result', async ({ page }) => {
+      await page.keyboard.press('a');
+
+      const search = page.locator('#node-search');
+      await expect(search).toBeFocused();
+      await expect(search).toHaveValue('');
+
+      await search.fill('Logger');
+      await expect(page.locator('[phx-click="create_node_from_modal"]')).toHaveCount(1);
+      await search.press('Enter');
+
+      await expect(page.locator('custom-node')).toHaveCount(1);
+      await expect(search).toHaveCount(0);
+    });
+
+    test('Escape closes the search', async ({ page }) => {
+      await page.keyboard.press('a');
+      await expect(page.locator('#node-search')).toBeFocused();
+
+      await page.keyboard.press('Escape');
+
+      await expect(page.locator('#node-search')).toHaveCount(0);
+    });
+
+    test('the context menu shows the shortcut', async ({ page }) => {
+      await page.locator('#rete').click({ button: 'right', position: { x: 200, y: 150 } });
+
+      const item = page.locator('.fixed.z-\\[200\\]').getByRole('button', { name: 'Create Node' });
+      await expect(item).toContainText('A');
+    });
+
+    test('typing A in a field does not open it', async ({ page }) => {
+      await page.locator('#node-sidebar-search').fill('');
+      await page.locator('#node-sidebar-search').press('a');
+      await page.locator('#add-comment-note').click();
+      await page.keyboard.press('a');
+
+      await expect(page.locator('#node-search')).toHaveCount(0);
+      await expect(page.locator('custom-comment textarea')).toHaveValue('a');
+    });
+  });
+
+  test.describe('Comments', () => {
+    const note = (page) => page.locator('custom-comment');
+
+    // Where the note is on the canvas, whatever the zoom of the screen.
+    const placement = (page) =>
+      note(page).evaluate((el) => ({
+        position: el.parentElement.parentElement.style.transform,
+        size: el.querySelector('.comment-note').getAttribute('style'),
+      }));
+
+    const addComment = async (page, text, kind = 'note') => {
+      await page.locator(`#add-comment-${kind}`).click();
+      const input = note(page).last().locator('textarea');
+      await expect(input).toBeFocused();
+      await input.fill(text);
+      await page.locator('header').click();
+      await expect(note(page).last().locator('textarea')).toHaveCount(0);
+    };
+
+    const save = async (page) => {
+      await page.getByRole('button', { name: 'Save Changes' }).click();
+      await expect(page.getByText('You have unsaved changes')).not.toBeVisible();
+    };
+
+    const dragBy = async (page, locator, dx, dy) => {
+      const box = await locator.boundingBox();
+      const x = box.x + box.width / 2;
+      const y = box.y + box.height / 2;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x + dx, y + dy, { steps: 5 });
+      await page.mouse.up();
+    };
+
+    test('adds a title, a text, a note and a section from the canvas', async ({ page }) => {
+      for (const kind of ['title', 'text', 'note', 'section']) {
+        await addComment(page, `A ${kind}`, kind);
+        await expect(page.locator(`.comment-note[data-kind="${kind}"]`)).toContainText(`A ${kind}`);
+      }
+
+      await save(page);
+      await page.reload();
+      await waitForLiveView(page);
+
+      await expect(note(page)).toHaveCount(4);
+      await expect(page.locator('.comment-note[data-kind="title"]')).toContainText('A title');
+      await expect(page.locator('.comment-note[data-kind="section"]')).toContainText('A section');
+    });
+
+    test('changes the kind and color of a comment, and keeps them', async ({ page }) => {
+      await addComment(page, 'Billing');
+
+      await note(page).click();
+      await note(page).getByRole('button', { name: 'Title' }).click();
+      await note(page).getByRole('button', { name: 'Color green' }).click();
+      await save(page);
+
+      await page.reload();
+      await waitForLiveView(page);
+
+      await expect(page.locator('.comment-note[data-kind="title"][data-color="green"]')).toContainText('Billing');
+    });
+
+    test('grows to fit what is typed', async ({ page }) => {
+      await page.locator('#add-comment-text').click();
+      const input = note(page).locator('textarea');
+      await expect(input).toBeFocused();
+      const before = (await note(page).locator('.comment-note').boundingBox()).height;
+
+      await page.keyboard.type('one\ntwo\nthree\nfour\nfive\nsix\nseven\neight');
+
+      const after = (await note(page).locator('.comment-note').boundingBox()).height;
+      expect(after).toBeGreaterThan(before);
+      expect(await input.evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
+    });
+
+    test('keeps a section below the other comments', async ({ page }) => {
+      await addComment(page, 'Group', 'section');
+      await addComment(page, 'Inside');
+
+      const layer = (kind) =>
+        page.locator(`custom-comment:has(.comment-note[data-kind="${kind}"])`)
+          .evaluate((el) => el.parentElement.parentElement.style.zIndex);
+
+      expect(await layer('section')).toBe('-2');
+      expect(await layer('note')).toBe('-1');
+    });
+
+    test('adds a comment from the context menu where it was clicked', async ({ page }) => {
+      const rete = page.locator('#rete');
+      const canvas = await rete.boundingBox();
+      await rete.click({ button: 'right', position: { x: 300, y: 200 } });
+      await page.locator('.fixed.z-\\[200\\]').getByText('Add Note').click();
+
+      await expect(note(page).locator('textarea')).toBeFocused();
+      const box = await note(page).boundingBox();
+      expect(Math.abs(box.x - canvas.x - 300)).toBeLessThan(5);
+      expect(Math.abs(box.y - canvas.y - 200)).toBeLessThan(5);
+    });
+
+    test('keeps a comment after saving and reloading', async ({ page }) => {
+      await addComment(page, 'Calls the billing API\nOnly on weekdays');
+      await save(page);
+
+      await page.reload();
+      await waitForLiveView(page);
+
+      await expect(note(page)).toContainText('Calls the billing API');
+      await expect(note(page)).toContainText('Only on weekdays');
+    });
+
+    test('keeps where a comment was moved and its size', async ({ page }) => {
+      await addComment(page, 'Moved');
+      await save(page);
+
+      await dragBy(page, note(page).locator('.comment-note'), 80, 40);
+      await expect(page.getByText('You have unsaved changes')).toBeVisible();
+
+      await note(page).hover();
+      await dragBy(page, note(page).locator('.comment-resize'), 60, 30);
+      const before = await placement(page);
+      expect(before.size).not.toContain('width: 240px');
+      await save(page);
+
+      await page.reload();
+      await waitForLiveView(page);
+
+      await expect(note(page)).toBeVisible();
+      expect(await placement(page)).toEqual(before);
+    });
+
+    test('moving a node asks to save', async ({ page }) => {
+      await addNodeViaContextMenu(page, 'Logger');
+      await expect(page.locator('custom-node')).toHaveCount(1);
+      await save(page);
+
+      await dragBy(page, page.locator('custom-node .circular-node'), 80, 40);
+
+      await expect(page.getByText('You have unsaved changes')).toBeVisible();
+    });
+
+    test('clicking a comment does not ask to save', async ({ page }) => {
+      await addComment(page, 'Still');
+      await page.waitForTimeout(600);
+      await save(page);
+
+      await note(page).click();
+      await page.waitForTimeout(600);
+
+      await expect(page.getByText('You have unsaved changes')).not.toBeVisible();
+    });
+
+    test('edits a comment with a double click', async ({ page }) => {
+      await addComment(page, 'First');
+
+      await note(page).dblclick();
+      const input = note(page).locator('textarea');
+      await expect(input).toBeFocused();
+      await input.fill('Second');
+      await input.press('Escape');
+
+      await expect(note(page)).toContainText('Second');
+    });
+
+    test('shows the text as text, not as markup', async ({ page }) => {
+      await addComment(page, '<img src=x onerror=alert(1)>');
+
+      await expect(note(page)).toContainText('<img src=x');
+      await expect(note(page).locator('img')).toHaveCount(0);
+    });
+
+    test('deletes a comment and brings it back with undo', async ({ page }) => {
+      await addComment(page, 'Gone');
+      await dragBy(page, note(page).locator('.comment-note'), 80, 40);
+      await page.waitForTimeout(600);
+      const before = await placement(page);
+
+      await note(page).click();
+      await note(page).getByRole('button', { name: 'Delete' }).click();
+      await expect(note(page)).toHaveCount(0);
+
+      await page.keyboard.press('Control+z');
+      await expect(note(page)).toContainText('Gone');
+      expect(await placement(page)).toEqual(before);
+    });
+
+    test('undoes a change to the text', async ({ page }) => {
+      await addComment(page, 'First');
+
+      await note(page).dblclick();
+      await note(page).locator('textarea').fill('Second');
+      await page.locator('header').click();
+      await expect(note(page)).toContainText('Second');
+
+      await page.keyboard.press('Control+z');
+      await expect(note(page)).toContainText('First');
+    });
+
+    test('copies and pastes a comment with its text', async ({ page }) => {
+      await addComment(page, 'Twice');
+
+      await note(page).click();
+      await page.keyboard.press('Control+c');
+      await page.keyboard.press('Control+v');
+
+      await expect(note(page)).toHaveCount(2);
+      await expect(note(page).nth(1)).toContainText('Twice');
+    });
+
+    test('copy and paste inside a comment stay in the text', async ({ page }) => {
+      await addComment(page, 'Text');
+
+      await note(page).click();
+      await page.keyboard.press('Control+c');
+      await note(page).dblclick();
+      await note(page).locator('textarea').press('Control+v');
+
+      await expect(note(page)).toHaveCount(1);
+    });
+
+    test('keeps a comment behind the nodes', async ({ page }) => {
+      await page.locator('#rete').click({ button: 'right', position: { x: 300, y: 200 } });
+      await page.locator('.fixed.z-\\[200\\]').getByText('Add Note').click();
+      await page.locator('header').click();
+
+      const zIndex = await note(page).evaluate((el) => el.parentElement.parentElement.style.zIndex);
+      expect(zIndex).toBe('-1');
+    });
+
+    test('does not count as a node of the flow', async ({ page }) => {
+      await addComment(page, 'Not a step');
+      await save(page);
+
+      await expect(page.locator('custom-node')).toHaveCount(0);
+
+      await page.getByRole('button', { name: 'Run Flow' }).click();
+      await expect(page.getByText('Execution queued')).toBeVisible();
+    });
+  });
+
   test.describe('Code Editor', () => {
     const openCodeEditor = async (page) => {
       const node = page.locator('custom-node').first();
@@ -263,7 +546,7 @@ test.describe('Flow Editor', () => {
   });
 
   test.describe('New nodes', () => {
-    for (const name of ['Schedule', 'AI Agent', 'For Each', 'Respond to Webhook']) {
+    for (const name of ['Schedule', 'AI Agent', 'For Each', 'Respond to Webhook', 'Slack: Send Message', 'Email: Send Email', 'Email: List Emails', 'Google Sheets: Read Rows', 'Read CSV', 'Write CSV', 'S3: Upload File', 'FTP: Rename or Move', 'AI: Generate Image', 'AI: Edit Image', 'AI: Summarize', 'AI: Transcribe Audio']) {
       test(`adds ${name} from the context menu and saves it`, async ({ page }) => {
         await addNodeViaContextMenu(page, name);
 
@@ -273,6 +556,122 @@ test.describe('Flow Editor', () => {
         await expect(page.getByText('You have unsaved changes')).toBeHidden({ timeout: 5000 });
       });
     }
+
+    test('groups the actions of a service in the sidebar, with its logo', async ({ page }) => {
+      const group = page.locator('#node-category-slack');
+      const action = group.locator('[data-node-name="Slack: Send Message"]');
+
+      await expect(group).toBeVisible({ timeout: 5000 });
+      await expect(action).toBeHidden();
+
+      await group.getByRole('button', { name: 'Slack', exact: true }).click();
+
+      await expect(action).toBeVisible({ timeout: 5000 });
+      await expect(action.locator('.logo-slack')).toBeVisible();
+      await expect(group.locator('[data-node-name="Slack: Add Reaction"]')).toBeVisible();
+    });
+
+    test('clears the recent nodes', async ({ page }) => {
+      await addNodeViaContextMenu(page, 'Variable');
+
+      const recent = page.locator('#recent-node-group');
+      await expect(recent.locator('[data-node-name="Variable"]')).toBeVisible({ timeout: 5000 });
+
+      await recent.getByRole('button', { name: 'Clear' }).click();
+
+      await expect(recent).toBeHidden({ timeout: 5000 });
+      await expect(page.locator('custom-node')).toHaveCount(1);
+    });
+
+    test('groups HTTP Request under HTTP', async ({ page }) => {
+      const group = page.locator('#node-category-http');
+
+      await expect(group.getByRole('button', { name: 'HTTP', exact: true })).toBeVisible({ timeout: 5000 });
+      await expect(group.locator('[data-node-name="HTTP Request"]')).toBeVisible();
+    });
+
+    test('shows the logo of a service on the canvas', async ({ page }) => {
+      await addNodeViaContextMenu(page, 'Google Sheets: Read Rows');
+
+      await expect(page.locator('custom-node .logo-google-sheets')).toBeVisible({ timeout: 5000 });
+    });
+
+    test('shows only the fields of the action', async ({ page }) => {
+      await addNodeViaContextMenu(page, 'FTP: Rename or Move');
+
+      const node = page.locator('custom-node').first();
+      await node.hover();
+      await node.locator('.node-action-btn.config').click();
+
+      await expect(page.getByText('New path')).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText('Operation')).toHaveCount(0);
+      await expect(page.getByText('Content')).toHaveCount(0);
+    });
+
+    test('finds the image nodes by the name of the model', async ({ page }) => {
+      await page.getByPlaceholder('Search nodes').fill('nano banana');
+
+      await expect(page.locator('[data-node-name="AI: Generate Image"]')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('[data-node-name="AI: Edit Image"]')).toBeVisible();
+      await expect(page.locator('[data-node-name="AI: Summarize"]')).toHaveCount(0);
+    });
+
+    test('offers only the models of the credential, and says the default', async ({ page }) => {
+      const name = `gemini-${Date.now()}`;
+      const editor = page.url();
+
+      await page.goto('/credentials');
+      await waitForLiveView(page);
+      await page.getByLabel('Name').fill(name);
+      await page.getByLabel('Service').selectOption('ai');
+      await page.locator('#credential-value-provider').selectOption('google');
+      await page.locator('#credential-value-api_key').fill('e2e-key');
+      await page.locator('#credential-save').click();
+      await expect(page.locator('#credentials').getByText(name)).toBeVisible({ timeout: 5000 });
+
+      await page.goto(editor);
+      await waitForLiveView(page);
+      await addNodeViaContextMenu(page, 'AI: Generate Image');
+
+      const node = page.locator('custom-node').first();
+      await node.hover();
+      await node.locator('.node-action-btn.config').click();
+
+      const credential = page.locator('#node-credential-credential');
+      const model = page.locator('#node-model-model');
+
+      await credential.selectOption(name);
+
+      await expect(model.locator('option').first()).toHaveText('Default: Nano Banana 2.1', { timeout: 5000 });
+      await expect(model.locator('option', { hasText: 'Nano Banana Pro' })).toHaveCount(1);
+      await expect(model.locator('option', { hasText: 'Gemini 3.8 Flash' })).toHaveCount(0);
+      await expect(model).toHaveJSProperty('tagName', 'SELECT');
+    });
+
+    test('offers the stored credentials on a node', async ({ page }) => {
+      const name = `slack-${Date.now()}`;
+      const editor = page.url();
+
+      await page.goto('/credentials');
+      await waitForLiveView(page);
+      await page.getByLabel('Name').fill(name);
+      await page.getByLabel('Bot token').fill('xoxb-e2e');
+      await page.locator('#credential-save').click();
+      await expect(page.locator('#credentials').getByText(name)).toBeVisible({ timeout: 5000 });
+
+      await page.goto(editor);
+      await waitForLiveView(page);
+      await addNodeViaContextMenu(page, 'Slack: Send Message');
+
+      const node = page.locator('custom-node').first();
+      await node.hover();
+      await node.locator('.node-action-btn.config').click();
+
+      const select = page.locator('#node-credential-credential');
+      await expect(select.locator('option', { hasText: name })).toHaveCount(1, { timeout: 5000 });
+      await select.selectOption(name);
+      await expect(select).toHaveValue(name);
+    });
 
     test('shows the outputs of For Each', async ({ page }) => {
       await addNodeViaContextMenu(page, 'For Each');

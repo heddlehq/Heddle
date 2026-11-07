@@ -171,3 +171,25 @@
 .prose p:last-child {
   margin-bottom: 0 !important;
 }
+
+/* Logos of the services nodes reach. They work like the hero-* icon classes. */
+.logo-slack,
+.logo-google-sheets,
+.logo-s3 {
+  display: inline-block;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.logo-slack {
+  background-image: url("/images/services/slack.svg");
+}
+
+.logo-google-sheets {
+  background-image: url("/images/services/google-sheets.svg");
+}
+
+.logo-s3 {
+  background-image: url("/images/services/s3.svg");
+}

@@ -15,6 +15,23 @@
     --node-data: #a8701a;
     --node-integration: #8a4f7d;
     --node-utility: var(--color-gray-500);
+
+    --comment-default: var(--color-gray-100);
+    --comment-default-border: var(--color-gray-300);
+    --comment-default-ink: var(--color-gray-900);
+    --comment-yellow: #f4e3a6;
+    --comment-yellow-border: #d9c070;
+    --comment-yellow-ink: #7a5c0e;
+    --comment-green: #cfe5d6;
+    --comment-green-border: #8fbfa3;
+    --comment-green-ink: #2f6b4c;
+    --comment-blue: #cfe2ea;
+    --comment-blue-border: #8db8c6;
+    --comment-blue-ink: #2a6374;
+    --comment-red: #f0d3cc;
+    --comment-red-border: #d79a8d;
+    --comment-red-ink: #a63a2b;
+    --comment-note-text: var(--color-gray-900);
 }
 
 [data-theme="dark"] {
@@ -31,6 +48,23 @@
     --node-data: #d9a95c;
     --node-integration: #c795bc;
     --node-utility: var(--color-slate-400);
+
+    --comment-default: var(--color-slate-800);
+    --comment-default-border: var(--color-slate-600);
+    --comment-default-ink: var(--color-slate-100);
+    --comment-yellow: #3d3620;
+    --comment-yellow-border: #6b5d31;
+    --comment-yellow-ink: #e6c976;
+    --comment-green: #24382c;
+    --comment-green-border: #47705a;
+    --comment-green-ink: #9fd0b3;
+    --comment-blue: #213640;
+    --comment-blue-border: #446c7c;
+    --comment-blue-ink: #9fcbd9;
+    --comment-red: #402722;
+    --comment-red-border: #7c4c42;
+    --comment-red-ink: #e8a597;
+    --comment-note-text: var(--color-slate-100);
 }
 
 /* styles for the grid in the rete background */
@@ -68,4 +102,188 @@
 
 #rete-selection-box.visible {
     display: block;
+}
+
+/* Comments: titles, texts, notes and sections on the canvas, behind the nodes and wires. */
+[data-color="default"] { --comment: var(--comment-default); --comment-border: var(--comment-default-border); --comment-ink: var(--comment-default-ink); }
+[data-color="yellow"] { --comment: var(--comment-yellow); --comment-border: var(--comment-yellow-border); --comment-ink: var(--comment-yellow-ink); }
+[data-color="green"] { --comment: var(--comment-green); --comment-border: var(--comment-green-border); --comment-ink: var(--comment-green-ink); }
+[data-color="blue"] { --comment: var(--comment-blue); --comment-border: var(--comment-blue-border); --comment-ink: var(--comment-blue-ink); }
+[data-color="red"] { --comment: var(--comment-red); --comment-border: var(--comment-red-border); --comment-ink: var(--comment-red-ink); }
+
+.comment-note {
+    position: relative;
+    box-sizing: border-box;
+    color: var(--comment-ink);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: grab;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.comment-note:active {
+    cursor: grabbing;
+}
+
+.comment-note:hover {
+    border-color: var(--comment-border);
+}
+
+.comment-note.is-selected {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 40%, transparent);
+}
+
+.comment-note[data-kind="title"],
+.comment-note[data-kind="text"] {
+    padding: 4px 8px;
+}
+
+.comment-note[data-kind="title"] {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.comment-note[data-kind="text"] {
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.comment-note[data-kind="note"] {
+    padding: 12px;
+    color: var(--comment-note-text);
+    font-size: 15px;
+    line-height: 1.5;
+    background: var(--comment);
+    border-color: var(--comment-border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.comment-note[data-kind="section"] {
+    padding: 10px 14px;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    background: color-mix(in oklab, var(--comment) 45%, transparent);
+    border: 2px dashed var(--comment-border);
+    border-radius: 12px;
+}
+
+.comment-text {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+    color: inherit;
+    font: inherit;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: none;
+}
+
+.comment-text.is-empty,
+textarea.comment-text::placeholder {
+    color: inherit;
+    opacity: 0.55;
+}
+
+textarea.comment-text {
+    overflow: auto;
+    background: transparent;
+    border: 0;
+    outline: none;
+    box-shadow: none;
+    resize: none;
+    cursor: text;
+    user-select: text;
+}
+
+.comment-toolbar {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    color: var(--color-base-content);
+    white-space: nowrap;
+    background: var(--editor-surface);
+    border: 1px solid var(--editor-border);
+    border-radius: 10px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
+    transform-origin: left bottom;
+    cursor: default;
+}
+
+.comment-toolbar-divider {
+    width: 1px;
+    height: 18px;
+    margin: 0 4px;
+    background: var(--editor-border);
+}
+
+.comment-tool {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.comment-tool:hover {
+    background: var(--editor-input-bg);
+}
+
+.comment-tool.is-active {
+    color: var(--color-primary-content);
+    background: var(--color-primary);
+}
+
+.comment-tool.comment-delete:hover {
+    color: var(--color-error-content);
+    background: var(--color-error);
+}
+
+.comment-swatch {
+    width: 20px;
+    height: 20px;
+    margin: 0 2px;
+    background: var(--comment);
+    border: 1px solid var(--comment-border);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.comment-swatch:hover {
+    transform: scale(1.15);
+}
+
+.comment-swatch.is-active {
+    box-shadow: 0 0 0 2px var(--editor-surface), 0 0 0 4px var(--color-primary);
+}
+
+.comment-resize {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 14px;
+    height: 14px;
+    cursor: nwse-resize;
+    border-right: 2px solid var(--comment-border);
+    border-bottom: 2px solid var(--comment-border);
+    border-bottom-right-radius: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.comment-note:hover .comment-resize,
+.comment-note.is-selected .comment-resize {
+    opacity: 1;
 }

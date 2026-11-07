@@ -7,6 +7,7 @@ defmodule HeddleUI.FlowLive.EditorTest do
   import HeddleCore.AccountsFixtures
 
   alias HeddleCore.Executions
+  alias HeddleCore.Flows
 
   @flow_execution_worker "HeddleWorker.FlowExecutionWorker"
 
@@ -114,6 +115,28 @@ defmodule HeddleUI.FlowLive.EditorTest do
       render_click(lv, "add_node", %{"name" => "Variable"})
 
       assert has_element?(lv, "#recent-node-group [data-node-name=Variable]")
+    end
+
+    test "clears the recently used nodes", %{conn: conn} do
+      flow = flow_fixture()
+
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      render_click(lv, "add_node", %{"name" => "Variable"})
+      lv |> element("#clear-recent-nodes") |> render_click()
+
+      refute has_element?(lv, "#recent-node-group")
+      assert has_element?(lv, "#node-category-data_manipulation [data-node-name=Variable]")
+    end
+
+    test "groups HTTP Request under HTTP", %{conn: conn} do
+      flow = flow_fixture()
+
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      assert has_element?(lv, "#node-category-http button", "HTTP")
+      assert has_element?(lv, "#node-category-http [data-node-name=\"HTTP Request\"]")
+      refute has_element?(lv, "#node-category-integration")
     end
 
     test "renders the rete editor container", %{conn: conn} do
@@ -265,6 +288,59 @@ defmodule HeddleUI.FlowLive.EditorTest do
 
       html = render_hook(lv, "node_added_internally", %{"name" => "Start", "data" => %{}})
       assert html =~ "unsaved changes"
+    end
+  end
+
+  describe "comments" do
+    @comment %{
+      "id" => "note",
+      "kind" => "note",
+      "color" => "yellow",
+      "text" => "Calls the billing API",
+      "width" => 240,
+      "height" => 140,
+      "position" => %{"x" => 10, "y" => 20}
+    }
+
+    test "can be added from the canvas, of every kind", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow_fixture().id}")
+
+      for kind <- ~w(title text note section) do
+        assert has_element?(lv, "#add-comment-#{kind}[data-comment-kind=#{kind}]")
+      end
+    end
+
+    test "are sent to the canvas", %{conn: conn} do
+      flow = flow_fixture(%{comments: [@comment]})
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      render_hook(lv, "client_ready", %{})
+
+      assert_push_event(lv, "load_graph_data", %{comments: [@comment]})
+    end
+
+    test "are saved with the graph, and that doesn't reload the canvas", %{conn: conn} do
+      flow = flow_fixture()
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      render_hook(lv, "save_graph_data", %{
+        "data" => %{"nodes" => [], "connections" => [], "comments" => [@comment]}
+      })
+
+      render(lv)
+
+      assert Flows.get_flow!(flow.id).comments == [@comment]
+      refute_push_event(lv, "load_graph_data", %{comments: [@comment]})
+    end
+
+    test "reload the canvas when changed elsewhere", %{conn: conn} do
+      flow = flow_fixture()
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      {:ok, _flow} = Flows.update_flow(flow, %{comments: [@comment]})
+      render(lv)
+
+      assert_push_event(lv, "load_graph_data", %{comments: [@comment]})
     end
   end
 

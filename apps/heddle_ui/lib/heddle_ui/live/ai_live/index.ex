@@ -5,7 +5,9 @@ defmodule HeddleUI.AILive.Index do
 
   alias HeddleAI.ClaudeAgent
   alias HeddleAI.LLM
+  alias HeddleCore.Credentials
   alias HeddleCore.Settings
+  alias HeddleUI.AILive.Defaults
 
   @impl true
   def mount(_params, _session, socket) do
@@ -13,8 +15,10 @@ defmodule HeddleUI.AILive.Index do
 
     {:ok,
      socket
-     |> assign(:page_title, gettext("LLM & Agents"))
+     |> assign(:page_title, gettext("AI"))
      |> assign(:llm, LLM.status())
+     |> assign(:ai_credentials, ai_credentials())
+     |> assign_defaults(Defaults.to_form_params(Settings.ai_defaults()))
      |> assign(:agent, agent)
      |> assign(:agent_enabled, Settings.claude_agent_enabled?())
      |> assign(:mcp_command, mcp_command())
@@ -22,6 +26,23 @@ defmodule HeddleUI.AILive.Index do
   end
 
   @impl true
+  def handle_event("change_defaults", %{"ai" => params} = event, socket) do
+    {:noreply, assign_defaults(socket, Defaults.reset_model(params, event["_target"]))}
+  end
+
+  def handle_event("save_defaults", %{"ai" => params}, socket) do
+    case Settings.set_ai_defaults(Defaults.to_settings(params)) do
+      {:ok, _setting} ->
+        {:noreply,
+         socket
+         |> assign_defaults(params)
+         |> put_flash(:info, gettext("AI settings saved."))}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, gettext("Could not save this setting."))}
+    end
+  end
+
   def handle_event("toggle_claude_agent", _params, socket) do
     enabled = not socket.assigns.agent_enabled
 
@@ -43,7 +64,7 @@ defmodule HeddleUI.AILive.Index do
     <div class="p-6 md:p-8 w-full max-w-4xl mx-auto space-y-8">
       <div>
         <div class="flex items-center gap-3">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{gettext("LLM & Agents")}</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{gettext("AI")}</h1>
           <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
             {gettext("System admins only")}
           </span>
@@ -53,13 +74,15 @@ defmodule HeddleUI.AILive.Index do
         </p>
       </div>
 
+      <Defaults.defaults_section form={@defaults_form} credentials={@ai_credentials} />
+
       <section
         id="llm-provider"
         class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-6"
       >
         <div class="flex items-center justify-between gap-4">
           <h2 class="text-base font-semibold text-gray-900 dark:text-white">
-            {gettext("LLM provider")}
+            {gettext("LLM from the environment")}
           </h2>
           <.status_badge state={@llm.state} />
         </div>
@@ -200,6 +223,14 @@ defmodule HeddleUI.AILive.Index do
       </section>
     </div>
     """
+  end
+
+  defp assign_defaults(socket, params) do
+    assign(socket, :defaults_form, to_form(params, as: :ai))
+  end
+
+  defp ai_credentials do
+    for %{kind: "ai", name: name} <- Credentials.list_credentials(), do: name
   end
 
   attr :state, :atom, required: true

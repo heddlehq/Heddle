@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { waitForLiveView, clickAndWaitForNavigation } from './helpers.js';
 
-test.describe('LLM & Agents', () => {
+test.describe('AI', () => {
   test('is reached from the sidebar', async ({ page }) => {
     await page.goto('/');
     await waitForLiveView(page);
 
     await clickAndWaitForNavigation(page, page.locator('#nav-ai'), /\/ai$/);
 
-    await expect(page.getByRole('heading', { name: 'LLM & Agents' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'AI', exact: true })).toBeVisible();
     await expect(page.locator('#llm-status')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('#mcp-command')).toContainText('claude mcp add');
   });

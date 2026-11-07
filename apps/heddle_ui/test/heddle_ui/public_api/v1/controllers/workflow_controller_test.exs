@@ -143,6 +143,60 @@ defmodule HeddleUI.PublicAPI.V1.WorkflowControllerTest do
     end
   end
 
+  describe "comments" do
+    @comment %{
+      "id" => "note",
+      "kind" => "section",
+      "color" => "blue",
+      "text" => "Billing",
+      "width" => 520,
+      "height" => 320,
+      "position" => %{"x" => 10, "y" => 20}
+    }
+
+    test "are shown with the workflow", %{conn: conn} do
+      user = user_fixture()
+      workflow = flow_fixture(%{user: user, comments: [@comment]})
+
+      conn =
+        conn
+        |> authorize(user, ["workflows:read"])
+        |> get(~p"/api/v1/workflows/#{workflow}")
+
+      assert %{"data" => %{"comments" => [@comment]}} = json_response(conn, 200)
+    end
+
+    test "are saved with an update, and kept when it doesn't send them", %{conn: conn} do
+      user = user_fixture()
+      workflow = flow_fixture(%{user: user})
+      conn = authorize(conn, user, ["workflows:write"])
+
+      assert %{"data" => %{"comments" => [@comment]}} =
+               conn
+               |> put(~p"/api/v1/workflows/#{workflow}", workflow: %{comments: [@comment]})
+               |> json_response(200)
+
+      assert %{"data" => %{"comments" => [@comment]}} =
+               conn
+               |> put(~p"/api/v1/workflows/#{workflow}", workflow: %{name: "Renamed"})
+               |> json_response(200)
+    end
+
+    test "are refused when invalid", %{conn: conn} do
+      user = user_fixture()
+      workflow = flow_fixture(%{user: user})
+
+      conn =
+        conn
+        |> authorize(user, ["workflows:write"])
+        |> put(~p"/api/v1/workflows/#{workflow}",
+          workflow: %{comments: [%{@comment | "kind" => "image"}]}
+        )
+
+      assert json_response(conn, 422)
+    end
+  end
+
   describe "delete" do
     test "deletes workflow with delete scope", %{conn: conn} do
       user = user_fixture()

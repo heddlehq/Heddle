@@ -7,7 +7,7 @@ defmodule HeddleNodes.Nodes.HttpRequest do
     %{
       name: "HTTP Request",
       title: "HTTP Request",
-      category: :integration,
+      category: :http,
       color: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
       description: "Calls an external HTTP endpoint and routes success or error responses.",
       icon: "hero-globe-alt-solid",

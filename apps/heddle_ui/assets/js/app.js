@@ -8,8 +8,16 @@ const hooks = {
   CodeEditor: CodeEditorHook,
   NodeSearch: {
     mounted() {
+      this.el.focus();
       this.el.addEventListener("input", (e) => {
         this.pushEvent("filter_nodes", { value: e.target.value });
+      });
+      this.el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          document.querySelector('[phx-click="create_node_from_modal"]')?.click();
+        }
+        if (e.key === "Escape") this.pushEvent("close_create_node_modal", {});
       });
     }
   },
@@ -106,9 +114,9 @@ const hooks = {
         }
       });
 
-      this.handleEvent("load_graph_data", async ({ nodes, connections, definitions }) => {
+      this.handleEvent("load_graph_data", async ({ nodes, connections, comments, definitions }) => {
         if (editor.importData) {
-          await editor.importData({ nodes, connections, definitions });
+          await editor.importData({ nodes, connections, comments, definitions });
         } else {
           console.error("Editor importData method missing!");
         }
@@ -136,6 +144,10 @@ const hooks = {
         if (editor.updateNodeSockets) {
           editor.updateNodeSockets(nodeId, { inputs, outputs });
         }
+      });
+
+      document.querySelectorAll("[data-comment-kind]").forEach((button) => {
+        button.addEventListener("click", () => editor.addComment(button.dataset.commentKind));
       });
 
       if (editor.onChange) {

@@ -18,6 +18,7 @@ config :heddle_core, HeddleCore.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
+  port: String.to_integer(System.get_env("HEDDLE_DB_PORT", "5432")),
   database: "heddle_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
@@ -48,4 +49,5 @@ config :phoenix_live_view,
 config :phoenix,
   sort_verified_routes_query_params: true
 
+config :heddle_ai, :text_default, nil
 config :heddle_nodes, :req_plug, {Req.Test, HeddleNodes.Nodes.HttpRequest}

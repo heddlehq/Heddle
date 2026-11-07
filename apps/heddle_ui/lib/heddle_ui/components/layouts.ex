@@ -89,7 +89,7 @@ defmodule HeddleUI.Layouts do
                 id="nav-ai"
                 navigate={~p"/ai"}
                 icon="hero-cpu-chip"
-                label={gettext("LLM & Agents")}
+                label={gettext("AI")}
                 active={@section == :ai}
               />
               <.nav_link
@@ -98,6 +98,13 @@ defmodule HeddleUI.Layouts do
                 icon="hero-key"
                 label={gettext("API keys")}
                 active={@section == :api_keys}
+              />
+              <.nav_link
+                id="nav-credentials"
+                navigate={~p"/credentials"}
+                icon="hero-lock-closed"
+                label={gettext("Credentials")}
+                active={@section == :credentials}
               />
               <.nav_link
                 id="nav-users"
@@ -297,6 +304,7 @@ defmodule HeddleUI.Layouts do
   defp nav_section("/flows" <> _), do: :flows
   defp nav_section("/executions" <> _), do: :executions
   defp nav_section("/api-keys"), do: :api_keys
+  defp nav_section("/credentials"), do: :credentials
   defp nav_section("/users"), do: :users
   defp nav_section(_path), do: nil
 

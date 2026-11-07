@@ -37,6 +37,11 @@ config :heddle_core, Oban,
 config :heddle_core, :oban_name, HeddleCore.Oban
 
 config :heddle_nodes, :llm_client, HeddleAI.AI
+config :heddle_nodes, :agent_memory, HeddleCore.AgentMemory
+config :heddle_nodes, :credentials_client, HeddleCore.Credentials
+
+# Replaced in production by a key derived from SECRET_KEY_BASE. See runtime.exs.
+config :heddle_core, :credentials_secret, "development only"
 
 # Env is read by HeddleAI.LLM. A stray .env must not change what the app talks to.
 config :req_llm, load_dotenv: false

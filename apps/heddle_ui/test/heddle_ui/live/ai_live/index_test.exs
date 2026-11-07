@@ -173,4 +173,74 @@ defmodule HeddleUI.AILive.IndexTest do
       refute has_element?(view, "#create-flow-with-ai")
     end
   end
+
+  describe "model defaults" do
+    alias HeddleCore.Credentials
+
+    setup do
+      {:ok, _credential} =
+        Credentials.create_credential(%{
+          "name" => "gemini",
+          "kind" => "ai",
+          "values" => %{"provider" => "google", "api_key" => "k"}
+        })
+
+      :ok
+    end
+
+    defp pick(view, params) do
+      view |> form("#ai-defaults-form", ai: params) |> render_change()
+    end
+
+    test "offers the credentials and the models that fit", %{conn: conn} do
+      view = open(conn)
+
+      pick(view, %{"image_credential" => "gemini"})
+
+      assert has_element?(view, "#ai_image_model option", "Default: Nano Banana 2.1")
+      assert has_element?(view, "#ai_image_model option", "Nano Banana Pro")
+      refute has_element?(view, "#ai_image_model option", "Gemini 3.8 Flash")
+    end
+
+    test "says when a provider can't do a task", %{conn: conn} do
+      view = open(conn)
+
+      pick(view, %{"speech_credential" => "gemini"})
+
+      assert has_element?(view, "#ai-task-speech-problem")
+      assert has_element?(view, "#ai_speech_model[disabled]")
+    end
+
+    test "forgets the model when the credential changes", %{conn: conn} do
+      Settings.set_ai_defaults(%{
+        "image" => %{"credential" => "gemini", "model" => "gemini-3-pro-image"}
+      })
+
+      view = open(conn)
+
+      assert has_element?(view, "#ai_image_model option[selected]", "Nano Banana Pro")
+
+      view
+      |> element("#ai-defaults-form")
+      |> render_change(%{
+        "_target" => ["ai", "image_credential"],
+        "ai" => %{"image_credential" => "", "image_model" => "gemini-3-pro-image"}
+      })
+
+      refute has_element?(view, "#ai_image_model option[selected]", "Nano Banana Pro")
+    end
+
+    test "saves what each task uses", %{conn: conn} do
+      view = open(conn)
+
+      pick(view, %{"image_credential" => "gemini"})
+
+      view
+      |> form("#ai-defaults-form", ai: %{"image_model" => "gemini-3-pro-image"})
+      |> render_submit()
+
+      assert %{"image" => %{"credential" => "gemini", "model" => "gemini-3-pro-image"}} =
+               Settings.ai_defaults()
+    end
+  end
 end

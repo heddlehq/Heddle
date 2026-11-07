@@ -56,40 +56,15 @@ cd apps/heddle_worker
 mix run --no-halt
 ```
 
-## 🧩 Building your own nodes
+## ⚡ Benchmark
 
-Nodes are written in Elixir with **[Bobbin](https://github.com/heddlehq/Bobbin)**, the SDK for extending Heddle. It's on [Hex](https://hex.pm/packages/bobbin), and Heddle's own nodes are built with it:
+Same flow, same machine, default settings, against Windmill, Kestra, n8n and Activepieces.
 
-```elixir
-def deps do
-  [
-    {:bobbin, "~> 0.2"}
-  ]
-end
-```
+<p align="center">
+  <img src="benchmark/compare/benchmark.gif" alt="Animated charts of the benchmark. Heddle does 387 runs per second against 108 for the runner-up, 395 with a slow API, one run takes 11 ms, and it lost no calls in a crash, repeating 50. It also uses the least idle memory and disk." width="800" />
+</p>
 
-```elixir
-defmodule MyNodes.Greet do
-  use Bobbin.Node
-
-  definition do
-    %{
-      name: "Greet",
-      title: "Greet",
-      category: :utility,
-      inputs: [:exec],
-      outputs: [:exec]
-    }
-  end
-
-  @impl true
-  def handler(context, _input) do
-    {:ok, Map.put(context, "result", "Hello!"), :exec}
-  end
-end
-```
-
-The API docs are on [HexDocs](https://hexdocs.pm/bobbin). Heddle can't load outside nodes yet, so for now a new node goes in [`apps/heddle_nodes`](apps/heddle_nodes).
+We wrote this test, and Heddle is in it, so everything is meant to be checked and rerun: see the [method and the raw data](benchmark/compare).
 
 ## 🤝 Community & Contributing
 

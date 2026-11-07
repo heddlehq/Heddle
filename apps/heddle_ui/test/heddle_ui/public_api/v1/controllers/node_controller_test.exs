@@ -14,7 +14,7 @@ defmodule HeddleUI.PublicAPI.V1.NodeControllerTest do
 
       assert %{
                "data" => nodes,
-               "meta" => %{"page" => 1, "per_page" => 20, "total" => _total, "total_pages" => 1}
+               "meta" => %{"page" => 1, "per_page" => 20, "total" => _total}
              } = json_response(conn, 200)
 
       assert Enum.any?(nodes, &(&1["type"] == "Start"))

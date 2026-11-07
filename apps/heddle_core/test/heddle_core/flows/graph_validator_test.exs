@@ -137,4 +137,60 @@ defmodule HeddleCore.Flows.GraphValidatorTest do
                GraphValidator.validate(@valid_nodes, connections, manifest: Manifest)
     end
   end
+
+  describe "validate_comments/1" do
+    @comment %{
+      "id" => "note",
+      "kind" => "note",
+      "color" => "yellow",
+      "text" => "Calls the billing API",
+      "width" => 240,
+      "height" => 140,
+      "position" => %{"x" => 10, "y" => 20.5}
+    }
+
+    test "accepts no comments, and comments without text" do
+      assert GraphValidator.validate_comments([]) == :ok
+      assert GraphValidator.validate_comments([@comment]) == :ok
+      assert GraphValidator.validate_comments([%{@comment | "text" => ""}]) == :ok
+    end
+
+    test "accepts every kind and color" do
+      for kind <- ~w(title text note section), color <- ~w(default yellow green blue red) do
+        comment = %{@comment | "kind" => kind, "color" => color}
+
+        assert GraphValidator.validate_comments([comment]) == :ok
+      end
+    end
+
+    test "rejects what isn't a list of objects" do
+      assert {:error, :comments, "must be a list"} = GraphValidator.validate_comments(%{})
+      assert {:error, :comments, _message} = GraphValidator.validate_comments(["note"])
+    end
+
+    test "rejects duplicate ids" do
+      assert {:error, :comments, "contains duplicate comment ids"} =
+               GraphValidator.validate_comments([@comment, @comment])
+    end
+
+    test "rejects a comment with missing, invalid or unknown fields" do
+      invalid = [
+        Map.delete(@comment, "id"),
+        Map.delete(@comment, "text"),
+        Map.delete(@comment, "kind"),
+        %{@comment | "kind" => "image"},
+        %{@comment | "color" => "#ff0000"},
+        %{@comment | "text" => 1},
+        %{@comment | "position" => %{"x" => "10", "y" => 20}},
+        %{@comment | "width" => 0},
+        %{@comment | "height" => "140"},
+        Map.put(@comment, "script", "x")
+      ]
+
+      for comment <- invalid do
+        assert {:error, :comments, "contains an invalid comment"} =
+                 GraphValidator.validate_comments([comment])
+      end
+    end
+  end
 end
