@@ -32,6 +32,7 @@ defmodule HeddleCore.MixProject do
 
   defp deps do
     [
+      {:heddle, in_umbrella: true},
       {:pbkdf2_elixir, "~> 2.0"},
       {:ecto_sql, "~> 3.13"},
       {:postgrex, ">= 0.0.0"},

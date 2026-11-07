@@ -8,6 +8,7 @@ defmodule HeddleWorker.ScheduleWorker do
 
   use Oban.Worker, queue: :default, max_attempts: 1
 
+  alias Heddle.Graph
   alias HeddleCore.Executions
   alias HeddleCore.Flows
   alias HeddleCore.Flows.Schedule
@@ -19,9 +20,8 @@ defmodule HeddleWorker.ScheduleWorker do
     now = scheduled_at || DateTime.utc_now()
 
     for flow <- Flows.list_flows_with_node("Schedule"),
-        node <- flow.nodes,
-        node["type"] == "Schedule",
-        Schedule.due?(node["controls"]["cron"], now) do
+        node <- flow |> Graph.new() |> Graph.of_type("Schedule"),
+        Schedule.due?(node.controls["cron"], now) do
       start(flow, node)
     end
 
@@ -29,7 +29,7 @@ defmodule HeddleWorker.ScheduleWorker do
   end
 
   defp start(flow, node) do
-    input = %{"trigger" => "schedule", "node_id" => node["id"]}
+    input = %{"trigger" => "schedule", "node_id" => node.id}
 
     with {:error, reason} <- Executions.start_execution(flow, input) do
       Logger.error("Could not start scheduled flow #{flow.id}: #{inspect(reason)}")

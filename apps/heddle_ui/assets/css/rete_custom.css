@@ -8,6 +8,7 @@
     --editor-input-bg: var(--color-slate-50);
     --editor-input-border: var(--color-gray-200);
     --editor-muted: var(--color-gray-500);
+    --editor-text: var(--color-gray-900);
 
     --node-trigger: #3f7d5e;
     --node-flow-control: var(--color-primary);
@@ -42,6 +43,7 @@
     --editor-input-bg: var(--color-slate-800);
     --editor-input-border: var(--color-slate-600);
     --editor-muted: var(--color-slate-400);
+    --editor-text: var(--color-white);
 
     --node-trigger: #7fb796;
     --node-code: #7db3bf;

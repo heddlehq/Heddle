@@ -110,7 +110,7 @@ defmodule HeddleNodes.Nodes.NewNodesTest do
       graph = loop_flow("numbers", [eval_node("boom", ~s(raise "boom"))])
       graph = %{graph | connections: [link("each", "item", "boom") | graph.connections]}
 
-      assert {:error, reason, "boom"} = Runner.run(graph, %{"numbers" => [1]})
+      assert {:error, reason, "boom", _context} = Runner.run(graph, %{"numbers" => [1]})
       assert reason =~ "boom"
     end
 

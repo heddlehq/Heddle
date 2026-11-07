@@ -92,16 +92,16 @@ defmodule HeddleNodes.Agent do
   end
 
   defp build_tool(node, name, run_tool, target) do
-    definition = Nodes.get_node(node["type"]) || %{}
+    definition = Nodes.get_node(node.type) || %{}
     fields = open_fields(node, definition)
     allowed = Enum.map(fields, &to_string(&1.name))
 
     fun = fn args ->
       args = Map.new(args, fn {key, value} -> {to_string(key), value} end)
-      controls = Map.merge(node["controls"] || %{}, Map.take(args, allowed))
+      controls = Map.merge(node.controls, Map.take(args, allowed))
 
       name
-      |> call_tool(args, run_tool.(%{node | "controls" => controls}, args["input"]), target)
+      |> call_tool(args, run_tool.(%{node | controls: controls}, args["input"]), target)
     end
 
     llm().tool(name, description(node, definition), schema(fields), fun)
@@ -113,7 +113,7 @@ defmodule HeddleNodes.Agent do
     {:ok, tool_output(context["result"])}
   end
 
-  defp call_tool(name, args, {:error, reason, _node_id}, {parent, ref}) do
+  defp call_tool(name, args, {:error, reason, _node_id, _context}, {parent, ref}) do
     send(parent, {ref, %{"tool" => name, "args" => args, "ok" => false}, []})
 
     {:error, if(is_binary(reason), do: reason, else: inspect(reason))}
@@ -139,12 +139,10 @@ defmodule HeddleNodes.Agent do
   end
 
   defp open_fields(node, definition) do
-    controls = node["controls"] || %{}
-
     definition
     |> Map.get(:ui_fields, [])
     |> Enum.reject(&(&1.type in [:credential, :code, :model]))
-    |> Enum.filter(&blank?(controls[to_string(&1.name)]))
+    |> Enum.filter(&blank?(node.controls[to_string(&1.name)]))
   end
 
   defp blank?(nil), do: true
@@ -173,19 +171,19 @@ defmodule HeddleNodes.Agent do
   defp option(value), do: to_string(value)
 
   defp description(node, definition) do
-    "#{node["label"]}: #{Map.get(definition, :description, "A step of this flow.")}"
+    "#{node.label}: #{Map.get(definition, :description, "A step of this flow.")}"
   end
 
   defp unique_name(node, names) do
     base =
-      (node["label"] || node["type"] || "tool")
+      (node.label || node.type)
       |> String.downcase()
       |> String.replace(~r/[^a-z0-9]+/, "_")
       |> String.trim("_")
       |> then(&if(&1 =~ ~r/\A[a-z]/, do: &1, else: "tool_" <> &1))
       |> String.slice(0, 48)
 
-    if MapSet.member?(names, base), do: "#{base}_#{node["id"]}", else: base
+    if MapSet.member?(names, base), do: "#{base}_#{node.id}", else: base
   end
 
   defp llm, do: Application.fetch_env!(:heddle_nodes, :llm_client)

@@ -7,6 +7,7 @@ defmodule HeddleCore.Flows.GraphValidator do
   runtime-configured manifest or `HeddleNodes` is used when available.
   """
 
+  alias Heddle.Graph
   alias HeddleCore.Flows.Schedule
 
   @node_keys ~w(id type label controls position)
@@ -21,7 +22,7 @@ defmodule HeddleCore.Flows.GraphValidator do
   def validate(nodes, connections, opts \\ []) do
     with :ok <- validate_list(:nodes, nodes),
          :ok <- validate_list(:connections, connections) do
-      validate_graph(nodes, connections, opts)
+      validate_graph(Graph.normalize_nodes(nodes), Graph.normalize_connections(connections), opts)
     end
   end
 
@@ -88,7 +89,7 @@ defmodule HeddleCore.Flows.GraphValidator do
   end
 
   defp validate_nodes(nodes, definitions) do
-    node_ids = MapSet.new(Enum.map(nodes, &to_string(&1["id"])))
+    node_ids = MapSet.new(nodes, & &1["id"])
 
     Enum.reduce_while(nodes, :ok, fn node, :ok ->
       cond do
@@ -101,19 +102,16 @@ defmodule HeddleCore.Flows.GraphValidator do
         MapSet.size(node_ids) != length(nodes) ->
           {:halt, {:error, :nodes, "contains duplicate node ids"}}
 
-        not present_string?(node["type"]) && not present_string?(node["label"]) ->
+        not present_string?(node["type"]) ->
           {:halt, {:error, :nodes, "contains a node without type"}}
 
-        not is_map(node["position"]) ->
-          {:halt, {:error, :nodes, "contains a node without position"}}
-
-        not valid_position?(node["position"]) ->
+        invalid_position?(node) ->
           {:halt, {:error, :nodes, "contains a node with invalid position"}}
 
         not is_map(node["controls"]) ->
           {:halt, {:error, :nodes, "contains a node without controls"}}
 
-        not Map.has_key?(definitions, node_type(node)) ->
+        not Map.has_key?(definitions, node["type"]) ->
           {:halt, {:error, :nodes, "contains unknown node type"}}
 
         invalid_schedule?(node) ->
@@ -125,6 +123,11 @@ defmodule HeddleCore.Flows.GraphValidator do
     end)
   end
 
+  # Only the canvas needs a position, and it places a node that has none.
+  defp invalid_position?(node) do
+    not is_nil(node["position"]) and not valid_position?(node["position"])
+  end
+
   defp invalid_schedule?(%{"type" => "Schedule", "controls" => %{"cron" => cron}}) do
     not Schedule.valid?(cron)
   end
@@ -132,13 +135,11 @@ defmodule HeddleCore.Flows.GraphValidator do
   defp invalid_schedule?(_node), do: false
 
   defp validate_connections(connections, nodes, definitions) do
-    nodes_by_id = Map.new(nodes, fn node -> {to_string(node["id"]), node} end)
+    nodes_by_id = Map.new(nodes, &{&1["id"], &1})
 
     Enum.reduce_while(connections, :ok, fn connection, :ok ->
-      source = to_string(connection["source"])
-      target = to_string(connection["target"])
-      source_node = nodes_by_id[source]
-      target_node = nodes_by_id[target]
+      source_node = nodes_by_id[connection["source"]]
+      target_node = nodes_by_id[connection["target"]]
 
       cond do
         unknown_keys?(connection, @connection_keys) ->
@@ -170,7 +171,7 @@ defmodule HeddleCore.Flows.GraphValidator do
 
   defp output_exists?(definitions, node, output) do
     definitions
-    |> Map.fetch!(node_type(node))
+    |> Map.fetch!(node["type"])
     |> Map.get(:outputs, [])
     |> Enum.map(&port_id/1)
     |> Enum.member?(to_string(output))
@@ -178,7 +179,7 @@ defmodule HeddleCore.Flows.GraphValidator do
 
   defp input_exists?(definitions, node, input) do
     definitions
-    |> Map.fetch!(node_type(node))
+    |> Map.fetch!(node["type"])
     |> Map.get(:inputs, [])
     |> Enum.map(&port_id/1)
     |> Enum.member?(to_string(input))
@@ -187,8 +188,6 @@ defmodule HeddleCore.Flows.GraphValidator do
   defp port_id(port) when is_atom(port), do: Atom.to_string(port)
   defp port_id(port) when is_binary(port), do: port
   defp port_id(%{} = port), do: to_string(port[:id] || port["id"])
-
-  defp node_type(node), do: node["type"] || node["label"]
 
   defp valid_position?(%{"x" => x, "y" => y}), do: number?(x) and number?(y)
   defp valid_position?(%{x: x, y: y}), do: number?(x) and number?(y)

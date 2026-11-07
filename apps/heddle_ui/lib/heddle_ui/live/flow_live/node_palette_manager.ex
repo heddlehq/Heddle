@@ -91,7 +91,7 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
   end
 
   @doc """
-  Creates a node selected from the quick modal and pushes `add_node` to Rete.js.
+  Creates a node selected from the quick modal and pushes `add_node` to the canvas.
   """
   def create_node_from_modal(socket, name) do
     position = socket.assigns.selected_position || %{"x" => 100, "y" => 100}
@@ -118,7 +118,7 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
   end
 
   @doc """
-  Adds a node directly by name and pushes `add_node` to Rete.js.
+  Adds a node directly by name and pushes `add_node` to the canvas.
   """
   def add_node(socket, name) do
     definition = HeddleNodes.Nodes.get_node(name)
