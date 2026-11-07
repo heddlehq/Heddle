@@ -29,7 +29,7 @@ defmodule HeddleNodes.Nodes do
   @doc """
   The categories that hold the actions of a service.
   """
-  def service_categories, do: [:email, :ftp, :google_sheets, :s3, :slack]
+  def service_categories, do: [:database, :email, :ftp, :google_sheets, :s3, :slack]
 
   def category_label(:ai), do: "AI"
   def category_label(:ftp), do: "FTP"

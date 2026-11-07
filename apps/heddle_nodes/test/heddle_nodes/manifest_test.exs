@@ -30,7 +30,7 @@ defmodule HeddleNodes.ManifestTest do
       actions = Enum.filter(HeddleNodes.get_definitions(), &(&1.category in services))
       names = Enum.map(actions, & &1.name)
 
-      assert length(actions) == 34
+      assert length(actions) == 76
       assert names == Enum.uniq(names)
 
       for action <- actions do
@@ -40,13 +40,32 @@ defmodule HeddleNodes.ManifestTest do
       end
     end
 
+    test "keeps the nodes of a database together, which the sidebar relies on" do
+      groups =
+        HeddleNodes.Nodes.nodes_by_category()[:database]
+        |> Enum.chunk_by(& &1.group)
+        |> Enum.map(&hd(&1).group)
+
+      assert groups == [
+               "SQL",
+               "MongoDB",
+               "Redis",
+               "Elasticsearch",
+               "DynamoDB",
+               "Cassandra",
+               "Neo4j"
+             ]
+    end
+
     test "shows the logo of the services that have one" do
       icon = fn name -> HeddleNodes.Nodes.get_node(name).icon end
 
       assert icon.("Slack: Send Message") == "logo-slack"
       assert icon.("Google Sheets: Read Rows") == "logo-google-sheets"
       assert icon.("S3: Upload File") == "logo-s3"
+      assert icon.("MongoDB: Find Documents") == "logo-mongodb"
       assert icon.("FTP: Upload File") =~ "hero-"
+      assert icon.("SQL: Run Query") =~ "hero-"
     end
 
     test "returns definitions with module references" do

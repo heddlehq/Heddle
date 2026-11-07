@@ -25,6 +25,7 @@ defmodule HeddleNodes.Integration do
       name: name,
       title: name,
       category: service.category,
+      group: service[:group],
       color: color(service.icon),
       description: description,
       icon: service.icon,
@@ -126,6 +127,36 @@ defmodule HeddleNodes.Integration do
   defp media_type(_data), do: "application/octet-stream"
 
   @doc """
+  Reads a field that holds JSON, or a single placeholder pointing at a value.
+
+  Returns `{:ok, value}` or `{:error, message}`. See `HeddleNodes.Template.json/3`.
+  """
+  def json(context, name, check \\ fn _value -> :ok end) do
+    template = String.trim(context[name] || "")
+
+    case Regex.run(@single_placeholder, template) do
+      [_match, path] -> context |> Template.fetch(path) |> decoded()
+      nil -> Template.json(template, context, check)
+    end
+    |> case do
+      {:ok, value} -> {:ok, value}
+      {:error, message} -> {:error, "#{field_label(name)}: #{message}"}
+    end
+  end
+
+  # A previous node can hand JSON over as text, like an HTTP response or an AI reply.
+  defp decoded(value) when is_binary(value) do
+    case Jason.decode(value) do
+      {:ok, decoded} -> {:ok, decoded}
+      {:error, _reason} -> {:ok, value}
+    end
+  end
+
+  defp decoded(value), do: {:ok, value}
+
+  defp field_label(name), do: name |> String.replace("_", " ") |> String.capitalize()
+
+  @doc """
   Reads a field that holds a positive number, or returns `default`.
   """
   def number(context, name, default) do
@@ -163,6 +194,34 @@ defmodule HeddleNodes.Integration do
   def to_file(data, media_type) do
     %{"content" => Base.encode64(data), "encoding" => "base64", "type" => media_type}
   end
+
+  @doc """
+  Makes what a driver returned safe to keep in a run's context, which is saved as JSON.
+
+  Decimals become strings, because a float would lose cents.
+  """
+  def to_value(%Decimal{} = value), do: Decimal.to_string(value, :normal)
+  def to_value(%DateTime{} = value), do: DateTime.to_iso8601(value)
+  def to_value(%NaiveDateTime{} = value), do: NaiveDateTime.to_iso8601(value)
+  def to_value(%Date{} = value), do: Date.to_iso8601(value)
+  def to_value(%Time{} = value), do: Time.to_iso8601(value)
+
+  def to_value(%_{} = value) do
+    if String.Chars.impl_for(value), do: to_string(value), else: inspect(value)
+  end
+
+  def to_value(%{} = value), do: Map.new(value, fn {key, item} -> {key, to_value(item)} end)
+  def to_value(value) when is_list(value), do: Enum.map(value, &to_value/1)
+  def to_value(value) when is_tuple(value), do: inspect(value)
+
+  def to_value(value) when is_atom(value) and value not in [nil, true, false],
+    do: to_string(value)
+
+  def to_value(value) when is_binary(value) do
+    if String.valid?(value), do: value, else: to_text(value)
+  end
+
+  def to_value(value), do: value
 
   @doc """
   Makes content safe to keep in a run's context, which is saved as JSON.

@@ -35,6 +35,14 @@ The agent lives on the server, and every client only sends messages and shows ev
 - **Never** drive it from the harness. Sending requests through a subscription on someone's behalf is what Anthropic doesn't allow, and the rules are in the [Claude Code legal page](https://code.claude.com/docs/en/legal-and-compliance).
 - **Never** use the Claude Code name or logo as the name of a feature: it is the Terminal, and text can say it runs Claude Code.
 
+## Database nodes
+They are one category, `:database`, grouped by store in the sidebar. SQL and NoSQL are not categories: `SQL:` is one set of nodes for every relational engine, and each other store has its own, because they share nothing.
+- **A value never becomes text in a query.** `{{placeholders}}` go through `Sql.Statement.bind/5` as bound parameters, on any language that has them (CQL and Cypher too), and JSON fields go through `Template.json/3`, which parses before filling in. **Never** render a query with `Template.render/2`.
+- **A new relational engine** is a module with the callbacks of `Sql.Engine` and an entry in `Services.Sql`. Every SQL node then works on it.
+- **A connection is opened through `HeddleNodes.Connections`**, which keeps one per credential. **Never** open one per run, and **never** let a driver's options reach a log or a message: they hold the password. Try the connection with `Connections.check/1`.
+- **Name fields carefully**: a node's controls shadow the run while it executes, so `body`, `headers`, `index`, `item` and `result` would hide what a person wants to read.
+- **Tests**: `docker compose -f docker-compose.databases.yml up -d --wait`, then `HEDDLE_DB_PORT=5436 mix test --include databases`. Without them only SQLite and PostgreSQL run on a real server.
+
 ## Frontend: Rete.js, LiveView & Lit
 The visual editor is built with a modern stack designed for interactivity and customizability:
 - **Rete.js**: A modular framework for visual programming, used to render the node editor.

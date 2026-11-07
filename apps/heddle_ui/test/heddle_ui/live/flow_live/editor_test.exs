@@ -129,6 +129,20 @@ defmodule HeddleUI.FlowLive.EditorTest do
       assert has_element?(lv, "#node-category-data_manipulation [data-node-name=Variable]")
     end
 
+    test "groups the database nodes by store", %{conn: conn} do
+      flow = flow_fixture()
+
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      refute has_element?(lv, "#node-category-database [data-node-name=\"SQL: Run Query\"]")
+
+      render_click(lv, "toggle_node_category", %{"category" => "database"})
+
+      assert has_element?(lv, "#node-category-database [data-node-name=\"SQL: Run Query\"]")
+      assert has_element?(lv, "#node-category-database [id=\"node-group-SQL\"]")
+      assert has_element?(lv, "#node-category-database [id=\"node-group-MongoDB\"]")
+    end
+
     test "groups HTTP Request under HTTP", %{conn: conn} do
       flow = flow_fixture()
 

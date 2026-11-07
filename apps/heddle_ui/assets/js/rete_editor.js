@@ -1076,7 +1076,7 @@ export async function createEditor(container) {
                     }
                 };
             } else {
-                control.type = ['select', 'credential', 'model'].includes(field.type) ? field.type : 'text';
+                control.type = ['select', 'credential', 'model', 'textarea'].includes(field.type) ? field.type : 'text';
                 control.label = field.label;
                 control.credentialKind = field.kind;
                 if (field.options) control.options = field.options;

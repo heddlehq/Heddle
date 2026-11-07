@@ -239,6 +239,7 @@ export class CustomNodeElement extends LitElement {
       'code': 'var(--node-code)',
       'data_manipulation': 'var(--node-data)',
       'http': 'var(--node-integration)',
+      'database': 'var(--node-integration)',
       'email': 'var(--node-integration)',
       'ftp': 'var(--node-integration)',
       'google_sheets': 'var(--node-integration)',
