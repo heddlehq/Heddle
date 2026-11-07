@@ -288,4 +288,29 @@ defmodule HeddleUI.MCP.ServerTest do
       assert Executions.list_executions_for_flow(flow) == []
     end
   end
+
+  describe "the layout of a flow" do
+    @placed %{
+      "id" => "a",
+      "type" => "Start",
+      "label" => "Start",
+      "controls" => %{},
+      "position" => %{"x" => -7, "y" => 9}
+    }
+
+    test "survives an update that doesn't send positions", %{conn: conn, user: user, scope: scope} do
+      {:ok, flow} = Flows.create_flow(scope, %{name: "Layout", nodes: [@placed], connections: []})
+
+      call(conn, token(user), "update_flow", %{
+        flow_id: to_string(flow.id),
+        nodes: [
+          %{id: "a", type: "Start", controls: %{}},
+          %{id: "b", type: "Output", controls: %{}}
+        ]
+      })
+
+      assert [%{"position" => %{"x" => -7, "y" => 9}}, node] = Flows.get_flow!(flow.id).nodes
+      refute Map.has_key?(node, "position")
+    end
+  end
 end
