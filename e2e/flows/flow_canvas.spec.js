@@ -113,7 +113,14 @@ test.describe('Flow written outside the canvas', () => {
     const name = page.locator('custom-node .node-name').filter({ hasText: 'Receive Input' });
 
     await expect(name).toBeVisible();
-    await expect(name).toHaveCSS('user-select', 'none');
+    // WebKit only reports the prefixed property.
+    const selectable = await name.evaluate((element) => {
+      const style = getComputedStyle(element);
+
+      return style.userSelect || style.webkitUserSelect;
+    });
+
+    expect(selectable).toBe('none');
 
     await dragNode(page, page.locator('custom-node .circular-node').first());
 
