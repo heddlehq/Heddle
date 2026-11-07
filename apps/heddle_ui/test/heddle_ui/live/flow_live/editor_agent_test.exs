@@ -9,6 +9,7 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
   alias HeddleCore.ApiKeys
   alias HeddleCore.Flows
   alias HeddleCore.Settings
+  alias HeddleUI.Agent
 
   @variables ~w(
     HEDDLE_CLAUDE_BIN HEDDLE_CLAUDE_API_KEY OPENAI_API_KEY
@@ -31,6 +32,7 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
     Application.put_env(:heddle_ui, :claude_agent_test_pid, self())
 
     on_exit(fn ->
+      HeddleUI.AgentHelpers.stop_all()
       Enum.each(@variables, &System.delete_env/1)
       System.put_env(previous)
       Application.delete_env(:heddle_ui, :claude_agent)
@@ -42,6 +44,8 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
     admin = system_admin_fixture()
     Process.put(:heddle_owner, admin)
     flow = flow_fixture()
+    scope = HeddleCore.Accounts.Scope.for_user(admin)
+    :ok = Agent.subscribe(scope, flow.id)
 
     {:ok, view, _html} = conn |> log_in_user(admin) |> live(~p"/flows/#{flow.id}")
 
@@ -49,6 +53,12 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
   end
 
   defp say(view, content), do: render_hook(view, "send_message", %{"content" => content})
+
+  defp finished(view) do
+    assert_receive {:agent_event, %{type: "status", status: "idle"}}, 2000
+    _ = :sys.get_state(view.pid)
+    render(view)
+  end
 
   describe "chat button" do
     test "shows when the agent is on", %{view: view} do
@@ -77,15 +87,15 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
     test "goes to the agent, even with no LLM configured", %{view: view} do
       say(view, "add a logger")
 
-      assert_receive {:agent_called, "add a logger", opts}
-      assert opts[:system] =~ "copilot"
-      assert render_async(view) =~ "On it."
+      assert_receive {:agent_called, "add a logger" <> _state, opts}
+      assert opts[:system] =~ "agent of Heddle"
+      assert finished(view) =~ "On it."
     end
 
     test "gives the agent a key that is removed afterwards", %{view: view} do
       say(view, "hi")
 
-      assert_receive {:agent_called, "hi", opts}
+      assert_receive {:agent_called, "hi" <> _state, opts}
       assert {:ok, api_key} = ApiKeys.authenticate(opts[:token])
       assert ApiKeys.agent_key?(api_key)
 
@@ -96,12 +106,12 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
 
     test "continues the same conversation", %{view: view} do
       say(view, "first")
-      assert_receive {:agent_called, "first", first}
+      assert_receive {:agent_called, "first" <> _state, first}
       refute first[:resume?]
-      render_async(view)
+      finished(view)
 
       say(view, "second")
-      assert_receive {:agent_called, "second", second}
+      assert_receive {:agent_called, "second" <> _state, second}
 
       assert second[:resume?]
       assert second[:session_id] == first[:session_id]
@@ -110,12 +120,13 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
     test "falls back to the LLM when turned off", %{view: view} do
       {:ok, _setting} = Settings.set_claude_agent_enabled(false)
       System.put_env("OPENAI_API_KEY", "sk-test")
-      Application.put_env(:heddle_ai, :llm_client, HeddleUI.FakeLLMClient)
-      on_exit(fn -> Application.delete_env(:heddle_ai, :llm_client) end)
+      Application.put_env(:heddle_ai, :harness_model, HeddleUI.FakeHarnessModel)
+      on_exit(fn -> Application.delete_env(:heddle_ai, :harness_model) end)
+      HeddleUI.FakeHarnessModel.script(["From the LLM."])
 
       say(view, "hi")
-      render_async(view)
 
+      assert finished(view) =~ "From the LLM."
       refute_received {:agent_called, _content, _opts}
     end
   end
@@ -131,7 +142,7 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
 
       render_hook(view, "save_graph_data", %{"data" => %{"nodes" => [@node], "connections" => []}})
 
-      assert_receive {:agent_called, "hi", _opts}
+      assert_receive {:agent_called, "hi" <> _state, _opts}
       assert [%{"id" => "1"}] = Flows.get_flow!(flow.id).nodes
     end
 
@@ -147,43 +158,113 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
     end
   end
 
-  describe "confirming a run" do
-    defp ask(view) do
-      test = self()
-      ref = make_ref()
-
-      send(view.pid, {:agent_run_confirmation, %{ref: ref, reply_to: test, flow_name: "Flow"}})
-      ref
-    end
-
+  describe "the work of the agent" do
     setup %{view: view} do
+      {:ok, _setting} = Settings.set_claude_agent_enabled(false)
+      System.put_env("OPENAI_API_KEY", "sk-test")
+      Application.put_env(:heddle_ai, :harness_model, HeddleUI.FakeHarnessModel)
+      on_exit(fn -> Application.delete_env(:heddle_ai, :harness_model) end)
+
       render_hook(view, "toggle_chat", %{})
       :ok
     end
 
-    test "shows the question and sends the answer", %{view: view} do
-      ref = ask(view)
+    test "shows each tool it calls, and what came out", %{view: view, flow: flow} do
+      HeddleUI.FakeHarnessModel.script([
+        {:tool, "get_flow", %{flow_id: to_string(flow.id)}},
+        "Ok."
+      ])
 
+      say(view, "what is wrong?")
+      finished(view)
+
+      assert has_element?(view, ~s([id^="agent-tool-"][data-status="ok"]), "Reading the flow")
+    end
+
+    test "asks before running, and sends the answer", %{view: view, flow: flow} do
+      HeddleUI.FakeHarnessModel.script([
+        {:tool, "test_flow", %{flow_id: to_string(flow.id)}},
+        "Ok."
+      ])
+
+      say(view, "test it")
+
+      assert_receive {:agent_event, %{type: "permission", permission: %{flow_name: _name}}}, 2000
+      _ = :sys.get_state(view.pid)
       assert has_element?(view, "#agent-run-confirmation")
 
-      view |> element("#agent-run-approve") |> render_click()
-
-      assert_receive {:agent_run_decision, ^ref, true}
-      refute has_element?(view, "#agent-run-confirmation")
-    end
-
-    test "can be refused", %{view: view} do
-      ref = ask(view)
-
       view |> element("#agent-run-deny") |> render_click()
+      finished(view)
 
-      assert_receive {:agent_run_decision, ^ref, false}
+      refute has_element?(view, "#agent-run-confirmation")
+      assert has_element?(view, ~s([id^="agent-tool-"][data-status="error"]), "Testing the flow")
     end
 
-    test "ignores an answer nobody asked for", %{view: view} do
-      render_hook(view, "agent_run_decision", %{"decision" => "approve"})
+    test "can be stopped", %{view: view} do
+      HeddleUI.FakeHarnessModel.script([:hang])
 
-      refute_received {:agent_run_decision, _ref, _approved}
+      say(view, "go")
+      assert_receive {:agent_event, %{type: "status", status: "running"}}, 2000
+      _ = :sys.get_state(view.pid)
+      HeddleUI.AgentHelpers.wait_for_script()
+
+      view |> element("#agent-stop") |> render_click()
+
+      finished(view)
+      refute has_element?(view, "#agent-stop")
+    end
+
+    test "starts a new chat on reload, and keeps the old one in the history",
+         %{conn: conn, admin: admin, flow: flow, view: view} do
+      HeddleUI.FakeHarnessModel.script(["Still here."])
+
+      say(view, "hi")
+      finished(view)
+
+      {:ok, reloaded, _html} = conn |> log_in_user(admin) |> live(~p"/flows/#{flow.id}")
+
+      refute render(reloaded) =~ "Still here."
+
+      reloaded |> element("#agent-history-toggle") |> render_click()
+      reloaded |> element(~s([id^="agent-conversation-"])) |> render_click()
+
+      assert_receive {:agent_event, %{type: "reset", items: [_user, _reply]}}, 2000
+      _ = :sys.get_state(reloaded.pid)
+
+      assert render(reloaded) =~ "Still here."
+    end
+
+    test "a reload in the middle of the work shows the work",
+         %{conn: conn, admin: admin, flow: flow, view: view} do
+      HeddleUI.FakeHarnessModel.script([:hang])
+
+      say(view, "go")
+      HeddleUI.AgentHelpers.wait_for_script()
+
+      {:ok, reloaded, _html} = conn |> log_in_user(admin) |> live(~p"/flows/#{flow.id}")
+
+      assert has_element?(reloaded, "#agent-stop")
+      assert render(reloaded) =~ "go"
+    end
+
+    test "says when there is nothing in the history", %{view: view} do
+      view |> element("#agent-history-toggle") |> render_click()
+
+      assert has_element?(view, "#agent-history")
+      refute has_element?(view, ~s([id^="agent-conversation-"]))
+    end
+
+    test "starts over with the button", %{view: view} do
+      HeddleUI.FakeHarnessModel.script(["Bye."])
+
+      say(view, "hi")
+      finished(view)
+
+      view |> element("#agent-new-chat") |> render_click()
+      assert_receive {:agent_event, %{type: "reset", items: []}}, 2000
+      _ = :sys.get_state(view.pid)
+
+      refute render(view) =~ "Bye."
     end
   end
 

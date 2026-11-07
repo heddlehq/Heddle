@@ -21,6 +21,7 @@ defmodule HeddleUI.MCP.Server do
   component(Tools.ListExecutions)
   component(Tools.GetExecution)
   component(Tools.RunFlow)
+  component(Tools.TestFlow)
   component(Tools.Chat)
 
   # Long enough for a person to answer a confirmation before the request gives up.

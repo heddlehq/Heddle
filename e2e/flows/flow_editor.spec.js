@@ -30,9 +30,9 @@ test.describe('Flow Editor', () => {
     await expect(page.getByText('Utility')).toBeVisible();
   });
 
-  test('displays rete editor canvas', async ({ page }) => {
-    await expect(page.locator('#rete-container')).toBeVisible();
-    await expect(page.locator('#rete')).toBeVisible();
+  test('displays the canvas', async ({ page }) => {
+    await expect(page.locator('#flow-canvas-container')).toBeVisible();
+    await expect(page.locator('#flow-canvas')).toBeVisible();
   });
 
   test('navigates back to flows list', async ({ page }) => {
@@ -42,7 +42,7 @@ test.describe('Flow Editor', () => {
 
   test.describe('Context Menu', () => {
     test('shows Undo, Redo and Create Node on empty canvas right-click', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right' });
 
       const menu = page.locator('.fixed.z-\\[200\\]');
@@ -54,7 +54,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('does not show Copy, Paste or Delete on empty canvas', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right' });
 
       const menu = page.locator('.fixed.z-\\[200\\]');
@@ -66,7 +66,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('closes context menu on Escape', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right' });
 
       const menu = page.locator('.fixed.z-\\[200\\]');
@@ -77,7 +77,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('closes context menu on left-click outside', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right' });
 
       const menu = page.locator('.fixed.z-\\[200\\]');
@@ -88,7 +88,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('Create Node option triggers create node modal', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right' });
 
       const menu = page.locator('.fixed.z-\\[200\\]');
@@ -99,7 +99,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('second right-click replaces the context menu', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
 
       await rete.click({ button: 'right', position: { x: 200, y: 150 } });
       const menu = page.locator('.fixed.z-\\[200\\]');
@@ -117,7 +117,7 @@ test.describe('Flow Editor', () => {
       await expect(node).toBeVisible({ timeout: 5000 });
       await node.click();
 
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right', force: true });
       const menu = page.locator('.fixed.z-\\[200\\]');
       await expect(menu).toBeVisible({ timeout: 3000 });
@@ -133,7 +133,7 @@ test.describe('Flow Editor', () => {
       await expect(node).toBeVisible({ timeout: 5000 });
       await node.click();
 
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right', force: true });
       const menu = page.locator('.fixed.z-\\[200\\]');
       await expect(menu).toBeVisible({ timeout: 3000 });
@@ -163,7 +163,7 @@ test.describe('Flow Editor', () => {
     test('Paste is not shown when nothing has been copied', async ({ page }) => {
       await addNodeViaContextMenu(page, 'Logger');
 
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right', force: true });
       const menu = page.locator('.fixed.z-\\[200\\]');
       await expect(menu).toBeVisible({ timeout: 3000 });
@@ -178,7 +178,7 @@ test.describe('Flow Editor', () => {
       await expect(node).toBeVisible({ timeout: 5000 });
       await node.click();
 
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right', force: true });
       const menu = page.locator('.fixed.z-\\[200\\]');
       await expect(menu).toBeVisible({ timeout: 3000 });
@@ -214,7 +214,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('the context menu shows the shortcut', async ({ page }) => {
-      await page.locator('#rete').click({ button: 'right', position: { x: 200, y: 150 } });
+      await page.locator('#flow-canvas').click({ button: 'right', position: { x: 200, y: 150 } });
 
       const item = page.locator('.fixed.z-\\[200\\]').getByRole('button', { name: 'Create Node' });
       await expect(item).toContainText('A');
@@ -320,7 +320,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('adds a comment from the context menu where it was clicked', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       const canvas = await rete.boundingBox();
       await rete.click({ button: 'right', position: { x: 300, y: 200 } });
       await page.locator('.fixed.z-\\[200\\]').getByText('Add Note').click();
@@ -452,7 +452,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('keeps a comment behind the nodes', async ({ page }) => {
-      await page.locator('#rete').click({ button: 'right', position: { x: 300, y: 200 } });
+      await page.locator('#flow-canvas').click({ button: 'right', position: { x: 300, y: 200 } });
       await page.locator('.fixed.z-\\[200\\]').getByText('Add Note').click();
       await page.locator('header').click();
 
@@ -683,7 +683,7 @@ test.describe('Flow Editor', () => {
 });
 
 async function addNodeViaContextMenu(page, nodeName) {
-  const rete = page.locator('#rete');
+  const rete = page.locator('#flow-canvas');
   await rete.click({ button: 'right' });
 
   const menu = page.locator('.fixed.z-\\[200\\]');

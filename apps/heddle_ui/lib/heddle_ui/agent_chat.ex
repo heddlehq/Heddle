@@ -1,13 +1,13 @@
 defmodule HeddleUI.AgentChat do
   @moduledoc """
-  Connects the editor chat to the Claude Agent.
+  Gives the agent what it needs to act: a short-lived API key for each message, and
+  the way to the Claude Agent when that is what answers.
 
-  Each message gets its own short-lived API key, registered to the LiveView that sent
-  it. That registration is what lets `run_flow` find a person to ask: a key of this
-  kind with nobody behind it can't run anything.
+  The key is registered to the process of the conversation. That registration is what
+  lets a run find a person to ask: a key of this kind with nobody behind it can't run
+  anything.
   """
 
-  alias HeddleAI.Agents.FlowCopilot
   alias HeddleAI.ClaudeAgent
   alias HeddleCore.Accounts.Scope
   alias HeddleCore.ApiKeys
@@ -21,7 +21,7 @@ defmodule HeddleUI.AgentChat do
   def registry, do: @registry
 
   @doc """
-  Whether the editor chat should use the agent instead of the LLM.
+  Whether the Claude Agent answers instead of the LLM.
   """
   def active?, do: Settings.claude_agent_enabled?() and ClaudeAgent.ready?()
 
@@ -40,13 +40,13 @@ defmodule HeddleUI.AgentChat do
   @doc """
   Sends `content` to the agent. The key is deleted when its process ends.
   """
-  def stream(%{api_key: api_key, token: token}, %Flow{} = flow, content, session) do
+  def stream(%{api_key: api_key, token: token}, system, content, session) do
     client().stream_text(content,
       mcp_url: mcp_url(),
       token: token,
       session_id: session.id,
       resume?: session.started?,
-      system: FlowCopilot.system_prompt(flow),
+      system: system,
       on_finish: fn -> ApiKeys.delete_api_key(api_key) end
     )
   end
