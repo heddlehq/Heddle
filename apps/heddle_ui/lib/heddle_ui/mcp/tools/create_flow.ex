@@ -1,8 +1,8 @@
 defmodule HeddleUI.MCP.Tools.CreateFlow do
   @moduledoc """
   Creates a flow. Call list_nodes first: each node needs an id, a type from that list,
-  and optionally a label and controls. Connections use source, sourceOutput, target
-  and targetInput. Nodes are laid out automatically.
+  and optionally a label and controls. Connections use source, sourceOutput and target.
+  Nodes are laid out automatically.
   """
 
   use Anubis.Server.Component, type: :tool, name: "create_flow"
@@ -23,7 +23,7 @@ defmodule HeddleUI.MCP.Tools.CreateFlow do
     Tool.authorize(frame, "workflows:write", fn scope ->
       attrs = %{
         name: name,
-        nodes: nodes |> AIChat.normalize_nodes() |> AIChat.persistable_nodes(),
+        nodes: AIChat.normalize_nodes(nodes),
         connections: Map.get(params, :connections) || []
       }
 

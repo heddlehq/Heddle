@@ -50,4 +50,5 @@ config :phoenix,
   sort_verified_routes_query_params: true
 
 config :heddle_ai, :text_default, nil
+config :heddle_ai, :claude_binary, nil
 config :heddle_nodes, :req_plug, {Req.Test, HeddleNodes.Nodes.HttpRequest}

@@ -14,6 +14,11 @@ defmodule HeddleCore.Credentials do
   alias HeddleCore.Repo
 
   @version 1
+  @encryption [
+    %{label: "On, and check the server's certificate", value: "verify"},
+    %{label: "On, for a server with its own certificate", value: "require"},
+    %{label: "Off", value: "off"}
+  ]
   @kinds [
     %{
       id: "slack",
@@ -81,6 +86,97 @@ defmodule HeddleCore.Credentials do
       fields: [
         %{name: "host", label: "Host", required: true},
         %{name: "port", label: "Port", default: "21"},
+        %{name: "username", label: "Username", required: true},
+        %{name: "password", label: "Password", secret: true, required: true}
+      ]
+    },
+    %{
+      id: "sql",
+      label: "SQL database",
+      fields: [
+        %{
+          name: "engine",
+          label: "Database",
+          required: true,
+          default: "postgres",
+          options: [
+            %{label: "PostgreSQL, and compatible ones", value: "postgres"},
+            %{label: "MySQL or MariaDB, and compatible ones", value: "mysql"},
+            %{label: "SQL Server or Azure SQL", value: "sqlserver"},
+            %{label: "Oracle", value: "oracle"},
+            %{label: "SQLite", value: "sqlite"}
+          ]
+        },
+        %{name: "host", label: "Host, except for SQLite"},
+        %{name: "port", label: "Port, if it isn't the default one"},
+        %{name: "database", label: "Database name, or the path of a SQLite file", required: true},
+        %{name: "username", label: "Username"},
+        %{name: "password", label: "Password", secret: true},
+        %{
+          name: "ssl",
+          label: "Encryption",
+          default: "verify",
+          options: @encryption
+        }
+      ]
+    },
+    %{
+      id: "mongodb",
+      label: "MongoDB",
+      fields: [
+        %{name: "url", label: "Connection string", secret: true, required: true},
+        %{name: "database", label: "Database", required: true}
+      ]
+    },
+    %{
+      id: "redis",
+      label: "Redis",
+      fields: [
+        %{
+          name: "url",
+          label: "URL, like redis://:password@host:6379/0",
+          secret: true,
+          required: true
+        }
+      ]
+    },
+    %{
+      id: "elasticsearch",
+      label: "Elasticsearch or OpenSearch",
+      fields: [
+        %{name: "url", label: "URL", required: true},
+        %{name: "api_key", label: "API key", secret: true},
+        %{name: "username", label: "Username, without an API key"},
+        %{name: "password", label: "Password, without an API key", secret: true}
+      ]
+    },
+    %{
+      id: "dynamodb",
+      label: "DynamoDB",
+      fields: [
+        %{name: "access_key_id", label: "Access key ID", required: true},
+        %{name: "secret_access_key", label: "Secret access key", secret: true, required: true},
+        %{name: "region", label: "Region", default: "us-east-1"},
+        %{name: "endpoint", label: "Endpoint, for services other than AWS"}
+      ]
+    },
+    %{
+      id: "cassandra",
+      label: "Cassandra or ScyllaDB",
+      fields: [
+        %{name: "hosts", label: "Hosts, separated by commas", required: true},
+        %{name: "keyspace", label: "Keyspace"},
+        %{name: "username", label: "Username"},
+        %{name: "password", label: "Password", secret: true},
+        %{name: "ssl", label: "Encryption", default: "off", options: @encryption}
+      ]
+    },
+    %{
+      id: "neo4j",
+      label: "Neo4j",
+      fields: [
+        %{name: "url", label: "HTTP URL, like https://host:7473", required: true},
+        %{name: "database", label: "Database", default: "neo4j"},
         %{name: "username", label: "Username", required: true},
         %{name: "password", label: "Password", secret: true, required: true}
       ]

@@ -150,6 +150,15 @@ defmodule HeddleCore.ExecutionsTest do
     end
   end
 
+  describe "webhook_input/1" do
+    test "fills in what a real request would have" do
+      assert %{
+               "trigger" => "webhook",
+               "request" => %{"method" => "POST", "headers" => %{}, "body" => %{"x" => 1}}
+             } = Executions.webhook_input(%{"body" => %{"x" => 1}})
+    end
+  end
+
   describe "save_and_run/3" do
     setup do
       # In the full umbrella suite the HeddleCore.Oban instance is already

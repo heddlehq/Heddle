@@ -30,9 +30,9 @@ test.describe('Flow Editor', () => {
     await expect(page.getByText('Utility')).toBeVisible();
   });
 
-  test('displays rete editor canvas', async ({ page }) => {
-    await expect(page.locator('#rete-container')).toBeVisible();
-    await expect(page.locator('#rete')).toBeVisible();
+  test('displays the canvas', async ({ page }) => {
+    await expect(page.locator('#flow-canvas-container')).toBeVisible();
+    await expect(page.locator('#flow-canvas')).toBeVisible();
   });
 
   test('navigates back to flows list', async ({ page }) => {
@@ -42,7 +42,7 @@ test.describe('Flow Editor', () => {
 
   test.describe('Context Menu', () => {
     test('shows Undo, Redo and Create Node on empty canvas right-click', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right' });
 
       const menu = page.locator('.fixed.z-\\[200\\]');
@@ -54,7 +54,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('does not show Copy, Paste or Delete on empty canvas', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right' });
 
       const menu = page.locator('.fixed.z-\\[200\\]');
@@ -66,7 +66,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('closes context menu on Escape', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right' });
 
       const menu = page.locator('.fixed.z-\\[200\\]');
@@ -77,7 +77,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('closes context menu on left-click outside', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right' });
 
       const menu = page.locator('.fixed.z-\\[200\\]');
@@ -88,7 +88,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('Create Node option triggers create node modal', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right' });
 
       const menu = page.locator('.fixed.z-\\[200\\]');
@@ -99,7 +99,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('second right-click replaces the context menu', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
 
       await rete.click({ button: 'right', position: { x: 200, y: 150 } });
       const menu = page.locator('.fixed.z-\\[200\\]');
@@ -117,7 +117,7 @@ test.describe('Flow Editor', () => {
       await expect(node).toBeVisible({ timeout: 5000 });
       await node.click();
 
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right', force: true });
       const menu = page.locator('.fixed.z-\\[200\\]');
       await expect(menu).toBeVisible({ timeout: 3000 });
@@ -133,7 +133,7 @@ test.describe('Flow Editor', () => {
       await expect(node).toBeVisible({ timeout: 5000 });
       await node.click();
 
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right', force: true });
       const menu = page.locator('.fixed.z-\\[200\\]');
       await expect(menu).toBeVisible({ timeout: 3000 });
@@ -163,7 +163,7 @@ test.describe('Flow Editor', () => {
     test('Paste is not shown when nothing has been copied', async ({ page }) => {
       await addNodeViaContextMenu(page, 'Logger');
 
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right', force: true });
       const menu = page.locator('.fixed.z-\\[200\\]');
       await expect(menu).toBeVisible({ timeout: 3000 });
@@ -178,7 +178,7 @@ test.describe('Flow Editor', () => {
       await expect(node).toBeVisible({ timeout: 5000 });
       await node.click();
 
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       await rete.click({ button: 'right', force: true });
       const menu = page.locator('.fixed.z-\\[200\\]');
       await expect(menu).toBeVisible({ timeout: 3000 });
@@ -214,7 +214,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('the context menu shows the shortcut', async ({ page }) => {
-      await page.locator('#rete').click({ button: 'right', position: { x: 200, y: 150 } });
+      await page.locator('#flow-canvas').click({ button: 'right', position: { x: 200, y: 150 } });
 
       const item = page.locator('.fixed.z-\\[200\\]').getByRole('button', { name: 'Create Node' });
       await expect(item).toContainText('A');
@@ -320,7 +320,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('adds a comment from the context menu where it was clicked', async ({ page }) => {
-      const rete = page.locator('#rete');
+      const rete = page.locator('#flow-canvas');
       const canvas = await rete.boundingBox();
       await rete.click({ button: 'right', position: { x: 300, y: 200 } });
       await page.locator('.fixed.z-\\[200\\]').getByText('Add Note').click();
@@ -452,7 +452,7 @@ test.describe('Flow Editor', () => {
     });
 
     test('keeps a comment behind the nodes', async ({ page }) => {
-      await page.locator('#rete').click({ button: 'right', position: { x: 300, y: 200 } });
+      await page.locator('#flow-canvas').click({ button: 'right', position: { x: 300, y: 200 } });
       await page.locator('.fixed.z-\\[200\\]').getByText('Add Note').click();
       await page.locator('header').click();
 
@@ -546,7 +546,7 @@ test.describe('Flow Editor', () => {
   });
 
   test.describe('New nodes', () => {
-    for (const name of ['Schedule', 'AI Agent', 'For Each', 'Respond to Webhook', 'Slack: Send Message', 'Email: Send Email', 'Email: List Emails', 'Google Sheets: Read Rows', 'Read CSV', 'Write CSV', 'S3: Upload File', 'FTP: Rename or Move', 'AI: Generate Image', 'AI: Edit Image', 'AI: Summarize', 'AI: Transcribe Audio']) {
+    for (const name of ['Schedule', 'AI Agent', 'For Each', 'Respond to Webhook', 'Slack: Send Message', 'Email: Send Email', 'Email: List Emails', 'Google Sheets: Read Rows', 'Read CSV', 'Write CSV', 'S3: Upload File', 'FTP: Rename or Move', 'AI: Generate Image', 'AI: Edit Image', 'AI: Summarize', 'AI: Transcribe Audio', 'SQL: Run Query', 'SQL: Insert Rows', 'MongoDB: Find Documents', 'Redis: Set Value', 'Elasticsearch: Search', 'DynamoDB: Get Item', 'Cassandra: Run Query', 'Neo4j: Run Query']) {
       test(`adds ${name} from the context menu and saves it`, async ({ page }) => {
         await addNodeViaContextMenu(page, name);
 
@@ -569,6 +569,42 @@ test.describe('Flow Editor', () => {
       await expect(action).toBeVisible({ timeout: 5000 });
       await expect(action.locator('.logo-slack')).toBeVisible();
       await expect(group.locator('[data-node-name="Slack: Add Reaction"]')).toBeVisible();
+    });
+
+    test('groups the databases in one category, by store', async ({ page }) => {
+      const category = page.locator('#node-category-database');
+
+      await category.getByRole('button', { name: 'Database', exact: true }).click();
+
+      for (const store of ['SQL', 'MongoDB', 'Redis', 'Elasticsearch', 'DynamoDB', 'Cassandra', 'Neo4j']) {
+        await expect(category.locator(`[id="node-group-${store}"]`)).toBeVisible({ timeout: 5000 });
+      }
+
+      await expect(category.locator('[data-node-name="MongoDB: Find Documents"] .logo-mongodb')).toBeVisible();
+    });
+
+    test('finds the SQL nodes by the name of a database', async ({ page }) => {
+      await page.getByPlaceholder('Search nodes').fill('postgresql');
+
+      await expect(page.locator('[data-node-name="SQL: Run Query"]')).toBeVisible({ timeout: 5000 });
+    });
+
+    test('writes a query in a box that takes several lines, and keeps it', async ({ page }) => {
+      await addNodeViaContextMenu(page, 'SQL: Run Query');
+
+      const node = page.locator('custom-node').first();
+      await node.hover();
+      await node.locator('.node-action-btn.config').click();
+
+      const query = page.locator('textarea[name="sql"]');
+      await expect(query).toBeVisible({ timeout: 5000 });
+      await query.fill('SELECT *\nFROM items\nWHERE id = {{id}}');
+      await page.locator('#node-config-form').getByRole('button', { name: 'Save' }).click();
+      await expect(query).toBeHidden({ timeout: 5000 });
+
+      await node.hover();
+      await node.locator('.node-action-btn.config').click();
+      await expect(page.locator('textarea[name="sql"]')).toHaveValue('SELECT *\nFROM items\nWHERE id = {{id}}', { timeout: 5000 });
     });
 
     test('clears the recent nodes', async ({ page }) => {
@@ -683,7 +719,7 @@ test.describe('Flow Editor', () => {
 });
 
 async function addNodeViaContextMenu(page, nodeName) {
-  const rete = page.locator('#rete');
+  const rete = page.locator('#flow-canvas');
   await rete.click({ button: 'right' });
 
   const menu = page.locator('.fixed.z-\\[200\\]');

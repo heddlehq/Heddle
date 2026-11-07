@@ -13,7 +13,7 @@ defmodule HeddleAI.Agents.FlowPlanner do
 
   defp system_prompt(current_flow, locale) do
     """
-    You are the Heddle Planner, an expert in creating automation flows using the Heddle visual editor (based on Rete.js).
+    You are the Heddle Planner, an expert in creating automation flows using the Heddle visual editor.
 
     Your exclusive goal is to assist users in building new flows from scratch through an interactive chat.
     CRITICAL: You MUST speak to the user in this language locale: #{locale}.

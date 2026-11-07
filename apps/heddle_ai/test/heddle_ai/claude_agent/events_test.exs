@@ -45,4 +45,52 @@ defmodule HeddleAI.ClaudeAgent.EventsTest do
   test "drops lines that aren't JSON" do
     assert Events.parse("some warning on stderr") == []
   end
+
+  describe "tools" do
+    test "reports a tool the agent called, without the MCP prefix" do
+      line =
+        Jason.encode!(%{
+          type: "assistant",
+          message: %{
+            content: [
+              %{type: "text", text: "Looking"},
+              %{type: "tool_use", id: "t1", name: "mcp__heddle__get_flow", input: %{flow_id: "1"}}
+            ]
+          }
+        })
+
+      assert [{:tool_started, %{id: "t1", name: "get_flow", args: %{"flow_id" => "1"}}}] =
+               Events.parse(line)
+    end
+
+    test "reports what the tool returned" do
+      line =
+        Jason.encode!(%{
+          type: "user",
+          message: %{
+            content: [
+              %{
+                type: "tool_result",
+                tool_use_id: "t1",
+                content: [%{type: "text", text: "a flow"}]
+              }
+            ]
+          }
+        })
+
+      assert [{:tool_finished, %{id: "t1", ok?: true, output: "a flow"}}] = Events.parse(line)
+    end
+
+    test "reports a tool that failed" do
+      line =
+        Jason.encode!(%{
+          type: "user",
+          message: %{
+            content: [%{type: "tool_result", tool_use_id: "t1", content: "no", is_error: true}]
+          }
+        })
+
+      assert [{:tool_finished, %{ok?: false, output: "no"}}] = Events.parse(line)
+    end
+  end
 end

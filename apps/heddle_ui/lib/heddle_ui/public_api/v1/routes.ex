@@ -28,6 +28,13 @@ defmodule HeddleUI.PublicAPI.V1.Routes do
           request_timeout: HeddleUI.MCP.Server.request_timeout()
       end
 
+      # No :accepts here either: this one answers with text/event-stream.
+      scope "/api/v1", HeddleUI.PublicAPI.V1 do
+        pipe_through [:mcp]
+
+        get "/workflows/:workflow_id/agent/events", AgentController, :events
+      end
+
       scope "/api/v1", HeddleUI.PublicAPI.V1 do
         pipe_through [:public_api]
 
@@ -40,6 +47,12 @@ defmodule HeddleUI.PublicAPI.V1.Routes do
 
         get "/nodes", NodeController, :index
         get "/nodes/:type", NodeController, :show
+
+        get "/workflows/:workflow_id/agent", AgentController, :show
+        post "/workflows/:workflow_id/agent/messages", AgentController, :message
+        post "/workflows/:workflow_id/agent/decision", AgentController, :decide
+        post "/workflows/:workflow_id/agent/stop", AgentController, :stop
+        post "/workflows/:workflow_id/agent/new", AgentController, :new_conversation
 
         get "/workflows/:workflow_id/executions", ExecutionController, :index
         get "/workflows/:workflow_id/executions/:public_id", ExecutionController, :show

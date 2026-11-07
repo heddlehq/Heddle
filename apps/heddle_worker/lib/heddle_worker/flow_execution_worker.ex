@@ -21,8 +21,8 @@ defmodule HeddleWorker.FlowExecutionWorker do
         {:ok, context} ->
           persist_success(running_execution, context)
 
-        {:error, reason, node_id} ->
-          persist_failure(running_execution, reason, node_id)
+        {:error, reason, node_id, context} ->
+          persist_failure(running_execution, reason, node_id, context)
       end
     end
   end
@@ -57,14 +57,14 @@ defmodule HeddleWorker.FlowExecutionWorker do
     end
   end
 
-  defp persist_failure(execution, reason, node_id) do
+  defp persist_failure(execution, reason, node_id, context) do
     error =
       %{
         "message" => format_reason(reason)
       }
       |> maybe_put_node_id(node_id)
 
-    case Executions.mark_failed(execution, error) do
+    case Executions.mark_failed(execution, error, failure_details(context)) do
       {:ok, execution} ->
         Executions.broadcast_execution_updated(execution)
         :ok
@@ -74,9 +74,23 @@ defmodule HeddleWorker.FlowExecutionWorker do
     end
   end
 
+  # What explains the failure. A value that can't be stored must not lose the failure.
+  defp failure_details(context) do
+    result = Map.drop(context, @internal_result_keys)
+
+    case Jason.encode(result) do
+      {:ok, _json} -> %{logs: Map.get(context, "logs", []), result: result}
+      {:error, _reason} -> %{logs: Map.get(context, "logs", [])}
+    end
+  end
+
   defp maybe_put_node_id(error, nil), do: error
   defp maybe_put_node_id(error, node_id), do: Map.put(error, "node_id", to_string(node_id))
 
-  defp format_reason(reason) when is_binary(reason), do: reason
+  # Compiler errors come with the colors of a terminal.
+  defp format_reason(reason) when is_binary(reason) do
+    String.replace(reason, ~r/\e\[[0-9;]*m/, "")
+  end
+
   defp format_reason(reason), do: inspect(reason)
 end

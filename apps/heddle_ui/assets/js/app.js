@@ -3,9 +3,13 @@ import { Socket } from "phoenix"
 import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import { CodeEditorHook, loadMonaco } from "./code_editor"
+import { WebhookBodyHook } from "./webhook_body"
+import { TerminalHook } from "./terminal"
 
 const hooks = {
   CodeEditor: CodeEditorHook,
+  WebhookBody: WebhookBodyHook,
+  Terminal: TerminalHook,
   NodeSearch: {
     mounted() {
       this.el.focus();
@@ -21,7 +25,7 @@ const hooks = {
       });
     }
   },
-  Rete: {
+  FlowCanvas: {
     async mounted() {
       const { createEditor } = await import("./rete_editor.js");
       const container = this.el;

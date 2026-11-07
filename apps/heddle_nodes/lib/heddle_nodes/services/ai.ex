@@ -101,6 +101,11 @@ defmodule HeddleNodes.Services.AI do
     end
   end
 
+  @doc "Returns the path of the claude program chosen in the AI page, if any."
+  def claude_binary do
+    Application.get_env(:heddle_nodes, :ai_settings, HeddleCore.Settings).claude_binary()
+  end
+
   @doc """
   Returns the credential of the text defaults, with its model, for the flow chats.
   """

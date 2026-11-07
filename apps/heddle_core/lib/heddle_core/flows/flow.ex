@@ -2,6 +2,7 @@ defmodule HeddleCore.Flows.Flow do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Heddle.Graph
   alias HeddleCore.Accounts.User
   alias HeddleCore.Flows.GraphValidator
 
@@ -23,6 +24,8 @@ defmodule HeddleCore.Flows.Flow do
     |> cast(attrs, [:name, :nodes, :connections, :comments, :user_id])
     |> validate_required([:name, :user_id])
     |> assoc_constraint(:user)
+    |> update_change(:nodes, &Graph.normalize_nodes/1)
+    |> update_change(:connections, &Graph.normalize_connections/1)
     |> validate_graph()
     |> validate_comments()
   end

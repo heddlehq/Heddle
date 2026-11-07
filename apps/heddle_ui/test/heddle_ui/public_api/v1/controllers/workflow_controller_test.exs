@@ -7,6 +7,30 @@ defmodule HeddleUI.PublicAPI.V1.WorkflowControllerTest do
   import HeddleCore.AccountsFixtures
   import HeddleCore.FlowsFixtures
 
+  describe "a flow saved without positions" do
+    test "comes with its nodes placed apart, so any client can draw it", %{conn: conn} do
+      user = user_fixture()
+
+      workflow =
+        flow_fixture(%{
+          user: user,
+          nodes: [
+            %{"id" => "a", "type" => "Start", "label" => "Start", "controls" => %{}},
+            %{"id" => "b", "type" => "Output", "label" => "End", "controls" => %{}}
+          ],
+          connections: [%{"source" => "a", "sourceOutput" => "exec", "target" => "b"}]
+        })
+
+      assert %{"data" => %{"nodes" => [first, second]}} =
+               conn
+               |> authorize(user, ["workflows:read"])
+               |> get(~p"/api/v1/workflows/#{workflow.id}")
+               |> json_response(200)
+
+      assert first["position"] != second["position"]
+    end
+  end
+
   describe "index" do
     test "lists workflows with read scope", %{conn: conn} do
       user = user_fixture()

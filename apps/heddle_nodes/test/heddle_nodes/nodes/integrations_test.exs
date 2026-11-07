@@ -68,12 +68,12 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
     end
 
     test "fails the run on that node when nobody handles it" do
-      assert {:error, message, "slack"} = Runner.run(flow([]), %{})
+      assert {:error, message, "slack", _context} = Runner.run(flow([]), %{})
       assert message =~ "gone"
     end
 
     test "still fails it when only the success output is connected" do
-      assert {:error, _message, "slack"} = Runner.run(flow(["success"]), %{})
+      assert {:error, _message, "slack", _context} = Runner.run(flow(["success"]), %{})
     end
 
     test "goes on through the error output when it's connected" do

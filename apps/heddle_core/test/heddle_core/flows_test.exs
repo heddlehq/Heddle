@@ -139,6 +139,34 @@ defmodule HeddleCore.FlowsTest do
     end
   end
 
+  describe "stored form of a flow" do
+    test "create_flow/1 stores string ids and fills in the target input" do
+      user = HeddleCore.AccountsFixtures.user_fixture()
+
+      assert {:ok, flow} =
+               Flows.create_flow(%{
+                 name: "Stored",
+                 user_id: user.id,
+                 nodes: [
+                   %{"id" => 1, "type" => "Start", "controls" => %{}},
+                   %{"id" => 2, "type" => "Output", "controls" => %{}}
+                 ],
+                 connections: [%{"source" => 1, "sourceOutput" => "exec", "target" => 2}]
+               })
+
+      assert [%{"id" => "1"}, %{"id" => "2"}] = flow.nodes
+
+      assert flow.connections == [
+               %{
+                 "source" => "1",
+                 "sourceOutput" => "exec",
+                 "target" => "2",
+                 "targetInput" => "exec"
+               }
+             ]
+    end
+  end
+
   describe "execution_logs" do
     import HeddleCore.FlowsFixtures
 

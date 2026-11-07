@@ -87,6 +87,41 @@ defmodule HeddleCore.CredentialsTest do
     end
   end
 
+  describe "the credentials of a database" do
+    test "a SQL one keeps its engine and hides its password" do
+      {:ok, credential} =
+        Credentials.create_credential(%{
+          name: "warehouse",
+          kind: "sql",
+          values: %{"engine" => "mysql", "database" => "shop", "password" => "p"}
+        })
+
+      assert {:ok, %{"engine" => "mysql", "password" => "p", "ssl" => "verify"}} =
+               Credentials.fetch("warehouse", "sql")
+
+      refute Map.has_key?(Credentials.public_values(credential), "password")
+    end
+
+    test "a connection string counts as a secret, because it holds the password" do
+      for {kind, values} <- [
+            {"mongodb", %{"url" => "mongodb://u:p@h", "database" => "d"}},
+            {"redis", %{"url" => "redis://:p@h"}}
+          ] do
+        {:ok, credential} =
+          Credentials.create_credential(%{name: kind, kind: kind, values: values})
+
+        refute Map.has_key?(Credentials.public_values(credential), "url")
+      end
+    end
+
+    test "asks for what can't be blank" do
+      assert {:error, changeset} =
+               Credentials.create_credential(%{name: "r", kind: "redis", values: %{}})
+
+      assert %{kind: [_message]} = errors_on(changeset)
+    end
+  end
+
   describe "fetch/2" do
     test "explains what went wrong" do
       {:ok, _credential} = Credentials.create_credential(@slack)

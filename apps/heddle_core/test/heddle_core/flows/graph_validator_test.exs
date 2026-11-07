@@ -56,7 +56,35 @@ defmodule HeddleCore.Flows.GraphValidatorTest do
       assert GraphValidator.validate([], [], manifest: MissingManifest) == :ok
     end
 
-    test "accepts valid Rete graph payload" do
+    test "accepts a node without position and a connection without target input" do
+      nodes = [
+        %{"id" => "a", "type" => "Start", "controls" => %{}},
+        %{"id" => "b", "type" => "Output", "controls" => %{}}
+      ]
+
+      connection = %{"source" => "a", "sourceOutput" => "exec", "target" => "b"}
+
+      assert GraphValidator.validate(nodes, [connection], manifest: Manifest) == :ok
+    end
+
+    test "refuses a position that isn't one" do
+      node = %{"id" => "a", "type" => "Start", "controls" => %{}, "position" => %{"x" => "1"}}
+
+      assert {:error, :nodes, "contains a node with invalid position"} =
+               GraphValidator.validate([node], [], manifest: Manifest)
+    end
+
+    test "treats an integer id and the same id as a string as the same node" do
+      nodes = [
+        %{"id" => 1, "type" => "Start", "controls" => %{}},
+        %{"id" => "1", "type" => "Start", "controls" => %{}}
+      ]
+
+      assert {:error, :nodes, "contains duplicate node ids"} =
+               GraphValidator.validate(nodes, [], manifest: Manifest)
+    end
+
+    test "accepts a valid graph" do
       assert GraphValidator.validate(@valid_nodes, @valid_connections, manifest: Manifest) == :ok
     end
 

@@ -156,10 +156,20 @@ defmodule HeddleAI.ClaudeAgent do
     })
   end
 
+  # The AI page comes first, then the environment, then whatever the PATH finds.
   defp binary(env) do
-    case read(env, "HEDDLE_CLAUDE_BIN") do
+    case saved_binary() || read(env, "HEDDLE_CLAUDE_BIN") do
       nil -> System.find_executable("claude")
       path -> if File.regular?(path), do: path
+    end
+  end
+
+  # The AI page is in heddle_core, which isn't a dependency of this app. Tests that have
+  # no database turn this off in config.
+  defp saved_binary do
+    case Application.get_env(:heddle_ai, :claude_binary, &HeddleNodes.Services.AI.claude_binary/0) do
+      nil -> nil
+      read -> read.()
     end
   end
 

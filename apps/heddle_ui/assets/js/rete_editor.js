@@ -28,6 +28,18 @@ if (!customElements.get("custom-control")) {
     customElements.define("custom-control", CustomControlElement);
 }
 
+const CODE_CONTROLS = ['code_elixir', 'code_python'];
+
+/**
+ * The canvas, built on Rete. This file and the custom-*.js elements it renders are the
+ * only ones that know about it.
+ *
+ * To draw flows with something else, return an object with the same methods from
+ * `createEditor`: the FlowCanvas hook in app.js only talks to them. `importData` and
+ * `exportData` take the flow as it is stored ({ nodes, connections, comments }), and
+ * `connections` must come back in the order they went in: that order is what runs
+ * first, see `Heddle.Graph`.
+ */
 export async function createEditor(container) {
     const socket = new ClassicPreset.Socket("socket");
 
@@ -262,6 +274,25 @@ export async function createEditor(container) {
         }, 400);
     };
 
+    // A node whose definition is gone stays on the canvas, or saving would erase it.
+    const definitionFor = (nodeData, connections, definitions) => {
+        const ports = (matches, key) => [...new Set(connections.filter(matches).map(c => c[key]))];
+
+        return definitions[nodeData.type] ?? {
+            name: nodeData.type,
+            inputs: ports(c => c.target === nodeData.id, 'targetInput'),
+            outputs: ports(c => c.source === nodeData.id, 'sourceOutput'),
+            ui_fields: []
+        };
+    };
+
+    const addHiddenControl = (node, key, value) => {
+        const control = new ClassicPreset.InputControl("text", { initial: value });
+        control.value = value;
+        control.type = 'hidden';
+        node.addControl(key, control);
+    };
+
     const getSnapshot = () => {
         const nodes = [];
         const connections = [];
@@ -278,7 +309,7 @@ export async function createEditor(container) {
             });
             nodes.push({
                 id: node.id,
-                type: node.type || node.label,
+                type: node.type,
                 label: node.label,
                 controls,
                 position
@@ -341,10 +372,7 @@ export async function createEditor(container) {
             await editor.clear();
             editor.nodeDefinitions = definitions;
             for (const nodeData of nodes) {
-                const nodeType = nodeData.type || nodeData.label;
-                const definition = definitions[nodeType];
-                if (!definition) continue;
-                await processAddNode(nodeType, definition, nodeData);
+                await processAddNode(nodeData.type, definitionFor(nodeData, connections, definitions), nodeData);
             }
             for (const comment of comments) {
                 await processAddComment(comment);
@@ -387,7 +415,7 @@ export async function createEditor(container) {
             const currentNode = editor.getNode(currentId);
             if (!currentNode) continue;
 
-            if ((currentNode.type === 'Variable' || currentNode.label === 'Variable') && currentNode.id !== startNodeId) {
+            if (currentNode.type === 'Variable' && currentNode.id !== startNodeId) {
                 const varName = currentNode.controls.var_name?.value;
                 if (varName) variables.add(varName);
             }
@@ -407,7 +435,8 @@ export async function createEditor(container) {
             context.type === 'connectioncreated' ||
             context.type === 'connectionremoved'
         ) {
-            processChange();
+            // Drawing a flow that was loaded isn't a change. Undo reports its own.
+            if (!isRestoring && !isImportingData) processChange();
             if (!isRestoring && !isImportingData && !isTranslatingSelection && !isDeletingSelection) {
                 if (translateDebounce) {
                     clearTimeout(translateDebounce);
@@ -1019,7 +1048,7 @@ export async function createEditor(container) {
         const uiFields = definition.ui_fields || [];
 
         uiFields.forEach(field => {
-            const initialValue = (data && data.controls && data.controls[field.name]) || field.default || "";
+            const initialValue = data?.controls?.[field.name] ?? field.default ?? "";
             const control = new ClassicPreset.InputControl("text", { initial: initialValue });
             control.value = initialValue;
 
@@ -1047,7 +1076,7 @@ export async function createEditor(container) {
                     }
                 };
             } else {
-                control.type = ['select', 'credential', 'model'].includes(field.type) ? field.type : 'text';
+                control.type = ['select', 'credential', 'model', 'textarea'].includes(field.type) ? field.type : 'text';
                 control.label = field.label;
                 control.credentialKind = field.kind;
                 if (field.options) control.options = field.options;
@@ -1056,34 +1085,20 @@ export async function createEditor(container) {
             node.addControl(field.name, control);
         });
 
-        const elixirField = uiFields.find(f => f.name === 'code_elixir');
-        const pythonField = uiFields.find(f => f.name === 'code_python');
-        
-        const initialElixir = (data && data.controls && data.controls.code_elixir !== undefined) 
-            ? data.controls.code_elixir 
-            : (elixirField ? elixirField.default : "");
-            
-        const initialPython = (data && data.controls && data.controls.code_python !== undefined) 
-            ? data.controls.code_python 
-            : (pythonField ? pythonField.default : "");
-
-        if (!node.controls.code_elixir) {
-            const ctrl = new ClassicPreset.InputControl("text", { initial: initialElixir });
-            ctrl.value = initialElixir;
-            ctrl.type = 'hidden';
-            node.addControl('code_elixir', ctrl);
-        } else if (data && data.controls && data.controls.code_elixir !== undefined) {
-             node.controls.code_elixir.value = data.controls.code_elixir;
+        if (uiFields.some(field => field.type === 'code')) {
+            CODE_CONTROLS.forEach(key => {
+                if (!node.controls[key]) addHiddenControl(node, key, "");
+            });
         }
 
-        if (!node.controls.code_python) {
-            const ctrl = new ClassicPreset.InputControl("text", { initial: initialPython });
-            ctrl.value = initialPython;
-            ctrl.type = 'hidden';
-            node.addControl('code_python', ctrl);
-        } else if (data && data.controls && data.controls.code_python !== undefined) {
-             node.controls.code_python.value = data.controls.code_python;
-        }
+        // What this version of the node doesn't show still belongs to the flow.
+        Object.entries(data?.controls ?? {}).forEach(([key, value]) => {
+            if (node.controls[key]) {
+                node.controls[key].value = value;
+            } else if (!(CODE_CONTROLS.includes(key) && value === "")) {
+                addHiddenControl(node, key, value);
+            }
+        });
 
         await editor.addNode(node);
 
@@ -1125,14 +1140,7 @@ export async function createEditor(container) {
                 editor.nodeDefinitions = definitions || {};
 
                 for (const nodeData of nodes) {
-                    const nodeType = nodeData.type || nodeData.label;
-                    const definition = definitions[nodeType];
-
-                    if (!definition) {
-                        console.warn(`Definition not found for node type: ${nodeType}`);
-                        continue;
-                    }
-                    await processAddNode(nodeType, definition, nodeData);
+                    await processAddNode(nodeData.type, definitionFor(nodeData, connections, definitions), nodeData);
                 }
 
                 for (const comment of keptComments) {
@@ -1276,7 +1284,16 @@ export async function createEditor(container) {
             await area.update('node', nodeId);
             processChange();
         },
-        exportData: async () => getSnapshot(),
+        exportData: async () => {
+            // What this would report is in the snapshot, and reporting it after the save
+            // would bring back a warning about changes that were just saved.
+            if (translateDebounce) {
+                clearTimeout(translateDebounce);
+                translateDebounce = null;
+                pushUndo();
+            }
+            return getSnapshot();
+        },
         addNodeError: (nodeId, message) => {
             const view = area.nodeViews.get(nodeId);
             if (view && view.element) {

@@ -252,6 +252,118 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+  /api/v1/workflows/{workflow_id}/agent:
+    get:
+      summary: Get the conversation with the agent of a workflow
+      description: Each person has one conversation per workflow, shared by all their clients. It lives on the server and ends after 30 minutes without work.
+      operationId: getAgentConversation
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+      responses:
+        "200":
+          description: The conversation so far
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AgentTranscript"
+  /api/v1/workflows/{workflow_id}/agent/events:
+    get:
+      summary: Follow the agent as it works
+      description: |
+        A stream of server-sent events. The first one is `snapshot`, with the whole conversation. Then come
+        `user_message`, `text_delta`, `tool_started`, `tool_finished`, `failed`, `status`, `permission` and `reset`.
+      operationId: followAgent
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+      responses:
+        "200":
+          description: The stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+  /api/v1/workflows/{workflow_id}/agent/messages:
+    post:
+      summary: Send a message to the agent
+      operationId: sendAgentMessage
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+      responses:
+        "202":
+          description: The agent started. Follow it through the events.
+        "409":
+          description: The agent is still working
+  /api/v1/workflows/{workflow_id}/agent/decision:
+    post:
+      summary: Answer a request of the agent to run the flow
+      operationId: decideAgentRun
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - decision
+              properties:
+                decision:
+                  type: string
+                  enum:
+                    - once
+                    - always
+                    - deny
+      responses:
+        "204":
+          description: Answered
+        "409":
+          description: Nothing is waiting for an answer
+  /api/v1/workflows/{workflow_id}/agent/new:
+    post:
+      summary: Start a new conversation
+      description: The current one stays saved. While the agent works, nothing changes.
+      operationId: newAgentConversation
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+      responses:
+        "204":
+          description: Done
+  /api/v1/workflows/{workflow_id}/agent/stop:
+    post:
+      summary: Stop what the agent is doing
+      operationId: stopAgent
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+      responses:
+        "204":
+          description: Stopped
   /api/v1/workflows/{workflow_id}/executions:
     get:
       operationId: listWorkflowExecutions
@@ -530,12 +642,12 @@ components:
             nodes:
               type: array
               items:
-                $ref: "#/components/schemas/ReteNode"
+                $ref: "#/components/schemas/FlowNode"
               default: []
             connections:
               type: array
               items:
-                $ref: "#/components/schemas/ReteConnection"
+                $ref: "#/components/schemas/FlowConnection"
               default: []
             comments:
               type: array
@@ -576,11 +688,11 @@ components:
         nodes:
           type: array
           items:
-            $ref: "#/components/schemas/ReteNode"
+            $ref: "#/components/schemas/FlowNode"
         connections:
           type: array
           items:
-            $ref: "#/components/schemas/ReteConnection"
+            $ref: "#/components/schemas/FlowConnection"
         comments:
           type: array
           items:
@@ -632,15 +744,14 @@ components:
         height:
           type: number
           exclusiveMinimum: 0
-    ReteNode:
+    FlowNode:
       type: object
       additionalProperties: false
-      description: Rete node payload stored by Heddle.
+      description: A step of a flow.
       required:
         - id
         - type
         - controls
-        - position
       properties:
         id:
           oneOf:
@@ -653,6 +764,7 @@ components:
         position:
           type: object
           additionalProperties: false
+          description: Where the node is on the canvas. It has no effect on a run, and a node without it is placed automatically.
           required:
             - x
             - y
@@ -664,15 +776,14 @@ components:
         controls:
           type: object
           additionalProperties: true
-    ReteConnection:
+    FlowConnection:
       type: object
       additionalProperties: false
-      description: Rete connection payload stored by Heddle.
+      description: Connections leaving the same output run one after the other, in the order they are listed.
       required:
         - source
         - sourceOutput
         - target
-        - targetInput
       properties:
         source:
           oneOf:
@@ -686,6 +797,41 @@ components:
             - type: integer
         targetInput:
           type: string
+          default: exec
+    AgentTranscript:
+      type: object
+      required:
+        - items
+        - status
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+            required:
+              - id
+              - role
+            properties:
+              id:
+                type: string
+              role:
+                type: string
+                enum:
+                  - user
+                  - assistant
+                  - tool
+                  - error
+        status:
+          type: string
+          enum:
+            - idle
+            - running
+        permission:
+          type:
+            - object
+            - "null"
+          additionalProperties: true
     NodeListResponse:
       type: object
       required:
@@ -710,7 +856,6 @@ components:
         - inputs
         - outputs
         - ui_fields
-        - rete
       properties:
         type:
           type: string
@@ -753,46 +898,6 @@ components:
           items:
             type: object
             additionalProperties: true
-        rete:
-          $ref: "#/components/schemas/ReteNodeDefinition"
-    ReteNodeDefinition:
-      type: object
-      additionalProperties: true
-      required:
-        - id
-        - label
-        - inputs
-        - outputs
-      properties:
-        id:
-          type: string
-        label:
-          type: string
-        category:
-          type: string
-        color:
-          type: string
-        icon:
-          type: string
-        inputs:
-          type: array
-          items:
-            $ref: "#/components/schemas/RetePort"
-        outputs:
-          type: array
-          items:
-            $ref: "#/components/schemas/RetePort"
-    RetePort:
-      type: object
-      additionalProperties: true
-      required:
-        - id
-        - label
-      properties:
-        id:
-          type: string
-        label:
-          type: string
     ExecutionRequest:
       type: object
       properties:
