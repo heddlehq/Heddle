@@ -16,16 +16,65 @@ On Windows 10 or later, in PowerShell:
 irm https://heddlehq.github.io/website/install.ps1 | iex
 ```
 
-Heddle then starts and opens in your browser, where you create the admin account. To use it again later, open a new terminal and run `heddle`. Press `Ctrl+C` to stop it.
+The installer then asks what you want. **Quick install** only asks whether you also want Treadle and which AI to use, and **Customize everything** goes through the folder, version, port, performance and how it starts. Your AI key is checked with the provider before anything is installed, and nothing changes on your computer until you confirm.
 
-- **Where it lives:** `~/.heddle`, or `%LOCALAPPDATA%\Heddle` on Windows. If your Windows user folder has an accent in its name, it's `%ProgramData%\Heddle` instead, because Postgres and Python can't load from one. Your data is in the `data` folder inside it.
+Heddle then starts and opens in your browser, where you create the admin account.
+
+- **Where it lives:** `~/.heddle`, or `%LOCALAPPDATA%\Heddle` on Windows. If your Windows user folder has an accent in its name, it's `%ProgramData%\Heddle` instead, because Postgres and Python can't load from one. Your data is in the `data` folder inside it, and your settings in `heddle.env`.
 - **Folders with accents:** on Linux and macOS, a home folder like `/home/joão` needs `HEDDLE_HOME` set to a folder without accents.
-- **Updating:** stop Heddle and run the install command again. Your data stays, and a copy goes to the `backups` folder first, keeping the latest three. If a new version needs a Postgres your data can't use, the installer stops without changing anything.
-- **Removing:** delete that folder and remove it from your `PATH`.
 - **Network access:** this install answers on your computer only. Flows can run code with your account's permissions, so run only the ones you trust.
 - **Python:** the first start downloads Python, which needs an internet connection.
 
-This install is for one person on one computer. For a server, or to share Heddle with a team, use Docker below. Linux with musl, like Alpine, also needs Docker.
+This install is for one person on one computer. For a server, or to share Heddle with a team, choose Docker in the installer, or see [Docker](#-installation-docker) below. As root or on Linux with musl, like Alpine, Docker is the option the installer offers.
+
+### Installing only Treadle
+
+[Treadle](https://github.com/heddlehq/Treadle) is the terminal editor. To install only it, on a machine that connects to a Heddle running elsewhere:
+
+```bash
+curl -fsSL https://heddlehq.github.io/website/install.sh | sh -s -- --treadle
+```
+
+```powershell
+& ([scriptblock]::Create((irm https://heddlehq.github.io/website/install.ps1))) --treadle
+```
+
+It asks for the server and an API key, checks them, and Treadle opens already connected. Leave them empty to sign in with your browser when you open it.
+
+### Installing with no questions
+
+With no terminal, or with `--yes`, nothing is asked and what wasn't passed takes its default. Every question has an option, and `heddle install --help` lists them:
+
+```bash
+curl -fsSL https://heddlehq.github.io/website/install.sh | \
+  HEDDLE_LLM_API_KEY=sk-ant-... sh -s -- --yes --with-treadle --port 4100 \
+  --llm-provider anthropic --llm-model claude-sonnet-5-5
+```
+
+Prefer the `HEDDLE_LLM_API_KEY` variable to `--llm-key`, which shows in the process list.
+
+### The `heddle` command
+
+| Command | What it does |
+| --- | --- |
+| `heddle` or `heddle start` | Starts Heddle in this terminal. `Ctrl+C` stops it. |
+| `heddle start -d` | Starts it in the background. |
+| `heddle stop` | Stops Heddle and its database, wherever it was started. |
+| `heddle restart` | Stops and starts again, in the background. |
+| `heddle status` | Shows what's running and how it's set up. Takes `--json`. |
+| `heddle logs -f` | Follows the logs. `--db` shows the database's. |
+| `heddle open` | Opens Heddle in the browser. |
+| `heddle setup` | Changes the AI, step by step. |
+| `heddle config` | Lists the settings. `set`, `get` and `unset` change them. |
+| `heddle autostart on` | Starts Heddle with the computer. Needs systemd. |
+| `heddle doctor` | Checks that everything is in order, your AI key included. |
+| `heddle update` | Updates Heddle, Treadle and this command. `--check` only looks. |
+| `heddle backup` | Copies your data. `list` shows the copies, `restore` puts one back. |
+| `heddle uninstall` | Removes Heddle. `--keep-data` keeps your data. |
+
+- **Updating:** `heddle update`, or run the install command again. Your data stays, and a copy goes to the `backups` folder first, keeping the latest three. If a new version needs a Postgres your data can't use, it stops without changing anything.
+- **Backing up:** `heddle backup` stops Heddle for the copy and starts it again after. `heddle backup restore` moves your current data aside instead of deleting it.
+- **Settings:** `heddle config set` takes anything in [`.env.example`](../.env.example). Restart for a change to apply.
 
 ---
 

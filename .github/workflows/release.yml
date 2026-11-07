@@ -1,6 +1,6 @@
 name: Release
 
-# Builds the archives behind the install scripts. A `v*` tag publishes them to its
+# Builds what `heddle install` downloads, and that command itself. A `v*` tag publishes them to its
 # GitHub release. Anything else only builds and smoke tests them.
 on:
   push:
@@ -9,6 +9,7 @@ on:
     paths:
       - ".github/workflows/release.yml"
       - "apps/heddle_local/**"
+      - "cli/**"
       - "config/runtime.exs"
       - "mix.exs"
       - "mix.lock"
@@ -50,6 +51,11 @@ jobs:
         with:
           node-version: 22
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: cli/go.mod
+          cache-dependency-path: cli/go.sum
+
       # Pythonx compiles a NIF, which needs nmake and the compiler on PATH.
       - if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
@@ -70,7 +76,7 @@ jobs:
 
       - run: scripts/package_release.sh ${{ matrix.target }}
 
-      - run: scripts/smoke_release.sh dist/heddle-${{ matrix.target }}.tar.gz
+      - run: scripts/smoke_release.sh dist/heddle-${{ matrix.target }}.tar.gz dist/heddle-cli-${{ matrix.target }}${{ runner.os == 'Windows' && '.exe' || '' }}
 
       - uses: actions/upload-artifact@v4
         with:

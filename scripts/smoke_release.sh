@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# Installs a packaged archive somewhere awkward and checks that it really boots.
+# Installs a packaged archive somewhere awkward, checks that the `heddle` command
+# really boots it, and that `heddle stop` leaves nothing running.
 #
-#     scripts/smoke_release.sh dist/heddle-linux-x64.tar.gz
+#     scripts/smoke_release.sh dist/heddle-linux-x64.tar.gz dist/heddle-cli-linux-x64
 set -euo pipefail
 
 archive="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+cli="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
 
 export HEDDLE_NO_BROWSER=1
 
@@ -17,11 +19,11 @@ temp="${RUNNER_TEMP:-$(mktemp -d)}"
 # GNU tar reads the colon in D:\ as a remote host.
 [ "$windows" = true ] && temp="$(cygpath -u "$temp")"
 
-# The launcher finds this folder by itself, as it does after a real install.
 home="$temp/Heddle Install"
+export HEDDLE_HOME="$home"
 
-# install.ps1 keeps Heddle out of a user folder with an accent. Nothing in it may
-# depend on that folder either.
+# `heddle install` keeps Heddle out of a user folder with an accent. Nothing in it
+# may depend on that folder either.
 if [ "$windows" = true ]; then
   LOCALAPPDATA="$(cygpath -w "$temp/Usuário João")"
   export LOCALAPPDATA
@@ -33,24 +35,12 @@ log="$home/smoke.log"
 mkdir -p "$app"
 tar -xzf "$archive" -C "$app"
 
-stop() {
-  if [ "$windows" = true ]; then
-    taskkill //F //IM erl.exe //T >/dev/null 2>&1 || true
-    taskkill //F //IM beam.smp.exe //T >/dev/null 2>&1 || true
-    cmd //c "$(cygpath -w "$app/heddle.cmd")" stop >/dev/null 2>&1 || true
-  else
-    kill -TERM "$pid" 2>/dev/null || true
-    wait "$pid" 2>/dev/null || true
-  fi
-}
+[ "$windows" = true ] && HEDDLE_HOME="$(cygpath -w "$home")"
 
-if [ "$windows" = true ]; then
-  cmd //c "$(cygpath -w "$app/heddle.cmd")" > "$log" 2>&1 &
-else
-  "$app/heddle" > "$log" 2>&1 &
-fi
+chmod +x "$cli"
+"$cli" start > "$log" 2>&1 &
 pid=$!
-trap stop EXIT
+trap '"$cli" stop >/dev/null 2>&1 || true' EXIT
 
 for _ in $(seq 1 180); do
   grep -q 'Heddle is running' "$log" && break
@@ -68,6 +58,21 @@ status="$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:$port/setup")
 
 if grep -q 'Pythonx init skipped' "$log"; then
   echo "Python did not initialize." >&2
+  exit 1
+fi
+
+"$cli" status
+
+# Stopping has to take the whole thing down, and end the foreground command with it.
+"$cli" stop
+wait "$pid"
+
+status="$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:$port/setup" || true)"
+[ "$status" = 000 ] || { echo "Still answering after heddle stop: $status." >&2; exit 1; }
+
+if [ "$windows" = false ] && pgrep -f "$app/" >/dev/null; then
+  echo "heddle stop left something running:" >&2
+  pgrep -fa "$app/" >&2
   exit 1
 fi
 

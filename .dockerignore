@@ -7,6 +7,7 @@ apps/heddle_ui/assets/node_modules
 apps/heddle_ui/priv/static/assets
 e2e
 benchmark
+cli
 docs
 guides
 test-results

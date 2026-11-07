@@ -9,7 +9,9 @@ on:
 jobs:
   test:
     timeout-minutes: 60
-    runs-on: ubuntu-latest
+    # Not ubuntu-latest: Playwright only installs its browsers on the Ubuntu versions
+    # it knows, so a new runner image breaks this job until Playwright catches up.
+    runs-on: ubuntu-24.04
 
     services:
       db:

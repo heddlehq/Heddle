@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# Turns the `heddle` release into the archive the install scripts download.
+# Turns the `heddle` release into what `heddle install` downloads, and builds that
+# command.
 #
 #     MIX_ENV=prod mix release heddle
 #     scripts/package_release.sh linux-x64
 #
-# Writes dist/heddle-<target>.tar.gz and its .sha256. Every platform uses tar.gz
-# because Windows 10 and later ship a tar that reads it.
+# Writes dist/heddle-<target>.tar.gz and dist/heddle-cli-<target>, each with its
+# .sha256. Every platform uses tar.gz because Windows 10 and later ship a tar that
+# reads it.
 set -euo pipefail
 
 POSTGRES_VERSION=17.11.0
@@ -76,12 +78,26 @@ if [ "$target" = macos-arm64 ]; then
   fi
 fi
 
-cp scripts/launcher/heddle scripts/launcher/heddle.cmd VERSION "$release/"
-chmod +x "$release/heddle"
+cp VERSION "$release/"
+
+checksum() {
+  (cd dist && { sha256sum "$1" > "$1.sha256" 2>/dev/null || shasum -a 256 "$1" > "$1.sha256"; })
+  echo "dist/$1: $(du -h "dist/$1" | cut -f1)"
+}
 
 mkdir -p dist
 archive="heddle-$target.tar.gz"
 tar -czf "dist/$archive" -C "$release" .
-(cd dist && sha256sum "$archive" > "$archive.sha256" 2>/dev/null || shasum -a 256 "$archive" > "$archive.sha256")
+checksum "$archive"
 
-echo "dist/$archive: $(du -h "dist/$archive" | cut -f1)"
+# No cgo, so one binary runs on any Linux, musl included: that's how a machine that
+# can't run the release still gets offered Docker or Treadle.
+cli="heddle-cli-$target"
+[ "$target" = windows-x64 ] && cli="$cli.exe"
+(
+  cd cli
+  CGO_ENABLED=0 go build -trimpath \
+    -ldflags "-s -w -X github.com/heddlehq/heddle/cli/internal/commands.Version=$(cat ../VERSION)" \
+    -o "../dist/$cli" ./cmd/heddle
+)
+checksum "$cli"
