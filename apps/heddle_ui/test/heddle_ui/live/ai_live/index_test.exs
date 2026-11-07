@@ -83,6 +83,93 @@ defmodule HeddleUI.AILive.IndexTest do
     end
   end
 
+  describe "the claude program" do
+    setup do
+      Application.put_env(:heddle_ai, :claude_binary, &Settings.claude_binary/0)
+      on_exit(fn -> Application.put_env(:heddle_ai, :claude_binary, nil) end)
+    end
+
+    defp save_binary(view, path) do
+      view |> form("#claude-binary-form", claude: %{path: path}) |> render_submit()
+    end
+
+    test "can be pointed at another path", %{conn: conn} do
+      System.put_env("HEDDLE_CLAUDE_BIN", "/no/such/claude")
+      view = open(conn)
+      assert has_element?(view, "#claude-agent-binary", "Not found")
+
+      save_binary(view, "/bin/true")
+
+      assert Settings.claude_binary() == "/bin/true"
+      assert has_element?(view, "#claude-agent-binary", "Found")
+    end
+
+    test "must be a program that exists", %{conn: conn} do
+      view = open(conn)
+
+      save_binary(view, "/no/such/claude")
+
+      assert Settings.claude_binary() == nil
+    end
+
+    test "must be something that runs", %{conn: conn} do
+      view = open(conn)
+
+      save_binary(view, "/etc/hostname")
+
+      assert Settings.claude_binary() == nil
+    end
+
+    test "goes back to being found when emptied", %{conn: conn} do
+      {:ok, _setting} = Settings.set_claude_binary("/bin/true")
+      view = open(conn)
+
+      save_binary(view, "")
+
+      assert Settings.claude_binary() == nil
+    end
+  end
+
+  describe "Terminal" do
+    setup do
+      Application.put_env(:heddle_ui, :terminal, true)
+      Application.put_env(:heddle_ui, :terminal_command, ["/bin/sh"])
+
+      on_exit(fn ->
+        Application.delete_env(:heddle_ui, :terminal)
+        Application.delete_env(:heddle_ui, :terminal_command)
+      end)
+    end
+
+    test "starts off, and is turned on here", %{conn: conn} do
+      view = open(conn)
+      assert has_element?(view, ~s(#terminal-toggle[aria-checked="false"]))
+
+      view |> element("#terminal-toggle") |> render_click()
+
+      assert has_element?(view, ~s(#terminal-toggle[aria-checked="true"]))
+      assert Settings.terminal_enabled?()
+    end
+
+    test "can't be turned on where it isn't supported", %{conn: conn} do
+      Application.put_env(:heddle_ui, :terminal, false)
+      view = open(conn)
+
+      assert has_element?(view, "#terminal-toggle[disabled]")
+      assert has_element?(view, "#terminal-help")
+
+      render_click(view, "toggle_terminal", %{})
+
+      refute Settings.terminal_enabled?()
+    end
+
+    test "is what the Claude Agent points a subscription to", %{conn: conn} do
+      System.put_env("HEDDLE_CLAUDE_BIN", "/bin/true")
+
+      assert has_element?(open(conn), "#claude-agent-help", "turn on the Terminal below")
+    end
+  end
+
   describe "Claude Agent" do
     defp agent_ready do
       System.put_env(%{"HEDDLE_CLAUDE_BIN" => "/bin/true", "HEDDLE_CLAUDE_API_KEY" => "sk-ant"})
@@ -94,7 +181,7 @@ defmodule HeddleUI.AILive.IndexTest do
       view = open(conn)
 
       assert has_element?(view, "#claude-agent-toggle[disabled]")
-      assert has_element?(view, "#claude-agent-help", "HEDDLE_CLAUDE_BIN")
+      assert has_element?(view, "#claude-agent-help", "set its path above")
     end
 
     test "asks for a key, and says subscriptions don't work", %{conn: conn} do

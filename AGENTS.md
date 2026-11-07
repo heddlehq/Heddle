@@ -29,6 +29,12 @@ The agent lives on the server, and every client only sends messages and shows ev
 - **What must be true for the model goes in the last message**, through `FlowCopilot.with_current_state/3`, not in the system prompt: in the system prompt it loses to older results in the conversation.
 - **Running a flow always asks first**, through `AgentChat.confirm_run/2`.
 
+## The terminal runs Claude Code as it ships
+`HeddleUI.Terminal` opens Claude Code on a pty in the editor, on local installs only, once turned on in the AI page. It talks through `HeddleUI.TerminalSocket`, not the LiveView: a terminal sends a message per key and repaint. It may use a person's subscription because of how it works, so keep it that way:
+- **Never** change or wrap the program, offer or handle its login, or read what it shows. It only carries keys and the screen.
+- **Never** drive it from the harness. Sending requests through a subscription on someone's behalf is what Anthropic doesn't allow, and the rules are in the [Claude Code legal page](https://code.claude.com/docs/en/legal-and-compliance).
+- **Never** use the Claude Code name or logo as the name of a feature: it is the Terminal, and text can say it runs Claude Code.
+
 ## Frontend: Rete.js, LiveView & Lit
 The visual editor is built with a modern stack designed for interactivity and customizability:
 - **Rete.js**: A modular framework for visual programming, used to render the node editor.

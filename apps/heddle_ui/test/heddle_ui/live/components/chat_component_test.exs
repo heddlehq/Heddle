@@ -9,7 +9,7 @@ defmodule HeddleUI.ChatComponentTest do
   defp chat(events, opts \\ []) do
     agent = Enum.reduce(events, Transcript.new(), &Transcript.reduce(&2, &1))
 
-    render_component(ChatComponent, [id: "chat", open: true, agent: agent] ++ opts)
+    render_component(ChatComponent, Keyword.merge([id: "chat", open: true, agent: agent], opts))
   end
 
   defp tool(name, args \\ %{}), do: %{type: "tool_started", id: "t1", name: name, args: args}
@@ -74,6 +74,13 @@ defmodule HeddleUI.ChatComponentTest do
 
     assert html =~ "Fix the sum"
     refute html =~ "Current"
+  end
+
+  test "moves its button out of the way of the terminal" do
+    closed = [open: false]
+
+    assert chat([], closed ++ [terminal_open: true]) =~ "bottom-[calc(45vh+1.5rem)]"
+    refute chat([], closed) =~ "bottom-[calc(45vh+1.5rem)]"
   end
 
   test "shows a failure in the conversation" do

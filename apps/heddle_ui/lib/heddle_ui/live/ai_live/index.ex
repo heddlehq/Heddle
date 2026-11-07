@@ -8,21 +8,34 @@ defmodule HeddleUI.AILive.Index do
   alias HeddleCore.Credentials
   alias HeddleCore.Settings
   alias HeddleUI.AILive.Defaults
+  alias HeddleUI.Terminal
 
   @impl true
   def mount(_params, _session, socket) do
-    agent = ClaudeAgent.status()
-
     {:ok,
      socket
      |> assign(:page_title, gettext("AI"))
      |> assign(:llm, LLM.status())
      |> assign(:ai_credentials, ai_credentials())
      |> assign_defaults(Defaults.to_form_params(Settings.ai_defaults()))
-     |> assign(:agent, agent)
      |> assign(:agent_enabled, Settings.claude_agent_enabled?())
+     |> assign(:terminal_enabled, Settings.terminal_enabled?())
      |> assign(:mcp_command, mcp_command())
-     |> assign_async(:agent_version, fn -> {:ok, %{agent_version: version(agent)}} end)}
+     |> assign_binary_form(Settings.claude_binary() || "")
+     |> assign_agent()}
+  end
+
+  defp assign_agent(socket) do
+    agent = ClaudeAgent.status()
+
+    socket
+    |> assign(:agent, agent)
+    |> assign(:terminal_supported, Terminal.supported?())
+    |> assign_async(:agent_version, fn -> {:ok, %{agent_version: version(agent)}} end)
+  end
+
+  defp assign_binary_form(socket, path) do
+    assign(socket, :binary_form, to_form(%{"path" => path}, as: :claude))
   end
 
   @impl true
@@ -39,6 +52,43 @@ defmodule HeddleUI.AILive.Index do
          |> put_flash(:info, gettext("AI settings saved."))}
 
       {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, gettext("Could not save this setting."))}
+    end
+  end
+
+  def handle_event("save_claude_binary", %{"claude" => %{"path" => path}}, socket) do
+    path = path |> String.trim() |> Path.expand() |> then(&if(path == "", do: "", else: &1))
+
+    with :ok <- check_binary(path),
+         {:ok, _setting} <- Settings.set_claude_binary(path) do
+      {:noreply,
+       socket
+       |> assign_binary_form(path)
+       |> assign_agent()
+       |> put_flash(:info, gettext("AI settings saved."))}
+    else
+      {:error, :not_executable} ->
+        {:noreply,
+         socket
+         |> assign_binary_form(path)
+         |> put_flash(:error, gettext("There is no program at this path."))}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, gettext("Could not save this setting."))}
+    end
+  end
+
+  def handle_event("toggle_terminal", _params, socket) do
+    enabled = not socket.assigns.terminal_enabled
+
+    cond do
+      enabled and not socket.assigns.terminal_supported ->
+        {:noreply, put_flash(socket, :error, gettext("The Terminal is not available here."))}
+
+      match?({:ok, _setting}, Settings.set_terminal_enabled(enabled)) ->
+        {:noreply, assign(socket, :terminal_enabled, enabled)}
+
+      true ->
         {:noreply, put_flash(socket, :error, gettext("Could not save this setting."))}
     end
   end
@@ -137,30 +187,13 @@ defmodule HeddleUI.AILive.Index do
               {gettext("Copilot in the editor chat. It can read, edit and run your flows.")}
             </p>
           </div>
-          <button
+          <.switch
             id="claude-agent-toggle"
-            type="button"
-            role="switch"
-            aria-checked={to_string(agent_on?(@agent, @agent_enabled))}
-            aria-label={gettext("Use in the editor chat")}
+            on={agent_on?(@agent, @agent_enabled)}
             disabled={@agent.state != :ready}
-            phx-click="toggle_claude_agent"
-            class={[
-              "relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed",
-              if(agent_on?(@agent, @agent_enabled),
-                do: "bg-primary",
-                else: "bg-gray-200 dark:bg-slate-700"
-              )
-            ]}
-          >
-            <span class={[
-              "inline-block h-5 w-5 mt-0.5 rounded-full bg-white shadow transition-transform",
-              if(agent_on?(@agent, @agent_enabled),
-                do: "translate-x-[22px]",
-                else: "translate-x-0.5"
-              )
-            ]} />
-          </button>
+            label={gettext("Use in the editor chat")}
+            click="toggle_claude_agent"
+          />
         </div>
 
         <dl class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -185,12 +218,65 @@ defmodule HeddleUI.AILive.Index do
           </div>
         </dl>
 
+        <.form
+          for={@binary_form}
+          id="claude-binary-form"
+          phx-submit="save_claude_binary"
+          class="mt-4 flex items-end gap-2"
+        >
+          <div class="min-w-0 flex-1">
+            <.input
+              field={@binary_form[:path]}
+              type="text"
+              label={gettext("Path of the claude program")}
+              placeholder={gettext("Found automatically when empty")}
+            />
+          </div>
+          <.button id="claude-binary-save" type="submit" variant="ghost" class="mb-2">
+            {gettext("Save")}
+          </.button>
+        </.form>
+
         <p
           :if={@agent.state != :ready}
           id="claude-agent-help"
+          class="mt-2 text-xs text-gray-500 dark:text-gray-400"
+        >
+          {agent_help(@agent.state, @terminal_supported)}
+        </p>
+      </section>
+
+      <section
+        id="terminal-settings"
+        class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-6"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+              {gettext("Terminal")}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {gettext(
+                "Runs Claude Code in the flow editor, connected to your flows. It works with your Claude subscription, and you sign in inside it."
+              )}
+            </p>
+          </div>
+          <.switch
+            id="terminal-toggle"
+            on={@terminal_supported and @terminal_enabled}
+            disabled={not @terminal_supported}
+            label={gettext("Show the Terminal in the editor")}
+            click="toggle_terminal"
+          />
+        </div>
+        <p
+          :if={not @terminal_supported}
+          id="terminal-help"
           class="mt-4 text-xs text-gray-500 dark:text-gray-400"
         >
-          {agent_help(@agent.state)}
+          {gettext(
+            "It needs Heddle installed on your own machine, with the claude program. It can run commands there, so it isn't offered on a shared server."
+          )}
         </p>
       </section>
 
@@ -270,12 +356,60 @@ defmodule HeddleUI.AILive.Index do
   defp version(%{binary: nil}), do: nil
   defp version(%{binary: binary}), do: ClaudeAgent.version(binary)
 
-  defp agent_help(:missing_binary) do
-    gettext("Install claude on this server, or point HEDDLE_CLAUDE_BIN to it.")
+  defp agent_help(:missing_binary, _terminal?) do
+    gettext("Install claude on this server, or set its path above.")
   end
 
-  defp agent_help(:missing_key) do
+  defp agent_help(:missing_key, true) do
+    gettext(
+      "Set HEDDLE_CLAUDE_API_KEY. To use a Claude subscription, turn on the Terminal below."
+    )
+  end
+
+  defp agent_help(:missing_key, false) do
     gettext("Set HEDDLE_CLAUDE_API_KEY. Claude subscriptions can't be used here.")
+  end
+
+  defp check_binary(""), do: :ok
+
+  defp check_binary(path) do
+    if File.regular?(path) and executable?(path), do: :ok, else: {:error, :not_executable}
+  end
+
+  defp executable?(path) do
+    case File.stat(path) do
+      {:ok, %{mode: mode}} -> Bitwise.band(mode, 0o111) != 0
+      {:error, _reason} -> false
+    end
+  end
+
+  attr :id, :string, required: true
+  attr :on, :boolean, required: true
+  attr :disabled, :boolean, required: true
+  attr :label, :string, required: true
+  attr :click, :string, required: true
+
+  defp switch(assigns) do
+    ~H"""
+    <button
+      id={@id}
+      type="button"
+      role="switch"
+      aria-checked={to_string(@on)}
+      aria-label={@label}
+      disabled={@disabled}
+      phx-click={@click}
+      class={[
+        "relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50",
+        if(@on, do: "bg-primary", else: "bg-gray-200 dark:bg-slate-700")
+      ]}
+    >
+      <span class={[
+        "inline-block h-5 w-5 mt-0.5 rounded-full bg-white shadow transition-transform",
+        if(@on, do: "translate-x-[22px]", else: "translate-x-0.5")
+      ]} />
+    </button>
+    """
   end
 
   defp mcp_command do

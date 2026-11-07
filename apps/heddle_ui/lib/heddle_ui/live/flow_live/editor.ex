@@ -11,6 +11,7 @@ defmodule HeddleUI.FlowLive.Editor do
   alias HeddleUI.AIChat
   alias HeddleUI.Agent
   alias HeddleUI.FlowLive.AgentManager
+  alias HeddleUI.FlowLive.TerminalManager
   alias HeddleUI.FlowLive.{CodeEditorManager, NodePaletteManager}
 
   @notice_dismiss_timeout 6_000
@@ -21,10 +22,13 @@ defmodule HeddleUI.FlowLive.Editor do
 
     if connected?(socket), do: Flows.subscribe_to_flow(flow.id)
 
-    {:ok, socket |> assign(initial_assigns(flow)) |> AgentManager.follow(), layout: false}
+    {:ok,
+     socket
+     |> assign(initial_assigns(flow, socket.assigns.current_scope.user))
+     |> AgentManager.follow(), layout: false}
   end
 
-  defp initial_assigns(flow) do
+  defp initial_assigns(flow, user) do
     [
       current_flow: flow,
       has_changes: false,
@@ -55,6 +59,7 @@ defmodule HeddleUI.FlowLive.Editor do
       ai_configured: Agent.available?()
     ] ++
       AgentManager.initial_assigns() ++
+      TerminalManager.initial_assigns(user) ++
       CodeEditorManager.initial_assigns() ++
       NodePaletteManager.initial_assigns()
   end
@@ -394,6 +399,21 @@ defmodule HeddleUI.FlowLive.Editor do
   @impl true
   def handle_event("agent_run_decision", %{"decision" => decision}, socket) do
     {:noreply, AgentManager.decide(socket, decision)}
+  end
+
+  @impl true
+  def handle_event("terminal_toggle", _params, socket) do
+    {:noreply, TerminalManager.toggle(socket)}
+  end
+
+  @impl true
+  def handle_event("terminal_exited", _params, socket) do
+    {:noreply, TerminalManager.exited(socket)}
+  end
+
+  @impl true
+  def handle_event("terminal_restart", _params, socket) do
+    {:noreply, TerminalManager.restart(socket)}
   end
 
   @impl true

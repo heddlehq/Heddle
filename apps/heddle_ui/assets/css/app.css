@@ -7,6 +7,7 @@
 @source "../../lib/heddle_ui";
 @source "../../../heddle_nodes/lib";
 @import "./rete_custom.css";
+@import "../node_modules/@xterm/xterm/css/xterm.css";
 
 @theme {
   --color-scheme: light dark;

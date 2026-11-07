@@ -87,6 +87,7 @@ config :heddle_ui, HeddleUI.Endpoint,
 
 # Enable dev routes for dashboard and mailbox
 config :heddle_ui, dev_routes: true
+config :heddle_ui, terminal: true
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"

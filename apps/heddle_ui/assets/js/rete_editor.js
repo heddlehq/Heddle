@@ -435,7 +435,8 @@ export async function createEditor(container) {
             context.type === 'connectioncreated' ||
             context.type === 'connectionremoved'
         ) {
-            processChange();
+            // Drawing a flow that was loaded isn't a change. Undo reports its own.
+            if (!isRestoring && !isImportingData) processChange();
             if (!isRestoring && !isImportingData && !isTranslatingSelection && !isDeletingSelection) {
                 if (translateDebounce) {
                     clearTimeout(translateDebounce);
@@ -1283,7 +1284,16 @@ export async function createEditor(container) {
             await area.update('node', nodeId);
             processChange();
         },
-        exportData: async () => getSnapshot(),
+        exportData: async () => {
+            // What this would report is in the snapshot, and reporting it after the save
+            // would bring back a warning about changes that were just saved.
+            if (translateDebounce) {
+                clearTimeout(translateDebounce);
+                translateDebounce = null;
+                pushUndo();
+            }
+            return getSnapshot();
+        },
         addNodeError: (nodeId, message) => {
             const view = area.nodeViews.get(nodeId);
             if (view && view.element) {

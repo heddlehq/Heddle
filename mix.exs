@@ -49,17 +49,26 @@ defmodule Heddle.Umbrella.MixProject do
       # Postgres from scripts/package_release.sh. :heddle_local has to come first.
       heddle: [
         include_executables_for: [:unix, :windows],
-        applications: [
-          heddle_local: :permanent,
-          heddle_core: :permanent,
-          heddle_runtime: :permanent,
-          heddle_nodes: :permanent,
-          heddle_ai: :permanent,
-          heddle_worker: :permanent,
-          heddle_ui: :permanent
-        ]
+        applications:
+          [
+            heddle_local: :permanent,
+            heddle_core: :permanent,
+            heddle_runtime: :permanent,
+            heddle_nodes: :permanent,
+            heddle_ai: :permanent,
+            heddle_worker: :permanent,
+            heddle_ui: :permanent
+          ] ++ terminal_applications()
       ]
     ]
+  end
+
+  # Loaded and not started: `HeddleUI.Terminal` starts it when a terminal opens.
+  defp terminal_applications do
+    case :os.type() do
+      {:unix, _name} -> [erlexec: :load]
+      _other -> []
+    end
   end
 
   defp aliases do
