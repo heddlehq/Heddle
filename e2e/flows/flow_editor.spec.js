@@ -546,7 +546,7 @@ test.describe('Flow Editor', () => {
   });
 
   test.describe('New nodes', () => {
-    for (const name of ['Schedule', 'AI Agent', 'For Each', 'Respond to Webhook', 'Slack: Send Message', 'Email: Send Email', 'Email: List Emails', 'Google Sheets: Read Rows', 'Read CSV', 'Write CSV', 'S3: Upload File', 'FTP: Rename or Move', 'AI: Generate Image', 'AI: Edit Image', 'AI: Summarize', 'AI: Transcribe Audio']) {
+    for (const name of ['Schedule', 'AI Agent', 'For Each', 'Respond to Webhook', 'Slack: Send Message', 'Email: Send Email', 'Email: List Emails', 'Google Sheets: Read Rows', 'Read CSV', 'Write CSV', 'S3: Upload File', 'FTP: Rename or Move', 'AI: Generate Image', 'AI: Edit Image', 'AI: Summarize', 'AI: Transcribe Audio', 'SQL: Run Query', 'SQL: Insert Rows', 'MongoDB: Find Documents', 'Redis: Set Value', 'Elasticsearch: Search', 'DynamoDB: Get Item', 'Cassandra: Run Query', 'Neo4j: Run Query']) {
       test(`adds ${name} from the context menu and saves it`, async ({ page }) => {
         await addNodeViaContextMenu(page, name);
 
@@ -569,6 +569,42 @@ test.describe('Flow Editor', () => {
       await expect(action).toBeVisible({ timeout: 5000 });
       await expect(action.locator('.logo-slack')).toBeVisible();
       await expect(group.locator('[data-node-name="Slack: Add Reaction"]')).toBeVisible();
+    });
+
+    test('groups the databases in one category, by store', async ({ page }) => {
+      const category = page.locator('#node-category-database');
+
+      await category.getByRole('button', { name: 'Database', exact: true }).click();
+
+      for (const store of ['SQL', 'MongoDB', 'Redis', 'Elasticsearch', 'DynamoDB', 'Cassandra', 'Neo4j']) {
+        await expect(category.locator(`[id="node-group-${store}"]`)).toBeVisible({ timeout: 5000 });
+      }
+
+      await expect(category.locator('[data-node-name="MongoDB: Find Documents"] .logo-mongodb')).toBeVisible();
+    });
+
+    test('finds the SQL nodes by the name of a database', async ({ page }) => {
+      await page.getByPlaceholder('Search nodes').fill('postgresql');
+
+      await expect(page.locator('[data-node-name="SQL: Run Query"]')).toBeVisible({ timeout: 5000 });
+    });
+
+    test('writes a query in a box that takes several lines, and keeps it', async ({ page }) => {
+      await addNodeViaContextMenu(page, 'SQL: Run Query');
+
+      const node = page.locator('custom-node').first();
+      await node.hover();
+      await node.locator('.node-action-btn.config').click();
+
+      const query = page.locator('textarea[name="sql"]');
+      await expect(query).toBeVisible({ timeout: 5000 });
+      await query.fill('SELECT *\nFROM items\nWHERE id = {{id}}');
+      await page.locator('#node-config-form').getByRole('button', { name: 'Save' }).click();
+      await expect(query).toBeHidden({ timeout: 5000 });
+
+      await node.hover();
+      await node.locator('.node-action-btn.config').click();
+      await expect(page.locator('textarea[name="sql"]')).toHaveValue('SELECT *\nFROM items\nWHERE id = {{id}}', { timeout: 5000 });
     });
 
     test('clears the recent nodes', async ({ page }) => {

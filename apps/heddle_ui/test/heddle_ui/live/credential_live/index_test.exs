@@ -102,4 +102,32 @@ defmodule HeddleUI.CredentialLive.IndexTest do
     refute has_element?(lv, "#credentials-#{credential.id}")
     assert has_element?(lv, "#credentials-empty")
   end
+
+  describe "a database credential" do
+    test "picks its engine and never shows the password again", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/credentials")
+
+      lv
+      |> form("#credential-form", %{"credential" => %{"kind" => "sql"}})
+      |> render_change()
+
+      assert has_element?(lv, "#credential-value-engine option[value=oracle]")
+      assert has_element?(lv, "#credential-value-ssl")
+
+      lv
+      |> form("#credential-form", %{
+        "credential" => %{
+          "name" => "shop",
+          "kind" => "sql",
+          "values" => %{"engine" => "mysql", "database" => "shop", "password" => "s3cret"}
+        }
+      })
+      |> render_submit()
+
+      assert {:ok, %{"engine" => "mysql", "password" => "s3cret"}} =
+               Credentials.fetch("shop", "sql")
+
+      refute render(lv) =~ "s3cret"
+    end
+  end
 end

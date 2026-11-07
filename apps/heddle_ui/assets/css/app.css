@@ -176,7 +176,13 @@
 /* Logos of the services nodes reach. They work like the hero-* icon classes. */
 .logo-slack,
 .logo-google-sheets,
-.logo-s3 {
+.logo-s3,
+.logo-mongodb,
+.logo-redis,
+.logo-elasticsearch,
+.logo-dynamodb,
+.logo-cassandra,
+.logo-neo4j {
   display: inline-block;
   background-position: center;
   background-repeat: no-repeat;
@@ -193,4 +199,28 @@
 
 .logo-s3 {
   background-image: url("/images/services/s3.svg");
+}
+
+.logo-mongodb {
+  background-image: url("/images/services/mongodb.svg");
+}
+
+.logo-redis {
+  background-image: url("/images/services/redis.svg");
+}
+
+.logo-elasticsearch {
+  background-image: url("/images/services/elasticsearch.svg");
+}
+
+.logo-dynamodb {
+  background-image: url("/images/services/dynamodb.svg");
+}
+
+.logo-cassandra {
+  background-image: url("/images/services/cassandra.svg");
+}
+
+.logo-neo4j {
+  background-image: url("/images/services/neo4j.svg");
 }
