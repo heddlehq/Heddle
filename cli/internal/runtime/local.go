@@ -44,6 +44,9 @@ type state struct {
 	PID       int       `json:"pid"`
 	URL       string    `json:"url,omitempty"`
 	StartedAt time.Time `json:"started_at"`
+	// Stopping marks a stop someone asked for. The way the VM exits can't say: Windows
+	// kills it with status 1, the same as a crash.
+	Stopping bool `json:"stopping,omitempty"`
 }
 
 func (l *Local) readState() (state, bool) {
@@ -255,10 +258,11 @@ func (l *Local) Run(ctx context.Context, options StartOptions, ready func(string
 		case err := <-exited:
 			cancelBoot()
 			watch <- err
+			asked := l.stopAsked()
 			l.clearState()
 			// A VM stopped by a signal, here or by `heddle stop`, stopped on purpose.
 			var exit *exec.ExitError
-			if err == nil || stopping || (errors.As(err, &exit) && !exit.Exited()) {
+			if err == nil || stopping || asked || (errors.As(err, &exit) && !exit.Exited()) {
 				return nil
 			}
 			return fmt.Errorf("%s: %w\n\n%s", text.T("Heddle stopped", "O Heddle parou"), err, l.tail(offset, 15))
@@ -308,6 +312,13 @@ func (l *Local) awaitReady(ctx context.Context, offset int64, exited <-chan erro
 
 func (l *Local) clearState() { _ = os.Remove(l.Layout.State()) }
 
+// stopAsked says whether `heddle stop` is behind the end of a run. A state already
+// gone counts: only Stop removes it while the VM is up.
+func (l *Local) stopAsked() bool {
+	current, ok := l.readState()
+	return !ok || current.Stopping
+}
+
 func (l *Local) tail(offset int64, count int) string {
 	follower, err := newFollower(l.Layout.Log(), offset)
 	if err != nil {
@@ -334,6 +345,11 @@ func (l *Local) Stop(ctx context.Context) error {
 	}
 
 	if vm {
+		// Before the signal, so a foreground `heddle` sees it when the VM goes.
+		current.Stopping = true
+		if err := l.writeState(current); err != nil {
+			return err
+		}
 		terminate(current.PID, l.Layout)
 
 		deadline := time.After(stopTimeout)

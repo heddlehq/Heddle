@@ -40,6 +40,29 @@ func TestStaleStateIsNotARunningHeddle(t *testing.T) {
 	}
 }
 
+func TestAStopIsToldApartFromACrash(t *testing.T) {
+	local := &Local{Layout: paths.Layout{Home: t.TempDir()}}
+
+	if err := local.writeState(state{PID: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if local.stopAsked() {
+		t.Fatal("a VM that died by itself crashed")
+	}
+
+	if err := local.writeState(state{PID: 1, Stopping: true}); err != nil {
+		t.Fatal(err)
+	}
+	if !local.stopAsked() {
+		t.Fatal("heddle stop asked for this")
+	}
+
+	local.clearState()
+	if !local.stopAsked() {
+		t.Fatal("only Stop removes the state while the VM is up")
+	}
+}
+
 func TestFollowerOnlyReturnsWholeLines(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "log")
 	if err := os.WriteFile(path, []byte("one\ntw"), 0o644); err != nil {
