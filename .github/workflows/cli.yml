@@ -1,0 +1,41 @@
+name: CLI
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["cli/**", ".github/workflows/cli.yml"]
+  pull_request:
+    paths: ["cli/**", ".github/workflows/cli.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-15]
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: cli/go.mod
+          cache-dependency-path: cli/go.sum
+
+      - name: Formatting
+        run: test -z "$(gofmt -l .)"
+
+      - run: go vet ./...
+      - run: go test ./...
+
+      # The tests lean on Unix file modes. The Windows build runs for real in the
+      # smoke test of the release workflow.
+      - name: Windows still builds
+        run: GOOS=windows GOARCH=amd64 go vet ./...
