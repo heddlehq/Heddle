@@ -18,7 +18,7 @@ defmodule HeddleUI.PublicAPI.V1.NodeControllerTest do
              } = json_response(conn, 200)
 
       assert Enum.any?(nodes, &(&1["type"] == "Start"))
-      assert Enum.any?(nodes, &(&1["rete"]["id"] == "Start"))
+      assert Enum.any?(nodes, &(&1["type"] == "Start"))
     end
 
     test "paginates node definitions", %{conn: conn} do
@@ -59,8 +59,7 @@ defmodule HeddleUI.PublicAPI.V1.NodeControllerTest do
       assert %{
                "data" => %{
                  "type" => "Evaluate Code",
-                 "title" => "Evaluate Code",
-                 "rete" => %{"id" => "Evaluate Code"}
+                 "title" => "Evaluate Code"
                }
              } = json_response(conn, 200)
     end

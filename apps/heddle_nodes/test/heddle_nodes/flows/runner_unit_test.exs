@@ -27,7 +27,28 @@ defmodule HeddleNodes.RunnerUnitTest do
           node("1", "Variable", %{"var_name" => "x", "var_value" => "1", "var_type" => "String"})
         ])
 
-      assert {:error, "No Start node found", nil} = Runner.run(f)
+      assert {:error, "No Start node found", nil, _context} = Runner.run(f)
+    end
+
+    test "starts from an entry node when the flow has no Start" do
+      for type <- ["Webhook", "Schedule"] do
+        f = flow([node("v", "Variable"), node("entry", type)])
+
+        assert {:ok, %{"logs" => [%{"node_id" => "entry"}]}} = Runner.run(f)
+      end
+    end
+
+    test "prefers the Start node over any other entry node" do
+      f = flow([node("hook", "Webhook"), node("start", "Start")])
+
+      assert {:ok, %{"logs" => [%{"node_id" => "start"}]}} = Runner.run(f)
+    end
+
+    test "never takes a node for the Start because of its label" do
+      fake = Map.put(node("fake", "Variable"), "label", "Start")
+
+      assert {:ok, %{"logs" => [%{"node_id" => "real"}]}} =
+               Runner.run(flow([fake, node("real", "Start")]))
     end
 
     test "succeeds with a flow containing only a Start node" do
@@ -50,6 +71,36 @@ defmodule HeddleNodes.RunnerUnitTest do
 
       assert {:ok, context} = Runner.run(f, %{payload: "hello"})
       assert context["payload"] == "hello"
+    end
+  end
+
+  describe "run/2 — connections" do
+    defp set_x(id, value) do
+      node(id, "Variable", %{"var_name" => "x", "var_value" => value, "var_type" => "String"})
+    end
+
+    test "runs the connections of an output in the order they are listed" do
+      nodes = [node("s", "Start"), set_x("a", "A"), set_x("b", "B")]
+      a_then_b = [connection("s", "exec", "a"), connection("s", "exec", "b")]
+
+      assert {:ok, %{"variables" => %{"x" => "B"}}} = Runner.run(flow(nodes, a_then_b))
+
+      assert {:ok, %{"variables" => %{"x" => "A"}}} =
+               Runner.run(flow(nodes, Enum.reverse(a_then_b)))
+    end
+
+    test "follows a connection whose ids are of another type than the node's" do
+      nodes = [node(1, "Start"), set_x(2, "A")]
+
+      assert {:ok, %{"variables" => %{"x" => "A"}}} =
+               Runner.run(flow(nodes, [connection("1", "exec", "2")]))
+    end
+
+    test "doesn't need a position or a target input" do
+      nodes = [node("s", "Start") |> Map.delete("position"), set_x("a", "A")]
+      link = %{"source" => "s", "sourceOutput" => "exec", "target" => "a"}
+
+      assert {:ok, %{"variables" => %{"x" => "A"}}} = Runner.run(flow(nodes, [link]))
     end
   end
 
@@ -105,7 +156,7 @@ defmodule HeddleNodes.RunnerUnitTest do
           [connection("1", "exec", "2")]
         )
 
-      assert {:error, _reason, "2"} = Runner.run(f)
+      assert {:error, _reason, "2", _context} = Runner.run(f)
     end
 
     test "removes node control keys from context after execution" do
@@ -209,7 +260,7 @@ defmodule HeddleNodes.RunnerUnitTest do
           [connection("1", "exec", "2")]
         )
 
-      assert {:error, _reason, _id} = Runner.run(f)
+      assert {:error, _reason, _id, _context} = Runner.run(f)
     end
 
     test "connection with missing target node is skipped gracefully" do
@@ -287,7 +338,7 @@ defmodule HeddleNodes.RunnerUnitTest do
           [connection("1", "exec", "2")]
         )
 
-      assert {:error, _reason, "2"} = Runner.run(f)
+      assert {:error, _reason, "2", _context} = Runner.run(f)
     end
   end
 
@@ -295,7 +346,7 @@ defmodule HeddleNodes.RunnerUnitTest do
     test "returns error when flow has no Webhook node" do
       f = flow([node("1", "Start")])
 
-      assert {:error, "No Webhook node found in flow", nil} =
+      assert {:error, "No Webhook node found in flow", nil, _context} =
                Runner.run_from_webhook(f, %{})
     end
 

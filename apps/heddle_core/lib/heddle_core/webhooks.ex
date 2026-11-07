@@ -9,16 +9,13 @@ defmodule HeddleCore.Webhooks do
   """
 
   import Ecto.Query
+  alias Heddle.Graph
   alias HeddleCore.Repo
   alias HeddleCore.Flows.{Flow, Webhook}
   alias HeddleCore.Webhooks.Registry
 
   def register_flow(%Flow{} = flow) do
-    webhook_nodes =
-      (flow.nodes || [])
-      |> Enum.filter(fn node ->
-        (node["type"] || node["label"]) == "Webhook"
-      end)
+    webhook_nodes = flow |> Graph.new() |> Graph.of_type("Webhook")
 
     if webhook_nodes == [] do
       unregister_flow(flow)
@@ -32,9 +29,8 @@ defmodule HeddleCore.Webhooks do
       end)
 
       Enum.each(webhook_nodes, fn node ->
-        controls = node["controls"] || %{}
-        method = controls["method"] || "POST"
-        path = controls["path"] || "/webhook"
+        method = node.controls["method"] || "POST"
+        path = node.controls["path"] || "/webhook"
         slug = normalize_path(path)
 
         %Webhook{flow_id: flow.id}

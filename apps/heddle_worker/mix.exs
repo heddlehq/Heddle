@@ -32,6 +32,7 @@ defmodule HeddleWorker.MixProject do
 
   defp deps do
     [
+      {:heddle, in_umbrella: true},
       {:heddle_core, in_umbrella: true},
       {:heddle_nodes, in_umbrella: true},
       {:heddle_runtime, in_umbrella: true},

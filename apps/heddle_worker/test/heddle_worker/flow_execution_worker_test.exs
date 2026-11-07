@@ -68,6 +68,50 @@ defmodule HeddleWorker.FlowExecutionWorkerTest do
       assert execution_id == execution.id
     end
 
+    test "keeps the steps and the context of a run that failed" do
+      flow =
+        flow_fixture(%{
+          nodes: [
+            %{
+              "id" => "start",
+              "type" => "Start",
+              "label" => "Start",
+              "controls" => %{},
+              "position" => %{"x" => 0, "y" => 0}
+            },
+            %{
+              "id" => "boom",
+              "type" => "Evaluate Code",
+              "label" => "Boom",
+              "controls" => %{"language" => "elixir", "code_elixir" => "1 + nil"},
+              "position" => %{"x" => 1, "y" => 0}
+            }
+          ],
+          connections: [
+            %{
+              "source" => "start",
+              "sourceOutput" => "exec",
+              "target" => "boom",
+              "targetInput" => "exec"
+            }
+          ]
+        })
+
+      execution = execution_fixture(%{flow: flow, input: %{"amount" => 3}})
+
+      assert :ok = perform_execution(execution)
+
+      persisted = Executions.get_execution!(execution.id)
+
+      assert persisted.status == "failed"
+      assert persisted.error["node_id"] == "boom"
+
+      assert [%{"node_id" => "start"}, %{"node_id" => "boom", "status" => "error"}] =
+               persisted.logs
+
+      assert persisted.result["amount"] == 3
+    end
+
     test "runs a webhook execution and persists request context" do
       flow =
         flow_fixture(%{

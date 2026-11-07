@@ -71,7 +71,7 @@ defmodule HeddleUI.Plugs.WebhookPlug do
   end
 
   defp responds?(flow) do
-    Enum.any?(flow.nodes || [], &(&1["type"] == "Respond to Webhook"))
+    flow |> Heddle.Graph.new() |> Heddle.Graph.of_type("Respond to Webhook") != []
   end
 
   defp respond_from_flow(conn, execution) do

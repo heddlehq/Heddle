@@ -51,8 +51,7 @@ defmodule HeddleUI.PublicAPI.V1.NodeController do
       show: Map.get(definition, :show, true),
       inputs: definition |> Map.get(:inputs, []) |> normalize_value(),
       outputs: definition |> Map.get(:outputs, []) |> normalize_value(),
-      ui_fields: definition |> Map.get(:ui_fields, []) |> normalize_value(),
-      rete: module |> Bobbin.Node.to_rete() |> normalize_value()
+      ui_fields: definition |> Map.get(:ui_fields, []) |> normalize_value()
     }
   end
 
