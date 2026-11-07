@@ -894,6 +894,7 @@ msgstr ""
 
 #: lib/heddle_ui/components/modals/node_config_modal.ex:171
 #: lib/heddle_ui/live/ai_live/defaults.ex:87
+#: lib/heddle_ui/live/ai_live/index.ex:236
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr ""
@@ -919,7 +920,7 @@ msgstr ""
 msgid "Started"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:69
+#: lib/heddle_ui/live/ai_live/index.ex:119
 #: lib/heddle_ui/live/api_key_live/index.ex:80
 #, elixir-autogen, elixir-format
 msgid "System admins only"
@@ -1040,89 +1041,91 @@ msgstr ""
 msgid "No LLM provider is configured."
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:257
+#: lib/heddle_ui/live/ai_live/index.ex:343
 #, elixir-autogen, elixir-format
 msgid "Active"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:258
+#: lib/heddle_ui/live/ai_live/index.ex:344
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Incomplete"
 msgstr ""
 
 #: lib/heddle_ui/live/ai_live/defaults.ex:127
-#: lib/heddle_ui/live/ai_live/index.ex:99
+#: lib/heddle_ui/live/ai_live/index.ex:149
 #, elixir-autogen, elixir-format
 msgid "Model"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:259
+#: lib/heddle_ui/live/ai_live/index.ex:345
 #, elixir-autogen, elixir-format
 msgid "Not configured"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:93
+#: lib/heddle_ui/live/ai_live/index.ex:143
 #, elixir-autogen, elixir-format
 msgid "Provider"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:110
+#: lib/heddle_ui/live/ai_live/index.ex:160
 #, elixir-autogen, elixir-format
 msgid "Read from OPENAI_API_KEY. Set the HEDDLE_LLM_* variables to change provider."
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:114
+#: lib/heddle_ui/live/ai_live/index.ex:164
 #, elixir-autogen, elixir-format
 msgid "The provider comes from the environment. Set these variables and restart:"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:73
+#: lib/heddle_ui/live/ai_live/index.ex:123
 #, elixir-autogen, elixir-format
 msgid "What this instance uses to run the AI features."
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:205
+#: lib/heddle_ui/live/ai_live/index.ex:291
 #, elixir-autogen, elixir-format
 msgid "Connect an external agent to read, edit and run your flows."
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:212
+#: lib/heddle_ui/live/ai_live/index.ex:298
 #, elixir-autogen, elixir-format
 msgid "External agents run flows without asking for confirmation: only the scopes of the API key limit them."
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:202
+#: lib/heddle_ui/live/ai_live/index.ex:288
 #, elixir-autogen, elixir-format
 msgid "MCP server"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:220
+#: lib/heddle_ui/live/ai_live/index.ex:306
 #, elixir-autogen, elixir-format
 msgid "Manage API keys"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:181
+#: lib/heddle_ui/live/ai_live/index.ex:214
 #, elixir-autogen, elixir-format, fuzzy
 msgid "API key"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:168
+#: lib/heddle_ui/live/ai_live/index.ex:201
 #, elixir-autogen, elixir-format
 msgid "Binary"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:134
+#: lib/heddle_ui/live/ai_live/index.ex:184
 #, elixir-autogen, elixir-format
 msgid "Claude Agent"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:137
+#: lib/heddle_ui/live/ai_live/index.ex:187
 #, elixir-autogen, elixir-format
 msgid "Copilot in the editor chat. It can read, edit and run your flows."
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:42
-#: lib/heddle_ui/live/ai_live/index.ex:57
+#: lib/heddle_ui/live/ai_live/index.ex:55
+#: lib/heddle_ui/live/ai_live/index.ex:77
+#: lib/heddle_ui/live/ai_live/index.ex:92
+#: lib/heddle_ui/live/ai_live/index.ex:107
 #, elixir-autogen, elixir-format
 msgid "Could not save this setting."
 msgstr ""
@@ -1132,27 +1135,22 @@ msgstr ""
 msgid "Don't run"
 msgstr ""
 
-#: lib/heddle_ui/live/flow_live/editor.ex:271
+#: lib/heddle_ui/live/flow_live/editor.ex:276
 #, elixir-autogen, elixir-format
 msgid "Failed to save graph data."
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:171
+#: lib/heddle_ui/live/ai_live/index.ex:204
 #, elixir-autogen, elixir-format
 msgid "Found"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:274
-#, elixir-autogen, elixir-format
-msgid "Install claude on this server, or point HEDDLE_CLAUDE_BIN to it."
-msgstr ""
-
-#: lib/heddle_ui/live/ai_live/index.ex:176
+#: lib/heddle_ui/live/ai_live/index.ex:209
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Not found"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:183
+#: lib/heddle_ui/live/ai_live/index.ex:216
 #, elixir-autogen, elixir-format
 msgid "Not set"
 msgstr ""
@@ -1162,17 +1160,17 @@ msgstr ""
 msgid "Run \"%{flow}\"?"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:183
+#: lib/heddle_ui/live/ai_live/index.ex:216
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Set"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:278
+#: lib/heddle_ui/live/ai_live/index.ex:370
 #, elixir-autogen, elixir-format
 msgid "Set HEDDLE_CLAUDE_API_KEY. Claude subscriptions can't be used here."
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:54
+#: lib/heddle_ui/live/ai_live/index.ex:104
 #, elixir-autogen, elixir-format
 msgid "The Claude Agent is not available."
 msgstr ""
@@ -1182,7 +1180,7 @@ msgstr ""
 msgid "The agent wants to run this flow, which can have real side effects."
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:145
+#: lib/heddle_ui/live/ai_live/index.ex:194
 #, elixir-autogen, elixir-format
 msgid "Use in the editor chat"
 msgstr ""
@@ -1302,8 +1300,8 @@ msgid "%{provider} can't do this here. Use a credential from another provider."
 msgstr ""
 
 #: lib/heddle_ui/components/layouts.ex:92
-#: lib/heddle_ui/live/ai_live/index.ex:18
-#: lib/heddle_ui/live/ai_live/index.ex:67
+#: lib/heddle_ui/live/ai_live/index.ex:17
+#: lib/heddle_ui/live/ai_live/index.ex:117
 #, elixir-autogen, elixir-format
 msgid "AI"
 msgstr ""
@@ -1318,7 +1316,8 @@ msgstr ""
 msgid "AI settings"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:39
+#: lib/heddle_ui/live/ai_live/index.ex:52
+#: lib/heddle_ui/live/ai_live/index.ex:68
 #, elixir-autogen, elixir-format
 msgid "AI settings saved."
 msgstr ""
@@ -1369,7 +1368,7 @@ msgstr ""
 msgid "Generate Image and Edit Image"
 msgstr ""
 
-#: lib/heddle_ui/live/ai_live/index.ex:85
+#: lib/heddle_ui/live/ai_live/index.ex:135
 #, elixir-autogen, elixir-format
 msgid "LLM from the environment"
 msgstr ""
@@ -1597,7 +1596,7 @@ msgid "Testing the flow"
 msgstr ""
 
 #: lib/heddle_ui/components/modals/webhook_test_modal.ex:94
-#: lib/heddle_ui/live/flow_live/editor.ex:315
+#: lib/heddle_ui/live/flow_live/editor.ex:320
 #, elixir-autogen, elixir-format
 msgid "The body isn't valid JSON."
 msgstr ""
@@ -1660,4 +1659,71 @@ msgstr ""
 #: lib/heddle_ui/components/modals/webhook_test_modal.ex:92
 #, elixir-autogen, elixir-format
 msgid "Value"
+msgstr ""
+
+#: lib/heddle_ui/components/flow/terminal_panel.ex:52
+#, elixir-autogen, elixir-format
+msgid "Hide"
+msgstr ""
+
+#: lib/heddle_ui/components/flow/terminal_panel.ex:37
+#, elixir-autogen, elixir-format
+msgid "Runs Claude Code on this machine. Sign in with your own account."
+msgstr ""
+
+#: lib/heddle_ui/components/flow/terminal_panel.ex:46
+#, elixir-autogen, elixir-format
+msgid "Start again"
+msgstr ""
+
+#: lib/heddle_ui/components/flow/terminal_panel.ex:20
+#: lib/heddle_ui/components/flow/terminal_panel.ex:35
+#: lib/heddle_ui/live/ai_live/index.ex:256
+#, elixir-autogen, elixir-format
+msgid "Terminal"
+msgstr ""
+
+#: lib/heddle_ui/live/ai_live/index.ex:232
+#, elixir-autogen, elixir-format
+msgid "Found automatically when empty"
+msgstr ""
+
+#: lib/heddle_ui/live/ai_live/index.ex:360
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Install claude on this server, or set its path above."
+msgstr ""
+
+#: lib/heddle_ui/live/ai_live/index.ex:277
+#, elixir-autogen, elixir-format
+msgid "It needs Heddle installed on your own machine, with the claude program. It can run commands there, so it isn't offered on a shared server."
+msgstr ""
+
+#: lib/heddle_ui/live/ai_live/index.ex:231
+#, elixir-autogen, elixir-format
+msgid "Path of the claude program"
+msgstr ""
+
+#: lib/heddle_ui/live/ai_live/index.ex:259
+#, elixir-autogen, elixir-format
+msgid "Runs Claude Code in the flow editor, connected to your flows. It works with your Claude subscription, and you sign in inside it."
+msgstr ""
+
+#: lib/heddle_ui/live/ai_live/index.ex:364
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Set HEDDLE_CLAUDE_API_KEY. To use a Claude subscription, turn on the Terminal below."
+msgstr ""
+
+#: lib/heddle_ui/live/ai_live/index.ex:268
+#, elixir-autogen, elixir-format
+msgid "Show the Terminal in the editor"
+msgstr ""
+
+#: lib/heddle_ui/live/ai_live/index.ex:86
+#, elixir-autogen, elixir-format
+msgid "The Terminal is not available here."
+msgstr ""
+
+#: lib/heddle_ui/live/ai_live/index.ex:74
+#, elixir-autogen, elixir-format
+msgid "There is no program at this path."
 msgstr ""

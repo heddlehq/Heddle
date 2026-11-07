@@ -56,6 +56,15 @@ defmodule HeddleUI.MixProject do
       {:bandit, "~> 1.5"},
       {:oban, "~> 2.0"},
       {:earmark, "~> 1.4"}
-    ]
+    ] ++ terminal_deps()
+  end
+
+  # Gives the terminal a real pty. It has no Windows build, and it only starts when a
+  # terminal opens: at boot it refuses to run as root, which is how Docker runs.
+  defp terminal_deps do
+    case :os.type() do
+      {:unix, _name} -> [{:erlexec, "~> 2.0", runtime: false}]
+      _other -> []
+    end
   end
 end

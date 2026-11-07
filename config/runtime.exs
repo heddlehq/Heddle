@@ -16,6 +16,7 @@ if local_install? do
   System.put_env(HeddleLocal.boot())
 
   config :heddle_local, enabled: true
+  config :heddle_ui, terminal: true
   config :heddle_core, migrate_on_boot: true
 end
 

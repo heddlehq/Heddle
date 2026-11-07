@@ -80,6 +80,24 @@ test.describe('Flow written outside the canvas', () => {
     await expect(page.locator('custom-node')).toHaveCount(3, { timeout: 5000 });
   });
 
+  test('has nothing to save when it is just opened', async ({ page }) => {
+    await page.reload();
+    await waitForLiveView(page);
+    await expect(page.locator('custom-node')).toHaveCount(3, { timeout: 5000 });
+
+    await expect(page.getByText('You have unsaved changes')).toHaveCount(0);
+  });
+
+  test('has something to save once a node moves', async ({ page }) => {
+    await page.reload();
+    await waitForLiveView(page);
+    await expect(page.locator('custom-node')).toHaveCount(3, { timeout: 5000 });
+
+    await dragNode(page, page.locator('custom-node .circular-node').first());
+
+    await expect(page.getByText('You have unsaved changes')).toBeVisible({ timeout: 3000 });
+  });
+
   test('gets its nodes placed apart from each other', async ({ page }) => {
     const boxes = await Promise.all(
       (await page.locator('custom-node').all()).map((node) => node.boundingBox()),
@@ -205,6 +223,53 @@ test.describe('Testing a webhook', () => {
 
     await expect(page.locator('#webhook-test-form')).toHaveCount(0);
     await expect(page.getByText('Execution queued')).toBeVisible({ timeout: 5000 });
+  });
+});
+
+// Only on a local install, with the claude program in the PATH of the server. The setting
+// is global, so these run in order.
+test.describe('Terminal', () => {
+  test.describe.configure({ mode: 'serial', timeout: 60000 });
+
+  const setTerminal = async (page, enabled) => {
+    await page.goto('/ai');
+    await waitForLiveView(page);
+
+    const toggle = page.locator('#terminal-toggle');
+    test.skip(await toggle.isDisabled(), 'This server has no terminal');
+
+    if ((await toggle.getAttribute('aria-checked')) !== String(enabled)) await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-checked', String(enabled), { timeout: 5000 });
+  };
+
+  test('only shows in the editor when turned on', async ({ page }) => {
+    await setTerminal(page, false);
+    await openNewFlow(page);
+
+    await expect(page.locator('#terminal-open-button')).toHaveCount(0);
+  });
+
+  test('opens and keeps running while hidden', async ({ page }) => {
+    await setTerminal(page, true);
+    await openNewFlow(page);
+
+    await page.locator('#terminal-open-button').click();
+    await expect(page.locator('#terminal-screen .xterm')).toBeVisible({ timeout: 10000 });
+
+    // It takes the place of the canvas, and leaves the sidebar alone.
+    const panel = await page.locator('#terminal-panel').boundingBox();
+    const sidebar = await page.locator('aside').first().boundingBox();
+    const canvas = await page.locator('#flow-canvas-container').boundingBox();
+    expect(panel.x).toBeGreaterThanOrEqual(sidebar.x + sidebar.width - 1);
+    expect(canvas.y + canvas.height).toBeLessThanOrEqual(panel.y + 1);
+
+    await page.getByTitle('Hide').click();
+    await expect(page.locator('#terminal-panel')).toBeHidden();
+
+    await page.locator('#terminal-open-button').click();
+    await expect(page.locator('#terminal-screen .xterm')).toBeVisible();
+
+    await setTerminal(page, false);
   });
 });
 

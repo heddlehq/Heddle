@@ -69,6 +69,9 @@ defmodule HeddleCore.Accounts do
   """
   def get_user!(id), do: Repo.get!(User, id)
 
+  @doc "Gets a single user, or nil."
+  def get_user(id), do: Repo.get(User, id)
+
   @doc """
   Lists all users, ordered by inserted_at descending.
   """

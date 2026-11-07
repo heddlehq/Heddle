@@ -6,6 +6,7 @@ defmodule HeddleUI.Components.ChatComponent do
   attr :waiting, :boolean, default: false
   attr :history_open, :boolean, default: false
   attr :history, :list, default: []
+  attr :terminal_open, :boolean, default: false
   attr :on_toggle, :string, default: "toggle_chat"
   attr :on_send, :string, default: "send_message"
   attr :node_config_open, :boolean, default: false
@@ -20,7 +21,10 @@ defmodule HeddleUI.Components.ChatComponent do
           phx-click={JS.push(@on_toggle) |> JS.focus(to: "#chat-input-field")}
           variant="primary"
           id="chat-open-button"
-          class="fixed bottom-6 right-6 z-[99] p-4 rounded-full shadow-lg group w-14 h-14"
+          class={[
+            "fixed right-6 z-[99] p-4 rounded-full shadow-lg group w-14 h-14 transition-[bottom]",
+            if(@terminal_open, do: "bottom-[calc(45vh+1.5rem)]", else: "bottom-6")
+          ]}
           title="AI Chat"
         >
           <.icon
