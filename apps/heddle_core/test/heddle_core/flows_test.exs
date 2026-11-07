@@ -26,6 +26,33 @@ defmodule HeddleCore.FlowsTest do
       assert Flows.get_flow!(flow.id).id == flow.id
     end
 
+    test "update_flow/2 keeps the comments of a save that doesn't send them" do
+      comment = %{
+        "id" => "note",
+        "kind" => "title",
+        "color" => "default",
+        "text" => "Billing",
+        "width" => 240,
+        "height" => 140,
+        "position" => %{"x" => 10, "y" => 20}
+      }
+
+      flow = flow_fixture()
+      assert flow.comments == []
+
+      assert {:ok, flow} = Flows.update_flow(flow, %{comments: [comment]})
+      assert {:ok, flow} = Flows.update_flow(flow, %{nodes: [], connections: []})
+
+      assert Flows.get_flow!(flow.id).comments == [comment]
+    end
+
+    test "update_flow/2 refuses an invalid comment" do
+      assert {:error, changeset} =
+               Flows.update_flow(flow_fixture(), %{comments: [%{"id" => "note"}]})
+
+      assert %{comments: ["contains an invalid comment"]} = errors_on(changeset)
+    end
+
     test "scoped queries only return owned flows" do
       user = user_fixture()
       owned_flow = flow_fixture(%{user: user})

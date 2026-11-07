@@ -79,6 +79,11 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   @impl true
+  def handle_event("clear_recent_nodes", _params, socket) do
+    {:noreply, NodePaletteManager.clear_recent_nodes(socket)}
+  end
+
+  @impl true
   def handle_event("show_drag_tooltip", %{"name" => name}, socket) do
     {:noreply,
      put_flash(socket, :info, "Drag and drop the '#{name}' node onto the canvas to add it.")}
@@ -461,6 +466,24 @@ defmodule HeddleUI.FlowLive.Editor do
     end
   end
 
+  attr :kind, :string, required: true
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+
+  defp canvas_tool(assigns) do
+    ~H"""
+    <button
+      id={"add-comment-#{@kind}"}
+      type="button"
+      data-comment-kind={@kind}
+      class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 hover:text-primary dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-primary"
+    >
+      <.icon name={@icon} class="size-4" />
+      {@label}
+    </button>
+    """
+  end
+
   # Private Helpers
   defp ask_llm(socket, content) do
     messages = socket.assigns.chat_messages ++ [{:user, content}, {:ai, ""}]
@@ -480,17 +503,21 @@ defmodule HeddleUI.FlowLive.Editor do
     push_event(socket, "load_graph_data", %{
       nodes: flow.nodes || [],
       connections: flow.connections || [],
+      comments: flow.comments,
       definitions: AIChat.node_definitions()
     })
   end
 
   # The editor hears its own saves too, and those must not reload the canvas.
   defp same_graph?(flow, current) do
-    flow.nodes == current.nodes and flow.connections == current.connections
+    flow.nodes == current.nodes and flow.connections == current.connections and
+      flow.comments == current.comments
   end
 
   # Keeps what is typed in the drawer, which redraws when a control changes.
   defp put_control_values(%{"controls" => controls} = node_data, params) do
+    params = forget_model(controls, params)
+
     controls =
       Map.new(controls, fn {key, control} ->
         {key, Map.put(control, "value", Map.get(params, key, control["value"]))}
@@ -501,6 +528,19 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   defp put_control_values(node_data, _params), do: node_data
+
+  # A model belongs to a provider, so it doesn't survive a change of credential.
+  defp forget_model(%{"model" => %{"type" => "model"}} = controls, params) do
+    credential = get_in(controls, ["credential", "value"])
+
+    if Map.get(params, "credential", credential) == credential do
+      params
+    else
+      Map.put(params, "model", "")
+    end
+  end
+
+  defp forget_model(_controls, params), do: params
 
   defp sync_node_sockets(socket, node_id, config_data) do
     Enum.reduce(config_data, socket, fn {_key, value}, acc_socket ->

@@ -15,6 +15,7 @@ defmodule HeddleUI.PublicAPI.V1.WorkflowJSON do
       name: workflow.name,
       nodes: workflow.nodes || [],
       connections: workflow.connections || [],
+      comments: workflow.comments,
       inserted_at: workflow.inserted_at,
       updated_at: workflow.updated_at
     }

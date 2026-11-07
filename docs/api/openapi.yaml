@@ -537,6 +537,11 @@ components:
               items:
                 $ref: "#/components/schemas/ReteConnection"
               default: []
+            comments:
+              type: array
+              description: Leave it out to keep the workflow's comments as they are.
+              items:
+                $ref: "#/components/schemas/Comment"
     WorkflowListResponse:
       type: object
       required:
@@ -576,12 +581,57 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReteConnection"
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
         inserted_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+    Comment:
+      type: object
+      additionalProperties: false
+      description: Text written on the canvas. It is not part of the graph and never runs.
+      required:
+        - id
+        - kind
+        - color
+        - text
+        - position
+        - width
+        - height
+      properties:
+        id:
+          oneOf:
+            - type: string
+            - type: integer
+        kind:
+          type: string
+          enum: [title, text, note, section]
+        color:
+          type: string
+          enum: [default, yellow, green, blue, red]
+        text:
+          type: string
+        position:
+          type: object
+          required:
+            - x
+            - y
+          properties:
+            x:
+              type: number
+            y:
+              type: number
+        width:
+          type: number
+          exclusiveMinimum: 0
+        height:
+          type: number
+          exclusiveMinimum: 0
     ReteNode:
       type: object
       additionalProperties: false

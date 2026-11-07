@@ -9,6 +9,7 @@ defmodule HeddleCore.Flows.Flow do
     field :name, :string
     field :nodes, {:array, :map}
     field :connections, {:array, :map}
+    field :comments, {:array, :map}, default: []
 
     belongs_to :user, User
     has_many :executions, HeddleCore.Executions.Execution
@@ -19,10 +20,11 @@ defmodule HeddleCore.Flows.Flow do
   @doc false
   def changeset(flow, attrs) do
     flow
-    |> cast(attrs, [:name, :nodes, :connections, :user_id])
+    |> cast(attrs, [:name, :nodes, :connections, :comments, :user_id])
     |> validate_required([:name, :user_id])
     |> assoc_constraint(:user)
     |> validate_graph()
+    |> validate_comments()
   end
 
   defp validate_graph(changeset) do
@@ -30,6 +32,13 @@ defmodule HeddleCore.Flows.Flow do
     connections = get_field(changeset, :connections) || []
 
     case GraphValidator.validate(nodes, connections) do
+      :ok -> changeset
+      {:error, field, message} -> add_error(changeset, field, message)
+    end
+  end
+
+  defp validate_comments(changeset) do
+    case GraphValidator.validate_comments(get_field(changeset, :comments)) do
       :ok -> changeset
       {:error, field, message} -> add_error(changeset, field, message)
     end
