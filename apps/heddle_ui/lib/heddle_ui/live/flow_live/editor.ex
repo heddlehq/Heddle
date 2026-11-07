@@ -5,9 +5,11 @@ defmodule HeddleUI.FlowLive.Editor do
 
   on_mount {HeddleUI.UserAuth, :require_system_admin}
 
+  alias Heddle.Graph
+  alias Heddle.Graph.Layout
   alias HeddleCore.{Executions, Flows}
   alias HeddleUI.AIChat
-  alias HeddleUI.AgentChat
+  alias HeddleUI.Agent
   alias HeddleUI.FlowLive.AgentManager
   alias HeddleUI.FlowLive.{CodeEditorManager, NodePaletteManager}
 
@@ -19,7 +21,7 @@ defmodule HeddleUI.FlowLive.Editor do
 
     if connected?(socket), do: Flows.subscribe_to_flow(flow.id)
 
-    {:ok, assign(socket, initial_assigns(flow)), layout: false}
+    {:ok, socket |> assign(initial_assigns(flow)) |> AgentManager.follow(), layout: false}
   end
 
   defp initial_assigns(flow) do
@@ -37,16 +39,20 @@ defmodule HeddleUI.FlowLive.Editor do
       execution_notice: nil,
       show_result_modal: false,
       inspecting_result: false,
+      # Testing a webhook
+      webhook_test_open: false,
+      webhook_test_form: webhook_test_form(%{"method" => "POST", "body" => "{\n  \n}"}),
+      webhook_test_error: nil,
+      webhook_test_fields: [],
+      webhook_test_input: nil,
       # Node error modal
       error_modal_open: false,
       current_error_message: nil,
       current_error_node_id: nil,
       # AI chat
       chat_open: false,
-      chat_messages: [],
       pending_ai_trigger: false,
-      chat_loading: false,
-      ai_configured: HeddleAI.LLM.configured?() or AgentChat.active?()
+      ai_configured: Agent.available?()
     ] ++
       AgentManager.initial_assigns() ++
       CodeEditorManager.initial_assigns() ++
@@ -274,25 +280,39 @@ defmodule HeddleUI.FlowLive.Editor do
 
   @impl true
   def handle_event("save_and_run", %{"data" => data}, socket) do
-    case Executions.save_and_run(socket.assigns.current_scope, socket.assigns.current_flow, data) do
-      {:ok, %{flow: updated_flow, execution: execution}} ->
+    if socket.assigns.webhook_test_input == nil and starts_at_webhook?(data) do
+      {:noreply,
+       assign(socket,
+         webhook_test_open: true,
+         webhook_test_error: nil,
+         webhook_test_fields:
+           Graph.body_fields(Graph.new(%{nodes: data["nodes"], connections: []}))
+       )}
+    else
+      {:noreply, save_and_run(socket, data)}
+    end
+  end
+
+  @impl true
+  def handle_event("close_webhook_test", _params, socket) do
+    {:noreply, assign(socket, webhook_test_open: false)}
+  end
+
+  @impl true
+  def handle_event("run_webhook_test", %{"webhook_test" => params}, socket) do
+    socket = assign(socket, webhook_test_form: webhook_test_form(params))
+
+    case decode_body(params["body"]) do
+      {:ok, body} ->
+        input = Executions.webhook_input(%{"method" => params["method"], "body" => body})
+
         {:noreply,
          socket
-         |> assign(
-           current_flow: updated_flow,
-           has_changes: false,
-           execution_result: nil,
-           execution_notice: execution_notice(:queued, execution),
-           show_result_modal: false,
-           inspecting_result: false
-         )
-         |> subscribe_to_execution(execution)
-         |> schedule_execution_notice_dismiss(execution.id)
-         |> put_flash(:info, "Flow saved and execution queued.")
-         |> push_event("clear_node_errors", %{})}
+         |> assign(webhook_test_open: false, webhook_test_input: input)
+         |> push_event("request_save_and_run", %{})}
 
-      {:error, stage, context} ->
-        {:noreply, handle_run_failure(socket, stage, context)}
+      :error ->
+        {:noreply, assign(socket, webhook_test_error: gettext("The body isn't valid JSON."))}
     end
   end
 
@@ -365,43 +385,35 @@ defmodule HeddleUI.FlowLive.Editor do
 
   @impl true
   def handle_event("send_message", %{"content" => content}, socket) do
-    cond do
-      content == "" ->
-        {:noreply, socket}
-
-      AgentChat.active?() ->
-        {:noreply, AgentManager.send_message(socket, content)}
-
-      true ->
-        {:noreply, ask_llm(socket, content)}
+    case String.trim(content) do
+      "" -> {:noreply, socket}
+      content -> {:noreply, AgentManager.send_message(socket, content)}
     end
   end
 
   @impl true
   def handle_event("agent_run_decision", %{"decision" => decision}, socket) do
-    {:noreply, AgentManager.decide(socket, decision == "approve")}
+    {:noreply, AgentManager.decide(socket, decision)}
   end
 
   @impl true
-  def handle_async(:ai_stream, {:ok, result}, socket) do
-    socket =
-      case List.last(socket.assigns.chat_messages) do
-        {:ai, content} -> apply_ai_flow(socket, content)
-        _ -> socket
-      end
-
-    {:noreply, socket |> AgentManager.finish(result) |> assign(chat_loading: false)}
+  def handle_event("agent_stop", _params, socket) do
+    {:noreply, AgentManager.stop(socket)}
   end
 
   @impl true
-  def handle_async(:ai_stream, {:exit, reason}, socket) do
-    Logger.warning("The AI stream stopped: #{inspect(reason)}")
+  def handle_event("agent_new_chat", _params, socket) do
+    {:noreply, AgentManager.new_conversation(socket)}
+  end
 
-    {:noreply,
-     socket
-     |> AgentManager.finish({:error, reason})
-     |> put_flash(:error, "AI Stream failed: #{inspect(reason)}")
-     |> assign(chat_loading: false)}
+  @impl true
+  def handle_event("agent_toggle_history", _params, socket) do
+    {:noreply, AgentManager.toggle_history(socket)}
+  end
+
+  @impl true
+  def handle_event("agent_open_conversation", %{"id" => id}, socket) do
+    {:noreply, AgentManager.open_conversation(socket, id)}
   end
 
   # Process Messages (info)
@@ -439,19 +451,8 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   @impl true
-  def handle_info({:chat_stream_chunk, chunk}, socket) do
-    {:noreply,
-     assign(socket, chat_messages: AIChat.append_chunk(socket.assigns.chat_messages, chunk))}
-  end
-
-  @impl true
-  def handle_info({:chat_stream_error, reason}, socket) do
-    {:noreply, put_flash(socket, :error, "AI Error: #{inspect(reason)}")}
-  end
-
-  @impl true
-  def handle_info({:agent_run_confirmation, confirmation}, socket) do
-    {:noreply, AgentManager.request_confirmation(socket, confirmation)}
+  def handle_info({:agent_event, event}, socket) do
+    {:noreply, AgentManager.apply_event(socket, event)}
   end
 
   @impl true
@@ -485,24 +486,10 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   # Private Helpers
-  defp ask_llm(socket, content) do
-    messages = socket.assigns.chat_messages ++ [{:user, content}, {:ai, ""}]
-    ai_messages = AIChat.to_api_messages(messages)
-    parent = self()
-    current_flow = socket.assigns.current_flow
-
-    socket
-    |> assign(chat_messages: messages, chat_loading: true)
-    |> start_async(:ai_stream, fn ->
-      {:ok, result} = HeddleAI.Agents.FlowCreator.chat(ai_messages, current_flow)
-      AIChat.consume_stream(result.stream, parent)
-    end)
-  end
-
   defp load_graph(socket, flow) do
     push_event(socket, "load_graph_data", %{
-      nodes: flow.nodes || [],
-      connections: flow.connections || [],
+      nodes: Layout.place(flow.nodes, flow.connections),
+      connections: Graph.normalize_connections(flow.connections),
       comments: flow.comments,
       definitions: AIChat.node_definitions()
     })
@@ -564,48 +551,6 @@ defmodule HeddleUI.FlowLive.Editor do
     end)
   end
 
-  defp apply_ai_flow(socket, content) do
-    case AIChat.extract_create_flow_json(content) do
-      {:ok, json} ->
-        case AIChat.prepare_flow(json) do
-          {:ok, flow} -> load_ai_flow(socket, flow)
-          {:error, reason} -> reject_ai_flow(socket, reason)
-        end
-
-      :error ->
-        # The chat tells the person. This keeps what the model sent, to learn why.
-        if AIChat.flow_json?(content) do
-          Logger.warning("The AI reply is not a flow: #{String.slice(content, 0, 2000)}")
-        end
-
-        socket
-    end
-  end
-
-  defp load_ai_flow(socket, flow) do
-    socket
-    |> push_event("load_graph_data", Map.put(flow, :definitions, AIChat.node_definitions()))
-    |> put_flash(:info, "Flow generated by AI applied successfully!")
-    |> assign(has_changes: true)
-    |> replace_ai_reply(gettext("Flow created successfully! You can see it on the canvas."))
-  end
-
-  defp reject_ai_flow(socket, reason) do
-    Logger.warning("The AI flow was refused: #{reason}")
-
-    replace_ai_reply(
-      socket,
-      gettext(
-        "I couldn't build this flow: it %{reason}. Tell me what to change and I'll try again.",
-        reason: reason
-      )
-    )
-  end
-
-  defp replace_ai_reply(socket, text) do
-    update(socket, :chat_messages, &List.replace_at(&1, -1, {:ai, text}))
-  end
-
   defp subscribe_to_execution(socket, execution) do
     if connected?(socket), do: Executions.subscribe_to_execution(execution)
     socket
@@ -625,6 +570,49 @@ defmodule HeddleUI.FlowLive.Editor do
       assign(socket, execution_notice: Map.put(notice, :dismiss_ref, dismiss_ref))
     else
       socket
+    end
+  end
+
+  defp save_and_run(socket, data) do
+    %{current_scope: scope, current_flow: flow, webhook_test_input: input} = socket.assigns
+    socket = assign(socket, webhook_test_input: nil)
+
+    case Executions.save_and_run(scope, flow, data, input || %{"trigger" => "manual"}) do
+      {:ok, %{flow: updated_flow, execution: execution}} ->
+        socket
+        |> assign(
+          current_flow: updated_flow,
+          has_changes: false,
+          execution_result: nil,
+          execution_notice: execution_notice(:queued, execution),
+          show_result_modal: false,
+          inspecting_result: false
+        )
+        |> subscribe_to_execution(execution)
+        |> schedule_execution_notice_dismiss(execution.id)
+        |> put_flash(:info, "Flow saved and execution queued.")
+        |> push_event("clear_node_errors", %{})
+
+      {:error, stage, context} ->
+        handle_run_failure(socket, stage, context)
+    end
+  end
+
+  # With a Start, a person can run the flow as it is. A Webhook needs a request.
+  defp starts_at_webhook?(%{"nodes" => nodes}) do
+    graph = Graph.new(%{nodes: nodes, connections: []})
+
+    Graph.of_type(graph, "Webhook") != [] and Graph.of_type(graph, "Start") == []
+  end
+
+  defp starts_at_webhook?(_data), do: false
+
+  defp webhook_test_form(params), do: to_form(params, as: :webhook_test)
+
+  defp decode_body(body) do
+    case String.trim(body || "") do
+      "" -> {:ok, %{}}
+      json -> with {:error, _reason} <- Jason.decode(json), do: :error
     end
   end
 

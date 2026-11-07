@@ -37,7 +37,7 @@ async function openNewFlow(page) {
     /\/flows\/.+/,
   );
   await waitForLiveView(page);
-  await expect(page.locator('#rete')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('#flow-canvas')).toBeVisible({ timeout: 5000 });
 
   return page.url().split('/').pop();
 }

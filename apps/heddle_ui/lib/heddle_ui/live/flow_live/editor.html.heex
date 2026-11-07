@@ -51,13 +51,13 @@
 
     <div
       class="flex-1 relative bg-gray-100 dark:bg-slate-900"
-      id="rete-container"
+      id="flow-canvas-container"
       phx-update="ignore"
     >
       <div
-        id="rete"
+        id="flow-canvas"
         class="absolute inset-0 w-full h-full"
-        phx-hook="Rete"
+        phx-hook="FlowCanvas"
       >
       </div>
       <div
@@ -94,6 +94,12 @@
     execution_result={@execution_result}
     inspecting_result={@inspecting_result}
   />
+  <HeddleUI.Components.Modals.WebhookTestModal.webhook_test_modal
+    open={@webhook_test_open}
+    form={@webhook_test_form}
+    error={@webhook_test_error}
+    fields={@webhook_test_fields}
+  />
   <HeddleUI.Components.Modals.CreateNodeModal.create_node_modal
     create_node_modal_open={@create_node_modal_open}
     available_nodes={@filtered_nodes}
@@ -105,9 +111,10 @@
     module={HeddleUI.Components.ChatComponent}
     id="chat-component"
     open={@chat_open}
-    messages={@chat_messages}
-    loading={@chat_loading}
-    confirmation={@agent_confirmation}
+    agent={@agent}
+    waiting={@pending_agent_message != nil}
+    history_open={@agent_history_open}
+    history={@agent_history}
     on_toggle="toggle_chat"
     on_send="send_message"
     node_config_open={@config_modal_open}

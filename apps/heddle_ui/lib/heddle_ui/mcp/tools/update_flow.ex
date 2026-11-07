@@ -1,8 +1,8 @@
 defmodule HeddleUI.MCP.Tools.UpdateFlow do
   @moduledoc """
   Replaces the name, nodes or connections of a flow. Read it with get_flow first and
-  send the complete list of nodes. Every node needs id, type, label, controls and
-  position: keep the position of the ones you didn't move.
+  send the complete list of nodes. Every node needs id, type and controls. Keep the
+  position of the ones that have one, and a node without it is placed automatically.
   """
 
   use Anubis.Server.Component, type: :tool, name: "update_flow"

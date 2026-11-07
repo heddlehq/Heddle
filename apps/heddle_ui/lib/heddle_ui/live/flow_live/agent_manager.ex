@@ -1,37 +1,74 @@
 defmodule HeddleUI.FlowLive.AgentManager do
   @moduledoc """
-  Socket reducers for the Claude Agent inside `FlowLive`.
+  Socket reducers for the agent inside `FlowLive`.
 
-  The agent reads the saved flow, so a message with unsaved changes on the canvas
-  waits for them to be saved first.
+  The conversation lives in `HeddleUI.Agent`: this only follows it. The agent reads the
+  saved flow, so a message with unsaved changes on the canvas waits for them first.
   """
-  import Phoenix.Component, only: [assign: 2]
-  import Phoenix.LiveView, only: [push_event: 3, start_async: 3]
+  import Phoenix.Component, only: [assign: 2, update: 3]
+  import Phoenix.LiveView, only: [connected?: 1, push_event: 3]
 
-  alias HeddleUI.AgentChat
-  alias HeddleUI.AIChat
+  alias HeddleUI.Agent
+  alias HeddleUI.Agent.Transcript
 
   @doc "Default agent-related assigns, merged into the LiveView mount."
   def initial_assigns do
     [
-      agent_session_id: nil,
-      agent_session_started: false,
-      agent_run: nil,
+      agent: Transcript.new(),
       pending_agent_message: nil,
-      agent_confirmation: nil
+      agent_history_open: false,
+      agent_history: []
     ]
   end
 
-  def send_message(socket, content) do
-    messages = socket.assigns.chat_messages ++ [{:user, content}, {:ai, ""}]
-    socket = assign(socket, chat_messages: messages, chat_loading: true)
+  @doc """
+  Opens the chat of this screen. It starts new, unless the agent is in the middle of
+  something: then this is the screen that shows it.
+  """
+  def follow(socket) do
+    if connected?(socket) do
+      scope = socket.assigns.current_scope
+      flow_id = socket.assigns.current_flow.id
 
+      _result = Agent.new_conversation(scope, flow_id)
+      assign(socket, agent: Agent.join(scope, flow_id))
+    else
+      socket
+    end
+  end
+
+  def new_conversation(socket) do
+    _result = Agent.new_conversation(socket.assigns.current_scope, socket.assigns.current_flow.id)
+    assign(socket, agent_history_open: false)
+  end
+
+  def toggle_history(socket) do
+    open? = not socket.assigns.agent_history_open
+
+    conversations =
+      if open? do
+        Agent.conversations(socket.assigns.current_scope, socket.assigns.current_flow.id)
+      else
+        []
+      end
+
+    assign(socket, agent_history_open: open?, agent_history: conversations)
+  end
+
+  def open_conversation(socket, id) do
+    %{current_scope: scope, current_flow: flow} = socket.assigns
+    _result = Agent.open_conversation(scope, flow.id, id)
+
+    assign(socket, agent_history_open: false)
+  end
+
+  def send_message(socket, content) do
     if socket.assigns.has_changes do
       socket
       |> assign(pending_agent_message: content)
       |> push_event("request_graph_data", %{})
     else
-      start(socket, content)
+      deliver(socket, content)
     end
   end
 
@@ -43,54 +80,30 @@ defmodule HeddleUI.FlowLive.AgentManager do
 
     socket
     |> assign(pending_agent_message: nil)
-    |> start(content)
+    |> deliver(content)
   end
 
   @doc "Drops a waiting message because the canvas could not be saved."
-  def abort_pending(%{assigns: %{pending_agent_message: nil}} = socket), do: socket
+  def abort_pending(socket), do: assign(socket, pending_agent_message: nil)
 
-  def abort_pending(socket) do
-    assign(socket, pending_agent_message: nil, chat_loading: false)
+  def apply_event(socket, event) do
+    update(socket, :agent, &Transcript.reduce(&1, event))
   end
 
-  @doc "Ends the current run, if the reply came from the agent."
-  def finish(%{assigns: %{agent_run: nil}} = socket, _result), do: socket
-
-  def finish(socket, result) do
-    AgentChat.close(socket.assigns.agent_run)
-
-    assign(socket,
-      agent_run: nil,
-      agent_confirmation: nil,
-      agent_session_started: socket.assigns.agent_session_started or is_binary(result)
-    )
+  def decide(socket, decision) do
+    _result = Agent.decide(socket.assigns.current_scope, socket.assigns.current_flow.id, decision)
+    socket
   end
 
-  def request_confirmation(socket, confirmation) do
-    assign(socket, agent_confirmation: confirmation)
+  def stop(socket) do
+    _result = Agent.stop(socket.assigns.current_scope, socket.assigns.current_flow.id)
+    socket
   end
 
-  def decide(%{assigns: %{agent_confirmation: nil}} = socket, _approved?), do: socket
-
-  def decide(socket, approved?) do
-    %{ref: ref, reply_to: reply_to} = socket.assigns.agent_confirmation
-    send(reply_to, {:agent_run_decision, ref, approved?})
-
-    assign(socket, agent_confirmation: nil)
-  end
-
-  defp start(socket, content) do
-    session_id = socket.assigns.agent_session_id || Ecto.UUID.generate()
-    session = %{id: session_id, started?: socket.assigns.agent_session_started}
-    run = AgentChat.open(socket.assigns.current_scope)
-    flow = socket.assigns.current_flow
-    parent = self()
+  defp deliver(socket, content) do
+    _result =
+      Agent.send_message(socket.assigns.current_scope, socket.assigns.current_flow.id, content)
 
     socket
-    |> assign(agent_session_id: session_id, agent_run: run)
-    |> start_async(:ai_stream, fn ->
-      {:ok, result} = AgentChat.stream(run, flow, content, session)
-      AIChat.consume_stream(result.stream, parent)
-    end)
   end
 end
