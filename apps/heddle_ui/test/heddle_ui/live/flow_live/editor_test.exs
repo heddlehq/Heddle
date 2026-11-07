@@ -129,6 +129,20 @@ defmodule HeddleUI.FlowLive.EditorTest do
       assert has_element?(lv, "#node-category-data_manipulation [data-node-name=Variable]")
     end
 
+    test "groups the database nodes by store", %{conn: conn} do
+      flow = flow_fixture()
+
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      refute has_element?(lv, "#node-category-database [data-node-name=\"SQL: Run Query\"]")
+
+      render_click(lv, "toggle_node_category", %{"category" => "database"})
+
+      assert has_element?(lv, "#node-category-database [data-node-name=\"SQL: Run Query\"]")
+      assert has_element?(lv, "#node-category-database [id=\"node-group-SQL\"]")
+      assert has_element?(lv, "#node-category-database [id=\"node-group-MongoDB\"]")
+    end
+
     test "groups HTTP Request under HTTP", %{conn: conn} do
       flow = flow_fixture()
 
@@ -139,14 +153,14 @@ defmodule HeddleUI.FlowLive.EditorTest do
       refute has_element?(lv, "#node-category-integration")
     end
 
-    test "renders the rete editor container", %{conn: conn} do
+    test "renders the canvas container", %{conn: conn} do
       flow = flow_fixture()
 
       {:ok, _lv, html} = live(conn, ~p"/flows/#{flow.id}")
 
-      assert html =~ ~s(id="rete-container")
-      assert html =~ ~s(id="rete")
-      assert html =~ ~s(phx-hook="Rete")
+      assert html =~ ~s(id="flow-canvas-container")
+      assert html =~ ~s(id="flow-canvas")
+      assert html =~ ~s(phx-hook="FlowCanvas")
     end
 
     test "renders header action buttons", %{conn: conn} do
@@ -912,6 +926,101 @@ defmodule HeddleUI.FlowLive.EditorTest do
         queue: :executions,
         args: %{execution_id: execution.id}
       )
+    end
+  end
+
+  describe "testing a webhook" do
+    setup %{conn: conn} do
+      user = system_admin_fixture()
+      Process.put(:heddle_owner, user)
+      flow = flow_fixture()
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/flows/#{flow.id}")
+
+      %{lv: lv, flow: flow}
+    end
+
+    defp entry_node(type) do
+      %{
+        "id" => "entry",
+        "type" => type,
+        "label" => type,
+        "controls" => %{},
+        "position" => %{"x" => 0, "y" => 0}
+      }
+    end
+
+    defp run_with(lv, type) do
+      data = %{"nodes" => [entry_node(type)], "connections" => []}
+      render_hook(lv, "save_and_run", %{"data" => data})
+    end
+
+    test "asks for the request instead of running with none", %{lv: lv, flow: flow} do
+      run_with(lv, "Webhook")
+
+      assert has_element?(lv, "#webhook-test-form")
+      assert HeddleCore.Executions.list_executions_for_flow(flow) == []
+    end
+
+    test "runs a flow with a Start right away", %{lv: lv, flow: flow} do
+      run_with(lv, "Start")
+
+      refute has_element?(lv, "#webhook-test-form")
+
+      assert [%{input: %{"trigger" => "manual"}}] =
+               HeddleCore.Executions.list_executions_for_flow(flow)
+    end
+
+    test "sends what was typed as the request", %{lv: lv, flow: flow} do
+      run_with(lv, "Webhook")
+
+      lv
+      |> form("#webhook-test-form")
+      |> render_submit(%{webhook_test: %{method: "PUT", body: ~s({"x": 2})}})
+
+      assert_push_event(lv, "request_save_and_run", %{})
+      refute has_element?(lv, "#webhook-test-form")
+
+      run_with(lv, "Webhook")
+
+      assert [%{input: input}] = HeddleCore.Executions.list_executions_for_flow(flow)
+
+      assert %{"trigger" => "webhook", "request" => %{"method" => "PUT", "body" => %{"x" => 2}}} =
+               input
+    end
+
+    test "asks again on the next run, with the last body", %{lv: lv} do
+      run_with(lv, "Webhook")
+
+      lv
+      |> form("#webhook-test-form")
+      |> render_submit(%{webhook_test: %{method: "POST", body: ~s({"x": 7})}})
+
+      run_with(lv, "Webhook")
+      run_with(lv, "Webhook")
+
+      assert lv
+             |> element("#webhook-test-form input[type=hidden][name='webhook_test[body]']")
+             |> render() =~ "7"
+    end
+
+    test "suggests the fields the flow reads", %{lv: lv} do
+      code = %{"code_elixir" => ~s|variable(:body)["x"] * variable(:body)["y"]|}
+      eval = %{entry_node("Evaluate Code") | "id" => "eval", "controls" => code}
+      data = %{"nodes" => [entry_node("Webhook"), eval], "connections" => []}
+
+      render_hook(lv, "save_and_run", %{"data" => data})
+
+      assert lv |> element("#webhook-body-editor") |> render() =~ "[&quot;x&quot;,&quot;y&quot;]"
+    end
+
+    test "says when the body isn't JSON", %{lv: lv} do
+      run_with(lv, "Webhook")
+
+      lv
+      |> form("#webhook-test-form")
+      |> render_submit(%{webhook_test: %{method: "POST", body: "{nope"}})
+
+      assert has_element?(lv, "#webhook-test-error")
     end
   end
 

@@ -181,30 +181,22 @@ export class CustomNodeElement extends LitElement {
         background: var(--color-primary);
         color: var(--color-primary-content);
       }
-      .node-name-hover {
+      .node-name {
         position: absolute;
-        top: -32px;
+        bottom: calc(100% + 8px);
         left: 50%;
         transform: translateX(-50%);
-        background: var(--editor-tooltip);
-        color: var(--color-white);
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 12px;
+        width: 180px;
+        color: var(--editor-text);
+        font-size: 13px;
         font-weight: 500;
-        white-space: nowrap;
-        opacity: 0;
-        transition: opacity 0.2s, transform 0.2s;
+        line-height: 1.25;
+        text-align: center;
+        overflow-wrap: anywhere;
+        user-select: none;
+        -webkit-user-select: none;
         pointer-events: none;
         z-index: 60;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-      }
-      .dark .node-name-hover {
-        border: 1px solid var(--editor-border);
-      }
-      custom-node:hover .node-name-hover {
-        opacity: 1;
-        transform: translateX(-50%) translateY(-4px);
       }
       .language-badge {
         position: absolute;
@@ -247,6 +239,7 @@ export class CustomNodeElement extends LitElement {
       'code': 'var(--node-code)',
       'data_manipulation': 'var(--node-data)',
       'http': 'var(--node-integration)',
+      'database': 'var(--node-integration)',
       'email': 'var(--node-integration)',
       'ftp': 'var(--node-integration)',
       'google_sheets': 'var(--node-integration)',
@@ -260,7 +253,7 @@ export class CustomNodeElement extends LitElement {
     const langLabel = language === 'elixir' ? 'EX' : (language === 'python' ? 'PY' : null);
 
     return html`
-      <div class="node-name-hover">${this.data.label || this.data.name}</div>
+      <div class="node-name">${this.data.label}</div>
 
       <div 
         class="circular-node ${this.selected ? 'is-selected' : ''}" 

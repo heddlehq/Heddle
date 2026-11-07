@@ -10,21 +10,14 @@ defmodule HeddleUI.AIChat do
     * appending a streamed chunk to the running assistant message;
     * extracting the `create_flow` JSON out of an assistant reply;
     * reading the planner's plan marker and hiding it from the user; and
-    * normalizing the AI-generated nodes into the single canonical shape the
-      Rete editor consumes (whether pushed to the client or persisted first).
+    * normalizing the AI-generated nodes into the form a flow is stored in.
   """
 
   alias HeddleCore.Flows.GraphValidator
 
-  @node_default_x 100
-  @node_default_y 100
-  @node_x_spacing 500
-
   @plan_marker ~r/\[?PLAN_PROPOSED\]?/i
   @partial_marker ~r/\[[A-Z_]*\z/
   @bold ~r/\*\*(.+?)\*\*/
-
-  @output_default_code "ui do\n  text :status, label: \"Final Status\", default: \"success\"\nend\n"
 
   @doc """
   Converts the chat message list into the agent message format.
@@ -77,8 +70,8 @@ defmodule HeddleUI.AIChat do
   end
 
   @doc """
-  Returns the map of node definitions (`name => definition`) used by the Rete
-  editor when loading graph data.
+  Returns the map of node definitions (`name => definition`) used by the canvas
+  when loading graph data.
   """
   def node_definitions do
     HeddleNodes.Nodes.all_nodes()
@@ -139,41 +132,19 @@ defmodule HeddleUI.AIChat do
   end
 
   @doc """
-  Turns a `create_flow` payload into what the canvas loads, checking it first.
+  Normalizes AI-generated nodes into the form a flow is stored in.
 
-  The canvas drops what it can't draw without saying so, which leaves a broken flow.
-  Returns `{:ok, %{nodes: nodes, connections: connections}}` or `{:error, message}`.
-  """
-  def prepare_flow(%{"nodes" => raw_nodes} = json) when is_list(raw_nodes) do
-    nodes = normalize_nodes(raw_nodes)
-    connections = Map.get(json, "connections", [])
-
-    case GraphValidator.validate(persistable_nodes(nodes), connections) do
-      :ok -> {:ok, %{nodes: nodes, connections: connections}}
-      {:error, _field, message} -> {:error, message}
-    end
-  end
-
-  def prepare_flow(_json), do: {:error, "has no nodes"}
-
-  @doc """
-  Normalizes AI-generated nodes into the canonical shape the Rete editor expects.
-
-  Reconciles the two previously divergent implementations: flattens `{value: ...}`
-  controls, applies the `Evaluate Code` and `Output` control defaults, fills in
-  `id/name/type/label/inputs/outputs`, and lays the nodes out horizontally.
+  Flattens `{value: ...}` controls, applies the `Evaluate Code` and `Output` control
+  defaults, and fills in `id/type/label`. A position from the model is left out: where
+  a node goes is up to `Heddle.Graph.Layout`.
   """
   def normalize_nodes(raw_nodes) when is_list(raw_nodes) do
-    raw_nodes
-    |> Enum.map(&normalize_node/1)
-    |> reposition_horizontally()
+    Enum.map(raw_nodes, &normalize_node/1)
   end
 
   @doc """
-  Reduces normalized nodes to the fields a saved flow may have.
-
-  `normalize_nodes/1` also returns the fields the Rete editor needs to draw a node,
-  which `HeddleCore.Flows.GraphValidator` rejects when persisting.
+  Reduces nodes to the fields a saved flow may have, which
+  `HeddleCore.Flows.GraphValidator` requires.
   """
   def persistable_nodes(nodes) when is_list(nodes) do
     Enum.map(nodes, &Map.take(&1, GraphValidator.node_keys()))
@@ -185,8 +156,6 @@ defmodule HeddleUI.AIChat do
     type = node["type"] || name
     label = node["label"] || data["label"] || name
 
-    position = node["position"] || %{"x" => data["x"] || 0, "y" => data["y"] || 0}
-
     controls =
       node
       |> base_controls(data)
@@ -195,13 +164,9 @@ defmodule HeddleUI.AIChat do
 
     %{
       "id" => node["id"],
-      "name" => name,
       "type" => type,
       "label" => label,
-      "position" => position,
-      "controls" => controls,
-      "inputs" => node["inputs"] || %{},
-      "outputs" => node["outputs"] || %{}
+      "controls" => controls
     }
   end
 
@@ -235,26 +200,11 @@ defmodule HeddleUI.AIChat do
         |> Map.delete("code")
 
       "Output" in [type, name] ->
-        controls
-        |> Map.put_new("status", "success")
-        |> Map.put_new("code", @output_default_code)
+        Map.put_new(controls, "status", "success")
 
       true ->
         controls
     end
-  end
-
-  defp reposition_horizontally(nodes) do
-    nodes
-    |> Enum.with_index()
-    |> Enum.map(fn {node, index} ->
-      current_y = get_in(node, ["position", "y"]) || @node_default_y
-
-      Map.put(node, "position", %{
-        "x" => @node_default_x + index * @node_x_spacing,
-        "y" => current_y
-      })
-    end)
   end
 
   defp strip_code_fence(content) do

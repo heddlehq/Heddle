@@ -1,0 +1,105 @@
+# The databases the Database nodes talk to, for their integration tests:
+#
+#     docker compose -f docker-compose.databases.yml up -d --wait
+#     HEDDLE_DB_PORT=5436 mix test --include databases apps/heddle_nodes/test/heddle_nodes/nodes/database
+#
+# Ports start at 15400 so they stay away from a Postgres or Redis already running.
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: heddle
+      MYSQL_DATABASE: heddle
+    ports: ["127.0.0.1:15401:3306"]
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -pheddle --silent
+      interval: 3s
+      retries: 40
+
+  mariadb:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: heddle
+      MARIADB_DATABASE: heddle
+    ports: ["127.0.0.1:15402:3306"]
+    healthcheck:
+      test: healthcheck.sh --connect --innodb_initialized
+      interval: 3s
+      retries: 40
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: Heddle_12345
+    ports: ["127.0.0.1:15403:1433"]
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P Heddle_12345 -Q "SELECT 1" -b
+      interval: 5s
+      retries: 40
+
+  oracle:
+    image: gvenzl/oracle-free:23-slim-faststart
+    environment:
+      ORACLE_PASSWORD: heddle
+      APP_USER: heddle
+      APP_USER_PASSWORD: heddle
+    ports: ["127.0.0.1:15404:1521"]
+    healthcheck:
+      test: healthcheck.sh
+      interval: 5s
+      retries: 60
+
+  mongodb:
+    image: mongo:7
+    ports: ["127.0.0.1:15405:27017"]
+    healthcheck:
+      test: mongosh --quiet --eval "db.adminCommand('ping').ok"
+      interval: 3s
+      retries: 40
+
+  redis:
+    image: redis:7-alpine
+    ports: ["127.0.0.1:15406:6379"]
+    healthcheck:
+      test: redis-cli ping
+      interval: 3s
+      retries: 20
+
+  cassandra:
+    image: cassandra:5
+    environment:
+      MAX_HEAP_SIZE: 512M
+      HEAP_NEWSIZE: 128M
+    ports: ["127.0.0.1:15407:9042"]
+    healthcheck:
+      test: cqlsh -e "DESCRIBE KEYSPACES"
+      interval: 5s
+      retries: 60
+
+  elasticsearch:
+    image: elasticsearch:8.17.0
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      cluster.routing.allocation.disk.threshold_enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports: ["127.0.0.1:15408:9200"]
+    healthcheck:
+      test: curl -fs http://localhost:9200/_cluster/health
+      interval: 5s
+      retries: 40
+
+  dynamodb:
+    image: amazon/dynamodb-local:2.5.4
+    ports: ["127.0.0.1:15409:8000"]
+
+  neo4j:
+    image: neo4j:5-community
+    environment:
+      NEO4J_AUTH: neo4j/heddle-test
+    ports: ["127.0.0.1:15410:7474"]
+    healthcheck:
+      test: wget -q --spider http://localhost:7474
+      interval: 5s
+      retries: 40

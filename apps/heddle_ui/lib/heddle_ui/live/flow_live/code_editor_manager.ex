@@ -95,7 +95,7 @@ defmodule HeddleUI.FlowLive.CodeEditorManager do
 
   @doc """
   Saves the edited code. Updates either the node configuration drawer data or pushes
-  an `update_node_code` event to Rete.js.
+  an `update_node_code` event to the canvas.
   """
   def save(socket, %{"code_elixir" => code_elixir, "code_python" => code_python}) do
     node_id = socket.assigns.current_node_id

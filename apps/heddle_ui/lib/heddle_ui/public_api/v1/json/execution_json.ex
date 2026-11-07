@@ -19,6 +19,7 @@ defmodule HeddleUI.PublicAPI.V1.ExecutionJSON do
       result: execution.result,
       error: execution.error,
       logs: execution.logs || [],
+      response: execution.response,
       started_at: execution.started_at,
       finished_at: execution.finished_at,
       inserted_at: execution.inserted_at,

@@ -13,6 +13,7 @@ defmodule HeddleCore.Executions do
   @flow_execution_worker "HeddleWorker.FlowExecutionWorker"
   @response_channel :webhook_responses
   @response_timeout :timer.seconds(30)
+  @await_timeout to_timeout(minute: 2)
   @response_poll 250
   @public_id_retry_attempts 8
   @public_id_first_words ~w(blue bright calm clear crisp fresh green lean quiet rapid sharp steady swift)
@@ -122,6 +123,43 @@ defmodule HeddleCore.Executions do
   end
 
   @doc """
+  Builds the input of a run that behaves as if `request` had reached the Webhook node.
+
+  `request` takes `"body"`, and optionally `"method"`, `"headers"` and `"query_params"`.
+  """
+  def webhook_input(request) do
+    defaults = %{"method" => "POST", "headers" => %{}, "query_params" => %{}, "path" => "/test"}
+
+    %{"trigger" => "webhook", "request" => Map.merge(defaults, request)}
+  end
+
+  @doc """
+  Runs `flow` with `input` and waits for it to finish.
+
+  Returns `{:ok, execution}` whether the run succeeded or failed, and
+  `{:error, :timeout}` if it takes longer than `timeout`.
+  """
+  def start_and_await(%Flow{id: flow_id}, input, timeout \\ @await_timeout) do
+    with {:ok, %Execution{} = execution} <- create_execution(%{flow_id: flow_id, input: input}) do
+      :ok = subscribe_to_execution(execution)
+
+      with {:ok, _job} <- enqueue_execution(execution) do
+        await_finish(execution.id, timeout)
+      end
+    end
+  end
+
+  defp await_finish(id, timeout) do
+    receive do
+      {:execution_updated, %Execution{id: ^id, status: status} = execution}
+      when status in ["succeeded", "failed"] ->
+        {:ok, execution}
+    after
+      timeout -> {:error, :timeout}
+    end
+  end
+
+  @doc """
   Saves what a Respond to Webhook node answered, for the call waiting on it.
 
   The answer goes through the database because the call can be on another node, and
@@ -214,9 +252,9 @@ defmodule HeddleCore.Executions do
   is saved, `:execution` once the record is created) so the caller can still
   reflect them in the UI.
   """
-  def save_and_run(scope, %Flow{} = flow, data) do
+  def save_and_run(scope, %Flow{} = flow, data, input \\ %{"trigger" => "manual"}) do
     with {:ok, saved_flow} <- save_flow(scope, flow, data),
-         {:ok, execution} <- create_run(saved_flow),
+         {:ok, execution} <- create_run(saved_flow, input),
          {:ok, _job} <- enqueue_run(saved_flow, execution) do
       {:ok, %{flow: saved_flow, execution: execution}}
     end
@@ -229,8 +267,8 @@ defmodule HeddleCore.Executions do
     end
   end
 
-  defp create_run(saved_flow) do
-    case create_execution(%{flow_id: saved_flow.id, input: %{"trigger" => "manual"}}) do
+  defp create_run(saved_flow, input) do
+    case create_execution(%{flow_id: saved_flow.id, input: input}) do
       {:ok, execution} -> {:ok, execution}
       {:error, reason} -> {:error, :create, %{reason: reason, flow: saved_flow}}
     end

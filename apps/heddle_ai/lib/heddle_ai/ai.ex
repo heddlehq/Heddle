@@ -93,6 +93,23 @@ defmodule HeddleAI.AI do
   end
 
   @doc """
+  Says what to call `req_llm` with for a conversation with `:tools`.
+
+  Returns `{:ok, model, request}` or `{:error, message}`.
+  """
+  def connect(opts) do
+    with {:ok, model, api_key} <- LLM.connection(opts[:credential]),
+         {:ok, model} <- text_model(model, opts[:model], :text) do
+      {:ok, model, request(api_key, Keyword.fetch!(opts, :tools), opts)}
+    else
+      {:error, reason} -> {:error, error_message(reason)}
+    end
+  end
+
+  @doc "Turns what a provider failed with into something to show."
+  def describe_error(reason), do: error_message(reason)
+
+  @doc """
   Asks about an image, given as `{bytes, media_type}`.
 
   Takes the same options as `run/2`, without the tools.

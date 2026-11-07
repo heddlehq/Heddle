@@ -100,8 +100,7 @@ defmodule HeddleUI.FlowLive.AICreator do
   defp create_flow(socket, json) do
     attrs = %{
       name: json["name"] || "AI Generated Flow",
-      nodes:
-        json |> Map.get("nodes", []) |> AIChat.normalize_nodes() |> AIChat.persistable_nodes(),
+      nodes: json |> Map.get("nodes", []) |> AIChat.normalize_nodes(),
       connections: Map.get(json, "connections", [])
     }
 

@@ -12,6 +12,37 @@ We extract the best features of the BEAM to ensure robustness:
 ## Backend: Oban & Workflow Orchestration
 For the execution engine, we utilize **Oban**, a proven and robust job processing library. Oban serves as the reliable backend orchestrator, managing job queues, retries, scheduled jobs, and workflow execution states, providing a solid foundation for complex automation sequences.
 
+## Flows: Rete is only the canvas
+Rete draws flows and nothing else. Only `rete_editor.js` and the `custom-*.js` elements know about it, and replacing it means writing a new `createEditor` for the `FlowCanvas` hook.
+- **Reading a flow**: everything goes through `Heddle.Graph` (`apps/heddle`), the one place that knows the stored format. **Never** read `flow.nodes` or `flow.connections` by hand, or by a node's `label`.
+- **What a flow is**: nodes (`id`, `type`, `label`, `controls`, optional `position`) and connections (`source`, `sourceOutput`, `target`, optional `targetInput`). Connections leaving the same output run in the order they are listed.
+- **Layout** is not part of running a flow: a node without a position is placed by `Heddle.Graph.Layout`.
+- **Never** let the API, the agents or a Bobbin node depend on the canvas.
+
+## The agent is one harness on the server
+The agent lives on the server, and every client only sends messages and shows events. **Never** put agent logic in a client.
+- `HeddleAI.Harness`: the loop. It knows nothing about flows: it takes tools, reports events, stops repeated calls and keeps the conversation within what a model takes.
+- `HeddleUI.Agent` and `HeddleUI.Agent.Session`: one supervised conversation per person and flow, saved in `HeddleCore.AgentConversations`. A screen opening starts a new one, unless the agent is working.
+- `HeddleUI.Agent.Transcript`: the protocol. A new event goes there, in its counterpart in Treadle (`internal/agent`), and in `docs/api/openapi.yaml`.
+- **Clients**: the editor follows it through PubSub, and Treadle through `/api/v1/workflows/:id/agent` (REST to send, SSE to follow).
+- **Tools** are the MCP tools (`HeddleUI.MCP.AgentTools`). A new capability of the agent is a new MCP tool, so Claude Code gets it too.
+- **What must be true for the model goes in the last message**, through `FlowCopilot.with_current_state/3`, not in the system prompt: in the system prompt it loses to older results in the conversation.
+- **Running a flow always asks first**, through `AgentChat.confirm_run/2`.
+
+## The terminal runs Claude Code as it ships
+`HeddleUI.Terminal` opens Claude Code on a pty in the editor, on local installs only, once turned on in the AI page. It talks through `HeddleUI.TerminalSocket`, not the LiveView: a terminal sends a message per key and repaint. It may use a person's subscription because of how it works, so keep it that way:
+- **Never** change or wrap the program, offer or handle its login, or read what it shows. It only carries keys and the screen.
+- **Never** drive it from the harness. Sending requests through a subscription on someone's behalf is what Anthropic doesn't allow, and the rules are in the [Claude Code legal page](https://code.claude.com/docs/en/legal-and-compliance).
+- **Never** use the Claude Code name or logo as the name of a feature: it is the Terminal, and text can say it runs Claude Code.
+
+## Database nodes
+They are one category, `:database`, grouped by store in the sidebar. SQL and NoSQL are not categories: `SQL:` is one set of nodes for every relational engine, and each other store has its own, because they share nothing.
+- **A value never becomes text in a query.** `{{placeholders}}` go through `Sql.Statement.bind/5` as bound parameters, on any language that has them (CQL and Cypher too), and JSON fields go through `Template.json/3`, which parses before filling in. **Never** render a query with `Template.render/2`.
+- **A new relational engine** is a module with the callbacks of `Sql.Engine` and an entry in `Services.Sql`. Every SQL node then works on it.
+- **A connection is opened through `HeddleNodes.Connections`**, which keeps one per credential. **Never** open one per run, and **never** let a driver's options reach a log or a message: they hold the password. Try the connection with `Connections.check/1`.
+- **Name fields carefully**: a node's controls shadow the run while it executes, so `body`, `headers`, `index`, `item` and `result` would hide what a person wants to read.
+- **Tests**: `docker compose -f docker-compose.databases.yml up -d --wait`, then `HEDDLE_DB_PORT=5436 mix test --include databases`. Without them only SQLite and PostgreSQL run on a real server.
+
 ## Frontend: Rete.js, LiveView & Lit
 The visual editor is built with a modern stack designed for interactivity and customizability:
 - **Rete.js**: A modular framework for visual programming, used to render the node editor.
@@ -719,7 +750,7 @@ The project uses **Playwright** for end-to-end testing. E2E tests live in the `e
 - **Always** import and use `waitForLiveView(page)` from `helpers.js` after navigation to ensure the LiveView is connected before interacting with it.
 - **Always** use `clickAndWaitForNavigation(page, locator, urlPattern)` from `helpers.js` for navigation that changes the URL.
 - Use Playwright's built-in locators (`getByRole`, `getByText`, `locator`) — **avoid** fragile CSS selectors when possible.
-- For Rete.js canvas interactions, use `page.locator('#rete')` and `page.locator('custom-node')`.
+- For canvas interactions, use `page.locator('#flow-canvas')` and `page.locator('custom-node')`.
 - Set appropriate timeouts for LiveView interactions (elements may take time to mount): `{ timeout: 5000 }` for element visibility, `{ timeout: 15000 }` for page loads.
 - Group related tests with `test.describe` blocks and use `test.beforeEach` for common setup.
 - Use `test.describe.configure({ timeout: 60000 })` for flow editor tests that involve multiple steps.

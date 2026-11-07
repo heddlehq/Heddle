@@ -49,26 +49,36 @@
       };
     </script>
 
-    <div
-      class="flex-1 relative bg-gray-100 dark:bg-slate-900"
-      id="rete-container"
-      phx-update="ignore"
-    >
+    <div class="flex min-h-0 min-w-0 flex-1 flex-col">
       <div
-        id="rete"
-        class="absolute inset-0 w-full h-full"
-        phx-hook="Rete"
+        class="relative min-h-0 flex-1 bg-gray-100 dark:bg-slate-900"
+        id="flow-canvas-container"
+        phx-update="ignore"
       >
+        <div
+          id="flow-canvas"
+          class="absolute inset-0 w-full h-full"
+          phx-hook="FlowCanvas"
+        >
+        </div>
+        <div
+          id="canvas-tools"
+          class="absolute top-4 left-4 z-10 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+        >
+          <.canvas_tool kind="title" icon="hero-h1" label={gettext("Title")} />
+          <.canvas_tool kind="text" icon="hero-bars-3-bottom-left" label={gettext("Text")} />
+          <.canvas_tool kind="note" icon="hero-document-text" label={gettext("Note")} />
+          <.canvas_tool kind="section" icon="hero-rectangle-group" label={gettext("Section")} />
+        </div>
       </div>
-      <div
-        id="canvas-tools"
-        class="absolute top-4 left-4 z-10 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-800"
-      >
-        <.canvas_tool kind="title" icon="hero-h1" label={gettext("Title")} />
-        <.canvas_tool kind="text" icon="hero-bars-3-bottom-left" label={gettext("Text")} />
-        <.canvas_tool kind="note" icon="hero-document-text" label={gettext("Note")} />
-        <.canvas_tool kind="section" icon="hero-rectangle-group" label={gettext("Section")} />
-      </div>
+      <HeddleUI.Components.Flow.TerminalPanel.terminal_panel
+        :if={@terminal_available}
+        open={@terminal_open}
+        exited={@terminal_exited}
+        token={@terminal_token}
+        flow_id={@current_flow.id}
+        chat_open={@chat_open}
+      />
     </div>
   </div>
 
@@ -94,6 +104,12 @@
     execution_result={@execution_result}
     inspecting_result={@inspecting_result}
   />
+  <HeddleUI.Components.Modals.WebhookTestModal.webhook_test_modal
+    open={@webhook_test_open}
+    form={@webhook_test_form}
+    error={@webhook_test_error}
+    fields={@webhook_test_fields}
+  />
   <HeddleUI.Components.Modals.CreateNodeModal.create_node_modal
     create_node_modal_open={@create_node_modal_open}
     available_nodes={@filtered_nodes}
@@ -105,9 +121,11 @@
     module={HeddleUI.Components.ChatComponent}
     id="chat-component"
     open={@chat_open}
-    messages={@chat_messages}
-    loading={@chat_loading}
-    confirmation={@agent_confirmation}
+    agent={@agent}
+    waiting={@pending_agent_message != nil}
+    history_open={@agent_history_open}
+    history={@agent_history}
+    terminal_open={@terminal_available and @terminal_open}
     on_toggle="toggle_chat"
     on_send="send_message"
     node_config_open={@config_modal_open}

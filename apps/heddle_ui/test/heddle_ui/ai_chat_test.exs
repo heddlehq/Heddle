@@ -73,11 +73,11 @@ defmodule HeddleUI.AIChatTest do
   describe "persistable_nodes/1" do
     test "keeps only the fields a saved flow accepts" do
       [node] =
-        [%{"id" => "a", "name" => "Logger", "type" => "Logger"}]
-        |> AIChat.normalize_nodes()
-        |> AIChat.persistable_nodes()
+        AIChat.persistable_nodes([
+          %{"id" => "a", "type" => "Logger", "position" => %{}, "inputs" => %{}, "outputs" => %{}}
+        ])
 
-      assert node |> Map.keys() |> Enum.sort() == ~w(controls id label position type)
+      assert node |> Map.keys() |> Enum.sort() == ~w(id position type)
     end
 
     test "produces nodes the graph validator accepts" do
@@ -139,7 +139,7 @@ defmodule HeddleUI.AIChatTest do
   end
 
   describe "normalize_nodes/1" do
-    test "fills defaults, flattens control values and lays nodes out horizontally" do
+    test "fills defaults and flattens control values" do
       raw = [
         %{"id" => "a", "name" => "Webhook", "controls" => %{"path" => %{"value" => "/in"}}},
         %{"id" => "b", "name" => "Log"}
@@ -152,13 +152,7 @@ defmodule HeddleUI.AIChatTest do
       assert first["label"] == "Webhook"
       # control value maps are flattened to their raw value
       assert first["controls"] == %{"path" => "/in"}
-      assert first["inputs"] == %{}
-      assert first["outputs"] == %{}
-      # x comes from the layout; y defaults to 0 when the node carries no position
-      assert first["position"] == %{"x" => 100, "y" => 0}
-
-      # second node is shifted to the right
-      assert second["position"]["x"] == 600
+      assert second["type"] == "Log"
     end
 
     test "normalizes Evaluate Code controls" do
@@ -177,11 +171,10 @@ defmodule HeddleUI.AIChatTest do
 
       assert [node] = AIChat.normalize_nodes(raw)
 
-      assert node["controls"]["status"] == "success"
-      assert node["controls"]["code"] =~ "ui do"
+      assert node["controls"] == %{"status" => "success"}
     end
 
-    test "reads label/position/controls from a nested data map" do
+    test "reads label and controls from a nested data map" do
       raw = [
         %{
           "id" => "a",
@@ -195,50 +188,14 @@ defmodule HeddleUI.AIChatTest do
       assert node["label"] == "My Log"
       # controls fall back to the data map (minus reserved keys)
       assert node["controls"] == %{"level" => "info"}
-      # y is preserved from data, x is recomputed by the layout
-      assert node["position"] == %{"x" => 100, "y" => 9}
-    end
-  end
-
-  describe "prepare_flow/1" do
-    @node_a %{"id" => "a", "type" => "Start", "label" => "Start", "controls" => %{}}
-    @node_b %{
-      "id" => "b",
-      "type" => "For Each",
-      "label" => "Each",
-      "controls" => %{"items" => "x"}
-    }
-    @node_c %{"id" => "c", "type" => "Logger", "label" => "Log", "controls" => %{}}
-
-    defp link(source, output, target, input \\ "exec") do
-      %{"source" => source, "sourceOutput" => output, "target" => target, "targetInput" => input}
     end
 
-    test "returns a valid graph ready for the canvas" do
-      json = %{
-        "nodes" => [@node_a, @node_b, @node_c],
-        "connections" => [link("a", "exec", "b"), link("b", "item", "c")]
-      }
+    test "leaves the position to the layout" do
+      raw = [%{"id" => "a", "name" => "Log", "position" => %{"x" => 1, "y" => 2}}]
 
-      assert {:ok, %{nodes: [%{"id" => "a"} | _rest], connections: [_first, _second]}} =
-               AIChat.prepare_flow(json)
-    end
+      assert [node] = AIChat.normalize_nodes(raw)
 
-    test "refuses a connection into an input that doesn't exist" do
-      json = %{
-        "nodes" => [@node_a, @node_b, @node_c],
-        "connections" => [link("a", "exec", "b"), link("c", "exec", "b", "done")]
-      }
-
-      assert {:error, message} = AIChat.prepare_flow(json)
-      assert message =~ "input"
-    end
-
-    test "refuses a node type that doesn't exist" do
-      json = %{"nodes" => [%{"id" => "a", "type" => "Nope", "controls" => %{}}]}
-
-      assert {:error, message} = AIChat.prepare_flow(json)
-      assert message =~ "unknown node type"
+      refute Map.has_key?(node, "position")
     end
   end
 end

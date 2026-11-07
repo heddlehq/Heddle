@@ -73,8 +73,18 @@ defmodule HeddleUI.Components.Flow.NodeSidebar do
             </button>
 
             <div :if={!collapsed?} class="space-y-0.5">
-              <%= for node <- nodes do %>
-                <.node_button node={node} color_class={node.color} />
+              <%= for group <- Enum.chunk_by(nodes, &Map.get(&1, :group)) do %>
+                <% title = Map.get(hd(group), :group) %>
+                <p
+                  :if={title}
+                  id={"node-group-#{title}"}
+                  class="px-4 pb-1 pt-3 text-xs font-medium text-gray-500 first:pt-0 dark:text-gray-400"
+                >
+                  {title}
+                </p>
+                <%= for node <- group do %>
+                  <.node_button node={node} color_class={node.color} />
+                <% end %>
               <% end %>
             </div>
           </div>

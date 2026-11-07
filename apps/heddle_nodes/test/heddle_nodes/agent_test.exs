@@ -122,7 +122,7 @@ defmodule HeddleNodes.AgentTest do
     end
 
     test "fails the run with nothing to ask, when nobody handles the error" do
-      assert {:error, "The prompt is empty.", "agent"} =
+      assert {:error, "The prompt is empty.", "agent", _context} =
                Runner.run(agent_flow(%{"prompt" => "  "}), %{})
 
       refute_received {:llm, _, _}
@@ -348,7 +348,7 @@ defmodule HeddleNodes.AgentTest do
 
       graph = agent_flow(%{"prompt" => "Hi", "memory_key" => "ana"})
 
-      assert {:error, "down", "agent"} = Runner.run(graph, %{})
+      assert {:error, "down", "agent", _context} = Runner.run(graph, %{})
       assert Memory.load(1, "ana") == []
     end
   end

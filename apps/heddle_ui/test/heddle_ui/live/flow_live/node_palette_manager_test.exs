@@ -9,8 +9,15 @@ defmodule HeddleUI.FlowLive.NodePaletteManagerTest do
       categories = "" |> NodePaletteManager.nodes_by_category() |> Enum.map(&elem(&1, 0))
       position = Enum.find_index(categories, &(&1 == :http))
 
-      assert Enum.slice(categories, position + 1, 5) == Nodes.service_categories()
+      services = Nodes.service_categories()
+
+      assert Enum.slice(categories, position + 1, length(services)) == services
       assert List.last(categories) == :utility
+    end
+
+    test "finds a database by a name that's only in the description" do
+      assert [{:database, nodes}] = NodePaletteManager.nodes_by_category("postgresql")
+      assert Enum.any?(nodes, &(&1.name == "SQL: Run Query"))
     end
 
     test "finds the actions of a service by its name" do

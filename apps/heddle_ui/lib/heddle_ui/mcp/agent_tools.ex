@@ -1,6 +1,6 @@
 defmodule HeddleUI.MCP.AgentTools do
   @moduledoc """
-  Offers the MCP tools to the LLM behind `HeddleUI.MCP.Tools.Chat`.
+  Offers the MCP tools to the LLM.
 
   Each one runs with the caller's frame, so the model can only do what the API key
   that started the chat can.
@@ -23,8 +23,19 @@ defmodule HeddleUI.MCP.AgentTools do
     {"get_execution", Tools.GetExecution}
   ]
 
+  # What is left of a long result is enough to read, and it stays in the conversation.
+  @max_output 20_000
+
   @doc """
-  Builds the tools of one chat.
+  Builds the tools of the agent, which tests flows by itself and waits for the result.
+  Running one goes through `HeddleUI.AgentChat.confirm_run/2`.
+  """
+  def for_agent(frame) do
+    Enum.map([{"test_flow", Tools.TestFlow} | @tools], &to_ai_tool(&1, frame))
+  end
+
+  @doc """
+  Builds the tools of one chat through MCP.
 
   `run_flow` is there too, but it runs nothing: it sends `{ref, :run_requested, request}`
   to the caller, and running stays a decision of the person on the other end.
@@ -76,7 +87,11 @@ defmodule HeddleUI.MCP.AgentTools do
   defp execute(module, params, frame) do
     {:reply, %Response{} = response, _frame} = module.execute(params, frame)
 
-    text = Enum.map_join(response.content, "\n", &Map.get(&1, "text", ""))
+    text =
+      response.content
+      |> Enum.map_join("\n", &Map.get(&1, "text", ""))
+      |> String.slice(0, @max_output)
+
     if response.isError, do: {:error, text}, else: {:ok, text}
   rescue
     error ->
