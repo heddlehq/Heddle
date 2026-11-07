@@ -7,7 +7,7 @@ defmodule HeddleNodes.Nodes.HttpRequestTest do
     test "returns the correct node definition" do
       definition = HttpRequest.definition()
       assert definition.name == "HTTP Request"
-      assert definition.category == :integration
+      assert definition.category == :http
       assert definition.inputs == [:exec]
       assert definition.outputs == ["success", "error"]
     end

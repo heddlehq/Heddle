@@ -246,16 +246,28 @@ defmodule HeddleUI.CoreComponents do
     <div class={["fieldset mb-2", @class]}>
       <label>
         <span :if={@label} class="label mb-1">{@label}</span>
-        <select
-          id={@id}
-          name={@name}
-          class={["w-full select", @errors != [] && (@error_class || "select-error")]}
-          multiple={@multiple}
-          {@rest}
-        >
-          <option :if={@prompt} value="">{@prompt}</option>
-          {Phoenix.HTML.Form.options_for_select(@options, @value)}
-        </select>
+        <span class="relative block">
+          <select
+            id={@id}
+            name={@name}
+            class={[
+              field_classes(),
+              "disabled:cursor-not-allowed disabled:opacity-60",
+              !@multiple && "appearance-none pr-10",
+              @errors != [] && (@error_class || "border-red-500 focus:ring-red-500")
+            ]}
+            multiple={@multiple}
+            {@rest}
+          >
+            <option :if={@prompt} value="">{@prompt}</option>
+            {Phoenix.HTML.Form.options_for_select(@options, @value)}
+          </select>
+          <.icon
+            :if={!@multiple}
+            name="hero-chevron-down"
+            class="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-gray-400"
+          />
+        </span>
       </label>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
@@ -274,7 +286,7 @@ defmodule HeddleUI.CoreComponents do
           id={@id}
           value={Phoenix.HTML.Form.normalize_value(@type, @value)}
           class={[
-            "w-full bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl px-5 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition shadow-sm",
+            field_classes(),
             @errors != [] && (@error_class || "border-red-500 focus:ring-red-500")
           ]}
           {@rest}
@@ -324,7 +336,8 @@ defmodule HeddleUI.CoreComponents do
           id={@id}
           name={@name}
           class={[
-            "w-full bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl px-5 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition shadow-sm resize-none",
+            field_classes(),
+            "resize-none",
             @errors != [] && (@error_class || "border-red-500 focus:ring-red-500")
           ]}
           {@rest}
@@ -333,6 +346,10 @@ defmodule HeddleUI.CoreComponents do
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
+  end
+
+  defp field_classes do
+    "w-full bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl px-5 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition shadow-sm"
   end
 
   # Helper used by inputs to generate form errors
@@ -474,11 +491,16 @@ defmodule HeddleUI.CoreComponents do
 
       <.icon name="hero-x-mark" />
       <.icon name="hero-arrow-path" class="ml-1 size-3 motion-safe:animate-spin" />
+
+  A name starting with `logo-` shows the logo of a service, from `app.css`.
   """
   attr :name, :string, required: true
   attr :class, :any, default: "size-4"
 
-  def icon(%{name: "hero-" <> _} = assigns) do
+  def icon(%{name: "hero-" <> _} = assigns), do: icon_span(assigns)
+  def icon(%{name: "logo-" <> _} = assigns), do: icon_span(assigns)
+
+  defp icon_span(assigns) do
     ~H"""
     <span class={[@name, @class]} />
     """

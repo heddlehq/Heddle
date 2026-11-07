@@ -16,7 +16,7 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
     [
       nodes_by_category: nodes_by_category(""),
       node_search_query: "",
-      collapsed_node_categories: MapSet.new(),
+      collapsed_node_categories: MapSet.new(HeddleNodes.Nodes.service_categories()),
       recent_nodes: [],
       available_nodes: HeddleNodes.Nodes.visible_nodes(),
       filtered_nodes: HeddleNodes.Nodes.visible_nodes(),
@@ -148,6 +148,11 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
   end
 
   @doc """
+  Forgets the recently used nodes.
+  """
+  def clear_recent_nodes(socket), do: assign(socket, recent_nodes: [])
+
+  @doc """
   Filters all visible nodes matching a query string.
   """
   def filter_nodes(query) do
@@ -165,7 +170,10 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
         category_match =
           String.contains?(String.downcase(to_string(node.category)), query_lower)
 
-        name_match || category_match
+        description_match =
+          String.contains?(String.downcase(Map.get(node, :description, "")), query_lower)
+
+        name_match || category_match || description_match
       end)
     end
   end
@@ -185,9 +193,15 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
   defp category_sort_index(:data_manipulation), do: 2
   defp category_sort_index(:code), do: 3
   defp category_sort_index(:ai), do: 4
-  defp category_sort_index(:integration), do: 5
-  defp category_sort_index(:utility), do: 6
-  defp category_sort_index(_), do: 7
+  defp category_sort_index(:http), do: 5
+  defp category_sort_index(:utility), do: 20
+
+  defp category_sort_index(category) do
+    case Enum.find_index(HeddleNodes.Nodes.service_categories(), &(&1 == category)) do
+      nil -> 21
+      position -> 6 + position
+    end
+  end
 
   @doc """
   Finds matching category atom from string param.

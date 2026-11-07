@@ -1,5 +1,7 @@
-defmodule HeddleNodes.Nodes.GoogleSheets do
-  use Bobbin.Node
+defmodule HeddleNodes.Services.GoogleSheets do
+  @moduledoc """
+  The Google Sheets API with a service account, for the Google Sheets nodes.
+  """
 
   alias HeddleNodes.Integration
   alias HeddleNodes.Template
@@ -7,78 +9,47 @@ defmodule HeddleNodes.Nodes.GoogleSheets do
   @api "https://sheets.googleapis.com/v4/spreadsheets"
   @scope "https://www.googleapis.com/auth/spreadsheets"
   @token_lifetime 3600
+  @service %{
+    title: "Google Sheets",
+    category: :google_sheets,
+    credential: "google",
+    icon: "logo-google-sheets"
+  }
 
-  definition do
-    %{
-      name: "Google Sheets",
-      title: "Google Sheets",
-      category: :integration,
-      color: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
-      description:
-        "Reads rows from a sheet or adds rows to it, using a service account. Share the sheet with its email first.",
-      icon: "hero-table-cells-solid",
-      inputs: [:exec],
-      outputs: Integration.outputs(),
-      show: true,
-      ui_fields: [
-        Integration.credential_field("google"),
-        %{
-          type: :select,
-          name: :operation,
-          label: "Operation",
-          options: [
-            %{label: "Read rows", value: "read"},
-            %{label: "Add rows", value: "append"}
-          ],
-          default: "read"
-        },
-        %{type: :text, name: :spreadsheet_id, label: "Spreadsheet ID", default: ""},
-        %{type: :text, name: :range, label: "Range", default: "Sheet1!A:Z"},
-        %{type: :text, name: :rows, label: "Rows to add", default: "result"}
-      ]
-    }
+  def definition(action, description, fields) do
+    Integration.definition(@service, action, description, [spreadsheet_field() | fields])
   end
 
-  @impl true
-  def handler(context, _input) do
-    with {:ok, %{"json" => json}} <- Integration.credential(context, "google"),
-         {:ok, account} <- decode_account(json),
-         {:ok, token} <- access_token(account),
-         {:ok, result} <- run(context["operation"] || "read", token, context) do
-      Integration.success(context, result)
-    else
-      {:error, message} -> Integration.failure(context, message)
-    end
+  def range_field, do: %{type: :text, name: :range, label: "Range", default: "Sheet1!A:Z"}
+  def rows_field, do: %{type: :text, name: :rows, label: "Rows", default: "result"}
+
+  defp spreadsheet_field do
+    %{type: :text, name: :spreadsheet_id, label: "Spreadsheet ID", default: ""}
   end
 
-  defp run("read", token, context) do
-    with {:ok, body} <- call(:get, url(context), token, []) do
-      {:ok, Map.get(body, "values", [])}
-    end
+  @doc """
+  Calls `fun` with an access token.
+  """
+  def run(context, fun) do
+    Integration.run(context, "google", fn %{"json" => json} ->
+      with {:ok, account} <- decode_account(json),
+           {:ok, token} <- access_token(account) do
+        fun.(token)
+      end
+    end)
   end
 
-  defp run("append", token, context) do
-    with {:ok, rows} <- rows(context),
-         {:ok, body} <-
-           call(:post, url(context) <> ":append", token,
-             params: [valueInputOption: "USER_ENTERED"],
-             json: %{values: rows}
-           ) do
-      {:ok, %{"updated_rows" => get_in(body, ["updates", "updatedRows"]) || length(rows)}}
-    end
+  def spreadsheet_url(context) do
+    "#{@api}/#{encode(Integration.field(context, "spreadsheet_id"))}"
   end
 
-  defp run(operation, _token, _context), do: {:error, "Unknown operation: #{operation}"}
-
-  defp url(context) do
-    id = encode(Integration.field(context, "spreadsheet_id"))
-
-    "#{@api}/#{id}/values/#{encode(Integration.field(context, "range"))}"
+  def values_url(context) do
+    "#{spreadsheet_url(context)}/values/#{encode(Integration.field(context, "range"))}"
   end
 
   defp encode(value), do: URI.encode(value, &URI.char_unreserved?/1)
 
-  defp call(method, url, token, options) do
+  def call(method, url, token, options \\ []) do
     request =
       options
       |> Keyword.merge(method: method, url: url, auth: {:bearer, token})
@@ -92,8 +63,10 @@ defmodule HeddleNodes.Nodes.GoogleSheets do
     end
   end
 
-  # Accepts a list of rows, one row, or a list of maps like the CSV node gives.
-  defp rows(context) do
+  @doc """
+  Accepts a list of rows, one row, or a list of maps like the CSV node gives.
+  """
+  def rows(context) do
     case Template.fetch(context, context["rows"] || "result") do
       [%{} = first | _rest] = maps ->
         headers = Map.keys(first)
@@ -109,7 +82,7 @@ defmodule HeddleNodes.Nodes.GoogleSheets do
         {:ok, [Map.values(map)]}
 
       _other ->
-        {:error, "#{context["rows"]} has no rows to add."}
+        {:error, "#{context["rows"]} has no rows."}
     end
   end
 

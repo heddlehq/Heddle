@@ -34,6 +34,19 @@ defmodule HeddleUI.ExecutionLive.IndexTest do
     end
   end
 
+  describe "a run that produced a file" do
+    test "shows the image instead of its base64", %{conn: conn} do
+      content = Base.encode64(<<0x89, "PNG", 1, 2, 3>>) <> String.duplicate("A", 4000)
+      file = %{"content" => content, "encoding" => "base64", "type" => "image/png"}
+      execution = execution_fixture(%{result: %{"result" => file}})
+
+      {:ok, lv, _html} = live(conn, ~p"/executions/#{execution.public_id}")
+
+      assert has_element?(lv, "#execution-file img[src^='data:image/png;base64,']")
+      refute lv |> element("pre", "image/png") |> render() =~ content
+    end
+  end
+
   describe "index" do
     test "lists executions with status and flow name", %{conn: conn} do
       flow = flow_fixture(%{name: "Billing Flow"})

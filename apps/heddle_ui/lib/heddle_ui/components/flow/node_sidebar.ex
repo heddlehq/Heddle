@@ -35,9 +35,19 @@ defmodule HeddleUI.Components.Flow.NodeSidebar do
 
       <div class="flex-1 overflow-y-auto pt-4 pb-4 space-y-6">
         <div :if={@recent_nodes != []} id="recent-node-group">
-          <h3 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-4">
-            {gettext("Recent")}
-          </h3>
+          <div class="mb-2 flex items-center justify-between px-4">
+            <h3 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+              {gettext("Recent")}
+            </h3>
+            <button
+              id="clear-recent-nodes"
+              type="button"
+              phx-click="clear_recent_nodes"
+              class="text-xs font-medium text-gray-500 transition hover:text-primary dark:text-gray-400 dark:hover:text-primary"
+            >
+              {gettext("Clear")}
+            </button>
+          </div>
 
           <div class="space-y-0.5">
             <%= for node <- @recent_nodes do %>

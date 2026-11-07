@@ -86,7 +86,7 @@ defmodule HeddleAI.AITest do
 
       assert {:ok, %{stream: stream}} = AI.stream_text([%{role: "user", content: "hello"}])
 
-      assert [{:error, "No LLM provider is configured."}] = Enum.to_list(stream)
+      assert [{:error, "No AI provider is set up." <> _rest}] = Enum.to_list(stream)
       refute_received {:stream_text, _model, _messages, _opts}
     end
   end

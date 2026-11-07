@@ -89,7 +89,7 @@ defmodule HeddleUI.Layouts do
                 id="nav-ai"
                 navigate={~p"/ai"}
                 icon="hero-cpu-chip"
-                label={gettext("LLM & Agents")}
+                label={gettext("AI")}
                 active={@section == :ai}
               />
               <.nav_link

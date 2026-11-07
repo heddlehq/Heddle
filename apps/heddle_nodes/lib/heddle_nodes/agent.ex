@@ -4,7 +4,8 @@ defmodule HeddleNodes.Agent do
 
   The nodes connected to its `tools` output become tools. The model fills in the
   fields left blank on a node, and what's already set stays out of its reach.
-  Credentials and code are never offered, so it can't pick a secret or write code.
+  Credentials, models and code are never offered, so it can't pick a secret or write
+  code.
 
   The LLM and the memory come from config, because heddle_ai depends on this app
   and heddle_core is only one of its test dependencies.
@@ -46,6 +47,7 @@ defmodule HeddleNodes.Agent do
     [
       tools: tools,
       system: system(request),
+      credential: request[:credential],
       model: request.model,
       temperature: request.temperature,
       max_steps: request.max_steps
@@ -119,6 +121,11 @@ defmodule HeddleNodes.Agent do
 
   defp tool_output(nil), do: "Done."
 
+  # The model can't read base64, and it would fill its context.
+  defp tool_output(%{"encoding" => "base64", "type" => type}) do
+    "Done. The result is a #{type} file, which the next step of the flow gets."
+  end
+
   defp tool_output(result) do
     result |> Jason.encode!() |> String.slice(0, @max_tool_output)
   end
@@ -136,7 +143,7 @@ defmodule HeddleNodes.Agent do
 
     definition
     |> Map.get(:ui_fields, [])
-    |> Enum.reject(&(&1.type in [:credential, :code]))
+    |> Enum.reject(&(&1.type in [:credential, :code, :model]))
     |> Enum.filter(&blank?(controls[to_string(&1.name)]))
   end
 

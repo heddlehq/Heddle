@@ -1,6 +1,8 @@
 defmodule HeddleUI.Components.Modals.ExecutionResultModal do
   use HeddleUI, :html
 
+  alias HeddleUI.Components.ResultFile
+
   attr :show_result_modal, :boolean, required: true
   attr :execution_result, :map, default: nil
   attr :inspecting_result, :boolean, default: false
@@ -38,7 +40,7 @@ defmodule HeddleUI.Components.Modals.ExecutionResultModal do
                       &larr; {gettext("Back to Result")}
                     </.button>
                   </div>
-                  <pre class="text-xs font-mono p-4 bg-gray-50 dark:bg-slate-950 rounded-lg border border-gray-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 overflow-x-auto">{Jason.encode!(@execution_result, pretty: true)}</pre>
+                  <pre class="text-xs font-mono p-4 bg-gray-50 dark:bg-slate-950 rounded-lg border border-gray-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 overflow-x-auto">{Jason.encode!(ResultFile.shorten(@execution_result), pretty: true)}</pre>
                 </div>
               <% else %>
                 <div class="flex flex-col text-left">
@@ -46,6 +48,7 @@ defmodule HeddleUI.Components.Modals.ExecutionResultModal do
                     <span class="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] block mb-2">
                       Output
                     </span>
+                    <ResultFile.result_file id="execution-result-file" value={@execution_result} />
                     <div class="max-h-80 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-4 font-mono text-sm leading-6 text-gray-900 selection:bg-primary/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
                       <% # Try result, then fallback to status as the user manually changed to that
                       output_val =
@@ -58,7 +61,7 @@ defmodule HeddleUI.Components.Modals.ExecutionResultModal do
                         <%= if is_binary(output_val) do %>
                           {output_val}
                         <% else %>
-                          <pre class="whitespace-pre-wrap break-words">{Jason.encode!(output_val, pretty: true)}</pre>
+                          <pre class="whitespace-pre-wrap break-words">{Jason.encode!(ResultFile.shorten(output_val), pretty: true)}</pre>
                         <% end %>
                       <% end %>
                     </div>

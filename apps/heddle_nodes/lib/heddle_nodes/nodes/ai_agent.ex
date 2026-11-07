@@ -1,6 +1,8 @@
 defmodule HeddleNodes.Nodes.AIAgent do
   use Bobbin.Node
 
+  alias HeddleNodes.Integration
+  alias HeddleNodes.Services.AI
   alias HeddleNodes.Template
 
   definition do
@@ -16,6 +18,7 @@ defmodule HeddleNodes.Nodes.AIAgent do
       outputs: ["success", "error", "tools"],
       show: true,
       ui_fields: [
+        AI.credential_field(),
         %{type: :text, name: :prompt, label: "Prompt", default: ""},
         %{type: :text, name: :system, label: "System prompt", default: ""},
         %{
@@ -26,8 +29,19 @@ defmodule HeddleNodes.Nodes.AIAgent do
           default: "text"
         },
         %{type: :text, name: :memory_key, label: "Memory key", default: ""},
-        %{type: :text, name: :model, label: "Model", default: ""},
-        %{type: :text, name: :temperature, label: "Temperature", default: ""},
+        %{
+          type: :select,
+          name: :temperature,
+          label: "Creativity",
+          options: [
+            %{label: "The model's default", value: ""},
+            %{label: "Precise", value: "0.2"},
+            %{label: "Balanced", value: "0.7"},
+            %{label: "Creative", value: "1.0"}
+          ],
+          default: ""
+        },
+        AI.model_field(:text),
         %{type: :text, name: :max_steps, label: "Max steps", default: "10"}
       ]
     }
@@ -35,16 +49,23 @@ defmodule HeddleNodes.Nodes.AIAgent do
 
   @impl true
   def handler(context, _input) do
-    {:agent,
-     %{
-       prompt: Template.render(context["prompt"], context),
-       system: text(context, "system"),
-       output: context["output"] || "text",
-       memory_key: text(context, "memory_key"),
-       model: text(context, "model"),
-       temperature: number(context["temperature"], &Float.parse/1),
-       max_steps: number(context["max_steps"], &Integer.parse/1)
-     }}
+    case AI.plan(context, :text) do
+      {:ok, options} -> {:agent, request(context, options)}
+      {:error, message} -> Integration.failure(context, message)
+    end
+  end
+
+  defp request(context, options) do
+    %{
+      prompt: Template.render(context["prompt"], context),
+      system: text(context, "system"),
+      output: context["output"] || "text",
+      memory_key: text(context, "memory_key"),
+      credential: options[:credential],
+      model: options[:model],
+      temperature: number(context["temperature"], &Float.parse/1),
+      max_steps: number(context["max_steps"], &Integer.parse/1)
+    }
   end
 
   defp text(context, name) do

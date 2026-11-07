@@ -103,12 +103,9 @@ defmodule HeddleNodes.Runner do
                 format_reason(reason)
               )
 
-            if "error" in (definition[:outputs] || []) do
-              flow
-              |> connections_from(node, "error")
-              |> process_connections(error_context, flow)
-            else
-              {:error, reason, to_string(node["id"])}
+            case connections_from(flow, node, "error") do
+              [] -> {:error, reason, to_string(node["id"])}
+              connections -> process_connections(connections, error_context, flow)
             end
         end
       rescue
@@ -126,6 +123,17 @@ defmodule HeddleNodes.Runner do
 
   defp first_output(definition), do: to_string(List.first(definition[:outputs]) || "exec")
 
+  # An error nobody handles fails the run. Ending as a success would hide it.
+  defp follow(result, "error", step) do
+    case connections_from(step.flow, step.node, "error") do
+      [] ->
+        {:error, error_message(result), to_string(step.node["id"])}
+
+      connections ->
+        process_connections(connections, finish_step(result, "error", step), step.flow)
+    end
+  end
+
   defp follow(result, output_name, step) do
     result = finish_step(result, output_name, step)
 
@@ -133,6 +141,10 @@ defmodule HeddleNodes.Runner do
     |> connections_from(step.node, output_name)
     |> process_connections(result, step.flow)
   end
+
+  defp error_message(%{"result" => %{"error" => message}}) when is_binary(message), do: message
+  defp error_message(%{"result" => reason}), do: reason
+  defp error_message(_result), do: "This step failed."
 
   defp finish_step(result, output_name, step) do
     finish_node(

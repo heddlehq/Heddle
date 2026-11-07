@@ -1,7 +1,9 @@
 defmodule HeddleNodes.Nodes.GoogleSheetsTest do
   use ExUnit.Case, async: false
 
-  alias HeddleNodes.Nodes.{GoogleSheets, HttpRequest}
+  alias HeddleNodes.Nodes.HttpRequest
+  alias HeddleNodes.Nodes.GoogleSheets.{AddRows, ClearRows, CreateSheet}
+  alias HeddleNodes.Nodes.GoogleSheets.{ListSheets, ReadRows, UpdateRows}
 
   defmodule Vault do
     def fetch("bad", "google"), do: {:ok, %{"json" => "not json"}}
@@ -55,7 +57,7 @@ defmodule HeddleNodes.Nodes.GoogleSheetsTest do
   test "signs in with a token the service account's key signed", %{key: key} do
     stub(&Req.Test.json(&1, %{"values" => []}))
 
-    assert {:ok, _context, "success"} = GoogleSheets.handler(context(%{}), nil)
+    assert {:ok, _context, "success"} = ReadRows.handler(context(%{}), nil)
     assert_received {:token, %{"assertion" => jwt, "grant_type" => grant}}
     assert grant =~ "jwt-bearer"
 
@@ -79,7 +81,7 @@ defmodule HeddleNodes.Nodes.GoogleSheetsTest do
     stub(&Req.Test.json(&1, %{"values" => [["a", "b"], ["1", "2"]]}))
 
     assert {:ok, %{"result" => [["a", "b"], ["1", "2"]]}, "success"} =
-             GoogleSheets.handler(context(%{}), nil)
+             ReadRows.handler(context(%{}), nil)
 
     assert_received {:sheets, conn, ""}
     assert conn.request_path == "/v4/spreadsheets/ID1/values/Vendas%21A%3AC"
@@ -89,20 +91,19 @@ defmodule HeddleNodes.Nodes.GoogleSheetsTest do
   test "an empty sheet has no rows" do
     stub(&Req.Test.json(&1, %{}))
 
-    assert {:ok, %{"result" => []}, "success"} = GoogleSheets.handler(context(%{}), nil)
+    assert {:ok, %{"result" => []}, "success"} = ReadRows.handler(context(%{}), nil)
   end
 
   test "adds rows from a list of maps" do
     stub(&Req.Test.json(&1, %{"updates" => %{"updatedRows" => 2}}))
 
     fields = %{
-      "operation" => "append",
       "rows" => "data",
       "data" => [%{"a" => 1, "b" => 2}, %{"a" => 3, "b" => 4}]
     }
 
     assert {:ok, %{"result" => %{"updated_rows" => 2}}, "success"} =
-             GoogleSheets.handler(context(fields), nil)
+             AddRows.handler(context(fields), nil)
 
     assert_received {:sheets, conn, raw}
     assert String.ends_with?(conn.request_path, "%3AC:append")
@@ -113,9 +114,9 @@ defmodule HeddleNodes.Nodes.GoogleSheetsTest do
   test "adds a single row" do
     stub(&Req.Test.json(&1, %{}))
 
-    fields = %{"operation" => "append", "rows" => "row", "row" => ["x", 1]}
+    fields = %{"rows" => "row", "row" => ["x", 1]}
 
-    assert {:ok, _context, "success"} = GoogleSheets.handler(context(fields), nil)
+    assert {:ok, _context, "success"} = AddRows.handler(context(fields), nil)
     assert_received {:sheets, _conn, raw}
     assert Jason.decode!(raw) == %{"values" => [["x", 1]]}
   end
@@ -123,9 +124,9 @@ defmodule HeddleNodes.Nodes.GoogleSheetsTest do
   test "takes the error output with no rows to add" do
     stub(&Req.Test.json(&1, %{}))
 
-    fields = %{"operation" => "append", "rows" => "missing"}
+    fields = %{"rows" => "missing"}
 
-    assert {:ok, _context, "error"} = GoogleSheets.handler(context(fields), nil)
+    assert {:ok, _context, "error"} = AddRows.handler(context(fields), nil)
   end
 
   test "takes the error output with what Google said" do
@@ -136,20 +137,71 @@ defmodule HeddleNodes.Nodes.GoogleSheetsTest do
     end)
 
     assert {:ok, %{"result" => %{"error" => message}}, "error"} =
-             GoogleSheets.handler(context(%{}), nil)
+             ReadRows.handler(context(%{}), nil)
 
     assert message =~ "permission"
   end
 
   test "takes the error output with a bad credential" do
     assert {:ok, %{"result" => %{"error" => message}}, "error"} =
-             GoogleSheets.handler(context(%{"credential" => "bad"}), nil)
+             ReadRows.handler(context(%{"credential" => "bad"}), nil)
 
     assert message =~ "service account"
 
     assert {:ok, %{"result" => %{"error" => message}}, "error"} =
-             GoogleSheets.handler(context(%{"credential" => "broken-key"}), nil)
+             ReadRows.handler(context(%{"credential" => "broken-key"}), nil)
 
     assert message =~ "can't be read"
+  end
+
+  test "writes rows over a range" do
+    stub(&Req.Test.json(&1, %{"updatedRows" => 1}))
+
+    fields = %{"rows" => "row", "row" => ["x", 1]}
+
+    assert {:ok, %{"result" => %{"updated_rows" => 1}}, "success"} =
+             UpdateRows.handler(context(fields), nil)
+
+    assert_received {:sheets, conn, raw}
+    assert conn.method == "PUT"
+    assert conn.request_path == "/v4/spreadsheets/ID1/values/Vendas%21A%3AC"
+    assert conn.query_string == "valueInputOption=USER_ENTERED"
+    assert Jason.decode!(raw) == %{"values" => [["x", 1]]}
+  end
+
+  test "clears a range" do
+    stub(&Req.Test.json(&1, %{"clearedRange" => "Vendas!A1:C9"}))
+
+    assert {:ok, %{"result" => %{"cleared_range" => "Vendas!A1:C9"}}, "success"} =
+             ClearRows.handler(context(%{}), nil)
+
+    assert_received {:sheets, conn, _raw}
+    assert conn.method == "POST"
+    assert String.ends_with?(conn.request_path, "%3AC:clear")
+  end
+
+  test "lists the sheets" do
+    sheets = [%{"properties" => %{"sheetId" => 7, "title" => "Vendas"}}]
+    stub(&Req.Test.json(&1, %{"sheets" => sheets}))
+
+    assert {:ok, %{"result" => [%{"id" => 7, "title" => "Vendas"}]}, "success"} =
+             ListSheets.handler(context(%{}), nil)
+
+    assert_received {:sheets, conn, _raw}
+    assert conn.request_path == "/v4/spreadsheets/ID1"
+  end
+
+  test "creates a sheet" do
+    reply = %{"replies" => [%{"addSheet" => %{"properties" => %{"sheetId" => 9}}}]}
+    stub(&Req.Test.json(&1, reply))
+
+    assert {:ok, %{"result" => %{"id" => 9, "title" => "Maio"}}, "success"} =
+             CreateSheet.handler(context(%{"title" => "Maio"}), nil)
+
+    assert_received {:sheets, conn, raw}
+    assert conn.request_path == "/v4/spreadsheets/ID1:batchUpdate"
+
+    assert %{"requests" => [%{"addSheet" => %{"properties" => %{"title" => "Maio"}}}]} =
+             Jason.decode!(raw)
   end
 end

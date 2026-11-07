@@ -1,6 +1,8 @@
 defmodule HeddleUI.ExecutionLive.Index do
   use HeddleUI, :live_view
 
+  alias HeddleUI.Components.ResultFile
+
   on_mount {HeddleUI.UserAuth, :require_system_admin}
 
   alias HeddleCore.Executions
@@ -187,7 +189,13 @@ defmodule HeddleUI.ExecutionLive.Index do
                   <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
                     {gettext("Result / Output")}
                   </h3>
-                  <pre class="mt-3 max-h-96 overflow-auto rounded-lg bg-gray-50 p-4 font-mono text-xs text-gray-800 dark:bg-slate-950 dark:text-gray-200"><%= Jason.encode!(@selected_execution.result || %{}, pretty: true) %></pre>
+                  <div class="mt-3">
+                    <ResultFile.result_file
+                      id="execution-file"
+                      value={@selected_execution.result}
+                    />
+                  </div>
+                  <pre class="mt-3 max-h-96 overflow-auto rounded-lg bg-gray-50 p-4 font-mono text-xs text-gray-800 dark:bg-slate-950 dark:text-gray-200"><%= Jason.encode!(ResultFile.shorten(@selected_execution.result || %{}), pretty: true) %></pre>
                 </div>
               </div>
 

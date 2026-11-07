@@ -2,7 +2,7 @@ defmodule HeddleAI.LLM do
   @moduledoc """
   Resolves which LLM this instance talks to from the environment.
 
-  The provider is an operator decision, so it lives in env and not in the database:
+  The AI page can set a credential for this. Without one, it comes from the env:
 
       HEDDLE_LLM_PROVIDER=anthropic
       HEDDLE_LLM_MODEL=claude-sonnet-5-5
@@ -37,7 +37,7 @@ defmodule HeddleAI.LLM do
   end
 
   @spec configured?() :: boolean()
-  def configured?, do: status().state == :ready
+  def configured?, do: saved_default() != nil or status().state == :ready
 
   @doc """
   Returns the model spec and API key to call `req_llm` with.
@@ -54,6 +54,39 @@ defmodule HeddleAI.LLM do
 
       _status ->
         {:error, :not_configured}
+    end
+  end
+
+  @doc """
+  Returns what to call `req_llm` with: the credential a node picked, or else the one
+  set in the AI page, or else the environment.
+
+  A credential holds `"provider"`, `"api_key"` and optionally `"model"`. Its model
+  can be `nil`, because a node can ask for one of its own.
+  """
+  @spec connection(map() | nil) ::
+          {:ok, {atom(), String.t() | nil, []}, String.t()}
+          | {:error, :not_configured | String.t()}
+  def connection(nil) do
+    case saved_default() do
+      nil -> credentials()
+      default -> connection(default)
+    end
+  end
+
+  def connection(%{"provider" => provider, "api_key" => api_key} = credential) do
+    case known_provider(String.trim(provider)) do
+      nil -> {:error, "The provider #{provider} isn't known."}
+      known -> {:ok, {known, read(credential, "model"), []}, api_key}
+    end
+  end
+
+  # The AI page is in heddle_core, which isn't a dependency of this app. Tests that
+  # have no database turn this off in config.
+  defp saved_default do
+    case Application.get_env(:heddle_ai, :text_default, &HeddleNodes.Services.AI.text_default/0) do
+      nil -> nil
+      read -> read.()
     end
   end
 

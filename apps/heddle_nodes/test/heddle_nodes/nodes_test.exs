@@ -99,7 +99,7 @@ defmodule HeddleNodes.NodesTest do
     end
 
     test "handles single-word categories" do
-      assert Nodes.category_label(:integration) == "Integration"
+      assert Nodes.category_label(:http) == "HTTP"
     end
 
     test "handles trigger category" do

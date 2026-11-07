@@ -13,6 +13,13 @@ defmodule HeddleNodes.AgentTest do
       send(self(), {:llm, messages, opts})
       Application.fetch_env!(:heddle_nodes, :model_script).(messages, opts)
     end
+
+    def generate_image(_prompt, _opts), do: {:ok, {String.duplicate(<<0>>, 6000), "image/png"}}
+    def check(_capability, _opts), do: :ok
+  end
+
+  defmodule Settings do
+    def ai_defaults, do: %{}
   end
 
   defmodule Memory do
@@ -25,14 +32,22 @@ defmodule HeddleNodes.AgentTest do
 
   setup do
     previous =
-      Map.new([:llm_client, :agent_memory], &{&1, Application.get_env(:heddle_nodes, &1)})
+      Map.new(
+        [:llm_client, :agent_memory, :ai_settings],
+        &{&1, Application.get_env(:heddle_nodes, &1)}
+      )
 
     Application.put_env(:heddle_nodes, :llm_client, Model)
+    Application.put_env(:heddle_nodes, :ai_settings, Settings)
     Application.put_env(:heddle_nodes, :agent_memory, Memory)
     script(fn _messages, _opts -> {:ok, "Olá"} end)
 
     on_exit(fn ->
-      Enum.each(previous, fn {key, value} -> Application.put_env(:heddle_nodes, key, value) end)
+      Enum.each(previous, fn
+        {key, nil} -> Application.delete_env(:heddle_nodes, key)
+        {key, value} -> Application.put_env(:heddle_nodes, key, value)
+      end)
+
       Application.delete_env(:heddle_nodes, {:memory, 1, "ana"})
     end)
   end
@@ -106,9 +121,10 @@ defmodule HeddleNodes.AgentTest do
       assert Enum.any?(context["logs"], &(&1["node_id"] == "ko"))
     end
 
-    test "takes the error output with nothing to ask" do
-      assert {:ok, context} = Runner.run(agent_flow(%{"prompt" => "  "}), %{})
-      assert context["result"] == %{"error" => "The prompt is empty."}
+    test "fails the run with nothing to ask, when nobody handles the error" do
+      assert {:error, "The prompt is empty.", "agent"} =
+               Runner.run(agent_flow(%{"prompt" => "  "}), %{})
+
       refute_received {:llm, _, _}
     end
   end
@@ -138,7 +154,13 @@ defmodule HeddleNodes.AgentTest do
     end
 
     test "never offers a credential or code" do
-      node = graph_node("s", "Slack", %{"credential" => "", "channel" => "#ops", "text" => ""})
+      node =
+        graph_node("s", "Slack: Send Message", %{
+          "credential" => "",
+          "channel" => "#ops",
+          "text" => "",
+          "thread_ts" => "1.1"
+        })
 
       assert {:ok, _context} = Runner.run(with_tool(node), %{})
       assert_received {:llm, _messages, opts}
@@ -151,6 +173,17 @@ defmodule HeddleNodes.AgentTest do
       assert_received {:llm, _messages, opts}
       assert [%{schema: schema}] = opts[:tools]
       assert Map.keys(schema.properties) == ["input"]
+    end
+
+    test "keeps a generated file out of what the model reads" do
+      node = graph_node("i", "AI: Generate Image", %{"credential" => "", "prompt" => "A cat"})
+
+      assert {:ok, _context} = Runner.run(with_tool(node), %{})
+      assert_received {:llm, _messages, opts}
+      assert [%{fun: tool}] = opts[:tools]
+      assert {:ok, output} = tool.(%{})
+      assert output =~ "image/png"
+      refute output =~ "AAAA"
     end
 
     test "offers a select as a choice" do
@@ -276,8 +309,12 @@ defmodule HeddleNodes.AgentTest do
     test "takes the error output when the reply isn't JSON" do
       script(fn _messages, _opts -> {:ok, "Sure thing"} end)
 
-      assert {:ok, context} =
-               Runner.run(agent_flow(%{"prompt" => "Rate", "output" => "json"}), %{})
+      graph =
+        agent_flow(%{"prompt" => "Rate", "output" => "json"}, [graph_node("ko", "Logger")], [
+          link("agent", "error", "ko")
+        ])
+
+      assert {:ok, context} = Runner.run(graph, %{})
 
       assert context["result"]["error"] =~ "not JSON"
       assert context["result"]["reply"] == "Sure thing"
@@ -311,7 +348,7 @@ defmodule HeddleNodes.AgentTest do
 
       graph = agent_flow(%{"prompt" => "Hi", "memory_key" => "ana"})
 
-      assert {:ok, _context} = Runner.run(graph, %{})
+      assert {:error, "down", "agent"} = Runner.run(graph, %{})
       assert Memory.load(1, "ana") == []
     end
   end

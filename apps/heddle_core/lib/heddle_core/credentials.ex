@@ -21,6 +21,25 @@ defmodule HeddleCore.Credentials do
       fields: [%{name: "token", label: "Bot token", secret: true, required: true}]
     },
     %{
+      id: "ai",
+      label: "AI provider",
+      fields: [
+        %{
+          name: "provider",
+          label: "Provider",
+          required: true,
+          default: "google",
+          options: [
+            %{label: "Google (Gemini, Nano Banana)", value: "google"},
+            %{label: "OpenAI (GPT, GPT Image, Whisper)", value: "openai"},
+            %{label: "Anthropic (Claude)", value: "anthropic"},
+            %{label: "xAI (Grok)", value: "xai"}
+          ]
+        },
+        %{name: "api_key", label: "API key", secret: true, required: true}
+      ]
+    },
+    %{
       id: "google",
       label: "Google service account",
       fields: [%{name: "json", label: "Service account JSON", secret: true, required: true}]
@@ -34,6 +53,16 @@ defmodule HeddleCore.Credentials do
         %{name: "username", label: "Username"},
         %{name: "password", label: "Password", secret: true},
         %{name: "from", label: "From address", required: true}
+      ]
+    },
+    %{
+      id: "imap",
+      label: "Email (IMAP)",
+      fields: [
+        %{name: "host", label: "Host", required: true},
+        %{name: "port", label: "Port", default: "993"},
+        %{name: "username", label: "Username", required: true},
+        %{name: "password", label: "Password", secret: true, required: true}
       ]
     },
     %{

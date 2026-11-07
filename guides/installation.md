@@ -163,6 +163,10 @@ Increase worker replicas carefully and tune these values together with your Post
 
 The **Credentials** page stores what nodes like Slack, S3 and FTP need to reach other services. Values are encrypted with a key derived from `SECRET_KEY_BASE`, and flows only keep the credential's name.
 
+Sending email takes an **Email (SMTP)** credential, and reading a mailbox takes an **Email (IMAP)** one. IMAP only connects over TLS, usually on port 993.
+
+The **AI** page sets what each AI task uses by default: text and chat, reading images, creating images, transcribing audio and text to speech. Each one takes an **AI provider** credential and a model. A node can override them, and the models offered are only the ones that can do the task. Generating images with Nano Banana takes a Google credential, with a key from Google AI Studio. Transcribing audio and text to speech take an OpenAI one. Without any of this, text tasks use the `HEDDLE_LLM_*` variables.
+
 The UI and the workers must share that secret. If it changes, every credential stops working and has to be entered again, so back it up with your data.
 
 ### 8. API-only UI mode
