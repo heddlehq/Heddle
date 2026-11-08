@@ -197,7 +197,8 @@ defmodule HeddleCore.Flows.Versions do
   `:save` or `:publish`.
   """
   def save_and_publish(%Scope{} = scope, %Flow{} = flow, graph, attrs \\ %{}) do
-    with {:save, {:ok, flow}} <- {:save, Flows.update_flow(scope, flow, graph)},
+    with {:save, {:ok, flow}} <-
+           {:save, Flows.update_flow(scope, flow, graph, checkpoint: false)},
          {:publish, {:ok, version}} <- {:publish, publish(scope, flow, attrs)} do
       {:ok, %{flow: Flows.get_flow!(flow.id), version: version}}
     else

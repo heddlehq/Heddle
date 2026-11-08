@@ -12,13 +12,17 @@ defmodule HeddleUI.Components.Flow.VersionPreview do
   attr :preview, :any, required: true
   attr :published_id, :any, default: nil
   attr :can_edit, :boolean, default: false
+  attr :history_open, :boolean, default: false, doc: "whether the history takes the right side"
 
   def version_preview(assigns) do
     ~H"""
     <div
       :if={@preview}
       id="version-preview-layer"
-      class="absolute inset-0 z-20 flex flex-col bg-gray-100 dark:bg-slate-900"
+      class={[
+        "absolute inset-y-0 left-0 z-20 flex flex-col bg-gray-100 dark:bg-slate-900",
+        if(@history_open, do: "right-0 sm:right-96", else: "right-0")
+      ]}
     >
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-2.5 dark:border-slate-700 dark:bg-slate-800">
         <div class="min-w-0">
