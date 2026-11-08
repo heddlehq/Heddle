@@ -105,6 +105,17 @@ defmodule HeddleCore.Flows do
   end
 
   @doc """
+  The draft of a flow the caller may do `action` with, as its editing session has it,
+  without joining it. Returns `{:ok, flow, %{graph: graph, seq: seq, epoch: epoch}}`.
+  """
+  def session_snapshot(%Scope{} = scope, action, id) do
+    with {:ok, flow} <- fetch_for(scope, action, id),
+         {:ok, snapshot} <- Session.snapshot(flow.id) do
+      {:ok, flow, snapshot}
+    end
+  end
+
+  @doc """
   Applies operations a person made on a flow they may edit, see `Heddle.Graph.Ops`.
   Returns `{:ok, seq}`, `{:error, :forbidden}` for someone who may only see it, or
   `{:error, reason}`.
