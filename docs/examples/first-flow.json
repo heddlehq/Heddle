@@ -31,8 +31,8 @@
       "type": "Evaluate Code",
       "label": "Write a sentence",
       "controls": {
-        "language": "python",
-        "code_python": "set_result(f\"{result['full_name']} has {result['stargazers_count']} stars\")"
+        "language": "elixir",
+        "code_elixir": "set_result(\"#{result[\"full_name\"]} has #{result[\"stargazers_count\"]} stars\")"
       },
       "position": {
         "x": 520,

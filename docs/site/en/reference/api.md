@@ -36,9 +36,9 @@ Keys also have **scopes**, picked when you create them: `workflows:read`, `workf
 | `401` | No key, a wrong one, or its owner left the workspace |
 | `403` | The scope or the role doesn't allow it |
 | `404` | It doesn't exist, or it's in another workspace |
-| `409` | The flow was never published, and the call needs a published version |
+| `409` | The flow was never published, and the call needs a published version; or, for `/changes`, operations on something no longer there |
 | `422` | What was sent isn't valid: `errors` says what |
-| `429` | More than 100 requests in a minute with this key |
+| `429` | More than 100 requests in a minute with this key (1200 for live editing) |
 
 ## Endpoints
 
@@ -103,6 +103,22 @@ A run takes the published version. `"version": "draft"` in the body runs the dra
 | `POST /api/v1/workflows/{id}/versions/{version id}/restore` | Put a version in the draft |
 
 See [Drafts and versions](/docs/concepts/versions/).
+
+### Editing together
+
+| Method and path | Does |
+| --- | --- |
+| `GET /api/v1/workflows/{id}/live` | Follow the draft as people edit it, as server-sent events |
+| `POST /api/v1/workflows/{id}/changes` | Change the draft without taking back what others changed |
+| `POST /api/v1/workflows/{id}/focus` | Say which nodes you point at |
+
+`PUT` and `PATCH` make the draft what you send, which takes back whatever someone else changed since you read it. To edit while others do, as [Treadle](https://github.com/heddlehq/Treadle) does:
+
+1. Open `live`. While it is open you are on the flow like anyone with its canvas open: they see you, and the stream says who else is there. It sends `ready` first, with your `client`, whether you `can_edit` and the `graph`; then a `change` with the graph after each change, `presence` when someone comes, goes or selects something, and `cursor` where their pointers are. Another `ready` means the stream lost track: take its graph as it is.
+2. Send each change to `changes` with `base`, the graph you last had, and `graph`, the one you have now. Only what changed between the two is applied, on top of what everyone else did; the answer has the draft right after it. What changes the same field last wins.
+3. Send `focus` with your `client` and the nodes `selected`, and others see them in your color. A client without a pointer, like a terminal, sends a `cursor` too, `x` and `y` on the flow, and the canvases draw it as yours.
+
+Live editing counts apart from the rest of the API, up to 1200 requests a minute per key. See [Editing together](/docs/concepts/collaboration/).
 
 ### The agent
 

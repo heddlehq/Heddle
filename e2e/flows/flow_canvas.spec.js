@@ -149,6 +149,69 @@ test.describe('Flow written outside the canvas', () => {
   });
 });
 
+// A node with several outputs draws each one in its own place, so a wire can leave from
+// the one meant. They were once all drawn on the same spot, and error, on top, took
+// every wire.
+test.describe('A node with several outputs', () => {
+  test.describe.configure({ timeout: 60000 });
+
+  test('connects from the output picked, and keeps it', async ({ page, request }) => {
+    const token = await createApiKey(page);
+    const flowId = await openNewFlow(page);
+    const headers = { Authorization: `Bearer ${token}` };
+
+    await request.put(`/api/v1/workflows/${flowId}`, {
+      headers,
+      data: {
+        workflow: {
+          nodes: [
+            { id: 'call', type: 'HTTP Request', label: 'Call', controls: {}, position: { x: 0, y: 0 } },
+            { id: 'ok', type: 'Logger', label: 'It worked', controls: {}, position: { x: 320, y: -120 } },
+            { id: 'bad', type: 'Logger', label: 'It failed', controls: {}, position: { x: 320, y: 120 } },
+          ],
+          connections: [],
+        },
+      },
+    });
+    await page.reload();
+    await waitForLiveView(page);
+
+    const call = page.locator('custom-node').filter({ hasText: 'Call' });
+    const success = call.locator('.socket-container.right[data-key="success"] .socket');
+    const error = call.locator('.socket-container.right[data-key="error"] .socket');
+    await expect(success).toBeVisible({ timeout: 5000 });
+
+    // Two outputs, two places.
+    const [a, b] = [await success.boundingBox(), await error.boundingBox()];
+    expect(Math.abs(a.y - b.y)).toBeGreaterThan(12);
+
+    // Their names show on hover.
+    await call.hover();
+    await expect(call.locator('.socket-label[data-key="success"]')).toBeVisible();
+
+    const wire = async (from, to) => {
+      const start = await from.boundingBox();
+      const end = await page
+        .locator('custom-node')
+        .filter({ hasText: to })
+        .locator('.socket-container.left .socket')
+        .boundingBox();
+      await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2, { steps: 12 });
+      await page.mouse.up();
+    };
+
+    await wire(success, 'It worked');
+    await wire(error, 'It failed');
+    await waitSaved(page);
+
+    const { data } = await (await request.get(`/api/v1/workflows/${flowId}`, { headers })).json();
+    const outputs = Object.fromEntries(data.connections.map((c) => [c.target, c.sourceOutput]));
+    expect(outputs).toEqual({ ok: 'success', bad: 'error' });
+  });
+});
+
 test.describe('Testing a webhook', () => {
   test.describe.configure({ timeout: 60000 });
 

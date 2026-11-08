@@ -16,7 +16,7 @@ config :heddle_core, HeddleCore.Repo,
   password: "postgres",
   hostname: "127.0.0.1",
   port: String.to_integer(System.get_env("HEDDLE_DB_PORT", "5432")),
-  database: "heddle_dev",
+  database: System.get_env("HEDDLE_DB_NAME", "heddle_dev"),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

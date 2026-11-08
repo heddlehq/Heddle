@@ -34,6 +34,8 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
             </div>
           </div>
           <button
+            id="close-node-config"
+            type="button"
             phx-click="close_config_modal"
             class="shrink-0 flex items-center justify-center w-9 h-9 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
           >

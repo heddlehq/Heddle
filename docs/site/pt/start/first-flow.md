@@ -35,10 +35,10 @@ Passe o mouse num nó e aperte a engrenagem para abrir a gaveta dele à direita.
 | Method | `GET` |
 | Endpoint URL | `https://api.github.com/repos/heddlehq/Heddle` |
 
-**Evaluate Code**: escolha `python` como linguagem, aperte **Edit Code** e escreva:
+**Evaluate Code**: deixe `elixir` como linguagem, aperte **Edit Code** e escreva:
 
-```python
-set_result(f"{result['full_name']} tem {result['stargazers_count']} estrelas")
+```elixir
+set_result("#{result["full_name"]} tem #{result["stargazers_count"]} estrelas")
 ```
 
 `result` é o que o passo anterior deixou: aqui, o que o GitHub respondeu. [Dados numa execução](/pt/docs/concepts/context/) explica como os dados passam de um passo para o outro.
