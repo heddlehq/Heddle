@@ -1,0 +1,72 @@
+{
+  "S3: Upload File": {
+    "result": {
+      "key": "reports/2026-05.csv"
+    },
+    "notes": {
+      "en": "**Content** is `{{result}}` after a node that returned a file, like a download, an AI image or **Write CSV**, or text. **Content type**, like `text/csv`, tells browsers what it is. An existing file at **Key** is replaced.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+      "pt": "**Content** é `{{result}}` depois de um nó que devolveu um arquivo, como um download, uma imagem de IA ou **Write CSV**, ou um texto. **Content type**, como `text/csv`, diz aos navegadores o que ele é. Um arquivo que já existe em **Key** é substituído.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+    }
+  },
+  "S3: Download File": {
+    "result": {
+      "content": "name,total\nAna,120\n"
+    },
+    "notes": {
+      "en": "`result.content` holds the file. Text stays as text, and anything else comes in base64 with `\"encoding\": \"base64\"`, which the upload nodes and attachments take back unchanged as `{{result}}`.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+      "pt": "`result.content` guarda o arquivo. Texto fica como texto, e o resto vem em base64 com `\"encoding\": \"base64\"`, que os nós de upload e os anexos aceitam de volta sem alteração como `{{result}}`.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+    }
+  },
+  "S3: List Files": {
+    "result": {
+      "keys": [
+        "reports/2026-04.csv",
+        "reports/2026-05.csv"
+      ]
+    },
+    "notes": {
+      "en": "Lists the keys that start with **Prefix**, up to the first 1,000. Blank lists from the top of the bucket.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+      "pt": "Lista as chaves que começam com **Prefix**, até as primeiras 1.000. Em branco lista a partir do topo do bucket.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+    }
+  },
+  "S3: File Info": {
+    "result": {
+      "key": "reports/2026-05.csv",
+      "size": 20481,
+      "type": "text/csv",
+      "modified": "Tue, 12 May 2026 09:14:00 GMT"
+    },
+    "notes": {
+      "en": "Reads a file's size, type and last change without downloading it. It goes down `error` when the file doesn't exist.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+      "pt": "Lê o tamanho, o tipo e a última alteração de um arquivo sem baixar. Sai por `error` quando o arquivo não existe.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+    }
+  },
+  "S3: Copy File": {
+    "result": {
+      "key": "archive/2026-05.csv"
+    },
+    "notes": {
+      "en": "Copies **Key** of **Bucket** to **Target key** of **Target bucket**, on the server side. To move a file, follow it with **S3: Delete File**.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+      "pt": "Copia **Key** de **Bucket** para **Target key** de **Target bucket**, no próprio servidor. Para mover, siga com **S3: Delete File**.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+    }
+  },
+  "S3: Delete File": {
+    "result": {
+      "key": "reports/2026-05.csv"
+    },
+    "notes": {
+      "en": "Deletes the file. S3 answers the same when there was nothing there.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+      "pt": "Apaga o arquivo. O S3 responde igual quando não havia nada lá.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+    }
+  },
+  "S3: Share Link": {
+    "result": {
+      "url": "https://my-bucket.s3.amazonaws.com/reports/2026-05.csv?X-Amz-Algorithm=AWS4-HMAC-SHA256&...",
+      "expires_in": 3600
+    },
+    "notes": {
+      "en": "Signs a link that downloads a private file, which anyone with it can open until it expires. **Expires in** is in seconds, an hour by default and a week at most. Send `{{result.url}}` by email or Slack.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+      "pt": "Assina um link que baixa um arquivo privado, que qualquer um com ele abre até expirar. **Expires in** é em segundos, uma hora por padrão e uma semana no máximo. Mande `{{result.url}}` por email ou Slack.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+    }
+  }
+}

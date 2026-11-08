@@ -1,0 +1,169 @@
+{
+  "name": "Refunds with approval",
+  "nodes": [
+    {
+      "id": "hook",
+      "type": "Webhook",
+      "label": "Refund request",
+      "controls": {
+        "method": "POST",
+        "path": "/refunds"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "ask",
+      "type": "Slack: Send Message",
+      "label": "Ask #finance",
+      "controls": {
+        "credential": "Slack",
+        "channel": "C0FINANCE01",
+        "text": "Refund of {{body.amount}} for order {{body.order_id}} ({{body.reason}}).\nApprove: {{resume_url}}?decision=approve\nReject: {{resume_url}}?decision=reject",
+        "thread_ts": ""
+      },
+      "position": {
+        "x": 280,
+        "y": 0
+      }
+    },
+    {
+      "id": "wait",
+      "type": "Wait",
+      "label": "Wait for a decision",
+      "controls": {
+        "wait_for": "call",
+        "amount": "24",
+        "unit": "hours",
+        "wait_until": ""
+      },
+      "position": {
+        "x": 560,
+        "y": 0
+      }
+    },
+    {
+      "id": "decide",
+      "type": "Switch",
+      "label": "Approved?",
+      "controls": {
+        "switch_value": "{{result.query_params.decision}}",
+        "case_1": "approve",
+        "case_2": "reject",
+        "case_3": "",
+        "case_4": ""
+      },
+      "position": {
+        "x": 840,
+        "y": -60
+      }
+    },
+    {
+      "id": "refund",
+      "type": "HTTP Request",
+      "label": "Refund it",
+      "controls": {
+        "method": "POST",
+        "url": "https://payments.example.com/refunds",
+        "headers": "{\"Content-Type\": \"application/json\"}",
+        "body": "{\"order_id\": \"{{body.order_id}}\", \"amount\": {{body.amount}}}"
+      },
+      "position": {
+        "x": 1120,
+        "y": -180
+      }
+    },
+    {
+      "id": "done",
+      "type": "Slack: Send Message",
+      "label": "Say it was refunded",
+      "controls": {
+        "credential": "Slack",
+        "channel": "C0FINANCE01",
+        "text": "Order {{body.order_id}} was refunded.",
+        "thread_ts": ""
+      },
+      "position": {
+        "x": 1400,
+        "y": -180
+      }
+    },
+    {
+      "id": "rejected",
+      "type": "Slack: Send Message",
+      "label": "Say it was rejected",
+      "controls": {
+        "credential": "Slack",
+        "channel": "C0FINANCE01",
+        "text": "The refund of order {{body.order_id}} was rejected.",
+        "thread_ts": ""
+      },
+      "position": {
+        "x": 1120,
+        "y": -20
+      }
+    },
+    {
+      "id": "expired",
+      "type": "Slack: Send Message",
+      "label": "Say nobody decided",
+      "controls": {
+        "credential": "Slack",
+        "channel": "C0FINANCE01",
+        "text": "Nobody decided on the refund of order {{body.order_id}} in 24 hours.",
+        "thread_ts": ""
+      },
+      "position": {
+        "x": 840,
+        "y": 160
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "hook",
+      "sourceOutput": "exec",
+      "target": "ask",
+      "targetInput": "exec"
+    },
+    {
+      "source": "ask",
+      "sourceOutput": "success",
+      "target": "wait",
+      "targetInput": "exec"
+    },
+    {
+      "source": "wait",
+      "sourceOutput": "exec",
+      "target": "decide",
+      "targetInput": "exec"
+    },
+    {
+      "source": "wait",
+      "sourceOutput": "timeout",
+      "target": "expired",
+      "targetInput": "exec"
+    },
+    {
+      "source": "decide",
+      "sourceOutput": "case 1",
+      "target": "refund",
+      "targetInput": "exec"
+    },
+    {
+      "source": "decide",
+      "sourceOutput": "case 2",
+      "target": "rejected",
+      "targetInput": "exec"
+    },
+    {
+      "source": "refund",
+      "sourceOutput": "success",
+      "target": "done",
+      "targetInput": "exec"
+    }
+  ],
+  "comments": []
+}

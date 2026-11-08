@@ -1,0 +1,80 @@
+{
+  "Slack: Send Message": {
+    "result": {
+      "channel": "C0123456789",
+      "ts": "1715712345.123456"
+    },
+    "notes": {
+      "en": "**Channel** is a channel ID, like `C0123456789`: **Slack: List Channels** gives them, and Slack shows it at the bottom of a channel's details. Invite the app to the channel first. **Message** takes Slack's formatting, like `*bold*` and `<https://example.com|links>`. Fill in **Thread timestamp** to reply in a thread.\n\nThe credential is a bot token (`xoxb-...`) of a Slack app. See [Credentials](/docs/guides/credentials/#slack).",
+      "pt": "**Channel** é o ID de um canal, como `C0123456789`: **Slack: List Channels** devolve eles, e o Slack mostra no fim dos detalhes do canal. Convide o app para o canal antes. **Message** aceita a formatação do Slack, como `*negrito*` e `<https://example.com|links>`. Preencha **Thread timestamp** para responder numa thread.\n\nA credencial é um token de bot (`xoxb-...`) de um app do Slack. Veja [Credenciais](/pt/docs/guides/credentials/#slack)."
+    }
+  },
+  "Slack: Read Messages": {
+    "result": [
+      {
+        "user": "U024BE7LH",
+        "text": "Deploy is done",
+        "ts": "1715712345.123456",
+        "thread_ts": null
+      }
+    ],
+    "notes": {
+      "en": "Returns the latest messages of a channel, newest first, up to **Limit**. **Channel** is a channel ID, like `C0123456789`: **Slack: List Channels** gives them, and Slack shows it at the bottom of a channel's details. Invite the app to the channel first.",
+      "pt": "Devolve as mensagens mais recentes de um canal, da mais nova para a mais antiga, até **Limit**. **Channel** é o ID de um canal, como `C0123456789`: **Slack: List Channels** devolve eles, e o Slack mostra no fim dos detalhes do canal. Convide o app para o canal antes."
+    }
+  },
+  "Slack: Update Message": {
+    "result": {
+      "channel": "C0123456789",
+      "ts": "1715712345.123456"
+    },
+    "notes": {
+      "en": "Rewrites a message the app sent. **Message timestamp** (`ts`) names a message: the defaults read it from a **Slack: Send Message** right before, as `{{result.ts}}`. A status message that changes as the flow goes is a Send Message first, then Update Message.",
+      "pt": "Reescreve uma mensagem que o app mandou. **Message timestamp** (`ts`) identifica uma mensagem: os padrões leem de um **Slack: Send Message** logo antes, como `{{result.ts}}`. Uma mensagem de status que muda conforme o fluxo anda é um Send Message primeiro e um Update Message depois."
+    }
+  },
+  "Slack: Delete Message": {
+    "result": {
+      "channel": "C0123456789",
+      "ts": "1715712345.123456"
+    },
+    "notes": {
+      "en": "Deletes a message the app sent. **Message timestamp** (`ts`) names a message: the defaults read it from a **Slack: Send Message** right before, as `{{result.ts}}`.",
+      "pt": "Apaga uma mensagem que o app mandou. **Message timestamp** (`ts`) identifica uma mensagem: os padrões leem de um **Slack: Send Message** logo antes, como `{{result.ts}}`."
+    }
+  },
+  "Slack: Add Reaction": {
+    "result": {
+      "emoji": "white_check_mark"
+    },
+    "notes": {
+      "en": "**Emoji** is the name, with or without colons: `white_check_mark` or `:eyes:`. **Message timestamp** (`ts`) names a message: the defaults read it from a **Slack: Send Message** right before, as `{{result.ts}}`.",
+      "pt": "**Emoji** é o nome, com ou sem dois pontos: `white_check_mark` ou `:eyes:`. **Message timestamp** (`ts`) identifica uma mensagem: os padrões leem de um **Slack: Send Message** logo antes, como `{{result.ts}}`."
+    }
+  },
+  "Slack: Upload File": {
+    "result": {
+      "file_id": "F07ABCDE123"
+    },
+    "notes": {
+      "en": "**Content** is `{{result}}` after a node that returned a file, like **S3: Download File** or **Write CSV**, or text. **File name** shows in Slack, with its extension. **Comment** goes with it as a message. **Channel** is a channel ID, like `C0123456789`: **Slack: List Channels** gives them, and Slack shows it at the bottom of a channel's details. Invite the app to the channel first.",
+      "pt": "**Content** é `{{result}}` depois de um nó que devolveu um arquivo, como **S3: Download File** ou **Write CSV**, ou um texto. **File name** aparece no Slack, com a extensão. **Comment** vai junto como mensagem. **Channel** é o ID de um canal, como `C0123456789`: **Slack: List Channels** devolve eles, e o Slack mostra no fim dos detalhes do canal. Convide o app para o canal antes."
+    }
+  },
+  "Slack: List Channels": {
+    "result": [
+      {
+        "id": "C0123456789",
+        "name": "general"
+      },
+      {
+        "id": "C0987654321",
+        "name": "sales"
+      }
+    ],
+    "notes": {
+      "en": "Lists the channels the token sees, every page of them, without archived ones. **Types** picks public, private or both.",
+      "pt": "Lista os canais que o token enxerga, todas as páginas, sem os arquivados. **Types** escolhe públicos, privados ou os dois."
+    }
+  }
+}

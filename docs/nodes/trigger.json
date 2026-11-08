@@ -1,0 +1,23 @@
+{
+  "Webhook": {
+    "result": null,
+    "notes": {
+      "en": "The flow's address is `/api/flows/<flow id>/webhook/<path>`, and it answers only the **Method** picked. What the request brings is in the run:\n\n| Key | What it holds |\n| --- | --- |\n| `body` | The body, decoded when it is JSON |\n| `headers` | The headers, by name in lowercase |\n| `query_params` | The query string |\n| `method`, `request_path` | How it was called |\n\nThe caller gets `202 Accepted` at once, unless the flow has a **Respond to Webhook**: then it waits for that answer. Production calls run the [published version](/docs/concepts/versions/), and a flow that was never published answers `404`.",
+      "pt": "O endereço do fluxo é `/api/flows/<id do fluxo>/webhook/<caminho>`, e ele só atende o **Method** escolhido. O que a requisição traz fica na execução:\n\n| Chave | O que guarda |\n| --- | --- |\n| `body` | O corpo, já decodificado quando é JSON |\n| `headers` | Os cabeçalhos, pelo nome em minúsculas |\n| `query_params` | A query string |\n| `method`, `request_path` | Como foi chamado |\n\nQuem chama recebe `202 Accepted` na hora, a não ser que o fluxo tenha um **Respond to Webhook**: aí ele espera essa resposta. As chamadas de produção rodam a [versão publicada](/pt/docs/concepts/versions/), e um fluxo que nunca foi publicado responde `404`."
+    }
+  },
+  "Schedule": {
+    "result": null,
+    "notes": {
+      "en": "**Cron (UTC)** takes five fields: minute, hour, day of the month, month and day of the week. `0 9 * * 1-5` runs at 09:00 UTC on weekdays, and `*/15 * * * *` every fifteen minutes.\n\nA flow can have several Schedules, and each starts the run from itself. Schedules run the [published version](/docs/concepts/versions/) only: a draft that was never published doesn't run on its own. The editor accepts a half-written expression while you type, and publishing checks it.",
+      "pt": "**Cron (UTC)** leva cinco campos: minuto, hora, dia do mês, mês e dia da semana. `0 9 * * 1-5` roda às 09:00 UTC nos dias úteis, e `*/15 * * * *` a cada quinze minutos.\n\nUm fluxo pode ter vários Schedules, e cada um começa a execução por ele mesmo. Os Schedules só rodam a [versão publicada](/pt/docs/concepts/versions/): um rascunho que nunca foi publicado não roda sozinho. O editor aceita uma expressão pela metade enquanto você digita, e a publicação confere."
+    }
+  },
+  "Error Trigger": {
+    "result": null,
+    "notes": {
+      "en": "Put it in a flow, then pick that flow as the **error flow** of others, in their **Settings**. When a run of one of them fails and nothing handled the failure, this flow runs with:\n\n```json\n{\n  \"error\": {\"message\": \"Slack refused it: channel_not_found\", \"node_id\": \"n4\", \"node_label\": \"Tell the team\", \"node_type\": \"Slack: Send Message\"},\n  \"execution\": {\"id\": \"8f3k2m\", \"flow_id\": 12, \"flow_name\": \"New leads\", \"url\": \"https://heddle.example.com/flows/12?execution=8f3k2m\"}\n}\n```\n\nThe error flow runs its published version, and a failure in it doesn't start another error flow.",
+      "pt": "Coloque num fluxo e escolha esse fluxo como **fluxo de erro** de outros, nas **Configurações** deles. Quando uma execução de um deles falha e nada tratou a falha, este fluxo roda com:\n\n```json\n{\n  \"error\": {\"message\": \"Slack refused it: channel_not_found\", \"node_id\": \"n4\", \"node_label\": \"Avisar o time\", \"node_type\": \"Slack: Send Message\"},\n  \"execution\": {\"id\": \"8f3k2m\", \"flow_id\": 12, \"flow_name\": \"Novos leads\", \"url\": \"https://heddle.example.com/flows/12?execution=8f3k2m\"}\n}\n```\n\nO fluxo de erro roda a versão publicada dele, e uma falha nele não dispara outro fluxo de erro."
+    }
+  }
+}
