@@ -42,14 +42,25 @@ defmodule HeddleCore.Flows.Flow do
   end
 
   @doc false
-  def changeset(flow, attrs) do
+  def changeset(flow, attrs, opts \\ []) do
     flow
     |> cast(attrs, [:name, :nodes, :connections, :comments])
     |> validate_required([:name])
     |> update_change(:nodes, &Graph.normalize_nodes/1)
     |> update_change(:connections, &Graph.normalize_connections/1)
-    |> validate_graph()
+    |> validate_graph(opts)
     |> validate_comments()
+  end
+
+  @doc """
+  For the graph an editing session saves as the people in it change it, see
+  `HeddleCore.Flows.Session`. It needs to be a graph, and may hold what is still being
+  typed: publishing checks the rest.
+  """
+  def draft_changeset(flow, graph, contributor_ids) do
+    flow
+    |> changeset(graph, draft: true)
+    |> put_change(:draft_contributor_ids, contributor_ids)
   end
 
   @doc """
@@ -65,11 +76,11 @@ defmodule HeddleCore.Flows.Flow do
     |> assoc_constraint(:error_flow)
   end
 
-  defp validate_graph(changeset) do
+  defp validate_graph(changeset, opts) do
     nodes = get_field(changeset, :nodes) || []
     connections = get_field(changeset, :connections) || []
 
-    case GraphValidator.validate(nodes, connections) do
+    case GraphValidator.validate(nodes, connections, Keyword.take(opts, [:draft])) do
       :ok -> changeset
       {:error, field, message} -> add_error(changeset, field, message)
     end

@@ -37,8 +37,9 @@ defmodule HeddleUI.FlowLive.EditorTest do
       refute has_element?(lv, "button[phx-click='run_flow']")
       refute has_element?(lv, "#chat-component")
 
-      render_hook(lv, "save_graph_data", %{"data" => %{"name" => "Changed"}})
-      assert Flows.get_flow!(flow.id).name == "Read me"
+      # The canvas follows the flow, and its changes are refused, see FlowChannelTest.
+      assert has_element?(lv, "#flow-canvas[data-socket-token]")
+      refute has_element?(lv, "#save-state")
 
       render_hook(lv, "save_and_run", %{"data" => %{"nodes" => [], "connections" => []}})
       assert Executions.list_executions_for_flow(flow) == []
@@ -77,8 +78,8 @@ defmodule HeddleUI.FlowLive.EditorTest do
       refute html =~ "View only"
       assert has_element?(lv, "#canvas-tools")
 
-      render_hook(lv, "save_graph_data", %{"data" => %{"name" => "Edited"}})
-      assert Flows.get_flow!(flow.id).name == "Edited"
+      assert has_element?(lv, "#save-state")
+      assert has_element?(lv, "#flow-canvas[data-flow-id='#{flow.id}'][data-socket-token]")
     end
 
     test "opening a flow of another of the person's workspaces makes it theirs" do
@@ -358,30 +359,14 @@ defmodule HeddleUI.FlowLive.EditorTest do
     end
   end
 
-  describe "graph_changed event" do
-    test "marks flow as having unsaved changes", %{conn: conn} do
-      flow = flow_fixture()
-
-      {:ok, lv, html} = live(conn, ~p"/flows/#{flow.id}")
-
-      refute html =~ "unsaved changes"
-
-      html = render_hook(lv, "graph_changed", %{})
-      assert html =~ "unsaved changes"
-      assert html =~ "Save Changes"
-    end
-  end
-
   describe "node_added_internally event" do
-    test "marks has_changes after node added", %{conn: conn} do
+    test "remembers the node among the recent ones", %{conn: conn} do
       flow = flow_fixture()
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
 
-      {:ok, lv, html} = live(conn, ~p"/flows/#{flow.id}")
+      render_hook(lv, "node_added_internally", %{"name" => "Start", "data" => %{}})
 
-      refute html =~ "unsaved changes"
-
-      html = render_hook(lv, "node_added_internally", %{"name" => "Start", "data" => %{}})
-      assert html =~ "unsaved changes"
+      assert render(lv) =~ "Start"
     end
   end
 
@@ -402,39 +387,6 @@ defmodule HeddleUI.FlowLive.EditorTest do
       for kind <- ~w(title text note section) do
         assert has_element?(lv, "#add-comment-#{kind}[data-comment-kind=#{kind}]")
       end
-    end
-
-    test "are sent to the canvas", %{conn: conn} do
-      flow = flow_fixture(%{comments: [@comment]})
-      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
-
-      render_hook(lv, "client_ready", %{})
-
-      assert_push_event(lv, "load_graph_data", %{comments: [@comment]})
-    end
-
-    test "are saved with the graph, and that doesn't reload the canvas", %{conn: conn} do
-      flow = flow_fixture()
-      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
-
-      render_hook(lv, "save_graph_data", %{
-        "data" => %{"nodes" => [], "connections" => [], "comments" => [@comment]}
-      })
-
-      render(lv)
-
-      assert Flows.get_flow!(flow.id).comments == [@comment]
-      refute_push_event(lv, "load_graph_data", %{comments: [@comment]})
-    end
-
-    test "reload the canvas when changed elsewhere", %{conn: conn} do
-      flow = flow_fixture()
-      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
-
-      {:ok, _flow} = Flows.update_flow(flow, %{comments: [@comment]})
-      render(lv)
-
-      assert_push_event(lv, "load_graph_data", %{comments: [@comment]})
     end
   end
 
@@ -480,17 +432,16 @@ defmodule HeddleUI.FlowLive.EditorTest do
       assert has_element?(lv, ~s(#import-flow[data-replace="true"]))
     end
 
-    test "puts the flow on the canvas unsaved, without its credentials", %{conn: conn} do
-      flow = flow_fixture()
+    test "replaces the draft, without its credentials, keeping the one it had", %{conn: conn} do
+      flow = flow_fixture(%{nodes: [%{"id" => "s", "type" => "Start", "controls" => %{}}]})
       {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
 
-      html = render_hook(lv, "import_flow", %{"json" => Jason.encode!(@imported)})
+      render_hook(lv, "import_flow", %{"json" => Jason.encode!(@imported)})
 
-      assert_push_event(lv, "load_graph_data", %{nodes: nodes, connections: [_connection]})
-      assert Enum.find(nodes, &(&1["id"] == "tell"))["controls"]["credential"] == ""
-      assert html =~ "unsaved changes"
       assert has_element?(lv, "#flash-info", "Flow imported")
-      assert HeddleCore.Flows.get_flow!(flow.id).nodes == []
+      %{nodes: nodes, connections: [_connection]} = HeddleCore.Flows.get_flow!(flow.id)
+      assert Enum.find(nodes, &(&1["id"] == "tell"))["controls"]["credential"] == ""
+      assert %{nodes: [%{"id" => "s"}]} = HeddleCore.Flows.Versions.latest(flow)
     end
 
     test "says why a file can't be imported", %{conn: conn} do
@@ -508,44 +459,12 @@ defmodule HeddleUI.FlowLive.EditorTest do
           %{hd(@imported["connections"]) | "sourceOutput" => "nope"}
         ])
 
-      html = render_hook(lv, "import_flow", %{"json" => Jason.encode!(bad)})
+      render_hook(lv, "import_flow", %{"json" => Jason.encode!(bad)})
       assert has_element?(lv, "#flash-error", "can't be imported")
-      refute html =~ "unsaved changes"
+      assert HeddleCore.Flows.get_flow!(flow.id).nodes == []
 
       render_hook(lv, "import_flow_too_big", %{})
       assert has_element?(lv, "#flash-error", "too big")
-    end
-  end
-
-  describe "save_graph_data event" do
-    test "saves graph data and clears has_changes", %{conn: conn} do
-      flow = flow_fixture()
-
-      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
-
-      render_hook(lv, "graph_changed", %{})
-
-      html =
-        render_hook(lv, "save_graph_data", %{
-          "data" => %{
-            "nodes" => [
-              %{
-                "id" => "n1",
-                "type" => "Start",
-                "label" => "Start",
-                "controls" => %{},
-                "position" => %{"x" => 0, "y" => 0}
-              }
-            ],
-            "connections" => []
-          }
-        })
-
-      refute html =~ "unsaved changes"
-
-      updated_flow = HeddleCore.Flows.get_flow!(flow.id)
-      assert length(updated_flow.nodes) == 1
-      assert hd(updated_flow.nodes)["type"] == "Start"
     end
   end
 
@@ -1403,9 +1322,6 @@ defmodule HeddleUI.FlowLive.EditorTest do
 
       assert [%{input: %{"trigger" => "section", "section_id" => "billing"}}] =
                Executions.list_executions_for_flow(flow)
-
-      assert [%{"manual" => true, "nodes" => ["entry"]}] =
-               HeddleCore.Flows.get_flow!(flow.id).comments
     end
 
     test "asks for the request when the section starts at a Webhook", %{lv: lv, flow: flow} do

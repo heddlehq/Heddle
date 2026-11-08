@@ -421,7 +421,9 @@ defmodule HeddleUI.MCP.ServerTest do
       })
 
       assert [%{"position" => %{"x" => -7, "y" => 9}}, node] = Flows.get_flow!(flow.id).nodes
-      refute Map.has_key?(node, "position")
+      # A new node is placed once, so every canvas draws it in the same place.
+      assert %{"x" => x, "y" => y} = node["position"]
+      assert is_number(x) and is_number(y)
     end
   end
 end

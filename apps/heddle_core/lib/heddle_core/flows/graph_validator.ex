@@ -68,7 +68,7 @@ defmodule HeddleCore.Flows.GraphValidator do
 
   defp validate_graph(nodes, connections, opts) do
     with {:ok, definitions} <- definitions(opts),
-         :ok <- validate_nodes(nodes, definitions),
+         :ok <- validate_nodes(nodes, definitions, opts),
          :ok <- validate_connections(connections, nodes, definitions) do
       :ok
     end
@@ -105,7 +105,11 @@ defmodule HeddleCore.Flows.GraphValidator do
     end
   end
 
-  defp validate_nodes(nodes, definitions) do
+  # A draft (`draft: true`) may hold what is still being typed, such as half a cron
+  # expression: it only has to be a graph. What runs is checked in full when published.
+  defp validate_nodes(nodes, definitions, opts) do
+    draft? = Keyword.get(opts, :draft, false)
+
     node_ids = MapSet.new(nodes, & &1["id"])
 
     Enum.reduce_while(nodes, :ok, fn node, :ok ->
@@ -134,7 +138,7 @@ defmodule HeddleCore.Flows.GraphValidator do
         not Map.has_key?(definitions, node["type"]) ->
           {:halt, {:error, :nodes, "contains unknown node type"}}
 
-        invalid_schedule?(node) ->
+        not draft? and invalid_schedule?(node) ->
           {:halt, {:error, :nodes, "contains a Schedule node with an invalid cron expression"}}
 
         true ->
