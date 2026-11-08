@@ -15,6 +15,11 @@ defmodule HeddleUI.PublicAPI.V1.Routes do
       pipeline :public_api_authenticated do
         plug HeddleUI.Plugs.ApiKeyAuth
       end
+
+      # Editing together sends each change as it is made: it has a budget of its own.
+      pipeline :public_api_live do
+        plug HeddleUI.Plugs.ApiKeyAuth, rate_limit: :live
+      end
     end
   end
 
@@ -33,6 +38,20 @@ defmodule HeddleUI.PublicAPI.V1.Routes do
         pipe_through [:mcp]
 
         get "/workflows/:workflow_id/agent/events", AgentController, :events
+      end
+
+      # No :accepts here either: it answers with text/event-stream.
+      scope "/api/v1", HeddleUI.PublicAPI.V1 do
+        pipe_through [:public_api_live]
+
+        get "/workflows/:workflow_id/live", LiveController, :live
+      end
+
+      scope "/api/v1", HeddleUI.PublicAPI.V1 do
+        pipe_through [:public_api, :public_api_live]
+
+        post "/workflows/:workflow_id/changes", LiveController, :changes
+        post "/workflows/:workflow_id/focus", LiveController, :focus
       end
 
       scope "/api/v1", HeddleUI.PublicAPI.V1 do
