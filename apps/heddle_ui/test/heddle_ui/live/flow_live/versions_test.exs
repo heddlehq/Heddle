@@ -18,11 +18,11 @@ defmodule HeddleUI.FlowLive.VersionsTest do
     %{conn: log_in_user(conn, admin), user: admin, scope: Scope.for_user(admin)}
   end
 
-  defp graph(nodes), do: %{"nodes" => nodes, "connections" => [], "comments" => []}
-
-  test "a new flow isn't published until someone publishes it", %{conn: conn} do
+  test "a new flow isn't published until someone publishes it", %{conn: conn, scope: scope} do
     flow = flow_fixture(%{nodes: [@start], published: false})
     {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+    # What the canvas changed reaches the draft through its channel.
+    {:ok, _flow} = Flows.update_flow(scope, flow, %{nodes: [@start, @output]}, checkpoint: false)
 
     assert has_element?(lv, "#flow-publish-status[data-status='unpublished']")
 
@@ -30,7 +30,8 @@ defmodule HeddleUI.FlowLive.VersionsTest do
     assert has_element?(lv, "#publish-modal")
 
     lv |> form("#publish-form", publish: %{note: "First"}) |> render_submit()
-    render_hook(lv, "publish_graph_data", %{"data" => graph([@start, @output])})
+    assert_push_event(lv, "request_publish_data", %{})
+    render_hook(lv, "publish_graph_data", %{})
 
     flow = Flows.get_flow!(flow.id)
     assert %{number: 1, note: "First", nodes: [_, _]} = Versions.published_version(flow)
@@ -39,13 +40,14 @@ defmodule HeddleUI.FlowLive.VersionsTest do
     assert has_element?(lv, "#flow-publish-status[data-status='published']")
   end
 
-  test "a change on the canvas isn't what production runs", %{conn: conn} do
+  test "a change of the draft isn't what production runs", %{conn: conn, scope: scope} do
     flow = flow_fixture(%{nodes: [@start]})
     {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
 
     assert has_element?(lv, "#flow-publish-status[data-status='published']")
 
-    render_hook(lv, "graph_changed", %{})
+    {:ok, _flow} = Flows.update_flow(scope, flow, %{nodes: [@start, @output]})
+    _ = :sys.get_state(lv.pid)
     assert has_element?(lv, "#flow-publish-status[data-status='changed']")
   end
 
@@ -83,7 +85,7 @@ defmodule HeddleUI.FlowLive.VersionsTest do
     lv |> element("#open-versions") |> render_click()
     lv |> element("#version-restore-#{first_id}") |> render_click()
 
-    assert_push_event(lv, "load_graph_data", %{nodes: [%{"id" => "1"}]})
+    # Everyone on the canvas sees it through the session of the flow.
     assert [%{"id" => "1"}] = Flows.get_flow!(flow.id).nodes
   end
 
@@ -101,7 +103,7 @@ defmodule HeddleUI.FlowLive.VersionsTest do
     refute has_element?(lv, "[id^='version-restore-']")
 
     render_hook(lv, "version_restore", %{"id" => flow.published_version_id})
-    render_hook(lv, "publish_graph_data", %{"data" => graph([])})
+    render_hook(lv, "publish_graph_data", %{})
 
     assert [%{"id" => "2"}] = Flows.get_flow!(flow.id).nodes
     assert Flows.get_flow!(flow.id).published_version_id == flow.published_version_id

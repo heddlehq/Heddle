@@ -103,6 +103,29 @@
     --json-match: #6b5d31;
 }
 
+/* How saving goes, see collab.js. */
+.save-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    transition: opacity 0.2s ease;
+}
+.save-state::before {
+    content: "";
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 9999px;
+    background: var(--run-success);
+}
+.save-state[data-state="saving"]::before {
+    background: var(--run-warning);
+    animation: save-pulse 1s ease-in-out infinite;
+}
+.save-state[data-state="offline"]::before { background: var(--run-error); }
+@keyframes save-pulse {
+    50% { opacity: 0.3; }
+}
+
 /* The legend of a version preview, see `HeddleUI.Components.Flow.VersionPreview`. */
 .diff-legend {
     display: inline-flex;

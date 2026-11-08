@@ -3,10 +3,9 @@
   phx-window-keydown="handle_keydown"
 >
   <HeddleUI.Components.Flow.FlowHeader.flow_header
-    has_changes={@has_changes}
     flow={@current_flow}
     renaming_flow={@renaming_flow}
-    can_replace={@has_changes or @current_flow.nodes not in [nil, []]}
+    can_replace={@current_flow.nodes not in [nil, []]}
     can_edit={@can_edit}
     can_run={@can_run}
     status={VersionsManager.status(assigns)}
@@ -62,7 +61,10 @@
         "Put nodes in this section to run it": "<%= gettext("Put nodes in this section to run it") %>",
         "Nothing in this section can start a run": "<%= gettext("Nothing in this section can start a run") %>",
         "Pinned data": "<%= gettext("Pinned data") %>",
-        "Inspect this step": "<%= gettext("Inspect this step") %>"
+        "Inspect this step": "<%= gettext("Inspect this step") %>",
+        "Saved": "<%= gettext("Saved") %>",
+        "Saving...": "<%= gettext("Saving...") %>",
+        "Reconnecting...": "<%= gettext("Reconnecting...") %>"
       };
     </script>
 
@@ -78,6 +80,8 @@
             class="absolute inset-0 w-full h-full"
             phx-hook="FlowCanvas"
             data-read-only={to_string(not @can_edit)}
+            data-flow-id={@current_flow.id}
+            data-socket-token={@flow_socket_token}
           >
           </div>
           <div
@@ -129,6 +133,8 @@
     current_code_elixir={@current_code_elixir}
     current_code_python={@current_code_python}
     available_variables={@available_variables}
+    conflict={@code_conflict}
+    revision={@code_revision}
   />
   <HeddleUI.Components.Modals.NodeConfigModal.node_config_modal
     config_modal_open={@config_modal_open}

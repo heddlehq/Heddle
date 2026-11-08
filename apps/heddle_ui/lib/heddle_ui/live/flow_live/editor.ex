@@ -4,9 +4,7 @@ defmodule HeddleUI.FlowLive.Editor do
   require Logger
 
   alias Heddle.Graph
-  alias Heddle.Graph.Layout
   alias HeddleCore.{Credentials, Executions, Flows, Workspaces}
-  alias HeddleUI.AIChat
   alias HeddleUI.Agent
   alias HeddleUI.FlowLive.AgentManager
   alias HeddleUI.FlowLive.TerminalManager
@@ -18,7 +16,10 @@ defmodule HeddleUI.FlowLive.Editor do
     flow = Flows.get_flow!(socket.assigns.current_scope, id)
     scope = work_in(socket.assigns.current_scope, flow)
 
-    if connected?(socket), do: Flows.subscribe_to_flow(flow.id)
+    if connected?(socket) do
+      Flows.subscribe_to_flow(flow.id)
+      HeddleCore.Flows.Session.subscribe(flow.id)
+    end
 
     {:ok,
      socket
@@ -52,7 +53,8 @@ defmodule HeddleUI.FlowLive.Editor do
       current_flow: flow,
       can_edit: can_edit,
       can_run: Flows.can?(scope, :run, flow),
-      has_changes: false,
+      # The canvas edits the flow through a socket of its own, see `HeddleUI.FlowSocket`.
+      flow_socket_token: HeddleUI.FlowSocket.token(scope.user),
       renaming_flow: false,
       # Node config drawer
       config_modal_open: false,
@@ -96,25 +98,20 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   @impl true
+  # The canvas gets the flow from its own channel, see `HeddleUI.FlowChannel`.
   def handle_event("client_ready", _params, socket) do
-    {:noreply,
-     socket
-     |> load_graph(socket.assigns.current_flow)
-     |> inspect_on_load()}
+    {:noreply, inspect_on_load(socket)}
   end
 
   @impl true
-  def handle_event("graph_changed", _params, socket) do
-    {:noreply, assign(socket, has_changes: true)}
+  def handle_event("canvas_join_failed", _params, socket) do
+    {:noreply, put_flash(socket, :error, gettext("The canvas couldn't connect to this flow."))}
   end
 
   # Node Palette & Creation (delegated to NodePaletteManager)
   @impl true
   def handle_event("node_added_internally", %{"name" => name}, socket) do
-    {:noreply,
-     socket
-     |> assign(has_changes: true)
-     |> NodePaletteManager.record_recent_node(name)}
+    {:noreply, NodePaletteManager.record_recent_node(socket, name)}
   end
 
   @impl true
@@ -190,6 +187,11 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   @impl true
+  def handle_event("load_their_code", _params, socket) do
+    {:noreply, CodeEditorManager.load_theirs(socket)}
+  end
+
+  @impl true
   def handle_event("save_code", params, socket) do
     {:noreply, CodeEditorManager.save(socket, params)}
   end
@@ -207,11 +209,15 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   @impl true
+  # Each field reaches the canvas as it changes, and from there everyone editing the
+  # flow: there is nothing to save.
   def handle_event("node_config_changed", params, socket) do
-    {:noreply,
-     update(socket, :editing_node_data, fn node_data ->
-       node_data |> put_control_values(params) |> put_settings_values(params["settings"])
-     end)}
+    socket =
+      update(socket, :editing_node_data, fn node_data ->
+        node_data |> put_control_values(params) |> put_settings_values(params["settings"])
+      end)
+
+    {:noreply, if(socket.assigns.can_edit, do: push_node_changes(socket, params), else: socket)}
   end
 
   @impl true
@@ -407,31 +413,6 @@ defmodule HeddleUI.FlowLive.Editor do
     end
   end
 
-  @impl true
-  def handle_event("save_graph", _params, socket) do
-    {:noreply, push_event(socket, "request_graph_data", %{})}
-  end
-
-  @impl true
-  def handle_event("save_graph_data", %{"data" => data}, socket) do
-    case Flows.update_flow(socket.assigns.current_scope, socket.assigns.current_flow, data) do
-      {:ok, updated_flow} ->
-        {:noreply,
-         socket
-         |> assign(current_flow: updated_flow, has_changes: false)
-         |> AgentManager.resume_pending()}
-
-      {:error, :forbidden} ->
-        {:noreply, socket |> AgentManager.abort_pending() |> read_only()}
-
-      {:error, _changeset} ->
-        {:noreply,
-         socket
-         |> AgentManager.abort_pending()
-         |> put_flash(:error, gettext("Failed to save graph data."))}
-    end
-  end
-
   # Versions & publishing (delegated to VersionsManager)
   @impl true
   def handle_event("versions_toggle", _params, socket) do
@@ -489,30 +470,31 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   @impl true
-  def handle_event("publish_graph_data", %{"data" => data}, socket) do
+  def handle_event("publish_graph_data", _params, socket) do
     note = socket.assigns.publish_note
 
     {:noreply,
      socket
      |> assign(publish_note: nil)
-     |> VersionsManager.publish(data, %{"note" => note})}
+     |> VersionsManager.publish(%{"note" => note})}
   end
 
-  # Importing: the flow goes on the canvas unsaved, so it can be looked at, undone
-  # or saved like any change.
+  # Importing replaces the draft, for everyone editing it: the browser asks first when
+  # there is a flow on the canvas. The draft it had is kept as a version.
   @impl true
   def handle_event("import_flow", %{"json" => json}, socket) when is_binary(json) do
-    case Flows.import_graph(json) do
-      {:ok, graph} ->
+    case Flows.import_into(socket.assigns.current_scope, socket.assigns.current_flow, json) do
+      {:ok, flow} ->
         {:noreply,
          socket
-         |> load_graph(%{
-           nodes: graph["nodes"],
-           connections: graph["connections"],
-           comments: graph["comments"]
-         })
-         |> assign(has_changes: true)
-         |> put_flash(:info, gettext("Flow imported. Save it to keep it."))}
+         |> assign(current_flow: flow)
+         |> put_flash(:info, gettext("Flow imported."))}
+
+      {:error, :forbidden} ->
+        {:noreply, read_only(socket)}
+
+      {:error, %Ecto.Changeset{}} ->
+        {:noreply, put_flash(socket, :error, gettext("That flow can't be imported here."))}
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, import_error(reason))}
@@ -688,17 +670,15 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   @impl true
+  # The canvas follows the draft through its channel. This keeps the rest: the name,
+  # the settings and what is published.
   def handle_info({:flow_updated, flow}, socket) do
-    socket =
-      if same_graph?(flow, socket.assigns.current_flow) do
-        assign(socket, current_flow: flow)
-      else
-        socket
-        |> assign(current_flow: flow, has_changes: false)
-        |> load_graph(flow)
-      end
+    {:noreply, socket |> assign(current_flow: flow) |> VersionsManager.refresh()}
+  end
 
-    {:noreply, VersionsManager.refresh(socket)}
+  @impl true
+  def handle_info({:flow_ops, change}, socket) do
+    {:noreply, follow_node(socket, change)}
   end
 
   @impl true
@@ -725,6 +705,82 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   # Private Helpers
+
+  # What the drawer shows changes on the canvas as it is typed. Settings go when they
+  # are valid, and pinned data only when the drawer is saved.
+  defp push_node_changes(socket, params) do
+    node_id = socket.assigns.current_node_id
+    config_data = Map.drop(params, ["_csrf_token", "_target", "node_label", "settings", "unpin"])
+    label = params["node_label"]
+
+    socket =
+      if is_binary(label) and label != "",
+        do: push_event(socket, "update_node_label", %{nodeId: node_id, label: label}),
+        else: socket
+
+    socket = push_event(socket, "update_node_data", %{nodeId: node_id, data: config_data})
+
+    settings = params["settings"]
+
+    case is_map(settings) and settings["unpin"] != "true" and NodeSettings.from_params(settings) do
+      {:ok, settings} ->
+        pin = get_in(socket.assigns.editing_node_data, ["settings", "pin"])
+        settings = if pin, do: Map.put_new(settings, "pin", pin), else: settings
+        push_event(socket, "update_node_settings", %{nodeId: node_id, settings: settings})
+
+      _none ->
+        socket
+    end
+  end
+
+  # Someone else changed the node open in the drawer: the fields follow, and the one
+  # being typed in keeps what is typed, since the page doesn't touch a focused field.
+  defp follow_node(%{assigns: %{config_modal_open: true, current_node_id: id}} = socket, change)
+       when is_binary(id) do
+    if change.user_id == socket.assigns.current_scope.user.id do
+      socket
+    else
+      Enum.reduce(change.ops, socket, &follow_op(&2, &1, id))
+    end
+  end
+
+  defp follow_node(socket, _change), do: socket
+
+  defp follow_op(socket, %{"op" => "remove_node", "id" => id}, id) do
+    socket
+    |> assign(config_modal_open: false, editing_node_data: nil, current_node_id: nil)
+    |> put_flash(:info, gettext("Someone else removed the node you had open."))
+  end
+
+  defp follow_op(socket, %{"op" => "update_node", "id" => id, "set" => set}, id) do
+    update(socket, :editing_node_data, fn
+      nil -> nil
+      node_data -> merge_node(node_data, set)
+    end)
+  end
+
+  defp follow_op(socket, _op, _id), do: socket
+
+  defp merge_node(node_data, set) do
+    Enum.reduce(set, node_data, fn
+      {"controls", controls}, acc when is_map(controls) ->
+        Enum.reduce(controls, acc, fn {key, value}, acc ->
+          if get_in(acc, ["controls", key]),
+            do: put_in(acc, ["controls", key, "value"], value),
+            else: acc
+        end)
+
+      {"label", label}, acc ->
+        Map.put(acc, "label", label)
+
+      {"settings", settings}, acc ->
+        Map.put(acc, "settings", settings || %{})
+
+      _other, acc ->
+        acc
+    end)
+  end
+
   defp save_node_config(socket, params, settings) do
     node_id = socket.assigns.current_node_id
     config_data = Map.drop(params, ["_csrf_token", "_target", "node_label", "settings"])
@@ -789,21 +845,6 @@ defmodule HeddleUI.FlowLive.Editor do
 
   defp import_error(reason) when is_binary(reason),
     do: gettext("That flow can't be imported: %{reason}.", reason: reason)
-
-  defp load_graph(socket, flow) do
-    push_event(socket, "load_graph_data", %{
-      nodes: Layout.place(flow.nodes, flow.connections),
-      connections: Graph.normalize_connections(flow.connections),
-      comments: flow.comments,
-      definitions: AIChat.node_definitions()
-    })
-  end
-
-  # The editor hears its own saves too, and those must not reload the canvas.
-  defp same_graph?(flow, current) do
-    flow.nodes == current.nodes and flow.connections == current.connections and
-      flow.comments == current.comments
-  end
 
   # Keeps what is typed in the drawer, which redraws when a control changes.
   defp put_control_values(%{"controls" => controls} = node_data, params) do
@@ -884,8 +925,13 @@ defmodule HeddleUI.FlowLive.Editor do
     )
   end
 
-  # An operator runs the draft as it was saved: they can't change it.
-  defp save_and_run(%{assigns: %{can_edit: false, can_run: true}} = socket, _data) do
+  defp save_and_run(%{assigns: %{can_run: false}} = socket, _data) do
+    put_flash(socket, :error, gettext("Your role in this workspace can't run flows."))
+  end
+
+  # The draft is saved as people change it, so a run takes it as it is now, everyone's
+  # changes in it. The canvas sent what it had before asking.
+  defp save_and_run(socket, _data) do
     %{current_scope: scope, current_flow: flow, next_run_input: input} = socket.assigns
     input = run_input(input, socket.assigns.run_section_id)
     socket = assign(socket, next_run_input: nil, run_section_id: nil)
@@ -898,26 +944,6 @@ defmodule HeddleUI.FlowLive.Editor do
 
       {:error, _reason} ->
         put_flash(socket, :error, gettext("The flow could not be started."))
-    end
-  end
-
-  defp save_and_run(%{assigns: %{can_run: false}} = socket, _data) do
-    put_flash(socket, :error, gettext("Your role in this workspace can't run flows."))
-  end
-
-  defp save_and_run(socket, data) do
-    %{current_scope: scope, current_flow: flow, next_run_input: input} = socket.assigns
-    input = run_input(input, socket.assigns.run_section_id)
-    socket = assign(socket, next_run_input: nil, run_section_id: nil)
-
-    case Executions.save_and_run(scope, flow, data, input) do
-      {:ok, %{flow: updated_flow, execution: execution}} ->
-        socket
-        |> assign(current_flow: updated_flow, has_changes: false, execution_notice: nil)
-        |> InspectorManager.follow(execution)
-
-      {:error, stage, context} ->
-        handle_run_failure(socket, stage, context)
     end
   end
 
@@ -948,53 +974,6 @@ defmodule HeddleUI.FlowLive.Editor do
       json -> with {:error, _reason} <- Jason.decode(json), do: :error
     end
   end
-
-  defp handle_run_failure(socket, stage, context) do
-    socket =
-      case context do
-        %{flow: flow} -> assign(socket, current_flow: flow, has_changes: false)
-        _ -> socket
-      end
-
-    socket
-    |> assign(execution_notice: run_failure_notice(stage, context))
-    |> put_flash(:error, run_failure_flash(stage))
-  end
-
-  defp run_failure_notice(:enqueue, %{execution: execution}) do
-    %{
-      kind: :error,
-      status: "failed",
-      title: "Execution was not queued",
-      message: "The flow was saved, but the execution job could not be created.",
-      execution_id: execution.id,
-      public_id: execution.public_id
-    }
-  end
-
-  defp run_failure_notice(:create, _context) do
-    %{
-      kind: :error,
-      status: "failed",
-      title: "Execution was not created",
-      message: "The flow was saved, but the execution record could not be created.",
-      execution_id: nil
-    }
-  end
-
-  defp run_failure_notice(:save, _context) do
-    %{
-      kind: :error,
-      status: "failed",
-      title: "Flow was not saved",
-      message: "The execution was not queued because the graph could not be saved.",
-      execution_id: nil
-    }
-  end
-
-  defp run_failure_flash(:enqueue), do: "Flow saved, but execution could not be queued."
-  defp run_failure_flash(:create), do: "Flow saved, but execution could not be created."
-  defp run_failure_flash(:save), do: "Failed to save flow before running."
 
   defp execution_notice(:queued, execution) do
     %{

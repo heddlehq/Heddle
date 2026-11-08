@@ -6,6 +6,8 @@ defmodule HeddleUI.Components.Modals.CodeEditorModal do
   attr :current_code_elixir, :string, required: true
   attr :current_code_python, :string, required: true
   attr :available_variables, :list, required: true
+  attr :conflict, :any, default: nil, doc: "the code someone else saved since it opened"
+  attr :revision, :integer, default: 0
 
   def code_editor_modal(assigns) do
     ~H"""
@@ -64,8 +66,39 @@ defmodule HeddleUI.Components.Modals.CodeEditorModal do
             class="flex-1 flex flex-col overflow-hidden"
           >
             <div
+              :if={@conflict}
+              id="code-conflict"
+              class="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-6 py-3 dark:border-amber-500/30 dark:bg-amber-500/10"
+            >
+              <p class="flex items-center gap-2 text-sm text-amber-900 dark:text-amber-200">
+                <.icon name="hero-exclamation-triangle" class="size-4 shrink-0" />
+                {gettext("Someone else changed this code since you opened it.")}
+              </p>
+              <div class="flex items-center gap-2">
+                <.button
+                  id="code-load-theirs"
+                  type="button"
+                  variant="ghost"
+                  phx-click="load_their_code"
+                  class="h-8 px-3"
+                >
+                  {gettext("Load theirs")}
+                </.button>
+                <.button
+                  id="code-overwrite"
+                  type="submit"
+                  name="overwrite"
+                  value="true"
+                  variant="danger"
+                  class="h-8 px-3"
+                >
+                  {gettext("Save mine anyway")}
+                </.button>
+              </div>
+            </div>
+            <div
               class="flex-1 p-0 overflow-hidden relative bg-[#1e1e1e]"
-              id="code-editor-wrapper"
+              id={editor_id(@revision)}
               phx-update="ignore"
               phx-hook="CodeEditor"
               data-variables={Jason.encode!(@available_variables)}
@@ -110,4 +143,8 @@ defmodule HeddleUI.Components.Modals.CodeEditorModal do
   defp code_field_class do
     "absolute inset-0 w-full h-full resize-none border-0 bg-transparent p-4 font-mono text-sm text-gray-200 outline-none"
   end
+
+  # A new id is a new editor: the page leaves the editor alone otherwise.
+  defp editor_id(0), do: "code-editor-wrapper"
+  defp editor_id(revision), do: "code-editor-wrapper-#{revision}"
 end

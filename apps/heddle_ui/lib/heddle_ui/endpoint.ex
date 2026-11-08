@@ -14,6 +14,7 @@ defmodule HeddleUI.Endpoint do
   plug HeddleUI.Plugs.ForceSSL, rewrite_on: [:x_forwarded_proto]
 
   socket "/terminal", HeddleUI.TerminalSocket, websocket: true, longpoll: false
+  socket "/flow", HeddleUI.FlowSocket, websocket: true, longpoll: false
 
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [session: @session_options]],
