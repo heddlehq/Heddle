@@ -266,11 +266,14 @@ defmodule HeddleUI.AILive.IndexTest do
 
     setup do
       {:ok, _credential} =
-        Credentials.create_credential(%{
-          "name" => "gemini",
-          "kind" => "ai",
-          "values" => %{"provider" => "google", "api_key" => "k"}
-        })
+        Credentials.insert_credential(
+          %{
+            "name" => "gemini",
+            "kind" => "ai",
+            "values" => %{"provider" => "google", "api_key" => "k"}
+          },
+          nil
+        )
 
       :ok
     end

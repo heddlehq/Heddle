@@ -13,6 +13,8 @@ defmodule HeddleUI.Components.Flow.RunInspector do
   alias HeddleUI.FlowLive.InspectorManager
 
   attr :inspector, :map, default: nil
+  attr :can_edit, :boolean, default: true, doc: "whether the person may pin data to a node"
+  attr :can_run, :boolean, default: true, doc: "whether the person may run the flow again"
 
   def run_inspector(assigns) do
     ~H"""
@@ -24,16 +26,17 @@ defmodule HeddleUI.Components.Flow.RunInspector do
         if(@inspector.collapsed, do: "h-12", else: "h-[min(26rem,48vh)]")
       ]}
     >
-      <.inspector_header inspector={@inspector} />
+      <.inspector_header inspector={@inspector} can_run={@can_run} />
       <div :if={!@inspector.collapsed} class="flex min-h-0 flex-1">
         <.timeline inspector={@inspector} />
-        <.step_detail inspector={@inspector} />
+        <.step_detail inspector={@inspector} can_edit={@can_edit} can_run={@can_run} />
       </div>
     </section>
     """
   end
 
   attr :inspector, :map, required: true
+  attr :can_run, :boolean, required: true
 
   defp inspector_header(assigns) do
     assigns =
@@ -78,7 +81,7 @@ defmodule HeddleUI.Components.Flow.RunInspector do
 
       <div class="ml-auto flex items-center gap-1">
         <button
-          :if={@execution.status not in ["queued", "running"]}
+          :if={@can_run and @execution.status not in ["queued", "running"]}
           id="run-inspector-rerun"
           type="button"
           phx-click="inspector_rerun"
@@ -224,6 +227,8 @@ defmodule HeddleUI.Components.Flow.RunInspector do
   end
 
   attr :inspector, :map, required: true
+  attr :can_edit, :boolean, required: true
+  attr :can_run, :boolean, required: true
 
   defp step_detail(%{inspector: %{selected: :result}} = assigns) do
     ~H"""
@@ -255,7 +260,12 @@ defmodule HeddleUI.Components.Flow.RunInspector do
     ~H"""
     <div id="run-step-detail" class="flex min-w-0 flex-1 flex-col">
       <%= if @step do %>
-        <.step_heading step={@step} index={@inspector.selected} />
+        <.step_heading
+          step={@step}
+          index={@inspector.selected}
+          can_edit={@can_edit}
+          can_run={@can_run}
+        />
         <.step_tabs step={@step} tab={@inspector.tab} />
         <%= case @inspector.tab do %>
           <% "error" -> %>
@@ -293,6 +303,8 @@ defmodule HeddleUI.Components.Flow.RunInspector do
 
   attr :step, :map, required: true
   attr :index, :integer, required: true
+  attr :can_edit, :boolean, required: true
+  attr :can_run, :boolean, required: true
 
   defp step_heading(assigns) do
     assigns = assign(assigns, :whole?, whole?(assigns.step))
@@ -334,7 +346,7 @@ defmodule HeddleUI.Components.Flow.RunInspector do
           <.icon name="hero-viewfinder-circle" class="size-4" />
         </button>
         <button
-          :if={@step["pinned"]}
+          :if={@can_edit and @step["pinned"]}
           id="run-step-unpin"
           type="button"
           phx-click="inspector_unpin"
@@ -344,7 +356,7 @@ defmodule HeddleUI.Components.Flow.RunInspector do
           <.icon name="hero-bookmark-slash" class="size-3.5" /> {gettext("Unpin")}
         </button>
         <button
-          :if={!@step["pinned"] and @step["status"] == "success"}
+          :if={@can_edit and !@step["pinned"] and @step["status"] == "success"}
           id="run-step-pin"
           type="button"
           phx-click="inspector_pin"
@@ -361,6 +373,7 @@ defmodule HeddleUI.Components.Flow.RunInspector do
           <.icon name="hero-bookmark" class="size-3.5" /> {gettext("Pin output")}
         </button>
         <button
+          :if={@can_run}
           id="run-step-replay"
           type="button"
           phx-click="inspector_replay"

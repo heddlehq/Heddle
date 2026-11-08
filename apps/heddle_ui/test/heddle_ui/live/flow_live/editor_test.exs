@@ -17,6 +17,87 @@ defmodule HeddleUI.FlowLive.EditorTest do
     %{conn: log_in_user(conn, admin), user: admin}
   end
 
+  describe "roles" do
+    defp open_as(flow, role) do
+      user = user_fixture()
+      member_fixture(HeddleCore.Workspaces.get_workspace(flow.workspace_id), user, role)
+      conn = Phoenix.ConnTest.build_conn() |> log_in_user(user)
+      {:ok, lv, html} = live(conn, ~p"/flows/#{flow.id}")
+      {lv, html}
+    end
+
+    test "a viewer sees the flow, read only, and can't run or change it" do
+      flow = flow_fixture(%{name: "Read me"})
+      {lv, html} = open_as(flow, "viewer")
+
+      assert html =~ "Read me"
+      assert has_element?(lv, "#flow-read-only")
+      assert has_element?(lv, "#flow-canvas[data-read-only='true']")
+      refute has_element?(lv, "#canvas-tools")
+      refute has_element?(lv, "button[phx-click='run_flow']")
+      refute has_element?(lv, "#chat-component")
+
+      render_hook(lv, "save_graph_data", %{"data" => %{"name" => "Changed"}})
+      assert Flows.get_flow!(flow.id).name == "Read me"
+
+      render_hook(lv, "save_and_run", %{"data" => %{"nodes" => [], "connections" => []}})
+      assert Executions.list_executions_for_flow(flow) == []
+    end
+
+    test "an operator runs the flow as saved, without changing it" do
+      flow =
+        flow_fixture(%{
+          name: "Run me",
+          nodes: [%{"id" => "1", "type" => "Start", "controls" => %{}}]
+        })
+
+      {lv, _html} = open_as(flow, "operator")
+
+      assert has_element?(lv, "button[phx-click='run_flow']")
+
+      html =
+        render_hook(lv, "save_and_run", %{
+          "data" => %{"name" => "Changed", "nodes" => [], "connections" => []}
+        })
+
+      assert html =~ "Run inspector"
+      assert has_element?(lv, "#run-inspector-status", "Queued")
+      assert [execution] = Executions.list_executions_for_flow(flow)
+      assert execution.input["debug"] == true
+      assert Flows.get_flow!(flow.id).name == "Run me"
+
+      # Only those who can change the flow see its settings.
+      refute has_element?(lv, "#open-flow-settings")
+    end
+
+    test "an editor changes the flow" do
+      flow = flow_fixture(%{name: "Edit me"})
+      {lv, html} = open_as(flow, "editor")
+
+      refute html =~ "View only"
+      assert has_element?(lv, "#canvas-tools")
+
+      render_hook(lv, "save_graph_data", %{"data" => %{"name" => "Edited"}})
+      assert Flows.get_flow!(flow.id).name == "Edited"
+    end
+
+    test "opening a flow of another of the person's workspaces makes it theirs" do
+      user = user_fixture()
+      first = workspace_fixture(user)
+      second = workspace_fixture(user)
+      flow = flow_fixture(%{user: user, workspace: first})
+
+      assert HeddleCore.Accounts.Scope.for_user(HeddleCore.Repo.reload!(user)).workspace.id ==
+               second.id
+
+      {:ok, _lv, _html} =
+        Phoenix.ConnTest.build_conn() |> log_in_user(user) |> live(~p"/flows/#{flow.id}")
+
+      assert HeddleCore.Accounts.Scope.for_user(HeddleCore.Repo.reload!(user)).workspace.id ==
+               first.id
+    end
+  end
+
   describe "mount" do
     test "requires authentication" do
       conn = Phoenix.ConnTest.build_conn()
@@ -27,7 +108,7 @@ defmodule HeddleUI.FlowLive.EditorTest do
       assert path == ~p"/users/log-in"
     end
 
-    test "redirects non-admin to root" do
+    test "a flow of a workspace the person isn't in looks missing" do
       user = user_fixture()
       flow = flow_fixture()
 
@@ -36,8 +117,7 @@ defmodule HeddleUI.FlowLive.EditorTest do
         |> Phoenix.ConnTest.init_test_session(%{})
         |> log_in_user(user)
 
-      assert {:error, {:redirect, %{to: path}}} = live(conn, ~p"/flows/#{flow.id}")
-      assert path == ~p"/"
+      assert_raise Ecto.NoResultsError, fn -> live(conn, ~p"/flows/#{flow.id}") end
     end
 
     test "loads flow and displays its name", %{conn: conn} do

@@ -186,6 +186,9 @@ defmodule HeddleUI.UserAuth do
 
   ## `on_mount` arguments
 
+    * `{:require_workspace, action}` - Lets in a person whose role in the workspace
+      they work in allows `action`, one of `HeddleCore.Workspaces.Role`'s.
+
     * `:mount_current_scope` - Assigns current_scope
       to socket assigns based on user_token, or nil if
       there's no user_token or no matching user.
@@ -273,6 +276,31 @@ defmodule HeddleUI.UserAuth do
         |> Phoenix.LiveView.redirect(to: ~p"/")
 
       {:halt, socket}
+    end
+  end
+
+  def on_mount({:require_workspace, action}, _params, session, socket) do
+    socket = mount_current_scope(socket, session)
+    scope = socket.assigns.current_scope
+
+    cond do
+      is_nil(scope && scope.workspace) ->
+        {:halt,
+         socket
+         |> Phoenix.LiveView.put_flash(:error, gettext("You aren't in a workspace yet."))
+         |> Phoenix.LiveView.redirect(to: ~p"/")}
+
+      HeddleCore.Workspaces.can?(scope, action) ->
+        {:cont, socket}
+
+      true ->
+        {:halt,
+         socket
+         |> Phoenix.LiveView.put_flash(
+           :error,
+           gettext("Your role in this workspace can't open that page.")
+         )
+         |> Phoenix.LiveView.redirect(to: ~p"/")}
     end
   end
 

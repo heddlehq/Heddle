@@ -12,6 +12,15 @@ We extract the best features of the BEAM to ensure robustness:
 ## Backend: Oban & Workflow Orchestration
 For the execution engine, we utilize **Oban**, a proven and robust job processing library. Oban serves as the reliable backend orchestrator, managing job queues, retries, scheduled jobs, and workflow execution states, providing a solid foundation for complex automation sequences.
 
+## Workspaces and roles decide access
+Everything a person owns lives in a workspace: flows (and their runs), credentials, API keys and invites. People join a workspace with a role, `viewer` < `operator` < `editor` < `admin`, and each one holds what the one below does (`HeddleCore.Workspaces.Role`). System admins act as admins in every workspace, create and delete workspaces, and own what is instance-wide: users, the AI page, the Terminal and shared credentials.
+- **Decide access in one place**: `HeddleCore.Workspaces.authorize/3` and `can?/3`. Every context function a person reaches takes a `Scope` first, checks the role, and scopes its query by the workspace, so a missing check shows nothing. **Never** fetch something a person asked for by id alone, and **never** check `is_system_admin` by hand for something inside a workspace.
+- **What isn't yours looks missing**: a flow of another workspace is `nil` or `404`, not `403`. `403` (`{:error, :forbidden}`) is for something the person can see but their role doesn't let them do.
+- **The workspace and author of a record are set by the context**, never cast from what a client sends.
+- **A run reads credentials of its flow's workspace**, then shared ones (`workspace_id` nil, changed only by system admins). The runner pins `flow_id` and `workspace_id` in every node's context, so neither a node nor a field can move a run elsewhere.
+- **An API key belongs to one workspace** and does no more than its owner's role there at each request. Agent and Terminal keys take the workspace of the flow they work on.
+- **A new page** for workspace data mounts with `{HeddleUI.UserAuth, {:require_workspace, action}}`, and shows only what the role allows: the server refuses the rest anyway.
+
 ## Flows: Rete is only the canvas
 Rete draws flows and nothing else. Only `rete_editor.js` and the `custom-*.js` elements know about it, and replacing it means writing a new `createEditor` for the `FlowCanvas` hook.
 - **Reading a flow**: everything goes through `Heddle.Graph` (`apps/heddle`), the one place that knows the stored format. **Never** read `flow.nodes` or `flow.connections` by hand, or by a node's `label`.

@@ -16,11 +16,13 @@ defmodule HeddleUI.Plugs.ApiKeyAuth do
     required_scopes = Keyword.get(opts, :scopes, [])
 
     with {:ok, token} <- fetch_token(conn),
-         {:ok, %ApiKey{} = api_key} <- ApiKeys.authenticate(token) do
+         {:ok, %ApiKey{} = api_key} <- ApiKeys.authenticate(token),
+         # Its owner left the workspace, or it was deleted: the key opens nothing.
+         %Scope{role: role} = scope when not is_nil(role) <- Scope.for_api_key(api_key) do
       if ApiKey.allows?(api_key, required_scopes) do
         conn
         |> assign(:api_key, api_key)
-        |> assign(:current_scope, Scope.for_api_key(api_key))
+        |> assign(:current_scope, scope)
         |> HeddleUI.Plugs.RateLimit.call([])
         |> HeddleUI.Plugs.ApiAuditLog.call([])
       else

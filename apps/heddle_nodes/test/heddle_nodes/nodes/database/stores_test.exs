@@ -11,6 +11,9 @@ defmodule HeddleNodes.Nodes.Database.StoresTest do
   @moduletag timeout: 30_000
 
   defmodule Vault do
+    # A run asks within its workspace, which these tests leave out.
+    def fetch(_workspace_id, name, kind), do: fetch(name, kind)
+
     def fetch("mongo", "mongodb") do
       {:ok, %{"url" => "mongodb://127.0.0.1:15405/heddle_test", "database" => "heddle_test"}}
     end

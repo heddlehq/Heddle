@@ -40,7 +40,9 @@ const CODE_CONTROLS = ['code_elixir', 'code_python'];
  * `connections` must come back in the order they went in: that order is what runs
  * first, see `Heddle.Graph`.
  */
-export async function createEditor(container) {
+// `readOnly` is for a person who can see a flow but not change it: they can still pan,
+// zoom, select and open a node to read it. The server refuses their changes anyway.
+export async function createEditor(container, { readOnly = false } = {}) {
     const socket = new ClassicPreset.Socket("socket");
 
     const editor = new NodeEditor();
@@ -160,6 +162,7 @@ export async function createEditor(container) {
                                 .data=${data.payload}
                                 .selected=${data.payload.selected}
                                 .getZoom=${() => area.area.transform.k}
+                                .readOnly=${readOnly}
                                 .onChange=${() => {
                                     processChange();
                                     pushUndo();
@@ -174,6 +177,7 @@ export async function createEditor(container) {
                         html`<custom-node 
                 .data=${data.payload} 
                 .emit=${emit} 
+                .readOnly=${readOnly}
                 class="${data.payload.selected ? 'selected' : ''}"
                 .onDelete=${async () => {
                                 const nodeId = data.payload.id;
@@ -256,8 +260,20 @@ export async function createEditor(container) {
     addCustomBackground(area);
 
     editor.use(area);
-    area.use(connection);
+    if (!readOnly) area.use(connection);
     area.use(render);
+
+    if (readOnly) {
+        // Dragging a node translates it while the pointer is down. Loading and
+        // laying out the flow translate nodes too, with no pointer.
+        let pointerDown = false;
+        container.addEventListener('pointerdown', () => { pointerDown = true; }, true);
+        window.addEventListener('pointerup', () => { pointerDown = false; }, true);
+        area.addPipe((context) => {
+            if (context && context.type === 'nodetranslate' && pointerDown) return;
+            return context;
+        });
+    }
 
     AreaExtensions.simpleNodesOrder(area);
 
@@ -541,6 +557,7 @@ export async function createEditor(container) {
 
     container.addEventListener("drop", async (e) => {
         e.preventDefault();
+        if (readOnly) return;
         const nodeName = e.dataTransfer.getData("application/vnd.heddle.node");
         
         if (!nodeName) return;
@@ -947,6 +964,7 @@ export async function createEditor(container) {
     container.addEventListener('contextmenu', (e) => {
         if (e.target.closest?.('textarea')) return;
         e.preventDefault();
+        if (readOnly) return;
         const path = e.composedPath && e.composedPath();
         const connectionEl = path && Array.isArray(path) && path.find(el => {
             if (el.nodeType !== 1) return false;
@@ -1033,6 +1051,7 @@ export async function createEditor(container) {
     };
 
     document.addEventListener('keydown', (e) => {
+        if (readOnly) return;
         const isInput = e.target && (e.target.closest('input') || e.target.closest('textarea') || e.target.closest('[contenteditable="true"]'));
         if (!isInput && e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
             e.preventDefault();
@@ -1239,6 +1258,7 @@ export async function createEditor(container) {
             return await processAddNode(name, definition, data);
         },
         addComment: async (kind) => {
+            if (readOnly) return;
             const rect = container.getBoundingClientRect();
             const { k, x: tx, y: ty } = area.area.transform;
             await processAddComment({

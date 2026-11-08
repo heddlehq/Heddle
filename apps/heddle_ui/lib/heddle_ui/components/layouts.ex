@@ -46,7 +46,7 @@ defmodule HeddleUI.Layouts do
     <div class="flex h-screen w-full bg-gray-50 dark:bg-slate-950 overflow-hidden">
       <%= if @current_scope && @current_scope.user do %>
         <aside class="w-20 lg:w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 flex flex-col items-center lg:items-start py-6 shadow-sm z-20 transition-all duration-300">
-          <div class="px-0 lg:px-6 w-full flex justify-center lg:justify-start mb-8">
+          <div class="px-0 lg:px-6 w-full flex justify-center lg:justify-start mb-6">
             <.link
               navigate={~p"/"}
               class="flex items-center gap-2 group transition-opacity hover:opacity-80"
@@ -62,7 +62,9 @@ defmodule HeddleUI.Layouts do
             </.link>
           </div>
 
-          <nav class="flex-1 w-full px-3 lg:px-4 space-y-2">
+          <.workspace_switcher scope={@current_scope} workspaces={assigns[:workspaces] || []} />
+
+          <nav id="sidebar-nav" class="flex-1 w-full px-3 lg:px-4 space-y-1 overflow-y-auto">
             <.nav_link
               id="nav-dashboard"
               navigate={~p"/"}
@@ -70,12 +72,12 @@ defmodule HeddleUI.Layouts do
               label={gettext("Dashboard")}
               active={@section == :dashboard}
             />
-            <%= if HeddleCore.Accounts.User.system_admin?(@current_scope.user) do %>
+            <%= if @current_scope.workspace do %>
               <.nav_link
                 id="nav-flows"
                 navigate={~p"/flows"}
                 icon="hero-squares-2x2"
-                label={gettext("My Flows")}
+                label={gettext("Flows")}
                 active={@section == :flows}
               />
               <.nav_link
@@ -86,11 +88,11 @@ defmodule HeddleUI.Layouts do
                 active={@section == :executions}
               />
               <.nav_link
-                id="nav-ai"
-                navigate={~p"/ai"}
-                icon="hero-cpu-chip"
-                label={gettext("AI")}
-                active={@section == :ai}
+                id="nav-credentials"
+                navigate={~p"/credentials"}
+                icon="hero-lock-closed"
+                label={gettext("Credentials")}
+                active={@section == :credentials}
               />
               <.nav_link
                 id="nav-api-keys"
@@ -100,11 +102,31 @@ defmodule HeddleUI.Layouts do
                 active={@section == :api_keys}
               />
               <.nav_link
-                id="nav-credentials"
-                navigate={~p"/credentials"}
-                icon="hero-lock-closed"
-                label={gettext("Credentials")}
-                active={@section == :credentials}
+                id="nav-members"
+                navigate={~p"/workspace"}
+                icon="hero-user-group"
+                label={gettext("Members")}
+                active={@section == :workspace}
+              />
+            <% end %>
+            <%= if HeddleCore.Accounts.User.system_admin?(@current_scope.user) do %>
+              <p class="hidden lg:block px-3 pt-5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                {gettext("Instance")}
+              </p>
+              <div class="lg:hidden my-3 mx-auto w-8 border-t border-gray-200 dark:border-slate-800" />
+              <.nav_link
+                id="nav-ai"
+                navigate={~p"/ai"}
+                icon="hero-cpu-chip"
+                label={gettext("AI")}
+                active={@section == :ai}
+              />
+              <.nav_link
+                id="nav-workspaces"
+                navigate={~p"/workspaces"}
+                icon="hero-building-office-2"
+                label={gettext("Workspaces")}
+                active={@section == :workspaces}
               />
               <.nav_link
                 id="nav-users"
@@ -299,6 +321,131 @@ defmodule HeddleUI.Layouts do
     """
   end
 
+  attr :scope, :map, required: true
+  attr :workspaces, :list, required: true
+
+  # The workspace the person works in, and the others they can open.
+  defp workspace_switcher(assigns) do
+    ~H"""
+    <div class="w-full px-3 lg:px-4 mb-5">
+      <%= if @scope.workspace do %>
+        <div class="relative" id="workspace-switcher">
+          <button
+            id="workspace-switcher-button"
+            type="button"
+            aria-haspopup="menu"
+            aria-label={gettext("Switch workspace")}
+            phx-click={
+              JS.toggle(
+                to: "#workspace-menu",
+                in:
+                  {"transition ease-out duration-100", "opacity-0 -translate-y-1",
+                   "opacity-100 translate-y-0"},
+                out: {"transition ease-in duration-75", "opacity-100", "opacity-0"}
+              )
+            }
+            class="w-full flex items-center justify-center lg:justify-start gap-3 p-2 rounded-xl border border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/60 transition-colors"
+          >
+            <span class="size-8 shrink-0 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
+              {initial(@scope.workspace.name)}
+            </span>
+            <span class="hidden lg:block min-w-0 flex-1 text-left">
+              <span class="block text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {@scope.workspace.name}
+              </span>
+              <span class="block text-xs text-gray-500 dark:text-gray-400">
+                {role_label(@scope.role)}
+              </span>
+            </span>
+            <.icon
+              name="hero-chevron-up-down-mini"
+              class="hidden lg:block size-4 text-gray-400"
+            />
+          </button>
+          <div
+            id="workspace-menu"
+            role="menu"
+            class="hidden absolute left-0 top-full mt-2 w-64 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-100 dark:border-slate-800 z-50 overflow-hidden"
+            phx-click-away={JS.hide(to: "#workspace-menu")}
+          >
+            <p class="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              {gettext("Workspaces")}
+            </p>
+            <div class="max-h-72 overflow-y-auto p-1.5">
+              <button
+                :for={{workspace, role} <- @workspaces}
+                id={"switch-workspace-#{workspace.id}"}
+                type="button"
+                role="menuitem"
+                phx-click={
+                  JS.hide(to: "#workspace-menu")
+                  |> JS.push("switch_workspace", value: %{id: workspace.id})
+                }
+                class="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-left hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                <span class="size-7 shrink-0 rounded-md bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 flex items-center justify-center text-xs font-bold">
+                  {initial(workspace.name)}
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {workspace.name}
+                  </span>
+                  <span class="block text-xs text-gray-500 dark:text-gray-400">
+                    {role_label(role)}
+                  </span>
+                </span>
+                <.icon
+                  :if={workspace.id == @scope.workspace.id}
+                  name="hero-check-mini"
+                  class="size-4 text-primary"
+                />
+              </button>
+            </div>
+            <div class="border-t border-gray-100 dark:border-slate-800 p-1.5">
+              <.link
+                navigate={~p"/workspace"}
+                class="flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                <.icon name="hero-user-group" class="size-4" /> {gettext("Members and settings")}
+              </.link>
+              <.link
+                :if={HeddleCore.Accounts.User.system_admin?(@scope.user)}
+                navigate={~p"/workspaces"}
+                class="flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                <.icon name="hero-plus" class="size-4" /> {gettext("New workspace")}
+              </.link>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp initial(name),
+    do: name |> to_string() |> String.trim() |> String.first() |> to_string() |> String.upcase()
+
+  @doc "The name of a role, for people."
+  def role_label("admin"), do: gettext("Admin")
+  def role_label("editor"), do: gettext("Editor")
+  def role_label("operator"), do: gettext("Operator")
+  def role_label("viewer"), do: gettext("Viewer")
+  def role_label(_role), do: ""
+
+  @doc "What a role lets someone do, in one line."
+  def role_description("admin"),
+    do: gettext("Everything, plus members, invites and the workspace itself.")
+
+  def role_description("editor"),
+    do: gettext("Creates and changes flows and credentials, and uses the agent.")
+
+  def role_description("operator"),
+    do: gettext("Runs flows and sees their results, without changing them.")
+
+  def role_description("viewer"), do: gettext("Sees flows, runs and members.")
+  def role_description(_role), do: ""
+
   defp nav_section("/"), do: :dashboard
   defp nav_section("/ai"), do: :ai
   defp nav_section("/flows" <> _), do: :flows
@@ -306,6 +453,8 @@ defmodule HeddleUI.Layouts do
   defp nav_section("/api-keys"), do: :api_keys
   defp nav_section("/credentials"), do: :credentials
   defp nav_section("/users"), do: :users
+  defp nav_section("/workspace"), do: :workspace
+  defp nav_section("/workspaces"), do: :workspaces
   defp nav_section(_path), do: nil
 
   @doc """

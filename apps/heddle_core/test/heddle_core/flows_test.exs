@@ -53,7 +53,7 @@ defmodule HeddleCore.FlowsTest do
       assert %{comments: ["contains an invalid comment"]} = errors_on(changeset)
     end
 
-    test "scoped queries only return owned flows" do
+    test "scoped queries only return the flows of the caller's workspace" do
       user = user_fixture()
       owned_flow = flow_fixture(%{user: user})
       other_flow = flow_fixture()
@@ -66,7 +66,16 @@ defmodule HeddleCore.FlowsTest do
 
     test "create_flow/1 with valid data creates a flow" do
       user = user_fixture()
-      attrs = %{name: "Test Flow", nodes: [], connections: [], user_id: user.id}
+      workspace = workspace_fixture(user)
+
+      attrs = %{
+        name: "Test Flow",
+        nodes: [],
+        connections: [],
+        user_id: user.id,
+        workspace_id: workspace.id
+      }
+
       assert {:ok, flow} = Flows.create_flow(attrs)
       assert flow.name == "Test Flow"
       assert flow.user_id == user.id
@@ -90,9 +99,12 @@ defmodule HeddleCore.FlowsTest do
         end
       end)
 
+      user = user_fixture()
+
       attrs = %{
         name: "Invalid Flow",
-        user_id: user_fixture().id,
+        user_id: user.id,
+        workspace_id: workspace_fixture(user).id,
         nodes: [
           %{
             "id" => "start",
@@ -124,18 +136,83 @@ defmodule HeddleCore.FlowsTest do
       flow = flow_fixture()
       assert %Ecto.Changeset{} = Flows.change_flow(flow)
     end
+  end
 
-    test "get_first_or_create_default_flow/0 returns existing flow" do
-      flow = flow_fixture()
-      assert {:ok, result} = Flows.get_first_or_create_default_flow()
-      assert result.id == flow.id
+  describe "workspaces and roles" do
+    import HeddleCore.FlowsFixtures
+
+    setup do
+      admin = user_fixture()
+      workspace = workspace_fixture(admin)
+      flow = flow_fixture(%{user: admin, workspace: workspace})
+      %{workspace: workspace, flow: flow}
     end
 
-    test "get_first_or_create_default_flow/0 creates default when none exist" do
-      user_fixture()
-      assert Flows.list_flows() == []
-      assert {:ok, flow} = Flows.get_first_or_create_default_flow()
-      assert flow.name == "My First Flow"
+    defp scope_as(workspace, role) do
+      user = user_fixture()
+      member_fixture(workspace, user, role)
+      Scope.for_user(HeddleCore.Repo.reload!(user))
+    end
+
+    test "every member sees the workspace's flows", %{workspace: workspace, flow: flow} do
+      for role <- HeddleCore.Workspaces.Role.all() do
+        scope = scope_as(workspace, role)
+        assert [%{id: id}] = Flows.list_flows(scope)
+        assert id == flow.id
+        assert Flows.get_flow(scope, flow.id)
+      end
+    end
+
+    test "someone outside sees nothing, and a flow looks missing", %{flow: flow} do
+      outsider = user_scope_fixture()
+
+      assert Flows.list_flows(outsider) == []
+      assert Flows.get_flow(outsider, flow.id) == nil
+      assert {:error, :not_found} = Flows.update_flow(outsider, flow, %{name: "x"})
+      assert {:error, :not_found} = Flows.delete_flow(outsider, flow)
+    end
+
+    test "a person with no workspace sees nothing" do
+      flow_fixture()
+      scope = Scope.for_user(user_fixture())
+
+      assert scope.workspace == nil
+      assert Flows.list_flows(scope) == []
+      assert {:error, :forbidden} = Flows.create_flow(scope, %{name: "x"})
+    end
+
+    test "viewers and operators can't change a flow", %{workspace: workspace, flow: flow} do
+      for role <- ["viewer", "operator"] do
+        scope = scope_as(workspace, role)
+
+        assert {:error, :forbidden} = Flows.create_flow(scope, %{name: "x", nodes: []})
+        assert {:error, :forbidden} = Flows.update_flow(scope, flow, %{name: "x"})
+        assert {:error, :forbidden} = Flows.delete_flow(scope, flow)
+      end
+    end
+
+    test "editors create flows in their workspace, as their author", %{workspace: workspace} do
+      scope = scope_as(workspace, "editor")
+
+      assert {:ok, flow} =
+               Flows.create_flow(scope, %{"name" => "Mine", "workspace_id" => -1, "user_id" => -1})
+
+      assert flow.workspace_id == workspace.id
+      assert flow.user_id == scope.user.id
+    end
+
+    test "a change can't move a flow to another workspace", %{workspace: workspace, flow: flow} do
+      scope = scope_as(workspace, "editor")
+      other = workspace_fixture(scope.user)
+
+      assert {:ok, flow} = Flows.update_flow(scope, flow, %{"workspace_id" => other.id})
+      assert flow.workspace_id == workspace.id
+    end
+
+    test "system admins reach every workspace", %{flow: flow} do
+      scope = Scope.for_user(system_admin_fixture())
+
+      assert {:ok, _flow} = Flows.update_flow(scope, flow, %{name: "Fixed by an admin"})
     end
   end
 
@@ -147,6 +224,7 @@ defmodule HeddleCore.FlowsTest do
                Flows.create_flow(%{
                  name: "Stored",
                  user_id: user.id,
+                 workspace_id: workspace_fixture(user).id,
                  nodes: [
                    %{"id" => 1, "type" => "Start", "controls" => %{}},
                    %{"id" => 2, "type" => "Output", "controls" => %{}}

@@ -73,9 +73,11 @@ defmodule HeddleNodes.Services.AI do
     default = defaults(capability)
     model = present(fields["model"]) || present(default["model"])
 
+    # A node's own credential is looked up in its workspace. The defaults of the AI
+    # page are for the whole instance, so they name shared credentials.
     case present(fields["credential"]) do
       nil -> default_credential(capability, model)
-      name -> with_credential(name, present(fields["model"]))
+      name -> with_credential(fields["workspace_id"], name, present(fields["model"]))
     end
   end
 
@@ -113,7 +115,7 @@ defmodule HeddleNodes.Services.AI do
     default = defaults(:text)
 
     with name when is_binary(name) <- present(default["credential"]),
-         {:ok, values} <- fetch(name) do
+         {:ok, values} <- fetch(nil, name) do
       Map.put(values, "model", present(default["model"]))
     else
       _other -> nil
@@ -130,12 +132,12 @@ defmodule HeddleNodes.Services.AI do
   defp default_credential(capability, model) do
     case default_credential_name(capability) do
       nil -> {:ok, [credential: nil, model: model]}
-      name -> with_credential(name, model)
+      name -> with_credential(nil, name, model)
     end
   end
 
-  defp with_credential(name, model) do
-    case fetch(name) do
+  defp with_credential(workspace_id, name, model) do
+    case fetch(workspace_id, name) do
       {:ok, values} ->
         {:ok, [credential: values, model: model]}
 
@@ -144,8 +146,8 @@ defmodule HeddleNodes.Services.AI do
     end
   end
 
-  defp fetch(name) do
-    Application.fetch_env!(:heddle_nodes, :credentials_client).fetch(name, "ai")
+  defp fetch(workspace_id, name) do
+    Application.fetch_env!(:heddle_nodes, :credentials_client).fetch(workspace_id, name, "ai")
   end
 
   defp defaults(capability) do
@@ -155,7 +157,11 @@ defmodule HeddleNodes.Services.AI do
   end
 
   defp render(context) do
-    %{"credential" => context["credential"], "model" => optional(context, "model")}
+    %{
+      "credential" => context["credential"],
+      "model" => optional(context, "model"),
+      "workspace_id" => context["workspace_id"]
+    }
   end
 
   defp present(value) when value in [nil, ""], do: nil

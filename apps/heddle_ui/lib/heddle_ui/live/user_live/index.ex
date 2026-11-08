@@ -5,55 +5,49 @@ defmodule HeddleUI.UserLive.Index do
 
   alias HeddleCore.Accounts
   alias HeddleCore.Accounts.Invite
+  alias HeddleCore.Workspaces
+  alias HeddleUI.Components.Invites
 
   @impl true
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_scope.user
-    users = Accounts.list_users()
-    invites = Accounts.list_invites_by_admin(user)
-    current_invite = get_current_valid_invite(invites)
+    scope = socket.assigns.current_scope
+    workspace_id = scope.workspace && scope.workspace.id
 
     {:ok,
      socket
      |> assign(:page_title, gettext("Users"))
-     |> assign(:users, users)
-     |> assign(:invites, invites)
-     |> assign(:current_invite, current_invite)}
+     |> assign(:users, Accounts.list_users())
+     |> assign(:current_invite, nil)
+     |> assign(
+       :invite_form,
+       to_form(%{"workspace_id" => workspace_id, "role" => "editor"}, as: :invite)
+     )}
   end
 
   @impl true
-  def handle_event("generate_invite", _params, socket) do
-    user = socket.assigns.current_scope.user
+  def handle_event("generate_invite", %{"invite" => params}, socket) do
+    scope = socket.assigns.current_scope
 
-    case Accounts.create_invite_or_reuse(user) do
-      {:ok, _invite} ->
-        invites = Accounts.list_invites_by_admin(user)
-        current_invite = get_current_valid_invite(invites)
-
-        {:noreply,
-         socket
-         |> assign(:invites, invites)
-         |> assign(:current_invite, current_invite)
-         |> put_flash(
-           :info,
-           gettext("Invite link generated. It expires in %{days} days.",
-             days: Invite.invite_validity_days()
-           )
-         )}
-
-      {:error, _changeset} ->
-        {:noreply, put_flash(socket, :error, gettext("Failed to generate invite."))}
+    with %{} = workspace <- Workspaces.get_workspace(params["workspace_id"]),
+         {:ok, invite} <- Accounts.create_invite(scope, workspace, params["role"]) do
+      {:noreply,
+       socket
+       |> assign(:current_invite, invite)
+       |> assign(:invite_form, to_form(params, as: :invite))
+       |> put_flash(
+         :info,
+         gettext("Invite link generated. It expires in %{days} days.",
+           days: Invite.invite_validity_days()
+         )
+       )}
+    else
+      _error -> {:noreply, put_flash(socket, :error, gettext("Failed to generate invite."))}
     end
   end
 
   @impl true
   def handle_event("change_locale", %{"locale" => locale}, socket) do
     {:noreply, redirect(socket, to: ~p"/users?locale=#{locale}")}
-  end
-
-  defp get_current_valid_invite(invites) do
-    invites
-    |> Enum.find(fn i -> Invite.valid?(i) end)
   end
 
   @impl true
@@ -77,45 +71,47 @@ defmodule HeddleUI.UserLive.Index do
             </h2>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {gettext(
-                "Generate a link to invite a new user. If you already have a valid invite, the same link is shown."
+                "Generate a link that creates an account and joins a workspace. If you already have a valid one for the same workspace and role, the same link is shown."
               )}
             </p>
           </div>
           <div class="p-6 space-y-4">
-            <.button phx-click="generate_invite" variant="primary">
-              <.icon name="hero-envelope" class="h-4 w-4 mr-1" />
-              {gettext("Generate invite link")}
-            </.button>
-            <%= if @current_invite do %>
-              <div class="mt-4 space-y-4">
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
-                  {gettext("Valid until")} {Calendar.strftime(
-                    @current_invite.expires_at,
-                    "%Y-%m-%d %H:%M"
-                  )}
-                </p>
-                <div class="flex flex-wrap items-end gap-3">
-                  <div class="flex-1 min-w-0">
-                    <.input
-                      type="text"
-                      id="invite-url"
-                      name="invite_url"
-                      value={invite_url(@current_invite)}
-                      label={gettext("Invite URL")}
-                      readonly
-                    />
-                  </div>
-                  <.button
-                    href={invite_url(@current_invite)}
-                    target="_blank"
-                    variant="outline"
-                  >
-                    <.icon name="hero-arrow-top-right-on-square" class="h-4 w-4 mr-1" />
-                    {gettext("Open link")}
-                  </.button>
-                </div>
+            <.form
+              for={@invite_form}
+              id="user-invite-form"
+              phx-submit="generate_invite"
+              class="flex flex-wrap items-end gap-3"
+            >
+              <div class="min-w-48">
+                <.input
+                  field={@invite_form[:workspace_id]}
+                  type="select"
+                  label={gettext("Workspace")}
+                  options={
+                    Enum.map(@workspaces, fn {workspace, _role} -> {workspace.name, workspace.id} end)
+                  }
+                />
               </div>
-            <% end %>
+              <div class="min-w-40">
+                <.input
+                  field={@invite_form[:role]}
+                  type="select"
+                  label={gettext("Role")}
+                  options={Invites.role_options()}
+                />
+              </div>
+              <.button
+                id="generate-invite"
+                type="submit"
+                variant="primary"
+                size="field"
+                class="mb-3"
+              >
+                <.icon name="hero-envelope" class="size-4" />
+                {gettext("Generate invite link")}
+              </.button>
+            </.form>
+            <Invites.invite_link :if={@current_invite} invite={@current_invite} />
           </div>
         </div>
 
@@ -186,9 +182,5 @@ defmodule HeddleUI.UserLive.Index do
       </div>
     </div>
     """
-  end
-
-  defp invite_url(invite) do
-    HeddleUI.Endpoint.url() <> ~p"/users/register/#{invite.token}"
   end
 end

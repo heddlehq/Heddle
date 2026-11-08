@@ -1,8 +1,6 @@
 defmodule HeddleUI.PublicAPI.V1.NodeControllerTest do
   use HeddleUI.ConnCase, async: true
 
-  alias HeddleCore.ApiKeys
-
   import HeddleCore.AccountsFixtures
 
   describe "index" do
@@ -77,7 +75,10 @@ defmodule HeddleUI.PublicAPI.V1.NodeControllerTest do
 
   defp authorize(conn, scopes) do
     user = user_fixture()
-    {:ok, %{token: token}} = ApiKeys.create_api_key(user, %{name: "test key", scopes: scopes})
+
+    {:ok, %{token: token}} =
+      HeddleCore.AccountsFixtures.create_api_key(user, %{name: "test key", scopes: scopes})
+
     put_req_header(conn, "authorization", "Bearer #{token}")
   end
 end
