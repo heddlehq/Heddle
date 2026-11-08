@@ -8,7 +8,7 @@ defmodule HeddleUI.ApiKeyLive.IndexTest do
   alias HeddleCore.ApiKeys.ApiKey
 
   describe "mount /api-keys" do
-    test "redirects non-admin to root with flash", %{conn: conn} do
+    test "redirects someone in no workspace to root with flash", %{conn: conn} do
       user = user_fixture()
 
       assert {:error, {:redirect, %{to: path}}} =
@@ -30,7 +30,7 @@ defmodule HeddleUI.ApiKeyLive.IndexTest do
       assert html =~ "API keys"
       assert html =~ "Create key"
       assert html =~ "Existing keys"
-      assert html =~ "System admins only"
+      assert html =~ "A key does no more than your role here"
       assert has_element?(lv, "#api-key-scope-toggle", "Toggle all")
 
       for scope <- ApiKey.scopes() do
@@ -65,7 +65,7 @@ defmodule HeddleUI.ApiKeyLive.IndexTest do
       assert html =~ "flows:read"
       assert html =~ "flows:write"
 
-      [api_key] = ApiKeys.list_api_keys(admin)
+      [api_key] = ApiKeys.list_api_keys(HeddleCore.Accounts.Scope.for_user(admin))
       assert api_key.name == "Deploy key"
       assert api_key.scopes == ["flows:read", "flows:write"]
       assert api_key.expires_at != nil
@@ -85,7 +85,9 @@ defmodule HeddleUI.ApiKeyLive.IndexTest do
   describe "revoke" do
     test "revokes an active API key", %{conn: conn} do
       admin = system_admin_fixture()
-      {:ok, %{api_key: api_key}} = ApiKeys.create_api_key(admin, %{name: "CI key"})
+
+      {:ok, %{api_key: api_key}} =
+        HeddleCore.AccountsFixtures.create_api_key(admin, %{name: "CI key"})
 
       {:ok, lv, _html} =
         conn
@@ -99,7 +101,21 @@ defmodule HeddleUI.ApiKeyLive.IndexTest do
 
       assert html =~ "Revoked"
       refute has_element?(lv, "#api-key-#{api_key.id} button", "Revoke")
-      assert ApiKey.revoked?(ApiKeys.get_api_key!(api_key.id))
+      assert ApiKey.revoked?(HeddleCore.Repo.get!(ApiKey, api_key.id))
+    end
+  end
+
+  describe "roles" do
+    test "offers only the scopes the person's role reaches", %{conn: conn} do
+      admin = system_admin_fixture()
+      viewer = user_fixture()
+      member_fixture(ensure_workspace(admin), viewer, "viewer")
+
+      {:ok, lv, _html} = conn |> log_in_user(viewer) |> live(~p"/api-keys")
+
+      assert has_element?(lv, "input[value='workflows:read']")
+      refute has_element?(lv, "input[value='workflows:write']")
+      refute has_element?(lv, "input[value='executions:write']")
     end
   end
 end

@@ -1,7 +1,6 @@
 defmodule HeddleUI.Plugs.RateLimitTest do
   use HeddleUI.ConnCase, async: false
 
-  alias HeddleCore.ApiKeys
   alias HeddleUI.Plugs.RateLimit
 
   import HeddleCore.AccountsFixtures
@@ -13,7 +12,10 @@ defmodule HeddleUI.Plugs.RateLimitTest do
 
   test "returns 429 with the standardized error payload when the limit is exceeded", %{conn: conn} do
     user = user_fixture()
-    {:ok, %{api_key: api_key}} = ApiKeys.create_api_key(user, %{name: "rate limit", scopes: []})
+
+    {:ok, %{api_key: api_key}} =
+      HeddleCore.AccountsFixtures.create_api_key(user, %{name: "rate limit", scopes: []})
+
     window = div(System.system_time(:second), 60)
     bucket = {api_key.id, window}
 

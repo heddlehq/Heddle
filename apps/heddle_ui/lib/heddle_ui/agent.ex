@@ -65,9 +65,22 @@ defmodule HeddleUI.Agent do
     end
   end
 
-  @doc "Sends a message, starting the conversation if needed."
+  @doc """
+  Sends a message, starting the conversation if needed.
+
+  The agent changes the flow, so only those who can edit it may talk to it.
+  """
   def send_message(%Scope{} = scope, flow_id, content) do
-    scope |> ensure_session(flow_id) |> Session.send_message(content)
+    with :ok <- may_edit(scope, flow_id) do
+      scope |> ensure_session(flow_id) |> Session.send_message(content)
+    end
+  end
+
+  defp may_edit(scope, flow_id) do
+    case HeddleCore.Flows.fetch_for(scope, :edit, flow_id) do
+      {:ok, _flow} -> :ok
+      error -> error
+    end
   end
 
   @doc """
@@ -80,7 +93,9 @@ defmodule HeddleUI.Agent do
 
   @doc "Goes back to a saved conversation."
   def open_conversation(%Scope{} = scope, flow_id, id) do
-    scope |> ensure_session(flow_id) |> Session.open_conversation(id)
+    with :ok <- may_edit(scope, flow_id) do
+      scope |> ensure_session(flow_id) |> Session.open_conversation(id)
+    end
   end
 
   @doc "Lists the saved conversations about a flow, the latest first."
@@ -90,7 +105,9 @@ defmodule HeddleUI.Agent do
 
   @doc "Answers a request to run a flow: `\"once\"`, `\"always\"` or `\"deny\"`."
   def decide(%Scope{} = scope, flow_id, decision) do
-    with_session(scope, flow_id, &Session.decide(&1, decision))
+    with :ok <- may_edit(scope, flow_id) do
+      with_session(scope, flow_id, &Session.decide(&1, decision))
+    end
   end
 
   @doc "Stops what the agent is doing."

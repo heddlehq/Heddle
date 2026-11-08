@@ -3,6 +3,8 @@ defmodule HeddleUI.OAuthHTML do
 
   attr :client, :map, required: true
   attr :form_params, :map, required: true
+  attr :workspaces, :list, required: true
+  attr :current_workspace_id, :any, default: nil
   attr :flash, :map, required: true
   attr :current_scope, :map, required: true
 
@@ -27,17 +29,44 @@ defmodule HeddleUI.OAuthHTML do
           </ul>
 
           <p class="mt-6 text-xs text-base-content/60">
-            {gettext("You can revoke this at any time on the API keys page.")}
+            {gettext(
+              "Only in the workspace you pick, and no more than your role there allows. You can revoke this at any time on its API keys page."
+            )}
           </p>
 
-          <.form for={to_form(%{})} action={~p"/oauth/authorize"} class="mt-6 flex gap-3">
+          <p :if={@workspaces == []} id="oauth-no-workspace" class="mt-6 text-sm text-base-content/80">
+            {gettext("You aren't in a workspace yet. Ask an admin to add you to one.")}
+          </p>
+
+          <.form for={to_form(%{})} action={~p"/oauth/authorize"} class="mt-6 space-y-4">
             <input :for={{name, value} <- @form_params} type="hidden" name={name} value={value} />
-            <.button name="decision" value="allow" variant="primary" class="flex-1">
-              {gettext("Allow")}
-            </.button>
-            <button type="submit" name="decision" value="deny" class="btn btn-ghost flex-1">
-              {gettext("Cancel")}
-            </button>
+            <.input
+              :if={@workspaces != []}
+              type="select"
+              id="oauth-workspace"
+              name="workspace_id"
+              label={gettext("Workspace")}
+              value={@current_workspace_id}
+              options={
+                Enum.map(@workspaces, fn {workspace, role} ->
+                  {"#{workspace.name} (#{Layouts.role_label(role)})", workspace.id}
+                end)
+              }
+            />
+            <div class="flex gap-3">
+              <.button
+                :if={@workspaces != []}
+                name="decision"
+                value="allow"
+                variant="primary"
+                class="flex-1"
+              >
+                {gettext("Allow")}
+              </.button>
+              <.button type="submit" name="decision" value="deny" variant="ghost" class="flex-1">
+                {gettext("Cancel")}
+              </.button>
+            </div>
           </.form>
         </div>
       </div>

@@ -6,7 +6,7 @@ test.describe('Flow List', () => {
     await page.goto('/flows');
     await waitForLiveView(page);
 
-    await expect(page.getByRole('heading', { name: 'My Flows' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Flows', exact: true })).toBeVisible();
     await expect(page.getByText('Flows available')).toBeVisible();
   });
 

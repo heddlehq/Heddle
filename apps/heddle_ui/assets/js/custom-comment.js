@@ -40,6 +40,7 @@ export class CustomCommentElement extends LitElement {
       getRunBlocker: { attribute: false },
       onRun: { attribute: false },
       settingsOpen: { state: true },
+      readOnly: { type: Boolean },
     };
   }
 
@@ -71,12 +72,12 @@ export class CustomCommentElement extends LitElement {
         data-color=${color}
         data-manual=${kind === "section" && this.data.manual ? "true" : "false"}
         style="width: ${width}px; height: ${height}px"
-        @mouseup=${this._editOnDoubleClick}
+        @mouseup=${this.readOnly ? null : this._editOnDoubleClick}
       >
-        ${this.selected || this.editing ? this._renderToolbar() : ""}
-        ${this.editing ? this._renderInput(text) : this._renderText(text)}
-        ${kind === "section" ? this._renderSectionActions() : ""}
-        <div class="comment-resize" @pointerdown=${this._startResize}></div>
+        ${!this.readOnly && (this.selected || this.editing) ? this._renderToolbar() : ""}
+        ${this.editing && !this.readOnly ? this._renderInput(text) : this._renderText(text)}
+        ${kind === "section" && !this.readOnly ? this._renderSectionActions() : ""}
+        ${this.readOnly ? "" : html`<div class="comment-resize" @pointerdown=${this._startResize}></div>`}
       </div>
     `;
   }

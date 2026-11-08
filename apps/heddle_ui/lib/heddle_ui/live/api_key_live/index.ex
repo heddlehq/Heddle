@@ -1,7 +1,7 @@
 defmodule HeddleUI.ApiKeyLive.Index do
   use HeddleUI, :live_view
 
-  on_mount {HeddleUI.UserAuth, :require_system_admin}
+  on_mount {HeddleUI.UserAuth, {:require_workspace, :view}}
 
   alias HeddleCore.ApiKeys
   alias HeddleCore.ApiKeys.ApiKey
@@ -19,15 +19,16 @@ defmodule HeddleUI.ApiKeyLive.Index do
      socket
      |> assign(:page_title, gettext("API keys"))
      |> assign(:created_token, nil)
-     |> assign(:form, api_key_form())
-     |> assign(:scopes, ApiKey.scopes())
+     |> assign(:scopes, ApiKey.scopes_for(socket.assigns.current_scope.role))
+     |> assign(:manage, HeddleCore.Workspaces.can?(socket.assigns.current_scope, :manage))
+     |> then(&assign(&1, :form, api_key_form(&1.assigns.scopes)))
      |> assign(:expiration_options, @expiration_options)
      |> assign_api_keys()}
   end
 
   @impl true
   def handle_event("create", %{"api_key" => params}, socket) do
-    user = socket.assigns.current_scope.user
+    scope = socket.assigns.current_scope
 
     attrs = %{
       name: Map.get(params, "name"),
@@ -35,14 +36,22 @@ defmodule HeddleUI.ApiKeyLive.Index do
       expires_at: expires_at(Map.get(params, "expires_in", "never"))
     }
 
-    case ApiKeys.create_api_key(user, attrs) do
+    case ApiKeys.create_api_key(scope, attrs) do
       {:ok, %{token: token}} ->
         {:noreply,
          socket
          |> assign(:created_token, token)
-         |> assign(:form, api_key_form())
+         |> assign(:form, api_key_form(socket.assigns.scopes))
          |> assign_api_keys()
          |> put_flash(:info, gettext("API key created. Copy it now; it will not be shown again."))}
+
+      {:error, :forbidden} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext("A key can't do more than your role in this workspace.")
+         )}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, gettext("Could not create API key."))}
@@ -50,9 +59,20 @@ defmodule HeddleUI.ApiKeyLive.Index do
   end
 
   def handle_event("revoke", %{"id" => id}, socket) do
-    api_key = ApiKeys.get_api_key!(id)
+    scope = socket.assigns.current_scope
 
-    case ApiKeys.revoke_api_key(api_key) do
+    case ApiKeys.get_api_key(scope, id) do
+      nil -> {:noreply, put_flash(socket, :error, gettext("Could not revoke API key."))}
+      api_key -> revoke(socket, api_key)
+    end
+  end
+
+  def handle_event("change_locale", %{"locale" => locale}, socket) do
+    {:noreply, redirect(socket, to: ~p"/?locale=#{locale}")}
+  end
+
+  defp revoke(socket, api_key) do
+    case ApiKeys.revoke_api_key(socket.assigns.current_scope, api_key) do
       {:ok, _api_key} ->
         {:noreply,
          socket
@@ -60,13 +80,9 @@ defmodule HeddleUI.ApiKeyLive.Index do
          |> assign_api_keys()
          |> put_flash(:info, gettext("Revoked"))}
 
-      {:error, _changeset} ->
+      {:error, _reason} ->
         {:noreply, put_flash(socket, :error, gettext("Could not revoke API key."))}
     end
-  end
-
-  def handle_event("change_locale", %{"locale" => locale}, socket) do
-    {:noreply, redirect(socket, to: ~p"/?locale=#{locale}")}
   end
 
   @impl true
@@ -76,13 +92,11 @@ defmodule HeddleUI.ApiKeyLive.Index do
       <div>
         <div class="flex items-center gap-3">
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{gettext("API keys")}</h1>
-          <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
-            {gettext("System admins only")}
-          </span>
         </div>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
           {gettext(
-            "Manage API keys used by external applications to trigger workflows and query nodes."
+            "Keys let other applications reach the flows of %{workspace}. A key does no more than your role here, and stops working if you leave.",
+            workspace: @current_scope.workspace.name
           )}
         </p>
       </div>
@@ -199,6 +213,7 @@ defmodule HeddleUI.ApiKeyLive.Index do
               <thead class="bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 text-xs uppercase border-b border-gray-200 dark:border-slate-800">
                 <tr>
                   <th class="px-6 py-3">{gettext("Name")}</th>
+                  <th :if={@manage} class="px-6 py-3">{gettext("Owner")}</th>
                   <th class="px-6 py-3">{gettext("Prefix")}</th>
                   <th class="px-6 py-3">{gettext("Scopes")}</th>
                   <th class="px-6 py-3">{gettext("Created")}</th>
@@ -211,6 +226,9 @@ defmodule HeddleUI.ApiKeyLive.Index do
                 <%= for key <- @api_keys do %>
                   <tr id={"api-key-#{key.id}"} class="hover:bg-gray-50 dark:hover:bg-slate-800/50">
                     <td class="px-6 py-4 font-medium">{key.name}</td>
+                    <td :if={@manage} class="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">
+                      {key.user && key.user.username}
+                    </td>
                     <td class="px-6 py-4 font-mono text-xs">{key.prefix}…</td>
                     <td class="px-6 py-4">
                       <div class="flex flex-wrap gap-1">
@@ -265,14 +283,11 @@ defmodule HeddleUI.ApiKeyLive.Index do
   end
 
   defp assign_api_keys(socket) do
-    user = socket.assigns.current_scope.user
-    assign(socket, :api_keys, ApiKeys.list_api_keys(user))
+    assign(socket, :api_keys, ApiKeys.list_api_keys(socket.assigns.current_scope))
   end
 
-  defp api_key_form do
-    to_form(%{"name" => "", "expires_in" => "never", "scopes" => ApiKey.scopes()},
-      as: :api_key
-    )
+  defp api_key_form(scopes) do
+    to_form(%{"name" => "", "expires_in" => "never", "scopes" => scopes}, as: :api_key)
   end
 
   defp expires_at("never"), do: nil

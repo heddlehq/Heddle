@@ -6,6 +6,9 @@ defmodule HeddleNodes.Nodes.GoogleSheetsTest do
   alias HeddleNodes.Nodes.GoogleSheets.{ListSheets, ReadRows, UpdateRows}
 
   defmodule Vault do
+    # A run asks within its workspace, which these tests leave out.
+    def fetch(_workspace_id, name, kind), do: fetch(name, kind)
+
     def fetch("bad", "google"), do: {:ok, %{"json" => "not json"}}
 
     def fetch("broken-key", "google") do

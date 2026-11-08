@@ -1,7 +1,6 @@
 defmodule HeddleUI.PublicAPI.V1.ExecutionControllerTest do
   use HeddleUI.ConnCase, async: true
 
-  alias HeddleCore.ApiKeys
   alias HeddleCore.Executions
   alias HeddleCore.Repo
 
@@ -158,7 +157,9 @@ defmodule HeddleUI.PublicAPI.V1.ExecutionControllerTest do
   end
 
   defp authorize(conn, user, scopes) do
-    {:ok, %{token: token}} = ApiKeys.create_api_key(user, %{name: "test key", scopes: scopes})
+    {:ok, %{token: token}} =
+      HeddleCore.AccountsFixtures.create_api_key(user, %{name: "test key", scopes: scopes})
+
     put_req_header(conn, "authorization", "Bearer #{token}")
   end
 end

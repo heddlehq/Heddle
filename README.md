@@ -38,7 +38,7 @@ irm https://heddlehq.github.io/website/install.ps1 | iex
 
 Then `heddle status`, `heddle logs -f`, `heddle doctor` and `heddle update` take it from there: `heddle --help` lists everything.
 
-For servers and other options, see the **[Installation Guide](guides/installation.md)**. For deployment topology and worker scaling, see [guides/scaling.md](guides/scaling.md).
+For servers and other options, see the **[Installation Guide](guides/installation.md)**. For deployment topology and worker scaling, see [guides/scaling.md](guides/scaling.md). To bring your team in, see [guides/workspaces.md](guides/workspaces.md).
 
 Quick local start with Docker Compose:
 

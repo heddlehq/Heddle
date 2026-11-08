@@ -5,21 +5,16 @@ defmodule HeddleUI.DashboardLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_scope.user
-    admin? = user && user.is_system_admin == true
-
-    flows =
-      if admin? do
-        Flows.list_flows(socket.assigns.current_scope)
-      else
-        []
-      end
+    scope = socket.assigns.current_scope
+    in_workspace? = not is_nil(scope.workspace)
+    flows = if in_workspace?, do: Flows.list_flows(scope), else: []
 
     {:ok,
      assign(socket,
        flows: flows,
        active_count: length(flows),
-       admin?: admin?,
+       admin?: in_workspace?,
+       system_admin?: HeddleCore.Accounts.Scope.system_admin?(scope),
        page_title: gettext("Dashboard")
      )}
   end
@@ -40,14 +35,20 @@ defmodule HeddleUI.DashboardLive.Index do
             <%= if @admin? do %>
               {gettext("Welcome back to Heddle! Here's an overview of your automated logic.")}
             <% else %>
-              {gettext("Welcome back to Heddle! Contact an administrator to access flows.")}
+              {gettext("You aren't in a workspace yet. Ask an admin to add you to one.")}
             <% end %>
           </p>
         </div>
-        <%= if @admin? do %>
-          <.button navigate={~p"/flows"} variant="primary">
-            {gettext("Manage Flows")}
-          </.button>
+        <%= cond do %>
+          <% @admin? -> %>
+            <.button navigate={~p"/flows"} variant="primary">
+              {gettext("Manage Flows")}
+            </.button>
+          <% @system_admin? -> %>
+            <.button id="dashboard-create-workspace" navigate={~p"/workspaces"} variant="primary">
+              {gettext("Create a workspace")}
+            </.button>
+          <% true -> %>
         <% end %>
       </div>
 

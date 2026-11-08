@@ -33,7 +33,7 @@ defmodule HeddleNodes.Runner do
   # order they began to wait. It travels in the context so it is saved with a pause.
   @merging "_merging"
   @run_only [@merging, "resume_url"]
-  @internal_keys ["flow_id", "logs" | @run_only]
+  @internal_keys ["flow_id", "workspace_id", "logs" | @run_only]
   @run_keys ["node_id", "section_id", "replay_from", "debug"]
   @drain %{"kind" => "drain"}
 
@@ -64,7 +64,7 @@ defmodule HeddleNodes.Runner do
     input = normalize_input(input)
     section_id = input["section_id"] || replay_section(flow, input["replay_from"])
     graph = graph(flow, section_id)
-    state = run_state(graph, opts, section_id)
+    state = run_state(graph, flow, opts, section_id)
 
     case first_nodes(graph, input, section_id) do
       {:ok, nodes} ->
@@ -90,7 +90,7 @@ defmodule HeddleNodes.Runner do
     Trace.start()
     section_id = opts[:section]
     graph = graph(flow, section_id)
-    state = run_state(graph, opts, section_id)
+    state = run_state(graph, flow, opts, section_id)
 
     if webhook_node = List.first(Graph.of_type(graph, "Webhook")) do
       request = %{
@@ -122,7 +122,7 @@ defmodule HeddleNodes.Runner do
   def resume(flow, %{"wait" => wait, "context" => context} = paused, resumption, opts \\ []) do
     Trace.start()
     section_id = paused["section_id"]
-    state = run_state(graph(flow, section_id), opts, section_id)
+    state = run_state(graph(flow, section_id), flow, opts, section_id)
 
     resumed =
       case Graph.get(state.graph, wait["node_id"]) do
@@ -209,10 +209,12 @@ defmodule HeddleNodes.Runner do
     match?(%{inputs: []}, Nodes.get_node(node.type))
   end
 
-  defp run_state(graph, opts, section_id) do
+  defp run_state(graph, flow, opts, section_id) do
     %{
       graph: graph,
       section_id: section_id,
+      flow_id: flow.id,
+      workspace_id: Map.get(flow, :workspace_id),
       on_respond: Keyword.get(opts, :on_respond, fn _response -> :ok end),
       on_step: Keyword.get(opts, :on_step, fn _entry -> :ok end),
       debug: Keyword.get(opts, :debug, false) == true,
@@ -221,7 +223,12 @@ defmodule HeddleNodes.Runner do
   end
 
   defp initial_context(flow, values, state, opts) do
-    context = Map.merge(values, %{"flow_id" => flow.id, "logs" => []})
+    context =
+      Map.merge(values, %{
+        "flow_id" => flow.id,
+        "workspace_id" => Map.get(flow, :workspace_id),
+        "logs" => []
+      })
 
     case {opts[:resume_url], Graph.of_type(state.graph, "Wait")} do
       {url, [_wait | _more]} when is_binary(url) -> Map.put(context, "resume_url", url)
@@ -398,7 +405,14 @@ defmodule HeddleNodes.Runner do
 
   # A step that fails runs again while its settings give it tries.
   defp attempt(module, step, number) do
-    outcome = call(module, Map.merge(step.context, step.node.controls))
+    # What a node or a field sets can't move a run to another flow or workspace, where
+    # it would read their credentials and memory.
+    node_context =
+      step.context
+      |> Map.merge(step.node.controls)
+      |> Map.merge(%{"flow_id" => step.flow.flow_id, "workspace_id" => step.flow.workspace_id})
+
+    outcome = call(module, node_context)
     settings = step.node.settings
 
     case failure(outcome) do
@@ -542,7 +556,7 @@ defmodule HeddleNodes.Runner do
       end
     end
 
-    case Agent.run(request, step.context["flow_id"], tools, run_tool) do
+    case Agent.run(request, step.flow.flow_id, tools, run_tool) do
       {:ok, value, calls, logs} ->
         step.context
         |> agent_result(value, calls, logs)

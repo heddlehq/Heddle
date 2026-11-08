@@ -66,6 +66,8 @@ defmodule HeddleUI.Router do
       live "/ai", AILive.Index
       live "/api-keys", ApiKeyLive.Index
       live "/credentials", CredentialLive.Index
+      live "/workspace", WorkspaceLive.Show
+      live "/workspaces", WorkspaceLive.Index
     end
 
     post "/users/update-password", UserSessionController, :update_password
