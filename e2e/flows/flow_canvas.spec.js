@@ -279,7 +279,7 @@ test.describe('How a node behaves when it fails, and the run inspector', () => {
     await expect(code.locator('custom-socket')).toHaveCount(3);
   });
 
-  test('changes them in the drawer, and keeps them after saving', async ({ page }) => {
+  test('changes them in the drawer as they change, and keeps them', async ({ page }) => {
     const code = page.locator('custom-node').filter({ hasText: 'Price' });
     await code.hover();
     await code.locator('.node-action-btn.config').click();
@@ -288,8 +288,10 @@ test.describe('How a node behaves when it fails, and the run inspector', () => {
     await expect(page.locator('#node-settings-pin-data')).toHaveValue(/42/);
 
     await page.locator('#node-settings-on-error-continue').check();
-    await page.locator('#node-settings-unpin').check();
-    await page.locator('#node-config-form').getByRole('button', { name: 'Save' }).click();
+    // What the drawer changes applies as it changes: there is no save button.
+    await expect(page.locator('#node-config-form').getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await page.locator('#node-settings-unpin').click();
+    await expect(page.locator('#node-settings-pin')).toHaveCount(0);
 
     await expect(code.locator('.pin-badge')).toHaveCount(0);
     await expect(code.locator('custom-socket')).toHaveCount(2);

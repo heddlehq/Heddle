@@ -82,6 +82,7 @@ const hooks = {
           saveState.dataset.state = state;
           const text = { saved: "Saved", saving: "Saving...", offline: "Reconnecting..." }[state];
           saveState.textContent = (window.Translations && window.Translations[text]) || text;
+          saveState.title = saveState.textContent;
         },
         onJoinError: () => this.pushEvent("canvas_join_failed", {}),
       });

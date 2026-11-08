@@ -673,7 +673,7 @@ defmodule HeddleUI.FlowLive.EditorTest do
     end
   end
 
-  describe "open_node_config / save_node_config / close_config_modal" do
+  describe "open_node_config / node_config_changed / close_config_modal" do
     test "opens config modal with node data", %{conn: conn} do
       flow = flow_fixture()
 
@@ -706,11 +706,11 @@ defmodule HeddleUI.FlowLive.EditorTest do
 
       assert html =~ "My Logger"
       assert html =~ "Node Name"
-      assert html =~ "Save"
-      assert html =~ "Cancel"
+      # What it changes applies as it changes: there is nothing to save.
+      refute has_element?(lv, "#node-config-form button[type=submit]")
     end
 
-    test "saves node config and closes modal", %{conn: conn} do
+    test "what the drawer changes reaches the canvas as it changes", %{conn: conn} do
       flow = flow_fixture()
 
       {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
@@ -726,12 +726,17 @@ defmodule HeddleUI.FlowLive.EditorTest do
         }
       })
 
-      render_submit(lv, "save_node_config", %{
+      render_change(lv, "node_config_changed", %{
         "node_label" => "Renamed Logger",
         "message" => "updated message"
       })
 
-      refute has_element?(lv, "[phx-click=close_config_modal]")
+      assert_push_event(lv, "update_node_label", %{nodeId: "n1", label: "Renamed Logger"})
+
+      assert_push_event(lv, "update_node_data", %{
+        nodeId: "n1",
+        data: %{"message" => "updated message"}
+      })
     end
 
     test "closes config modal without saving", %{conn: conn} do
@@ -770,7 +775,7 @@ defmodule HeddleUI.FlowLive.EditorTest do
       assert html =~ "No configuration options"
     end
 
-    test "saves how the node behaves when it fails", %{conn: conn} do
+    test "changes how the node behaves when it fails", %{conn: conn} do
       flow = flow_fixture()
 
       {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
@@ -793,7 +798,7 @@ defmodule HeddleUI.FlowLive.EditorTest do
       render_change(lv, "node_config_changed", %{"settings" => %{"retries" => "0"}})
       assert has_element?(lv, "#node-settings-delay[disabled]")
 
-      render_submit(lv, "save_node_config", %{
+      render_change(lv, "node_config_changed", %{
         "node_label" => "Code",
         "settings" => %{"retries" => "3", "retry_delay" => "2", "on_error" => "continue"}
       })
@@ -823,28 +828,32 @@ defmodule HeddleUI.FlowLive.EditorTest do
       assert has_element?(lv, "#node-settings-pin")
       refute has_element?(lv, "#node-settings-on-error-output")
 
-      # Unpinning shows only once saved.
+      # Data that isn't a JSON object yet stays as typed, and the node keeps the last.
       render_change(lv, "node_config_changed", %{
-        "settings" => %{"pin_output" => "success", "pin_data" => "{}", "unpin" => "true"}
-      })
-
-      assert has_element?(lv, "#node-settings-unpin[checked]")
-
-      html =
-        render_submit(lv, "save_node_config", %{
-          "node_label" => "API",
-          "settings" => %{"pin_output" => "success", "pin_data" => "not json"}
-        })
-
-      assert html =~ "The pinned data must be a JSON object."
-
-      render_submit(lv, "save_node_config", %{
         "node_label" => "API",
-        "settings" => %{"pin_output" => "success", "pin_data" => "{}", "unpin" => "true"}
+        "settings" => %{"pin_output" => "success", "pin_data" => "{\"result\""}
       })
+
+      assert has_element?(lv, "#node-settings-pin-invalid")
+      refute_push_event(lv, "update_node_settings", %{nodeId: "n1"})
+
+      render_change(lv, "node_config_changed", %{
+        "node_label" => "API",
+        "settings" => %{"pin_output" => "success", "pin_data" => ~s({"result": 2})}
+      })
+
+      refute has_element?(lv, "#node-settings-pin-invalid")
+
+      assert_push_event(lv, "update_node_settings", %{
+        nodeId: "n1",
+        settings: %{"pin" => %{"output" => "success", "data" => %{"result" => 2}}}
+      })
+
+      lv |> element("#node-settings-unpin") |> render_click()
 
       assert_push_event(lv, "update_node_settings", %{nodeId: "n1", settings: settings})
       assert settings == %{}
+      refute has_element?(lv, "#node-settings-pin")
     end
   end
 

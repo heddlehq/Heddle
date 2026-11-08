@@ -122,6 +122,10 @@
     animation: save-pulse 1s ease-in-out infinite;
 }
 .save-state[data-state="offline"]::before { background: var(--run-error); }
+/* Saved is the usual state, so it shows nothing: only saving and reconnecting do. */
+.save-state[data-state="saved"] {
+    display: none;
+}
 @keyframes save-pulse {
     50% { opacity: 0.3; }
 }
