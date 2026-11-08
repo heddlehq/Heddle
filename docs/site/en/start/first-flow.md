@@ -35,10 +35,10 @@ Hover a node and press the gear to open its drawer on the right. What you type a
 | Method | `GET` |
 | Endpoint URL | `https://api.github.com/repos/heddlehq/Heddle` |
 
-**Evaluate Code**: pick `python` as the language, press **Edit Code** and write:
+**Evaluate Code**: leave `elixir` as the language, press **Edit Code** and write:
 
-```python
-set_result(f"{result['full_name']} has {result['stargazers_count']} stars")
+```elixir
+set_result("#{result["full_name"]} has #{result["stargazers_count"]} stars")
 ```
 
 `result` is what the step before left: here, what GitHub answered. [Data in a run](/docs/concepts/context/) explains how data goes from one step to the next.
