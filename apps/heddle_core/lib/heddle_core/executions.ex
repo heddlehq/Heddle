@@ -9,6 +9,7 @@ defmodule HeddleCore.Executions do
   alias HeddleCore.Accounts.Scope
   alias HeddleCore.Executions.Execution
   alias HeddleCore.Flows.Flow
+  alias HeddleCore.Flows.Versions
   alias HeddleCore.Pagination
   alias HeddleCore.Repo
   alias HeddleCore.Workspaces
@@ -174,28 +175,61 @@ defmodule HeddleCore.Executions do
 
   @doc """
   Runs `flow` for the caller, who must be allowed to run it: operators and up.
-  """
-  def run(%Scope{} = scope, %Flow{} = flow, input) do
-    with :ok <- Workspaces.authorize(scope, :run, flow.workspace_id) do
-      start_execution(flow, input)
-    end
-  end
 
-  @doc "Like `run/3`, and waits for the run to finish. See `start_and_await/3`."
-  def run_and_await(%Scope{} = scope, %Flow{} = flow, input, timeout \\ @await_timeout) do
+  It runs the published version, as production does, unless `version: :draft`, which
+  runs the draft as it is now: for the editor and the agent, which test what they
+  change. See `HeddleCore.Flows.Versions`.
+  """
+  def run(%Scope{} = scope, %Flow{} = flow, input, opts \\ []) do
     with :ok <- Workspaces.authorize(scope, :run, flow.workspace_id) do
-      start_and_await(flow, input, timeout)
+      start_execution(flow, input, Keyword.put_new(opts, :author_id, user_id(scope)))
     end
   end
 
   @doc """
-  Creates an execution of `flow` with `input` and queues it, for what starts runs on
-  its own: schedules and webhooks. A person runs a flow with `run/3`.
+  Like `run/4`, and waits for the run to finish, up to `:timeout`. See
+  `start_and_await/3`.
   """
-  def start_execution(%Flow{id: flow_id}, input) do
-    with {:ok, %Execution{} = execution} <- create_execution(%{flow_id: flow_id, input: input}),
+  def run_and_await(%Scope{} = scope, %Flow{} = flow, input, opts \\ []) do
+    with :ok <- Workspaces.authorize(scope, :run, flow.workspace_id) do
+      start_and_await(flow, input, Keyword.put_new(opts, :author_id, user_id(scope)))
+    end
+  end
+
+  defp user_id(%Scope{user: %{id: id}}), do: id
+  defp user_id(_scope), do: nil
+
+  @doc """
+  Creates an execution of `flow` with `input` and queues it, for what starts runs on
+  its own: schedules and webhooks. A person runs a flow with `run/4`.
+
+  It runs the published version, and returns `{:error, :not_published}` for a flow
+  that has none, unless `version: :draft`.
+  """
+  def start_execution(%Flow{} = flow, input, opts \\ []) do
+    with {:ok, version_id} <- version_id(flow, opts),
+         {:ok, %Execution{} = execution} <-
+           create_execution(%{flow_id: flow.id, flow_version_id: version_id, input: input}),
          {:ok, _job} <- enqueue_execution(execution) do
       {:ok, execution}
+    end
+  end
+
+  @doc """
+  The version a run of `flow` takes: `{:ok, id}` of the published one, or with
+  `version: :draft` of the draft as it is now, see `Versions.freeze_draft/2`.
+  """
+  def version_id(%Flow{} = flow, opts \\ []) do
+    case Keyword.get(opts, :version, :published) do
+      :draft ->
+        with {:ok, version} <- Versions.freeze_draft(flow, opts[:author_id]),
+             do: {:ok, version.id}
+
+      :published ->
+        case flow.published_version_id do
+          nil -> {:error, :not_published}
+          id -> {:ok, id}
+        end
     end
   end
 
@@ -223,7 +257,7 @@ defmodule HeddleCore.Executions do
 
   defp error_input(execution, flow, error) do
     node_id = error["node_id"]
-    node = node_id && Graph.get(Graph.new(flow), node_id)
+    node = node_id && Graph.get(Graph.new(Versions.for_execution(flow, execution)), node_id)
 
     %{
       "trigger" => "error",
@@ -283,13 +317,18 @@ defmodule HeddleCore.Executions do
   end
 
   @doc """
-  Runs `flow` with `input` and waits for it to finish.
+  Runs `flow` with `input` and waits for it to finish, up to `:timeout`. It takes the
+  version `version_id/2` says.
 
   Returns `{:ok, execution}` whether the run succeeded, failed or is waiting at a Wait,
   and `{:error, :timeout}` if it takes longer than `timeout`.
   """
-  def start_and_await(%Flow{id: flow_id}, input, timeout \\ @await_timeout) do
-    with {:ok, %Execution{} = execution} <- create_execution(%{flow_id: flow_id, input: input}) do
+  def start_and_await(%Flow{} = flow, input, opts \\ []) do
+    timeout = Keyword.get(opts, :timeout, @await_timeout)
+
+    with {:ok, version_id} <- version_id(flow, opts),
+         {:ok, %Execution{} = execution} <-
+           create_execution(%{flow_id: flow.id, flow_version_id: version_id, input: input}) do
       :ok = subscribe_to_execution(execution)
 
       with {:ok, _job} <- enqueue_execution(execution) do
@@ -565,7 +604,7 @@ defmodule HeddleCore.Executions do
   def save_and_run(scope, %Flow{} = flow, data, input \\ %{"trigger" => "manual"}) do
     with :ok <- authorize_run(scope, flow),
          {:ok, saved_flow} <- save_flow(scope, flow, data),
-         {:ok, execution} <- create_run(saved_flow, input),
+         {:ok, execution} <- create_run(saved_flow, input, user_id(scope)),
          {:ok, _job} <- enqueue_run(saved_flow, execution) do
       {:ok, %{flow: saved_flow, execution: execution}}
     end
@@ -585,9 +624,13 @@ defmodule HeddleCore.Executions do
     end
   end
 
-  defp create_run(saved_flow, input) do
-    case create_execution(%{flow_id: saved_flow.id, input: input}) do
-      {:ok, execution} -> {:ok, execution}
+  # It runs the draft just saved.
+  defp create_run(saved_flow, input, author_id) do
+    with {:ok, version_id} <- version_id(saved_flow, version: :draft, author_id: author_id),
+         {:ok, execution} <-
+           create_execution(%{flow_id: saved_flow.id, flow_version_id: version_id, input: input}) do
+      {:ok, execution}
+    else
       {:error, reason} -> {:error, :create, %{reason: reason, flow: saved_flow}}
     end
   end

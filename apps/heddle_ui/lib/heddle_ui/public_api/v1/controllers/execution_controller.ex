@@ -34,8 +34,11 @@ defmodule HeddleUI.PublicAPI.V1.ExecutionController do
       workflow ->
         input = params |> Map.get("input", %{}) |> Map.put_new("trigger", "api")
 
+        # Production runs what the workflow publishes; `version=draft` tests its draft.
+        version = if params["version"] == "draft", do: :draft, else: :published
+
         with {:ok, %Execution{} = execution} <-
-               Executions.run(conn.assigns.current_scope, workflow, input) do
+               Executions.run(conn.assigns.current_scope, workflow, input, version: version) do
           conn
           |> put_status(:accepted)
           |> put_resp_header(

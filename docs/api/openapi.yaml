@@ -37,6 +37,8 @@ tags:
     description: Workflow CRUD operations.
   - name: Executions
     description: Queue and inspect workflow executions.
+  - name: Versions
+    description: Publish a workflow, and look at or bring back what it had before.
 security:
   - bearerApiKey: []
 paths:
@@ -427,6 +429,10 @@ paths:
 
         Creates a queued execution and enqueues an Oban job. The API currently
         returns `202 Accepted` with the execution status.
+
+        It runs the published version of the workflow, as webhooks and schedules
+        do, and answers `409` for a workflow that was never published. With
+        `version: draft`, it runs the draft as it is saved now.
       security:
         - bearerApiKey: []
       parameters:
@@ -461,8 +467,165 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/NotPublished"
         "422":
           $ref: "#/components/responses/ValidationError"
+  /api/v1/workflows/{workflow_id}/versions:
+    get:
+      operationId: listWorkflowVersions
+      tags:
+        - Versions
+      summary: List workflow versions
+      description: |
+        Requires `workflows:read`.
+
+        The graph of a workflow is its draft. Production (webhooks, schedules, error
+        flows and executions started here) runs its published version, the one with
+        `live`. Besides the published ones, a workflow keeps its draft as a
+        `checkpoint` every so often and before it is replaced, and as a `run` when a
+        run takes it. The 100 newest come first, each with what it changed from the
+        one before.
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+      responses:
+        "200":
+          description: The versions, newest first.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/workflows/{workflow_id}/versions/{version_id}:
+    get:
+      operationId: getWorkflowVersion
+      tags:
+        - Versions
+      summary: Get a workflow version, with its graph
+      description: Requires `workflows:read`.
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+        - $ref: "#/components/parameters/VersionId"
+      responses:
+        "200":
+          description: The version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/workflows/{workflow_id}/publish:
+    post:
+      operationId: publishWorkflow
+      tags:
+        - Versions
+      summary: Publish the draft
+      description: |
+        Requires `workflows:write`, and the role editor or above.
+
+        The draft becomes what production runs. Runs already going keep the version
+        they started with.
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishRequest"
+      responses:
+        "201":
+          description: The version published.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/workflows/{workflow_id}/versions/{version_id}/publish:
+    post:
+      operationId: publishWorkflowVersion
+      tags:
+        - Versions
+      summary: Put an older version back in production
+      description: |
+        Requires `workflows:write`, and the role editor or above.
+
+        Publishes a new version with the graph of an older one, and leaves the draft
+        as it is: for when what was published broke something.
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+        - $ref: "#/components/parameters/VersionId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishRequest"
+      responses:
+        "201":
+          description: The version published, with `source_version_number`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/workflows/{workflow_id}/versions/{version_id}/restore:
+    post:
+      operationId: restoreWorkflowVersion
+      tags:
+        - Versions
+      summary: Restore a version into the draft
+      description: |
+        Requires `workflows:write`, and the role editor or above.
+
+        The draft takes the graph of the version. What the draft had is kept as a
+        checkpoint first. Production keeps running what is published.
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+        - $ref: "#/components/parameters/VersionId"
+      responses:
+        "200":
+          description: The workflow, with its new draft.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/v1/workflows/{workflow_id}/executions/{public_id}:
     get:
       operationId: getWorkflowExecution
@@ -501,6 +664,13 @@ components:
       name: X-Heddle-API-Key
       description: Alternative API key header.
   parameters:
+    VersionId:
+      name: version_id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Version id.
     WorkflowId:
       name: id
       in: path
@@ -615,6 +785,20 @@ components:
                 error:
                   code: not_found
                   message: Not Found
+    NotPublished:
+      description: The workflow has no published version, so production can't run it.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            notPublished:
+              value:
+                error:
+                  code: not_published
+                  message: >-
+                    This workflow has no published version. Publish it, or run its
+                    draft with version=draft.
     ValidationError:
       description: Request payload failed validation.
       content:
@@ -720,12 +904,120 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Comment"
+        published_version_id:
+          type:
+            - integer
+            - "null"
+          description: >-
+            The version production runs. The nodes, connections and comments above
+            are the draft, and a workflow without a published version isn't in
+            production yet.
         inserted_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+    Version:
+      type: object
+      required:
+        - id
+        - number
+        - kind
+        - live
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+          description: Counts the versions of the workflow, from 1.
+        kind:
+          type: string
+          enum:
+            - publish
+            - checkpoint
+            - run
+          description: >-
+            `publish`, someone published it; `checkpoint`, the draft kept on its own;
+            `run`, the draft as a run took it.
+        live:
+          type: boolean
+          description: Whether production runs this version.
+        note:
+          type:
+            - string
+            - "null"
+        author:
+          oneOf:
+            - $ref: "#/components/schemas/Person"
+            - type: "null"
+        source_version_number:
+          type:
+            - integer
+            - "null"
+          description: For a version that put an older one back in production, that one.
+        changes:
+          type: object
+          additionalProperties:
+            type: integer
+          description: >-
+            In a list, what changed from the version before, by count: nodes_added,
+            nodes_removed, nodes_changed, nodes_moved, connections_added,
+            connections_removed, connections_reordered and comments_changed.
+        contributors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Person"
+          description: In a list, who changed the draft since the version before.
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowNode"
+        connections:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowConnection"
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        inserted_at:
+          type: string
+          format: date-time
+    Person:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type:
+            - string
+            - "null"
+        email:
+          type: string
+    VersionListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Version"
+    VersionResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/Version"
+    PublishRequest:
+      type: object
+      properties:
+        note:
+          type: string
+          maxLength: 500
+          description: What changed, for whoever reads the history.
     Comment:
       type: object
       additionalProperties: false
@@ -873,6 +1165,9 @@ components:
             - object
             - "null"
           additionalProperties: true
+          description: >-
+            What the agent waits for the person to allow: `flow_name`, `action`
+            (`run`, `publish` or `restore`) and, for a version, its `version` number.
     NodeListResponse:
       type: object
       required:
@@ -950,6 +1245,15 @@ components:
             Execution input. The API sets `trigger` to `api` when absent. With
             `section_id`, the id of a section comment, it runs only that section, from
             each node nothing in it leads to.
+        version:
+          type: string
+          enum:
+            - published
+            - draft
+          default: published
+          description: >-
+            Which graph runs: the published version, as production does, or the draft
+            as it is saved now.
     ExecutionListResponse:
       type: object
       required:

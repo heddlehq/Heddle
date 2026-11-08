@@ -5,6 +5,7 @@ defmodule HeddleCore.Flows.Flow do
   alias Heddle.Graph
   alias HeddleCore.Accounts.User
   alias HeddleCore.Flows.GraphValidator
+  alias HeddleCore.Flows.Version
   alias HeddleCore.Workspaces.Workspace
 
   schema "flows" do
@@ -12,11 +13,16 @@ defmodule HeddleCore.Flows.Flow do
     field :nodes, {:array, :map}
     field :connections, {:array, :map}
     field :comments, {:array, :map}, default: []
+    # Who changed the graph since the last version was kept, see `HeddleCore.Flows.Versions`.
+    field :draft_contributor_ids, {:array, :integer}, default: []
 
     belongs_to :user, User
     # The flow that runs when a run of this one fails, see `HeddleCore.Executions`.
     belongs_to :error_flow, __MODULE__
     belongs_to :workspace, Workspace
+    # The graph above is the draft. What runs in production is this version, and a flow
+    # without one isn't in production yet.
+    belongs_to :published_version, Version
     has_many :executions, HeddleCore.Executions.Execution
 
     timestamps(type: :utc_datetime)

@@ -1,6 +1,7 @@
 defmodule HeddleUI.MCP.Tools.RunFlow do
   @moduledoc """
-  Runs the saved version of a flow. This can have real side effects, such as calling
+  Runs the draft of a flow, as it is saved now, not what it publishes. This can have
+  real side effects, such as calling
   external APIs, so the user may be asked to confirm first. Returns the execution id:
   read the outcome with get_execution. With section_id, it runs only that section of
   the flow, the id of a comment of kind section.
@@ -34,7 +35,7 @@ defmodule HeddleUI.MCP.Tools.RunFlow do
           |> Tool.put_section(params)
 
         with :ok <- AgentChat.confirm_run(frame.assigns.api_key, flow),
-             {:ok, execution} <- Executions.run(scope, flow, input) do
+             {:ok, execution} <- Executions.run(scope, flow, input, version: :draft) do
           Tool.reply(ExecutionJSON.for_agent(%{execution: execution}).data, frame)
         else
           {:error, :forbidden} -> Tool.forbidden(frame)

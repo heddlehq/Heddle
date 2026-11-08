@@ -12,9 +12,11 @@ defmodule HeddleCore.FlowsFixtures do
     workspace =
       Map.get_lazy(attrs, :workspace, fn -> HeddleCore.AccountsFixtures.ensure_workspace(user) end)
 
+    publish? = Map.get(attrs, :published, true)
+
     {:ok, flow} =
       attrs
-      |> Map.drop([:user, :workspace])
+      |> Map.drop([:user, :workspace, :published])
       |> Enum.into(%{
         name: "Test Flow",
         nodes: [],
@@ -25,7 +27,13 @@ defmodule HeddleCore.FlowsFixtures do
       |> normalize_graph()
       |> Flows.create_flow()
 
-    flow
+    # A flow runs in production once published, and most tests want one that does.
+    if publish? do
+      {:ok, _version} = HeddleCore.Flows.Versions.publish_draft(flow, user.id)
+      Flows.get_flow!(flow.id)
+    else
+      flow
+    end
   end
 
   def execution_fixture(attrs \\ %{}) do
