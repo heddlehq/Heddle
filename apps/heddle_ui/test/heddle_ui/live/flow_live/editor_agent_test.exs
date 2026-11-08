@@ -131,30 +131,12 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
     end
   end
 
-  describe "unsaved changes" do
-    test "are saved before the agent reads the flow", %{view: view, flow: flow} do
-      render_hook(view, "graph_changed", %{})
-
+  describe "what the canvas has" do
+    test "goes to the agent at once: the canvas saves as it changes", %{view: view} do
       say(view, "hi")
-
-      assert_push_event(view, "request_graph_data", %{})
-      refute_received {:agent_called, _content, _opts}
-
-      render_hook(view, "save_graph_data", %{"data" => %{"nodes" => [@node], "connections" => []}})
 
       assert_receive {:agent_called, "hi" <> _state, _opts}
-      assert [%{"id" => "1"}] = Flows.get_flow!(flow.id).nodes
-    end
-
-    test "that can't be saved stop the message", %{view: view} do
-      render_hook(view, "graph_changed", %{})
-      say(view, "hi")
-
-      bad = %{"id" => "1", "type" => "No Such Node"}
-      render_hook(view, "save_graph_data", %{"data" => %{"nodes" => [bad], "connections" => []}})
-
-      refute_received {:agent_called, _content, _opts}
-      refute has_element?(view, "#chat-input-field[disabled]")
+      refute_push_event(view, "request_graph_data", %{})
     end
   end
 
@@ -269,19 +251,11 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
   end
 
   describe "a flow changed elsewhere" do
-    test "reloads the canvas", %{view: view, flow: flow} do
+    test "doesn't reload the canvas, which follows its own channel", %{view: view, flow: flow} do
       {:ok, _flow} = Flows.update_flow(flow, %{nodes: [@node]})
-
-      assert_push_event(view, "load_graph_data", %{nodes: [%{"id" => "1"}]})
-    end
-
-    test "doesn't reload for the editor's own save", %{view: view} do
-      data = %{"nodes" => [@node], "connections" => []}
-      render_hook(view, "save_graph_data", %{"data" => data})
-
       _ = :sys.get_state(view.pid)
 
-      refute_push_event(view, "load_graph_data", %{nodes: [%{"id" => "1"}]})
+      refute_push_event(view, "load_graph_data", %{})
     end
   end
 end

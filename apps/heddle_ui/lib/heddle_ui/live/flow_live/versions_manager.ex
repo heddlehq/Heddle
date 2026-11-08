@@ -11,7 +11,7 @@ defmodule HeddleUI.FlowLive.VersionsManager do
   use Gettext, backend: HeddleUI.Gettext
 
   import Phoenix.Component, only: [assign: 2, to_form: 2]
-  import Phoenix.LiveView, only: [push_event: 3, put_flash: 3, stream: 4]
+  import Phoenix.LiveView, only: [put_flash: 3, stream: 4]
 
   alias Heddle.Graph
   alias Heddle.Graph.Diff
@@ -39,8 +39,6 @@ defmodule HeddleUI.FlowLive.VersionsManager do
   what is published, or `:published`.
   """
   def status(%{published_version: nil}), do: :unpublished
-
-  def status(%{has_changes: true}), do: :changed
 
   def status(%{published_version: version, current_flow: flow}) do
     if Versions.same_graph?(flow, version), do: :published, else: :changed
@@ -136,26 +134,33 @@ defmodule HeddleUI.FlowLive.VersionsManager do
   def close_publish(socket), do: assign(socket, publish_open: false)
 
   @doc """
-  Publishes what the canvas holds, `data`, with the note typed in the dialog.
+  Publishes the draft, which the canvas sent before asking, with the note typed in the
+  dialog.
   """
-  def publish(socket, data, params) do
+  def publish(socket, params) do
     %{current_scope: scope, current_flow: flow} = socket.assigns
 
-    case Versions.save_and_publish(scope, flow, data, params) do
-      {:ok, %{flow: flow, version: version}} ->
+    case Versions.publish(scope, flow, params) do
+      {:ok, version} ->
         socket
-        |> assign(current_flow: flow, has_changes: false, publish_open: false)
+        |> assign(current_flow: Flows.get_flow!(scope, flow.id), publish_open: false)
         |> assign(published_version: version)
         |> refresh()
         |> put_flash(:info, gettext("Version %{number} is published.", number: version.number))
 
-      {:error, _stage, :forbidden} ->
+      {:error, :forbidden} ->
         put_flash(socket, :error, gettext("Your role in this workspace can't publish flows."))
 
-      {:error, :save, _reason} ->
-        put_flash(socket, :error, gettext("The flow could not be saved, so it wasn't published."))
+      {:error, {:invalid, message}} ->
+        put_flash(
+          socket,
+          :error,
+          gettext("The flow can't be published until this is fixed: %{problem}.",
+            problem: message
+          )
+        )
 
-      {:error, :publish, _reason} ->
+      {:error, _reason} ->
         put_flash(socket, :error, gettext("The flow could not be published."))
     end
   end
@@ -194,17 +199,12 @@ defmodule HeddleUI.FlowLive.VersionsManager do
     %{current_scope: scope, current_flow: flow} = socket.assigns
 
     case Versions.restore(scope, flow, id) do
+      # Everyone on the canvas sees it change, through the session of the flow.
       {:ok, flow} ->
         socket
-        |> assign(current_flow: flow, has_changes: false)
+        |> assign(current_flow: flow)
         |> close_preview()
         |> refresh()
-        |> push_event("load_graph_data", %{
-          nodes: Layout.place(flow.nodes, flow.connections),
-          connections: Graph.normalize_connections(flow.connections),
-          comments: flow.comments,
-          definitions: AIChat.node_definitions()
-        })
         |> put_flash(:info, gettext("The draft now has what that version had."))
 
       {:error, :forbidden} ->

@@ -28,6 +28,14 @@ Rete draws flows and nothing else. Only `rete_editor.js` and the `custom-*.js` e
 - **Layout** is not part of running a flow: a node without a position is placed by `Heddle.Graph.Layout`.
 - **Never** let the API, the agents or a Bobbin node depend on the canvas.
 
+## Flows are drafts, edited together, and published
+The graph of a flow is its **draft**. What production runs (webhooks, schedules, error flows and the API) is its **published version** (`HeddleCore.Flows.Versions`), and every run pins the version it took.
+- **One writer per flow**: `HeddleCore.Flows.Session`, one process per flow in the cluster through Horde. It applies changes in order, tells everyone, and saves the draft a moment later. Write a graph only through `Flows.update_flow/3` or `Flows.apply_operations/4`, which go through it. **Never** `Repo.update` the nodes, connections or comments of a flow.
+- **Changes are operations** (`Heddle.Graph.Ops`), and `assets/js/flow_ops.js` is its twin for the canvas: change both together.
+- **The canvas edits through its own socket** (`HeddleUI.FlowSocket`, `HeddleUI.FlowChannel`, `collab.js`), not the LiveView, and saves as it changes: there is no save button. Undo takes back only what that person did.
+- **A draft may be unfinished** (half a cron expression): publishing checks it in full.
+- **Running or publishing reads the database**, so it saves the session first: `Flows.saved_draft/1`.
+
 ## The agent is one harness on the server
 The agent lives on the server, and every client only sends messages and shows events. **Never** put agent logic in a client.
 - `HeddleAI.Harness`: the loop. It knows nothing about flows: it takes tools, reports events, stops repeated calls and keeps the conversation within what a model takes.

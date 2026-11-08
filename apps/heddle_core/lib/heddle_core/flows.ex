@@ -12,6 +12,7 @@ defmodule HeddleCore.Flows do
 
   alias HeddleCore.Accounts.Scope
   alias HeddleCore.Flows.Flow
+  alias HeddleCore.Flows.Session
   alias HeddleCore.Pagination
   alias HeddleCore.Workspaces
 
@@ -65,15 +66,62 @@ defmodule HeddleCore.Flows do
 
   def get_flow(id), do: Repo.get(Flow, id)
 
-  @doc "Gets a flow the caller may see, in any of their workspaces, or nil."
+  @doc """
+  Gets a flow the caller may see, in any of their workspaces, or nil. While people
+  edit it, its draft is what they have, which is saved a moment later: see
+  `HeddleCore.Flows.Session`.
+  """
   def get_flow(%Scope{} = scope, id) do
     with {:ok, id} <- cast_id(id),
          %Flow{} = flow <- Repo.get(Flow, id),
          true <- Workspaces.can?(scope, :view, flow.workspace_id) do
-      flow
+      live(flow)
     else
       _other -> nil
     end
+  end
+
+  # The draft as its session has it, when someone edits it.
+  defp live(%Flow{} = flow) do
+    case Session.peek(flow.id) do
+      nil ->
+        flow
+
+      graph ->
+        %{flow | nodes: graph.nodes, connections: graph.connections, comments: graph.comments}
+    end
+  end
+
+  @doc """
+  Joins the editing session of a flow the caller may see, for as long as the caller
+  lives. Returns `{:ok, flow, %{graph: graph, seq: seq, epoch: epoch}}`, see
+  `HeddleCore.Flows.Session.join/2`.
+  """
+  def join_session(%Scope{} = scope, id) do
+    with {:ok, flow} <- fetch_for(scope, :view, id),
+         {:ok, joined} <- Session.join(flow.id, scope.user && scope.user.id) do
+      {:ok, flow, joined}
+    end
+  end
+
+  @doc """
+  Applies operations a person made on a flow they may edit, see `Heddle.Graph.Ops`.
+  Returns `{:ok, seq}`, `{:error, :forbidden}` for someone who may only see it, or
+  `{:error, reason}`.
+  """
+  def apply_operations(%Scope{} = scope, id, ops, meta \\ %{}) do
+    with {:ok, flow} <- fetch_for(scope, :edit, id) do
+      Session.apply_ops(flow.id, scope.user && scope.user.id, ops, meta)
+    end
+  end
+
+  @doc """
+  `flow` as it is saved, once its session saved what it had: for what reads the
+  database, such as a run or a publish.
+  """
+  def saved_draft(%Flow{id: id}) do
+    :ok = Session.flush(id)
+    Repo.get!(Flow, id)
   end
 
   defp cast_id(id) when is_integer(id), do: {:ok, id}
@@ -128,19 +176,49 @@ defmodule HeddleCore.Flows do
   `update_flow/3`. Production keeps running the published version.
   """
   def update_flow(%Flow{} = flow, attrs) do
-    flow
-    |> Flow.changeset(attrs)
-    |> save_draft()
+    case Repo.get(Flow, flow.id) do
+      nil -> {:error, :not_found}
+      flow -> write(live(flow), Map.new(attrs), nil, [])
+    end
   end
 
-  defp save_draft(changeset) do
-    case Repo.update(changeset) do
-      {:ok, updated_flow} ->
-        broadcast_flow_updated(updated_flow)
-        {:ok, updated_flow}
+  # The graph goes through the session of the flow, which everyone editing it follows
+  # and which is the one thing that writes it. The rest is written here.
+  defp write(flow, attrs, author_id, opts) do
+    changeset = Flow.changeset(flow, attrs)
+    graph = Map.take(changeset.changes, [:nodes, :connections, :comments])
+    rest = Map.drop(changeset.changes, [:nodes, :connections, :comments])
 
-      error ->
-        error
+    if changeset.valid? do
+      with {:ok, flow} <- write_graph(flow, graph, author_id, opts) do
+        write_rest(flow, rest)
+      end
+    else
+      {:error, %{changeset | action: :update}}
+    end
+  end
+
+  defp write_graph(flow, graph, _author_id, _opts) when graph == %{}, do: {:ok, flow}
+
+  defp write_graph(flow, graph, author_id, opts) do
+    case Session.replace(flow.id, author_id, graph, opts) do
+      {:ok, flow} ->
+        {:ok, flow}
+
+      {:error, reason} when is_binary(reason) ->
+        {:error, flow |> Ecto.Changeset.change() |> Ecto.Changeset.add_error(:nodes, reason)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp write_rest(flow, rest) when rest == %{}, do: {:ok, live(flow)}
+
+  defp write_rest(flow, rest) do
+    with {:ok, flow} <- flow |> Ecto.Changeset.change(rest) |> Repo.update() do
+      broadcast_flow_updated(flow)
+      {:ok, live(flow)}
     end
   end
 
@@ -184,35 +262,7 @@ defmodule HeddleCore.Flows do
           "draft_contributor_ids"
         ])
 
-      author_id = scope.user && scope.user.id
-
-      flow
-      |> Flow.changeset(attrs)
-      |> put_contributor(author_id)
-      |> save_draft()
-      |> tap(fn
-        {:ok, flow} ->
-          if Keyword.get(opts, :checkpoint, true),
-            do: HeddleCore.Flows.Versions.checkpoint_if_due(flow, author_id)
-
-        _error ->
-          :ok
-      end)
-    end
-  end
-
-  defp put_contributor(changeset, nil), do: changeset
-
-  defp put_contributor(changeset, user_id) do
-    graph_changed? =
-      Enum.any?([:nodes, :connections, :comments], &Map.has_key?(changeset.changes, &1))
-
-    contributors = Ecto.Changeset.get_field(changeset, :draft_contributor_ids) || []
-
-    if graph_changed? and user_id not in contributors do
-      Ecto.Changeset.put_change(changeset, :draft_contributor_ids, contributors ++ [user_id])
-    else
-      changeset
+      write(flow, attrs, scope.user && scope.user.id, opts)
     end
   end
 
@@ -296,6 +346,23 @@ defmodule HeddleCore.Flows do
   `{:error, reason}`.
   """
   defdelegate import_graph(json), to: HeddleCore.Flows.Import, as: :read
+
+  @doc """
+  Makes the flow in `json` the draft of a flow the caller may edit, keeping the draft
+  it had as a version. Returns `{:ok, flow}`, or `{:error, reason}` with what
+  `import_graph/1` or `update_flow/3` says.
+  """
+  def import_into(%Scope{} = scope, %Flow{} = flow, json) do
+    with {:ok, graph} <- import_graph(json),
+         {:ok, flow} <- fetch_for(scope, :edit, flow.id),
+         {:ok, _kept} <- HeddleCore.Flows.Versions.checkpoint(flow, scope.user && scope.user.id) do
+      update_flow(scope, flow, %{
+        nodes: graph["nodes"] || [],
+        connections: graph["connections"] || [],
+        comments: graph["comments"] || []
+      })
+    end
+  end
 
   defp workspace_query(%Scope{workspace: %{id: workspace_id}} = scope) do
     if Workspaces.can?(scope, :view, workspace_id) do

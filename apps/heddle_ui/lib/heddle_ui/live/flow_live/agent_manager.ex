@@ -6,7 +6,7 @@ defmodule HeddleUI.FlowLive.AgentManager do
   saved flow, so a message with unsaved changes on the canvas waits for them first.
   """
   import Phoenix.Component, only: [assign: 2, update: 3]
-  import Phoenix.LiveView, only: [connected?: 1, push_event: 3]
+  import Phoenix.LiveView, only: [connected?: 1]
 
   alias HeddleUI.Agent
   alias HeddleUI.Agent.Transcript
@@ -62,29 +62,9 @@ defmodule HeddleUI.FlowLive.AgentManager do
     assign(socket, agent_history_open: false)
   end
 
-  def send_message(socket, content) do
-    if socket.assigns.has_changes do
-      socket
-      |> assign(pending_agent_message: content)
-      |> push_event("request_graph_data", %{})
-    else
-      deliver(socket, content)
-    end
-  end
-
-  @doc "Continues a message that was waiting for the canvas to be saved."
-  def resume_pending(%{assigns: %{pending_agent_message: nil}} = socket), do: socket
-
-  def resume_pending(socket) do
-    content = socket.assigns.pending_agent_message
-
-    socket
-    |> assign(pending_agent_message: nil)
-    |> deliver(content)
-  end
-
-  @doc "Drops a waiting message because the canvas could not be saved."
-  def abort_pending(socket), do: assign(socket, pending_agent_message: nil)
+  # The canvas saves as it changes, and the agent reads the draft as the session of
+  # the flow has it, so a message goes at once.
+  def send_message(socket, content), do: deliver(socket, content)
 
   def apply_event(socket, event) do
     update(socket, :agent, &Transcript.reduce(&1, event))
