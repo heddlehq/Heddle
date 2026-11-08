@@ -97,8 +97,13 @@ defmodule HeddleUI.ApiKeyLive.Index do
         </p>
       </div>
 
+      <%!-- Its own ids, so LiveView doesn't reuse the name field for the token and keep
+           what was typed there. --%>
       <%= if @created_token do %>
-        <div class="rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 p-4">
+        <div
+          id="api-key-created"
+          class="rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 p-4"
+        >
           <p class="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
             {gettext("Your new API key")} — {gettext("Copy this token now")}
           </p>
@@ -107,6 +112,7 @@ defmodule HeddleUI.ApiKeyLive.Index do
           </p>
           <div class="mt-3 flex items-center gap-2">
             <input
+              id="api-key-token"
               type="text"
               readonly
               value={@created_token}
