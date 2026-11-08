@@ -98,6 +98,10 @@ It answers with the run's id at once, and `GET /api/v1/workflows/12/executions/<
 
 A flow that starts with an [Error Trigger](/docs/nodes/error-trigger/) runs when a flow that picked it as its error flow fails. See [Error flows](/docs/guides/error-handling/#error-flows).
 
+## From another flow
+
+A flow that starts with a [Subflow Trigger](/docs/nodes/subflow-trigger/) runs when a [Subflow](/docs/nodes/subflow/) node of another flow calls it, with what that node sent. See [Subflows](/docs/guides/subflows/).
+
 ## Waiting for a call in the middle of a run
 
 A [Wait](/docs/nodes/wait/) set to **Until a call** pauses the run until something calls `{{resume_url}}`. Send that address in an email, a Slack message or to an API, and the run goes on when it is called, with the request as `result`. The [refund approval tutorial](/docs/tutorials/refund-approval/) does this.

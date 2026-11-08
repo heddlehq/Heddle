@@ -46,6 +46,7 @@ config :heddle_nodes, :llm_client, HeddleAI.AI
 config :heddle_nodes, :agent_memory, HeddleCore.AgentMemory
 config :heddle_nodes, :credentials_client, HeddleCore.Credentials
 config :heddle_nodes, :spool_client, HeddleCore.Spool.Client
+config :heddle_nodes, :subflow_client, HeddleWorker.Subflow
 
 # Replaced in production by a key derived from SECRET_KEY_BASE. See runtime.exs.
 config :heddle_core, :credentials_secret, "development only"

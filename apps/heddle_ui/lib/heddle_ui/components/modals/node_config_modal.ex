@@ -9,6 +9,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
   attr :config_modal_open, :boolean, required: true
   attr :editing_node_data, :map, default: nil
   attr :credentials, :list, default: []
+  attr :subflows, :list, default: []
   attr :read_only, :boolean, default: false
   attr :form_link, :map, default: nil
   attr :can_run, :boolean, default: false
@@ -131,6 +132,8 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
                             credentials={@credentials}
                             blank={credential_blank(@editing_node_data, control)}
                           />
+                        <% "flow" -> %>
+                          <.flow_field key={key} value={control["value"]} flows={@subflows} />
                         <% "model" -> %>
                           <.model_field
                             key={key}
@@ -571,6 +574,49 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
       class="mt-1.5 inline-block text-xs text-primary hover:underline"
     >
       {gettext("Manage credentials")}
+    </.link>
+    """
+  end
+
+  attr :key, :string, required: true
+  attr :value, :any, required: true
+  attr :flows, :list, required: true
+
+  # The flow a Subflow node runs, by id, so renaming it changes nothing.
+  defp flow_field(assigns) do
+    assigns = assign(assigns, :picked, to_string(assigns.value || ""))
+
+    ~H"""
+    <div class="relative">
+      <select
+        id={"node-flow-#{@key}"}
+        name={@key}
+        class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150 appearance-none pr-10"
+      >
+        <option value="">{gettext("Pick a flow")}</option>
+        <option
+          :for={{name, id} <- @flows}
+          value={id}
+          selected={to_string(id) == @picked}
+        >
+          {name}
+        </option>
+      </select>
+      <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400">
+        <.icon name="hero-chevron-down" class="w-4 h-4" />
+      </span>
+    </div>
+    <p :if={@flows == []} class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+      {gettext("Make another flow first, starting with a Subflow Trigger.")}
+    </p>
+    <.link
+      :if={@picked != ""}
+      id={"node-flow-open-#{@key}"}
+      navigate={~p"/flows/#{@picked}"}
+      class="mt-1.5 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+    >
+      {gettext("Open this flow")}
+      <.icon name="hero-arrow-top-right-on-square-mini" class="w-3.5 h-3.5" />
     </.link>
     """
   end
