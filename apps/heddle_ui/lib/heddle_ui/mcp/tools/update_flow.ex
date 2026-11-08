@@ -24,12 +24,17 @@ defmodule HeddleUI.MCP.Tools.UpdateFlow do
   def execute(%{flow_id: id} = params, frame) do
     Tool.authorize(frame, "workflows:write", fn scope ->
       Tool.with_flow(scope, id, frame, fn flow ->
-        case Flows.update_flow(scope, flow, attrs(params, flow)) do
+        case Flows.update_flow(scope, flow, attrs(params, flow), by(frame)) do
           {:ok, flow} -> Tool.reply(WorkflowJSON.show(%{workflow: flow}).data, frame)
           {:error, changeset} -> Tool.changeset_error(changeset, frame)
         end
       end)
     end)
+  end
+
+  # Whoever is on the canvas sees what the agent of the editor changes as the agent's.
+  defp by(frame) do
+    if HeddleCore.ApiKeys.agent_key?(frame.assigns.api_key), do: [client: "agent"], else: []
   end
 
   defp attrs(params, flow) do

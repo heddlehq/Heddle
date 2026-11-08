@@ -1425,25 +1425,25 @@ msgid "Name this section"
 msgstr "Dê um nome à seção"
 
 #: lib/heddle_ui/live/flow_live/editor.html.heex:45
-#: lib/heddle_ui/live/flow_live/editor.html.heex:94
+#: lib/heddle_ui/live/flow_live/editor.html.heex:96
 #, elixir-autogen, elixir-format
 msgid "Note"
 msgstr "Nota"
 
 #: lib/heddle_ui/live/flow_live/editor.html.heex:46
-#: lib/heddle_ui/live/flow_live/editor.html.heex:95
+#: lib/heddle_ui/live/flow_live/editor.html.heex:97
 #, elixir-autogen, elixir-format
 msgid "Section"
 msgstr "Seção"
 
 #: lib/heddle_ui/live/flow_live/editor.html.heex:44
-#: lib/heddle_ui/live/flow_live/editor.html.heex:93
+#: lib/heddle_ui/live/flow_live/editor.html.heex:95
 #, elixir-autogen, elixir-format
 msgid "Text"
 msgstr "Texto"
 
 #: lib/heddle_ui/live/flow_live/editor.html.heex:43
-#: lib/heddle_ui/live/flow_live/editor.html.heex:92
+#: lib/heddle_ui/live/flow_live/editor.html.heex:94
 #, elixir-autogen, elixir-format
 msgid "Title"
 msgstr "Título"
@@ -1461,6 +1461,7 @@ msgstr[0] "1 nó"
 msgstr[1] "%{count} nós"
 
 #: lib/heddle_ui/live/components/chat_component.ex:43
+#: lib/heddle_ui/live/flow_live/editor.html.heex:68
 #, elixir-autogen, elixir-format
 msgid "Agent"
 msgstr "Agente"
@@ -1724,7 +1725,7 @@ msgstr "Sem nome"
 msgid "When off, it runs only from the play button."
 msgstr "Desligado, ela só roda pelo botão de play."
 
-#: lib/heddle_ui/live/flow_live/editor.ex:1016
+#: lib/heddle_ui/live/flow_live/editor.ex:1015
 #, elixir-autogen, elixir-format
 msgid "Execution waiting"
 msgstr "Execução aguardando"
@@ -1744,7 +1745,7 @@ msgstr "Ela continua quando o endereço for chamado, ou pela saída timeout em %
 msgid "It goes on when its address is called."
 msgstr "Ela continua quando o endereço for chamado."
 
-#: lib/heddle_ui/live/flow_live/editor.ex:1017
+#: lib/heddle_ui/live/flow_live/editor.ex:1016
 #, elixir-autogen, elixir-format
 msgid "The flow is paused at a Wait, and goes on by itself when the wait ends."
 msgstr "O fluxo está pausado num Wait e continua sozinho quando a espera terminar."
@@ -2694,7 +2695,7 @@ msgstr "Editado por %{people}"
 msgid "Live"
 msgstr "No ar"
 
-#: lib/heddle_ui/components/flow/flow_header.ex:208
+#: lib/heddle_ui/components/flow/flow_header.ex:211
 #, elixir-autogen, elixir-format
 msgid "Live · v%{number}"
 msgstr "No ar · v%{number}"
@@ -2704,7 +2705,7 @@ msgstr "No ar · v%{number}"
 msgid "No versions yet. Publish the flow, or keep editing: the draft is kept every %{minutes} minutes."
 msgstr "Nenhuma versão ainda. Publique o fluxo, ou continue editando: o rascunho é guardado a cada %{minutes} minutos."
 
-#: lib/heddle_ui/components/flow/flow_header.ex:212
+#: lib/heddle_ui/components/flow/flow_header.ex:215
 #, elixir-autogen, elixir-format
 msgid "Not published"
 msgstr "Não publicado"
@@ -2719,7 +2720,7 @@ msgstr "Nada mudou no fluxo."
 msgid "Production already runs what the canvas has. Publishing keeps it as a version anyway."
 msgstr "A produção já roda o que está no canvas. Publicar guarda isso como uma versão mesmo assim."
 
-#: lib/heddle_ui/components/flow/flow_header.ex:221
+#: lib/heddle_ui/components/flow/flow_header.ex:224
 #, elixir-autogen, elixir-format
 msgid "Production runs the last version published, not what the canvas has."
 msgstr "A produção roda a última versão publicada, não o que está no canvas."
@@ -2730,12 +2731,12 @@ msgstr "A produção roda a última versão publicada, não o que está no canva
 msgid "Production runs v%{number} from now on, and the draft stays as it is. Publish it?"
 msgstr "A produção passa a rodar a v%{number}, e o rascunho fica como está. Publicar?"
 
-#: lib/heddle_ui/components/flow/flow_header.ex:218
+#: lib/heddle_ui/components/flow/flow_header.ex:221
 #, elixir-autogen, elixir-format
 msgid "Production runs what the canvas has."
 msgstr "A produção roda o que está no canvas."
 
-#: lib/heddle_ui/components/flow/flow_header.ex:166
+#: lib/heddle_ui/components/flow/flow_header.ex:170
 #: lib/heddle_ui/components/modals/publish_modal.ex:31
 #: lib/heddle_ui/components/modals/publish_modal.ex:77
 #: lib/heddle_ui/live/components/chat_component.ex:368
@@ -2759,7 +2760,7 @@ msgstr "Publicar esta"
 msgid "Publish v%{number} of \"%{flow}\"?"
 msgstr "Publicar a v%{number} de \"%{flow}\"?"
 
-#: lib/heddle_ui/components/flow/flow_header.ex:163
+#: lib/heddle_ui/components/flow/flow_header.ex:167
 #, elixir-autogen, elixir-format
 msgid "Publish what the canvas has, for production to run it"
 msgstr "Publicar o que está no canvas, para a produção rodar"
@@ -2801,12 +2802,12 @@ msgstr "Restaurar a v%{number} de \"%{flow}\"?"
 msgid "Showing the 100 newest versions."
 msgstr "Mostrando as 100 versões mais recentes."
 
-#: lib/heddle_ui/live/flow_live/versions_manager.ex:188
+#: lib/heddle_ui/live/flow_live/versions_manager.ex:190
 #, elixir-autogen, elixir-format
 msgid "That version could not be published."
 msgstr "Não foi possível publicar essa versão."
 
-#: lib/heddle_ui/live/flow_live/versions_manager.ex:212
+#: lib/heddle_ui/live/flow_live/versions_manager.ex:214
 #, elixir-autogen, elixir-format
 msgid "That version could not be restored."
 msgstr "Não foi possível restaurar essa versão."
@@ -2831,7 +2832,7 @@ msgstr "O agente quer trocar o rascunho por essa versão. O rascunho atual fica 
 msgid "The canvas is the draft. Production runs the version marked live, and the draft is kept on its own as you edit."
 msgstr "O canvas é o rascunho. A produção roda a versão marcada como no ar, e o rascunho é guardado sozinho enquanto você edita."
 
-#: lib/heddle_ui/live/flow_live/versions_manager.ex:206
+#: lib/heddle_ui/live/flow_live/versions_manager.ex:208
 #, elixir-autogen, elixir-format
 msgid "The draft now has what that version had."
 msgstr "O rascunho agora tem o que essa versão tinha."
@@ -2842,7 +2843,7 @@ msgstr "O rascunho agora tem o que essa versão tinha."
 msgid "The draft takes what v%{number} had. What the draft has now is kept as a version, and anything not saved on the canvas is lost. Restore it?"
 msgstr "O rascunho fica com o que a v%{number} tinha. O rascunho atual é guardado como versão, e o que não foi salvo no canvas se perde. Restaurar?"
 
-#: lib/heddle_ui/live/flow_live/versions_manager.ex:162
+#: lib/heddle_ui/live/flow_live/versions_manager.ex:164
 #, elixir-autogen, elixir-format
 msgid "The flow could not be published."
 msgstr "Não foi possível publicar o fluxo."
@@ -2852,12 +2853,12 @@ msgstr "Não foi possível publicar o fluxo."
 msgid "This flow isn't in production yet. Once published, its webhooks answer, its schedules start, and the API and other flows run it."
 msgstr "Este fluxo ainda não está em produção. Depois de publicado, os webhooks respondem, os agendamentos começam, e a API e outros fluxos passam a rodá-lo."
 
-#: lib/heddle_ui/components/flow/flow_header.ex:210
+#: lib/heddle_ui/components/flow/flow_header.ex:213
 #, elixir-autogen, elixir-format
 msgid "Unpublished changes"
 msgstr "Alterações não publicadas"
 
-#: lib/heddle_ui/live/flow_live/versions_manager.ex:178
+#: lib/heddle_ui/live/flow_live/versions_manager.ex:180
 #, elixir-autogen, elixir-format
 msgid "Version %{number} is published, with what version %{source} had."
 msgstr "A versão %{number} foi publicada, com o que a versão %{source} tinha."
@@ -2867,8 +2868,8 @@ msgstr "A versão %{number} foi publicada, com o que a versão %{source} tinha."
 msgid "Version %{number} is published."
 msgstr "A versão %{number} foi publicada."
 
-#: lib/heddle_ui/components/flow/flow_header.ex:149
-#: lib/heddle_ui/components/flow/flow_header.ex:152
+#: lib/heddle_ui/components/flow/flow_header.ex:153
+#: lib/heddle_ui/components/flow/flow_header.ex:156
 #: lib/heddle_ui/components/flow/version_history.ex:25
 #, elixir-autogen, elixir-format
 msgid "Versions"
@@ -2884,7 +2885,7 @@ msgstr "Ver"
 msgid "Viewing v%{number}"
 msgstr "Vendo a v%{number}"
 
-#: lib/heddle_ui/components/flow/flow_header.ex:224
+#: lib/heddle_ui/components/flow/flow_header.ex:227
 #, elixir-autogen, elixir-format
 msgid "Webhooks, schedules and the API don't run this flow until it is published."
 msgstr "Webhooks, agendamentos e a API não rodam este fluxo até ele ser publicado."
@@ -2899,13 +2900,13 @@ msgstr "O que mudou (opcional)"
 msgid "What is on the canvas now takes the place of what production runs. Runs already going keep the version they started with."
 msgstr "O que está no canvas passa a ser o que a produção roda. Execuções em andamento continuam com a versão em que começaram."
 
-#: lib/heddle_ui/live/flow_live/versions_manager.ex:209
+#: lib/heddle_ui/live/flow_live/versions_manager.ex:211
 #, elixir-autogen, elixir-format
 msgid "Your role in this workspace can't change this flow."
 msgstr "Seu papel neste workspace não permite alterar este fluxo."
 
 #: lib/heddle_ui/live/flow_live/versions_manager.ex:152
-#: lib/heddle_ui/live/flow_live/versions_manager.ex:185
+#: lib/heddle_ui/live/flow_live/versions_manager.ex:187
 #, elixir-autogen, elixir-format
 msgid "Your role in this workspace can't publish flows."
 msgstr "Seu papel neste workspace não permite publicar fluxos."
@@ -2989,3 +2990,8 @@ msgstr "O canvas não conseguiu se conectar a este fluxo."
 #, elixir-autogen, elixir-format
 msgid "The flow can't be published until this is fixed: %{problem}."
 msgstr "O fluxo só pode ser publicado depois que isto for corrigido: %{problem}."
+
+#: lib/heddle_ui/live/flow_live/editor.html.heex:69
+#, elixir-autogen, elixir-format
+msgid "Click to follow"
+msgstr "Clique para seguir"

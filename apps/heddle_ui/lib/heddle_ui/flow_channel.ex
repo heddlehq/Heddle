@@ -1,13 +1,20 @@
 defmodule HeddleUI.FlowChannel do
   @moduledoc """
-  A canvas editing a flow. Joining gives the draft as the session of the flow has it
-  (see `HeddleCore.Flows.Session`), and after that every change anyone makes, in order.
+  A canvas editing a flow, on `"canvas:<id>"`. Joining gives the draft as the session of
+  the flow has it (see `HeddleCore.Flows.Session`), and after that every change anyone
+  makes, in order, and who else is there (see `HeddleUI.FlowPresence`).
 
   In: `"ops"` with `ops`, `ref` and `client`, answered with the number of the change or
   a reason it was refused; `"snapshot"`, answered with the draft, for a canvas that lost
-  track. Out: `"ops"`, each change as the session tells it.
+  track; `"cursor"` with `x` and `y` on the canvas (or nil, when it left it), `"drag"`
+  with the `positions` of what is being dragged, and `"focus"` with the nodes
+  `selected` and the node `editing` in the drawer.
 
-  Someone who may only see the flow follows it and can't change it.
+  Out: `"ops"`, each change as the session tells it; `"cursor"` and `"drag"` of the
+  others, with their `client`; and `presence_state` and `presence_diff`.
+
+  Someone who may only see the flow follows it, and others see them, but they can't
+  change it or drag anything.
   """
 
   use Phoenix.Channel
@@ -17,9 +24,10 @@ defmodule HeddleUI.FlowChannel do
   alias HeddleCore.Flows
   alias HeddleCore.Flows.Session
   alias HeddleUI.AIChat
+  alias HeddleUI.FlowPresence
 
   @impl true
-  def join("flow:" <> id, _params, socket) do
+  def join("canvas:" <> id, _params, socket) do
     scope = socket.assigns.current_scope
 
     with {:ok, flow, joined} <- Flows.join_session(scope, id) do
@@ -28,8 +36,12 @@ defmodule HeddleUI.FlowChannel do
       can_edit = Flows.can?(scope, :edit, flow)
 
       socket = assign(socket, flow_id: flow.id, client: client, can_edit: can_edit)
+      send(self(), :after_join)
 
-      {:ok, reply(joined) |> Map.merge(%{client: client, can_edit: can_edit}), socket}
+      user_id = scope.user && scope.user.id
+
+      {:ok, reply(joined) |> Map.merge(%{client: client, can_edit: can_edit, user_id: user_id}),
+       socket}
     else
       _error -> {:error, %{reason: "not_found"}}
     end
@@ -47,6 +59,42 @@ defmodule HeddleUI.FlowChannel do
     end
   end
 
+  def handle_in("cursor", %{"x" => x, "y" => y}, socket) when is_number(x) and is_number(y) do
+    broadcast_from(socket, "cursor", %{client: socket.assigns.client, x: x, y: y})
+    {:noreply, socket}
+  end
+
+  def handle_in("cursor", _params, socket) do
+    broadcast_from(socket, "cursor", %{client: socket.assigns.client, x: nil, y: nil})
+    {:noreply, socket}
+  end
+
+  # How what is being dragged moves, before it is dropped and becomes a change.
+  def handle_in("drag", %{"positions" => positions}, %{assigns: %{can_edit: true}} = socket)
+      when is_map(positions) and map_size(positions) <= 200 do
+    broadcast_from(socket, "drag", %{client: socket.assigns.client, positions: positions})
+    {:noreply, socket}
+  end
+
+  def handle_in("drag", _params, socket), do: {:noreply, socket}
+
+  def handle_in("focus", params, socket) do
+    selected =
+      params
+      |> Map.get("selected", [])
+      |> List.wrap()
+      |> Enum.filter(&is_binary/1)
+      |> Enum.take(200)
+
+    editing = if is_binary(params["editing"]), do: params["editing"]
+
+    FlowPresence.update(self(), socket.topic, socket.assigns.client, fn meta ->
+      %{meta | selected: selected, editing: editing}
+    end)
+
+    {:noreply, socket}
+  end
+
   def handle_in("snapshot", _params, socket) do
     case Flows.join_session(socket.assigns.current_scope, socket.assigns.flow_id) do
       {:ok, _flow, joined} -> {:reply, {:ok, reply(joined)}, socket}
@@ -55,6 +103,19 @@ defmodule HeddleUI.FlowChannel do
   end
 
   @impl true
+  def handle_info(:after_join, socket) do
+    {:ok, _ref} =
+      FlowPresence.track(
+        self(),
+        socket.topic,
+        socket.assigns.client,
+        FlowPresence.person(socket.assigns.current_scope.user)
+      )
+
+    push(socket, "presence_state", FlowPresence.list(socket.topic))
+    {:noreply, socket}
+  end
+
   def handle_info({:flow_ops, change}, socket) do
     push(socket, "ops", Map.take(change, [:epoch, :seq, :ops, :user_id, :client, :ref]))
     {:noreply, socket}
