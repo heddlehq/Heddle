@@ -139,10 +139,10 @@ defmodule HeddleUI.Components.ChatComponent do
           class="p-4 border-t border-gray-200 dark:border-slate-800 bg-amber-50 dark:bg-amber-900/20"
         >
           <p class="text-sm font-medium text-gray-900 dark:text-white">
-            {gettext("Run \"%{flow}\"?", flow: @agent.permission.flow_name)}
+            {permission_question(@agent.permission)}
           </p>
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {gettext("The agent wants to run this flow, which can have real side effects.")}
+            {permission_hint(@agent.permission)}
           </p>
           <div class="mt-3 flex flex-wrap items-center gap-2">
             <.button
@@ -151,9 +151,10 @@ defmodule HeddleUI.Components.ChatComponent do
               phx-value-decision="once"
               variant="primary"
             >
-              {gettext("Run")}
+              {permission_approve(@agent.permission)}
             </.button>
             <.button
+              :if={permission_action(@agent.permission) == "run"}
               id="agent-run-always"
               phx-click="agent_run_decision"
               phx-value-decision="always"
@@ -167,7 +168,7 @@ defmodule HeddleUI.Components.ChatComponent do
               phx-value-decision="deny"
               variant="ghost"
             >
-              {gettext("Don't run")}
+              {permission_deny(@agent.permission)}
             </.button>
           </div>
         </div>
@@ -328,4 +329,53 @@ defmodule HeddleUI.Components.ChatComponent do
   end
 
   defp pretty(value), do: Jason.encode!(value, pretty: true)
+
+  # What the agent asks to do: run a flow, or change what production runs. See
+  # `HeddleUI.AgentChat`.
+  defp permission_action(permission), do: Map.get(permission, :action) || "run"
+
+  defp permission_question(permission) do
+    flow = permission.flow_name
+    version = Map.get(permission, :version)
+
+    case {permission_action(permission), version} do
+      {"publish", nil} -> gettext("Publish \"%{flow}\"?", flow: flow)
+      {"publish", n} -> gettext("Publish v%{number} of \"%{flow}\"?", number: n, flow: flow)
+      {"restore", n} -> gettext("Restore v%{number} of \"%{flow}\"?", number: n, flow: flow)
+      _run -> gettext("Run \"%{flow}\"?", flow: flow)
+    end
+  end
+
+  defp permission_hint(permission) do
+    case permission_action(permission) do
+      "publish" ->
+        gettext(
+          "The agent wants to change what production runs: webhooks, schedules and the API."
+        )
+
+      "restore" ->
+        gettext(
+          "The agent wants to replace the draft with that version. The draft it has now is kept."
+        )
+
+      _run ->
+        gettext("The agent wants to run this flow, which can have real side effects.")
+    end
+  end
+
+  defp permission_approve(permission) do
+    case permission_action(permission) do
+      "publish" -> gettext("Publish")
+      "restore" -> gettext("Restore")
+      _run -> gettext("Run")
+    end
+  end
+
+  defp permission_deny(permission) do
+    case permission_action(permission) do
+      "publish" -> gettext("Don't publish")
+      "restore" -> gettext("Don't restore")
+      _run -> gettext("Don't run")
+    end
+  end
 end

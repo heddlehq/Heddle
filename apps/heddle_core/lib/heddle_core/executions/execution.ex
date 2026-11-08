@@ -3,6 +3,7 @@ defmodule HeddleCore.Executions.Execution do
   import Ecto.Changeset
 
   alias HeddleCore.Flows.Flow
+  alias HeddleCore.Flows.Version
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @statuses ~w(queued running waiting succeeded failed)
@@ -23,6 +24,8 @@ defmodule HeddleCore.Executions.Execution do
     field :finished_at, :utc_datetime
 
     belongs_to :flow, Flow
+    # The graph this run runs, which the flow may have changed since.
+    belongs_to :flow_version, Version
 
     timestamps(type: :utc_datetime)
   end
@@ -35,6 +38,7 @@ defmodule HeddleCore.Executions.Execution do
     |> cast(attrs, [
       :public_id,
       :flow_id,
+      :flow_version_id,
       :status,
       :input,
       :result,
@@ -47,6 +51,7 @@ defmodule HeddleCore.Executions.Execution do
     |> validate_format(:public_id, ~r/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
     |> validate_inclusion(:status, @statuses)
     |> assoc_constraint(:flow)
+    |> assoc_constraint(:flow_version)
     |> check_constraint(:status, name: :executions_status_check)
     |> unique_constraint(:public_id)
     |> unique_constraint(:resume_token)

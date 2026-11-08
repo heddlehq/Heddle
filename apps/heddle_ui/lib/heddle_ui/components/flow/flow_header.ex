@@ -7,6 +7,13 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
   attr :can_edit, :boolean, default: true
   attr :can_run, :boolean, default: true
 
+  attr :status, :atom,
+    default: :unpublished,
+    doc: "`:unpublished`, `:changed` or `:published`, see `HeddleUI.FlowLive.VersionsManager`"
+
+  attr :published_number, :any, default: nil
+  attr :versions_open, :boolean, default: false
+
   attr :can_replace, :boolean,
     default: false,
     doc: "whether importing would replace a flow on the canvas"
@@ -59,6 +66,7 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
                 {@flow.name}
               </h1>
 
+              <.publish_status status={@status} number={@published_number} />
               <span
                 :if={not @can_edit}
                 id="flow-read-only"
@@ -122,8 +130,31 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
             title={gettext("This flow has an error flow")}
           />
         </.button>
+        <.button
+          id="open-versions"
+          type="button"
+          phx-click="versions_toggle"
+          variant="ghost"
+          class={["h-9 px-3", @versions_open && "bg-gray-100 dark:bg-slate-700"]}
+          title={gettext("Versions")}
+        >
+          <.icon name="hero-clock" class="w-4 h-4" />
+          <span class="hidden sm:inline">{gettext("Versions")}</span>
+        </.button>
         <div class="h-5 w-px bg-gray-200 dark:bg-slate-700 mx-1"></div>
 
+        <.button
+          :if={@can_edit}
+          id="publish-flow"
+          type="button"
+          phx-click="open_publish"
+          variant="outline"
+          class="h-9 px-4"
+          title={gettext("Publish what the canvas has, for production to run it")}
+        >
+          <.icon name="hero-rocket-launch" class="w-4 h-4" />
+          <span>{gettext("Publish")}</span>
+        </.button>
         <.button
           :if={@can_run}
           phx-click="run_flow"
@@ -154,4 +185,48 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
     </div>
     """
   end
+
+  attr :status, :atom, required: true
+  attr :number, :any, default: nil
+
+  defp publish_status(assigns) do
+    ~H"""
+    <span
+      id="flow-publish-status"
+      data-status={@status}
+      class={[
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium",
+        @status == :published &&
+          "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+        @status == :changed && "bg-amber-50 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300",
+        @status == :unpublished && "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-300"
+      ]}
+      title={status_hint(@status)}
+    >
+      <span class={[
+        "size-1.5 rounded-full",
+        @status == :published && "bg-emerald-500",
+        @status == :changed && "bg-amber-500",
+        @status == :unpublished && "bg-gray-400"
+      ]}>
+      </span>
+      <%= case @status do %>
+        <% :published -> %>
+          {gettext("Live · v%{number}", number: @number)}
+        <% :changed -> %>
+          {gettext("Unpublished changes")}
+        <% :unpublished -> %>
+          {gettext("Not published")}
+      <% end %>
+    </span>
+    """
+  end
+
+  defp status_hint(:published), do: gettext("Production runs what the canvas has.")
+
+  defp status_hint(:changed),
+    do: gettext("Production runs the last version published, not what the canvas has.")
+
+  defp status_hint(:unpublished),
+    do: gettext("Webhooks, schedules and the API don't run this flow until it is published.")
 end

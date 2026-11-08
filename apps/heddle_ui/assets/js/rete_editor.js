@@ -45,6 +45,12 @@ const CODE_CONTROLS = ['code_elixir', 'code_python'];
 export async function createEditor(container, { readOnly = false } = {}) {
     const socket = new ClassicPreset.Socket("socket");
 
+    // What the canvas listens to on the whole page goes with it when it is destroyed:
+    // a version preview opens and closes canvases over the editor.
+    const listeners = new AbortController();
+    const onDocument = (type, fn, options = {}) =>
+        document.addEventListener(type, fn, { ...options, signal: listeners.signal });
+
     const editor = new NodeEditor();
     const area = new AreaPlugin(container);
     const connection = new ConnectionPlugin();
@@ -709,7 +715,7 @@ export async function createEditor(container, { readOnly = false } = {}) {
         document.addEventListener('pointerup', handleSelectionUp);
     };
 
-    document.addEventListener('pointerdown', (e) => {
+    onDocument('pointerdown', (e) => {
         if (e.button !== 0 || !container.contains(e.target)) return;
         let clickedNodeId = null;
         for (const [nodeId, view] of area.nodeViews) {
@@ -749,7 +755,7 @@ export async function createEditor(container, { readOnly = false } = {}) {
             }
             startDragGroup(clickedNodeId);
         }
-    }, true);
+    }, { capture: true });
     container.addEventListener('mousedown', (e) => {
         if (!container.contains(e.target)) return;
         
@@ -793,7 +799,8 @@ export async function createEditor(container, { readOnly = false } = {}) {
     let contextMenuX = 0;
     let contextMenuY = 0;
 
-    window.copiedNodesData = [];
+    // Shared by every canvas on the page, so a preview opening doesn't empty it.
+    window.copiedNodesData = window.copiedNodesData || [];
 
     const removeContextMenu = () => {
         if (contextMenu) {
@@ -978,7 +985,7 @@ export async function createEditor(container, { readOnly = false } = {}) {
         createContextMenu(e.clientX, e.clientY, contextMenuConnectionId);
     }, true);
 
-    document.addEventListener('click', (e) => {
+    onDocument('click', (e) => {
         if (e.button === 0 && contextMenu && !contextMenu.contains(e.target)) {
             removeContextMenu();
         }
@@ -1050,7 +1057,7 @@ export async function createEditor(container, { readOnly = false } = {}) {
         processChange();
     };
 
-    document.addEventListener('keydown', (e) => {
+    onDocument('keydown', (e) => {
         if (readOnly) return;
         const isInput = e.target && (e.target.closest('input') || e.target.closest('textarea') || e.target.closest('[contenteditable="true"]'));
         if (!isInput && e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
@@ -1253,7 +1260,10 @@ export async function createEditor(container, { readOnly = false } = {}) {
     };
 
     return {
-        destroy: () => area.destroy(),
+        destroy: () => {
+            listeners.abort();
+            area.destroy();
+        },
         addNode: async (name, definition, data = null) => {
             return await processAddNode(name, definition, data);
         },
@@ -1458,6 +1468,16 @@ export async function createEditor(container, { readOnly = false } = {}) {
             node.settings = Object.keys(settings).length > 0 ? settings : undefined;
             await repaintNode(nodeId);
             processChange();
+        },
+        // Marks how each node differs from another version: { id: 'added' | 'changed' | 'removed' }.
+        setDiff: async (states) => {
+            for (const node of editor.getNodes()) {
+                if (node.type === COMMENT_TYPE) continue;
+                const diff = states?.[node.id] || null;
+                if ((node.diff || null) === diff) continue;
+                node.diff = diff;
+                await repaintNode(node.id);
+            }
         },
         // Paints what a run did: { nodes: { id: { status, count, duration_ms } }, wires: [[id, output]] }.
         setRunState: async ({ nodes, wires }) => {

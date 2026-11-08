@@ -20,7 +20,16 @@ defmodule HeddleUI.MCP.AgentTools do
     {"update_flow", Tools.UpdateFlow},
     {"list_nodes", Tools.ListNodes},
     {"list_executions", Tools.ListExecutions},
-    {"get_execution", Tools.GetExecution}
+    {"get_execution", Tools.GetExecution},
+    {"list_versions", Tools.ListVersions}
+  ]
+
+  # What changes production, which only the agent of the editor does: it asks the
+  # person in the chat first, see `HeddleUI.AgentChat.confirm_publish/3`.
+  @agent_tools [
+    {"test_flow", Tools.TestFlow},
+    {"publish_flow", Tools.PublishFlow},
+    {"restore_version", Tools.RestoreVersion}
   ]
 
   # What is left of a long result is enough to read, and it stays in the conversation.
@@ -28,10 +37,11 @@ defmodule HeddleUI.MCP.AgentTools do
 
   @doc """
   Builds the tools of the agent, which tests flows by itself and waits for the result.
-  Running one goes through `HeddleUI.AgentChat.confirm_run/2`.
+  Running one goes through `HeddleUI.AgentChat.confirm_run/2`, and publishing or
+  restoring one through `HeddleUI.AgentChat.confirm_publish/3`.
   """
   def for_agent(frame) do
-    Enum.map([{"test_flow", Tools.TestFlow} | @tools], &to_ai_tool(&1, frame))
+    Enum.map(@agent_tools ++ @tools, &to_ai_tool(&1, frame))
   end
 
   @doc """

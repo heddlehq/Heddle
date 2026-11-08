@@ -24,11 +24,12 @@ defmodule HeddleCore.Flows do
   end
 
   @doc """
-  Returns every flow with a node of `type`, in any workspace.
+  Returns every flow whose published version has a node of `type`, in any workspace,
+  with that graph: what production runs. See `HeddleCore.Flows.Versions`.
   """
-  def list_flows_with_node(type) do
-    Repo.all(from f in Flow, where: fragment("? @> ?::jsonb", f.nodes, ^[%{type: type}]))
-  end
+  defdelegate list_flows_with_node(type),
+    to: HeddleCore.Flows.Versions,
+    as: :list_published_with_node
 
   @doc "The flows of the workspace the caller works in."
   def list_flows(%Scope{} = scope) do
@@ -89,21 +90,14 @@ defmodule HeddleCore.Flows do
   @doc """
   Creates a flow from `attrs`, which must hold its `workspace_id`. For what isn't a
   person, such as seeds and tests: a person creates one with `create_flow/2`.
+
+  A new flow isn't in production until it is published, see
+  `HeddleCore.Flows.Versions.publish/3`.
   """
   def create_flow(attrs \\ %{}) do
-    result =
-      %Flow{}
-      |> Flow.create_changeset(attrs)
-      |> Repo.insert()
-
-    case result do
-      {:ok, flow} ->
-        HeddleCore.Webhooks.register_flow(flow)
-        {:ok, flow}
-
-      error ->
-        error
-    end
+    %Flow{}
+    |> Flow.create_changeset(attrs)
+    |> Repo.insert()
   end
 
   @doc """
@@ -130,18 +124,18 @@ defmodule HeddleCore.Flows do
   end
 
   @doc """
-  Updates a flow, for what isn't a person. A person changes one with `update_flow/3`.
+  Updates the draft of a flow, for what isn't a person. A person changes one with
+  `update_flow/3`. Production keeps running the published version.
   """
   def update_flow(%Flow{} = flow, attrs) do
-    result =
-      flow
-      |> Flow.changeset(attrs)
-      |> Repo.update()
+    flow
+    |> Flow.changeset(attrs)
+    |> save_draft()
+  end
 
-    case result do
+  defp save_draft(changeset) do
+    case Repo.update(changeset) do
       {:ok, updated_flow} ->
-        HeddleCore.Flows.Cache.invalidate(updated_flow.id)
-        HeddleCore.Webhooks.register_flow(updated_flow)
         broadcast_flow_updated(updated_flow)
         {:ok, updated_flow}
 
@@ -159,24 +153,61 @@ defmodule HeddleCore.Flows do
     Phoenix.PubSub.subscribe(HeddleCore.PubSub, flow_topic(flow_id))
   end
 
-  defp broadcast_flow_updated(%Flow{} = flow) do
+  @doc false
+  def broadcast_flow_updated(%Flow{} = flow) do
     Phoenix.PubSub.broadcast(HeddleCore.PubSub, flow_topic(flow.id), {:flow_updated, flow})
   end
 
   defp flow_topic(flow_id), do: "flow:#{flow_id}"
 
   @doc """
-  Changes a flow the caller may edit. Returns `{:error, :forbidden}` for one they can
-  only see, and `{:error, :not_found}` for one they can't.
+  Changes the draft of a flow the caller may edit. Returns `{:error, :forbidden}` for
+  one they can only see, and `{:error, :not_found}` for one they can't.
+
+  The caller counts among who changed the draft, and a draft edited for a while is
+  kept as a checkpoint, see `HeddleCore.Flows.Versions`.
   """
   def update_flow(%Scope{} = scope, %Flow{} = flow, attrs) do
     with {:ok, flow} <- fetch_for(scope, :edit, flow.id) do
       attrs =
         attrs
         |> Map.new()
-        |> Map.drop([:user_id, "user_id", :workspace_id, "workspace_id"])
+        |> Map.drop([
+          :user_id,
+          "user_id",
+          :workspace_id,
+          "workspace_id",
+          :published_version_id,
+          "published_version_id",
+          :draft_contributor_ids,
+          "draft_contributor_ids"
+        ])
 
-      update_flow(flow, attrs)
+      author_id = scope.user && scope.user.id
+
+      flow
+      |> Flow.changeset(attrs)
+      |> put_contributor(author_id)
+      |> save_draft()
+      |> tap(fn
+        {:ok, flow} -> HeddleCore.Flows.Versions.checkpoint_if_due(flow, author_id)
+        _error -> :ok
+      end)
+    end
+  end
+
+  defp put_contributor(changeset, nil), do: changeset
+
+  defp put_contributor(changeset, user_id) do
+    graph_changed? =
+      Enum.any?([:nodes, :connections, :comments], &Map.has_key?(changeset.changes, &1))
+
+    contributors = Ecto.Changeset.get_field(changeset, :draft_contributor_ids) || []
+
+    if graph_changed? and user_id not in contributors do
+      Ecto.Changeset.put_change(changeset, :draft_contributor_ids, contributors ++ [user_id])
+    else
+      changeset
     end
   end
 

@@ -142,6 +142,19 @@ export class CustomNodeElement extends LitElement {
         border-color: var(--run-skipped) !important;
         opacity: 0.75;
       }
+      .circular-node.diff-added {
+        border-color: var(--diff-added) !important;
+        box-shadow: 0 0 0 4px color-mix(in oklab, var(--diff-added) 18%, transparent);
+      }
+      .circular-node.diff-changed {
+        border-color: var(--diff-changed) !important;
+        box-shadow: 0 0 0 4px color-mix(in oklab, var(--diff-changed) 18%, transparent);
+      }
+      .circular-node.diff-removed {
+        border-color: var(--diff-removed) !important;
+        border-style: dashed !important;
+        opacity: 0.55;
+      }
       .circular-node.run-focused {
         box-shadow: 0 0 0 4px var(--editor-surface), 0 0 0 7px var(--color-primary) !important;
       }
@@ -342,7 +355,7 @@ export class CustomNodeElement extends LitElement {
       <div class="node-name">${this.data.label}</div>
 
       <div 
-        class="circular-node ${this.selected ? 'is-selected' : ''} ${this._runClass()} ${this.data.runFocused ? 'run-focused' : ''}" 
+        class="circular-node ${this.selected ? 'is-selected' : ''} ${this._runClass()} ${this.data.runFocused ? 'run-focused' : ''} ${this.data.diff ? `diff-${this.data.diff}` : ''}" 
         style="border-color: color-mix(in oklab, ${nodeColor} 67%, transparent)"
         @pointerdown=${(e) => {
           if (e.shiftKey) {

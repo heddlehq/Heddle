@@ -59,6 +59,12 @@ defmodule HeddleUI.PublicAPI.V1.Routes do
 
         post "/workflows/:workflow_id/executions", ExecutionController, :create
 
+        get "/workflows/:workflow_id/versions", VersionController, :index
+        get "/workflows/:workflow_id/versions/:id", VersionController, :show
+        post "/workflows/:workflow_id/publish", VersionController, :publish
+        post "/workflows/:workflow_id/versions/:id/publish", VersionController, :publish_version
+        post "/workflows/:workflow_id/versions/:id/restore", VersionController, :restore
+
         get "/workflows", WorkflowController, :index
         get "/workflows/:id", WorkflowController, :show
 

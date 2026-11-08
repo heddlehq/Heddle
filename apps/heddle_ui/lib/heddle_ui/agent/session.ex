@@ -136,13 +136,23 @@ defmodule HeddleUI.Agent.Session do
 
   def handle_info({:harness_event, event}, state), do: noreply(emit(state, to_event(event)))
 
-  def handle_info({:agent_run_confirmation, question}, %{runs_allowed?: true} = state) do
+  # Allowing every run doesn't allow changing what production runs.
+  def handle_info(
+        {:agent_run_confirmation, %{action: "run"} = question},
+        %{runs_allowed?: true} = state
+      ) do
     send(question.reply_to, {:agent_run_decision, question.ref, true})
     noreply(state)
   end
 
   def handle_info({:agent_run_confirmation, question}, state) do
-    state = emit(state, %{type: "permission", permission: %{flow_name: question.flow_name}})
+    permission = %{
+      flow_name: question.flow_name,
+      action: Map.get(question, :action, "run"),
+      version: Map.get(question, :version)
+    }
+
+    state = emit(state, %{type: "permission", permission: permission})
     noreply(%{state | question: question})
   end
 
@@ -184,7 +194,9 @@ defmodule HeddleUI.Agent.Session do
     flow = Flows.get_flow(turn.scope, turn.flow_id)
     latest = flow && latest_execution(flow)
     system = FlowCopilot.system_prompt(flow)
-    message = FlowCopilot.with_current_state(content, flow, latest)
+
+    message =
+      FlowCopilot.with_current_state(content, flow, latest, publication: publication(flow))
 
     read_new_failure(latest, turn.seen_failure, on_event)
 
@@ -192,6 +204,20 @@ defmodule HeddleUI.Agent.Session do
       run_claude(run, system, message, turn.claude, on_event)
     else
       run_llm(turn, run, system, message, on_event)
+    end
+  end
+
+  defp publication(nil), do: nil
+
+  defp publication(flow) do
+    case HeddleCore.Flows.Versions.published_version(flow) do
+      nil ->
+        :unpublished
+
+      version ->
+        if HeddleCore.Flows.Versions.same_graph?(flow, version),
+          do: {:published, version.number},
+          else: {:changed, version.number}
     end
   end
 
