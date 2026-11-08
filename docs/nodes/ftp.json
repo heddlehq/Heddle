@@ -1,0 +1,68 @@
+{
+  "FTP: Upload File": {
+    "result": {
+      "path": "exports/orders.csv"
+    },
+    "notes": {
+      "en": "**Content** is `{{result}}` after a node that returned a file, or text. A file already at **Path** is replaced. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+      "pt": "**Content** é `{{result}}` depois de um nó que devolveu um arquivo, ou um texto. Um arquivo que já está em **Path** é substituído. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+    }
+  },
+  "FTP: Download File": {
+    "result": {
+      "content": "id,total\n4411,129.90\n"
+    },
+    "notes": {
+      "en": "`result.content` holds the file. Text stays as text, and anything else comes in base64 with `\"encoding\": \"base64\"`, which the upload nodes and attachments take back unchanged as `{{result}}`. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+      "pt": "`result.content` guarda o arquivo. Texto fica como texto, e o resto vem em base64 com `\"encoding\": \"base64\"`, que os nós de upload e os anexos aceitam de volta sem alteração como `{{result}}`. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+    }
+  },
+  "FTP: List Files": {
+    "result": {
+      "files": [
+        "orders.csv",
+        "returns.csv"
+      ]
+    },
+    "notes": {
+      "en": "Lists the names in the folder at **Path**. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+      "pt": "Lista os nomes na pasta em **Path**. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+    }
+  },
+  "FTP: Rename or Move": {
+    "result": {
+      "path": "archive/orders.csv"
+    },
+    "notes": {
+      "en": "Renames **Path** to **New path**, which also moves it between folders. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+      "pt": "Renomeia **Path** para **New path**, o que também move entre pastas. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+    }
+  },
+  "FTP: Delete File": {
+    "result": {
+      "path": "exports/orders.csv"
+    },
+    "notes": {
+      "en": "**Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+      "pt": "**Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+    }
+  },
+  "FTP: Create Folder": {
+    "result": {
+      "path": "exports/2026"
+    },
+    "notes": {
+      "en": "Creates one folder, inside one that exists. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+      "pt": "Cria uma pasta, dentro de uma que já existe. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+    }
+  },
+  "FTP: Delete Folder": {
+    "result": {
+      "path": "exports/2025"
+    },
+    "notes": {
+      "en": "Deletes an empty folder. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+      "pt": "Apaga uma pasta vazia. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+    }
+  }
+}

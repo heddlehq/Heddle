@@ -1,0 +1,93 @@
+{
+  "AI Agent": {
+    "result": "The order 4411 shipped on May 2 and should arrive by Friday.",
+    "notes": {
+      "en": "Works on **Prompt** with the model, step by step, until it has an answer or reaches **Max steps**.\n\n**Tools.** The nodes connected to its `tools` output are steps it can use. On each one, the fields you leave blank are what the agent fills in; the fields you fill stay as they are, out of its reach. It never picks a credential or writes code. A tool can be a whole branch: the agent calls its first node, and the steps after it run too.\n\n**Reply as** `JSON` asks for a single JSON value, which becomes `result` already decoded. **Memory key** keeps the conversation between runs: runs with the same key, like `{{body.customer_id}}`, continue where the last one stopped.\n\nBesides `result`, the run gets `tool_calls`, the list of tools it used:\n\n```json\n[{\"tool\": \"find_order\", \"args\": {\"where\": \"id = 4411\"}, \"ok\": true}]\n```\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/). See the [AI Agent guide](/docs/guides/ai-agent/).",
+      "pt": "Trabalha no **Prompt** com o modelo, passo a passo, até ter uma resposta ou chegar em **Max steps**.\n\n**Ferramentas.** Os nós ligados à saída `tools` são passos que ele pode usar. Em cada um, os campos que você deixa em branco são o que o agente preenche; os que você preenche ficam como estão, fora do alcance dele. Ele nunca escolhe uma credencial nem escreve código. Uma ferramenta pode ser um ramo inteiro: o agente chama o primeiro nó, e os passos depois dele rodam também.\n\n**Reply as** `JSON` pede um único valor JSON, que vira `result` já decodificado. **Memory key** guarda a conversa entre execuções: execuções com a mesma chave, como `{{body.customer_id}}`, continuam de onde a última parou.\n\nAlém de `result`, a execução ganha `tool_calls`, a lista das ferramentas que ele usou:\n\n```json\n[{\"tool\": \"buscar_pedido\", \"args\": {\"where\": \"id = 4411\"}, \"ok\": true}]\n```\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/). Veja o [guia do AI Agent](/pt/docs/guides/ai-agent/)."
+    }
+  },
+  "AI: Generate Image": {
+    "result": {
+      "content": "iVBORw0KGgoAAAANSUhEUgAA...",
+      "encoding": "base64",
+      "type": "image/png"
+    },
+    "notes": {
+      "en": "Draws what **Prompt** describes. **Aspect ratio** is the shape of the image, when the model takes it.\n\n`result` is a file, which **S3: Upload File**, **Slack: Upload File**, **FTP: Upload File** and an email attachment take as `{{result}}`, unchanged.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+      "pt": "Desenha o que **Prompt** descreve. **Aspect ratio** é o formato da imagem, quando o modelo aceita.\n\n`result` é um arquivo, que **S3: Upload File**, **Slack: Upload File**, **FTP: Upload File** e um anexo de email aceitam como `{{result}}`, sem alteração.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+    }
+  },
+  "AI: Edit Image": {
+    "result": {
+      "content": "iVBORw0KGgoAAAANSUhEUgAA...",
+      "encoding": "base64",
+      "type": "image/png"
+    },
+    "notes": {
+      "en": "Changes **Image** as **Prompt** says, like `remove the background` or `make it a watercolor`. **Image** is `{{result}}` after a node that returned a file, like a download, or a URL that starts with `http`.\n\n`result` is a file, which **S3: Upload File**, **Slack: Upload File**, **FTP: Upload File** and an email attachment take as `{{result}}`, unchanged.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+      "pt": "Altera **Image** como **Prompt** pede, como `remova o fundo` ou `deixe em aquarela`. **Image** é `{{result}}` depois de um nó que devolveu um arquivo, como um download, ou uma URL que começa com `http`.\n\n`result` é um arquivo, que **S3: Upload File**, **Slack: Upload File**, **FTP: Upload File** e um anexo de email aceitam como `{{result}}`, sem alteração.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+    }
+  },
+  "AI: Describe Image": {
+    "result": "A receipt from Café Central, dated 2026-03-14, with a total of R$ 42,50.",
+    "notes": {
+      "en": "Answers **Question** about **Image**, with a model that sees images. Ask for what you need, like `What is the total of this receipt?`. **Image** is `{{result}}` after a node that returned a file, like a download, or a URL that starts with `http`.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+      "pt": "Responde **Question** sobre **Image**, com um modelo que enxerga imagens. Pergunte o que precisa, como `Qual é o total deste recibo?`. **Image** é `{{result}}` depois de um nó que devolveu um arquivo, como um download, ou uma URL que começa com `http`.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+    }
+  },
+  "AI: Transcribe Audio": {
+    "result": {
+      "text": "Hi, I'd like to change the delivery address of my order.",
+      "language": "en"
+    },
+    "notes": {
+      "en": "Turns speech into text. **Audio** is `{{result}}` after a node that returned a file, like a download, or a URL that starts with `http`. **Language** helps the model when you know it, and blank detects it.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+      "pt": "Transforma fala em texto. **Audio** é `{{result}}` depois de um nó que devolveu um arquivo, como um download, ou uma URL que começa com `http`. **Language** ajuda o modelo quando você sabe o idioma, e em branco ele detecta.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+    }
+  },
+  "AI: Text to Speech": {
+    "result": {
+      "content": "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYw...",
+      "encoding": "base64",
+      "type": "audio/mpeg"
+    },
+    "notes": {
+      "en": "Reads **Text** aloud with **Voice**.\n\n`result` is a file, which **S3: Upload File**, **Slack: Upload File**, **FTP: Upload File** and an email attachment take as `{{result}}`, unchanged.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+      "pt": "Lê **Text** em voz alta com **Voice**.\n\n`result` é um arquivo, que **S3: Upload File**, **Slack: Upload File**, **FTP: Upload File** e um anexo de email aceitam como `{{result}}`, sem alteração.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+    }
+  },
+  "AI: Summarize": {
+    "result": "The customer can't log in since the password reset, and asks for a call today.",
+    "notes": {
+      "en": "Summarizes **Text** in its own language, as a paragraph or as bullet points.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+      "pt": "Resume **Text** no próprio idioma dele, em um parágrafo ou em tópicos.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+    }
+  },
+  "AI: Translate": {
+    "result": "Olá! Seu pedido saiu para entrega.",
+    "notes": {
+      "en": "Translates **Text** into **Language**, written as you would say it, like `Portuguese` or `Brazilian Portuguese`.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+      "pt": "Traduz **Text** para **Language**, escrito como você diria, como `Portuguese` ou `Brazilian Portuguese`.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+    }
+  },
+  "AI: Classify": {
+    "result": {
+      "category": "billing"
+    },
+    "notes": {
+      "en": "Picks one of **Categories**, written with commas, like `billing, bug, sales, other`. `result.category` is always one of them, as you wrote it, so a **Switch** on `{{result.category}}` routes the run. When the model answers anything else, the node goes down `error`.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+      "pt": "Escolhe uma das **Categories**, escritas com vírgulas, como `cobranca, bug, vendas, outro`. `result.category` é sempre uma delas, do jeito que você escreveu, então um **Switch** em `{{result.category}}` encaminha a execução. Quando o modelo responde outra coisa, o nó sai por `error`.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+    }
+  },
+  "AI: Extract Data": {
+    "result": {
+      "name": "Ana Souza",
+      "email": "ana@example.com",
+      "company": null
+    },
+    "notes": {
+      "en": "Reads **Fields**, written with commas, like `name, email, company`, out of **Text**. `result` has exactly those keys, and `null` for what the text doesn't say: the model is told not to guess.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+      "pt": "Tira **Fields**, escritos com vírgulas, como `nome, email, empresa`, de **Text**. `result` tem exatamente essas chaves, e `null` para o que o texto não diz: o modelo é instruído a não chutar.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+    }
+  }
+}

@@ -1,0 +1,518 @@
+{
+  "SQL: Run Query": {
+    "result": {
+      "rows": [
+        {
+          "id": 4411,
+          "customer": "ana@example.com",
+          "total": "129.90"
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Runs any statement, on PostgreSQL, MySQL, MariaDB, SQL Server, Oracle or SQLite, depending on the credential.\n\n```sql\nSELECT id, total FROM orders WHERE customer = {{body.email}} AND status = 'open'\n```\n\n`result.rows` is a list of objects and `result.count` how many. Statements that change rows return the changed ones where the engine can (PostgreSQL with `RETURNING`), and MySQL returns `result.last_id` after an insert. Decimal numbers come as text, like `\"129.90\"`, so no cent is lost. A query that returns more than 10,000 rows fails: use `LIMIT`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+      "pt": "Roda qualquer comando, no PostgreSQL, MySQL, MariaDB, SQL Server, Oracle ou SQLite, conforme a credencial.\n\n```sql\nSELECT id, total FROM orders WHERE customer = {{body.email}} AND status = 'open'\n```\n\n`result.rows` é uma lista de objetos e `result.count` quantos são. Comandos que alteram linhas devolvem as alteradas quando o banco permite (PostgreSQL com `RETURNING`), e o MySQL devolve `result.last_id` depois de um insert. Números decimais vêm como texto, como `\"129.90\"`, para nenhum centavo se perder. Uma consulta que devolve mais de 10.000 linhas falha: use `LIMIT`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: Select Rows": {
+    "result": {
+      "rows": [
+        {
+          "id": 4411,
+          "customer": "ana@example.com",
+          "total": "129.90"
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Reads rows without writing SQL. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`. **Columns** is a list with commas, and blank reads them all. **Where** and **Order by** are SQL, with placeholders as parameters: `status = 'open' AND total > {{min}}`, `created_at DESC`. **Limit** is 100 by default, and **Offset** skips rows, for pages.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+      "pt": "Lê linhas sem escrever SQL. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`. **Columns** é uma lista com vírgulas, e em branco lê todas. **Where** e **Order by** são SQL, com placeholders como parâmetros: `status = 'open' AND total > {{minimo}}`, `created_at DESC`. **Limit** é 100 por padrão, e **Offset** pula linhas, para paginar.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: Insert Rows": {
+    "result": {
+      "rows": [
+        {
+          "id": 4412,
+          "customer": "bruno@example.com",
+          "total": "89.00"
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "**Rows** is one object or a list of them, from column to value, like `{\"customer\": \"{{body.email}}\", \"total\": {{body.total}}}`. It is `{{result}}` by default, so it inserts what the previous node returned, a **Select Rows** included. Many rows go in batches, all or none. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "**Rows** é um objeto ou uma lista deles, de coluna para valor, como `{\"customer\": \"{{body.email}}\", \"total\": {{body.total}}}`. O padrão é `{{result}}`, então insere o que o nó anterior devolveu, inclusive um **Select Rows**. Muitas linhas vão em lotes, todas ou nenhuma. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: Update Rows": {
+    "result": {
+      "rows": [],
+      "count": 3
+    },
+    "notes": {
+      "en": "**New values** is an object from column to value, like `{\"status\": \"shipped\"}`. **Where** is SQL, and can't be empty: to change every row on purpose, write `1 = 1`. `result.count` is how many rows changed. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+      "pt": "**New values** é um objeto de coluna para valor, como `{\"status\": \"shipped\"}`. **Where** é SQL e não pode ficar vazio: para alterar todas as linhas de propósito, escreva `1 = 1`. `result.count` é quantas linhas mudaram. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: Upsert Rows": {
+    "result": {
+      "rows": [],
+      "count": 2
+    },
+    "notes": {
+      "en": "Inserts the rows, or updates the ones that already exist. **Key columns** say which columns identify a row, like `email`, and need a unique index on them. **Rows** works as in **Insert Rows**. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "Insere as linhas, ou atualiza as que já existem. **Key columns** dizem quais colunas identificam uma linha, como `email`, e precisam de um índice único nelas. **Rows** funciona como no **Insert Rows**. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: Delete Rows": {
+    "result": {
+      "rows": [],
+      "count": 12
+    },
+    "notes": {
+      "en": "**Where** is SQL, and can't be empty: to delete every row on purpose, write `1 = 1`. `result.count` is how many were deleted. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+      "pt": "**Where** é SQL e não pode ficar vazio: para apagar todas as linhas de propósito, escreva `1 = 1`. `result.count` é quantas foram apagadas. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: Run Transaction": {
+    "result": {
+      "results": [
+        {
+          "rows": [],
+          "count": 1
+        },
+        {
+          "rows": [],
+          "count": 1
+        }
+      ],
+      "count": 2
+    },
+    "notes": {
+      "en": "Runs **Statements**, separated by `;`, all or none: if one fails, none of them is applied. `result.results` has what each returned, in order.\n\n```sql\nUPDATE accounts SET balance = balance - {{amount}} WHERE id = {{from}};\nUPDATE accounts SET balance = balance + {{amount}} WHERE id = {{to}}\n```\n\nA transaction can't span several nodes. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+      "pt": "Roda **Statements**, separados por `;`, todos ou nenhum: se um falha, nenhum é aplicado. `result.results` tem o que cada um devolveu, em ordem.\n\n```sql\nUPDATE accounts SET balance = balance - {{valor}} WHERE id = {{origem}};\nUPDATE accounts SET balance = balance + {{valor}} WHERE id = {{destino}}\n```\n\nUma transação não atravessa vários nós. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: List Tables": {
+    "result": {
+      "tables": [
+        "public.customers",
+        "public.orders"
+      ]
+    },
+    "notes": {
+      "en": "Lists the tables the credential's user sees. Useful as a tool of an AI Agent, so it finds out what the database holds before querying it.",
+      "pt": "Lista as tabelas que o usuário da credencial enxerga. Útil como ferramenta de um AI Agent, para ele descobrir o que o banco tem antes de consultar."
+    }
+  },
+  "SQL: Describe Table": {
+    "result": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": false,
+          "default": "nextval('orders_id_seq'::regclass)"
+        },
+        {
+          "name": "total",
+          "type": "numeric",
+          "nullable": true,
+          "default": null
+        }
+      ]
+    },
+    "notes": {
+      "en": "Lists the columns of **Table**, with type, whether they take null, and default. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.",
+      "pt": "Lista as colunas de **Table**, com tipo, se aceitam nulo e o valor padrão. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`."
+    }
+  },
+  "MongoDB: Find Documents": {
+    "result": {
+      "documents": [
+        {
+          "_id": "6650f1c2a1b2c3d4e5f60718",
+          "email": "ana@example.com",
+          "plan": "pro"
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "**Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. **Fields** picks what comes back, like `{\"email\": 1}`, and **Sort** orders it, like `{\"created_at\": -1}`. **Limit** is 100 by default. IDs come as text.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "**Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. **Fields** escolhe o que volta, como `{\"email\": 1}`, e **Sort** ordena, como `{\"created_at\": -1}`. **Limit** é 100 por padrão. Os IDs vêm como texto.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "MongoDB: Insert Documents": {
+    "result": {
+      "ids": [
+        "6650f1c2a1b2c3d4e5f60718"
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "**Documents** is one object or a list of them, `{{result}}` by default.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "**Documents** é um objeto ou uma lista deles, `{{result}}` por padrão.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "MongoDB: Update Documents": {
+    "result": {
+      "matched": 1,
+      "modified": 1,
+      "upserted_ids": []
+    },
+    "notes": {
+      "en": "**Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. It can't be empty. **Update** uses operators, like `{\"$set\": {\"status\": \"done\"}}`. **Which** is the first match or all of them, and **Upsert** `yes` inserts when nothing matches.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "**Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. Não pode ficar vazio. **Update** usa operadores, como `{\"$set\": {\"status\": \"done\"}}`. **Which** é o primeiro que bater ou todos, e **Upsert** `yes` insere quando nada bate.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "MongoDB: Delete Documents": {
+    "result": {
+      "count": 3
+    },
+    "notes": {
+      "en": "Deletes every document that matches. **Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. It can't be empty: to delete everything on purpose, use `{\"_id\": {\"$exists\": true}}`.",
+      "pt": "Apaga todos os documentos que batem. **Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. Não pode ficar vazio: para apagar tudo de propósito, use `{\"_id\": {\"$exists\": true}}`."
+    }
+  },
+  "MongoDB: Aggregate": {
+    "result": {
+      "documents": [
+        {
+          "_id": "pro",
+          "customers": 41
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Runs **Pipeline**, a list of stages:\n\n```json\n[{\"$match\": {\"status\": \"active\"}}, {\"$group\": {\"_id\": \"$plan\", \"customers\": {\"$sum\": 1}}}]\n```\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "Roda **Pipeline**, uma lista de estágios:\n\n```json\n[{\"$match\": {\"status\": \"active\"}}, {\"$group\": {\"_id\": \"$plan\", \"customers\": {\"$sum\": 1}}}]\n```\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "MongoDB: Count Documents": {
+    "result": {
+      "count": 42
+    },
+    "notes": {
+      "en": "Counts what matches. **Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. `{}` counts everything.",
+      "pt": "Conta o que bate. **Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. `{}` conta tudo."
+    }
+  },
+  "MongoDB: List Collections": {
+    "result": {
+      "collections": [
+        "customers",
+        "orders"
+      ]
+    },
+    "notes": {
+      "en": "Lists the collections of the credential's database, in order.",
+      "pt": "Lista as coleções do banco da credencial, em ordem."
+    }
+  },
+  "Redis: Get Value": {
+    "result": {
+      "key": "session:ana",
+      "value": "{\"cart\":3}",
+      "found": true
+    },
+    "notes": {
+      "en": "`result.found` is false when the key doesn't exist, and `value` is then `null`. Values come as text. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "`result.found` é falso quando a chave não existe, e `value` vem `null`. Os valores vêm como texto. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Set Value": {
+    "result": {
+      "key": "session:ana"
+    },
+    "notes": {
+      "en": "Saves **Value** in **Key**. Objects and lists are saved as JSON. With **Expires after (seconds)**, the key goes away on its own, which suits caches and locks. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Salva **Value** em **Key**. Objetos e listas são salvos como JSON. Com **Expires after (seconds)**, a chave some sozinha, o que serve para cache e travas. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Delete Keys": {
+    "result": {
+      "count": 2
+    },
+    "notes": {
+      "en": "**Keys** is a list with commas. `result.count` is how many existed. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "**Keys** é uma lista com vírgulas. `result.count` é quantas existiam. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Increment": {
+    "result": {
+      "key": "visits:2026-05-12",
+      "value": 18
+    },
+    "notes": {
+      "en": "Adds **Amount** to the number in **Key**, 1 by default, and returns the new value. A key that doesn't exist starts at 0, so it counts things and limits rates. A negative amount subtracts. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Soma **Amount** ao número em **Key**, 1 por padrão, e devolve o novo valor. Uma chave que não existe começa em 0, então serve para contar e limitar taxa. Um valor negativo subtrai. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Find Keys": {
+    "result": {
+      "keys": [
+        "session:ana",
+        "session:bruno"
+      ],
+      "count": 2
+    },
+    "notes": {
+      "en": "Finds the keys that match **Pattern**, like `session:*`, without blocking the server, up to **Limit**. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Encontra as chaves que batem com **Pattern**, como `session:*`, sem travar o servidor, até **Limit**. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Read Hash": {
+    "result": {
+      "key": "customer:42",
+      "fields": {
+        "name": "Ana",
+        "plan": "pro"
+      }
+    },
+    "notes": {
+      "en": "Returns every field of the hash. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Devolve todos os campos do hash. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Write Hash": {
+    "result": {
+      "key": "customer:42",
+      "added": 1
+    },
+    "notes": {
+      "en": "**Fields** is an object from field to value, `{{result}}` by default. `result.added` counts the fields that are new. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "**Fields** é um objeto de campo para valor, `{{result}}` por padrão. `result.added` conta os campos que são novos. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Push to List": {
+    "result": {
+      "key": "queue:emails",
+      "length": 4
+    },
+    "notes": {
+      "en": "Adds **Value** at the end or the start of the list, and returns its new length. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Adiciona **Value** no fim ou no começo da lista, e devolve o novo tamanho. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Read List": {
+    "result": {
+      "key": "queue:emails",
+      "items": [
+        "a@example.com",
+        "b@example.com"
+      ],
+      "count": 2
+    },
+    "notes": {
+      "en": "Reads the list from its start, up to **Limit** items, without removing them. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Lê a lista desde o começo, até **Limit** itens, sem remover. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Publish Message": {
+    "result": {
+      "subscribers": 3
+    },
+    "notes": {
+      "en": "Publishes **Value** on **Channel**. `result.subscribers` is how many got it. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Publica **Value** em **Channel**. `result.subscribers` é quantos receberam. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Run Command": {
+    "result": {
+      "reply": 1
+    },
+    "notes": {
+      "en": "Runs any command, written as a JSON list: `[\"EXPIRE\", \"session:{{id}}\", 60]`. Each item is one argument, so a value can't add others. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Roda qualquer comando, escrito como uma lista JSON: `[\"EXPIRE\", \"session:{{id}}\", 60]`. Cada item é um argumento, então um valor não consegue acrescentar outros. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Elasticsearch: Search": {
+    "result": {
+      "documents": [
+        {
+          "_id": "p-1",
+          "_score": 3.2,
+          "name": "Blue mug"
+        }
+      ],
+      "total": 1
+    },
+    "notes": {
+      "en": "**Search** is the query part of the search, like `{\"match\": {\"name\": \"{{term}}\"}}`. Each document comes with its `_id` and `_score`. **Limit** and **Offset** page through the hits. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "**Search** é a parte `query` da busca, como `{\"match\": {\"name\": \"{{termo}}\"}}`. Cada documento vem com `_id` e `_score`. **Limit** e **Offset** paginam os resultados. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Elasticsearch: Get Document": {
+    "result": {
+      "_id": "p-1",
+      "name": "Blue mug",
+      "price": 39.9
+    },
+    "notes": {
+      "en": "Returns the document with its `_id`. It goes down `error` when it doesn't exist. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).",
+      "pt": "Devolve o documento com o `_id` dele. Sai por `error` quando não existe. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Elasticsearch: Index Document": {
+    "result": {
+      "id": "p-1",
+      "outcome": "created"
+    },
+    "notes": {
+      "en": "Saves **Document**, an object. With **Document ID**, it creates or replaces that one; blank lets the server pick an ID. `result.outcome` is `created` or `updated`. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "Salva **Document**, um objeto. Com **Document ID**, cria ou substitui aquele; em branco o servidor escolhe um ID. `result.outcome` é `created` ou `updated`. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Elasticsearch: Update Document": {
+    "result": {
+      "id": "p-1",
+      "outcome": "updated"
+    },
+    "notes": {
+      "en": "Changes only the fields in **New values**, an object, and keeps the others. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "Altera só os campos de **New values**, um objeto, e mantém os outros. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Elasticsearch: Delete Document": {
+    "result": {
+      "id": "p-1",
+      "outcome": "deleted"
+    },
+    "notes": {
+      "en": "It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).",
+      "pt": "Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Elasticsearch: Run Request": {
+    "result": {
+      "acknowledged": true
+    },
+    "notes": {
+      "en": "Calls any endpoint, like `GET /_cat/indices?format=json` or `POST /products/_bulk`, and `result` is what it answered. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "Chama qualquer endpoint, como `GET /_cat/indices?format=json` ou `POST /products/_bulk`, e `result` é o que ele respondeu. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "DynamoDB: Get Item": {
+    "result": {
+      "item": {
+        "id": "42",
+        "name": "Ana",
+        "plan": "pro"
+      },
+      "found": true
+    },
+    "notes": {
+      "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. `result.found` is false, and `item` null, when there is none. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+      "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. `result.found` é falso, e `item` nulo, quando não existe. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "DynamoDB: Put Item": {
+    "result": {
+      "saved": true
+    },
+    "notes": {
+      "en": "Saves **Item**, an object with the primary key, `{{result}}` by default. An item with the same key is replaced. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+      "pt": "Salva **Item**, um objeto com a chave primária, `{{result}}` por padrão. Um item com a mesma chave é substituído. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "DynamoDB: Update Item": {
+    "result": {
+      "item": {
+        "id": "42",
+        "name": "Ana",
+        "plan": "business"
+      }
+    },
+    "notes": {
+      "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. Sets the attributes of **New values**, an object, keeps the others, and returns the whole item. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+      "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. Define os atributos de **New values**, um objeto, mantém os outros e devolve o item inteiro. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "DynamoDB: Delete Item": {
+    "result": {
+      "deleted": true
+    },
+    "notes": {
+      "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+      "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "DynamoDB: Query Items": {
+    "result": {
+      "items": [
+        {
+          "customer": "42",
+          "order": "4411",
+          "total": 129.9
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Reads the items of one partition. **Condition** is a key condition, like `customer = :pk AND begins_with(order, :prefix)`, and **Condition values** gives its values, like `{\":pk\": \"{{id}}\"}`. **Index** queries a secondary index instead of the table. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+      "pt": "Lê os itens de uma partição. **Condition** é uma condição de chave, como `customer = :pk AND begins_with(order, :prefix)`, e **Condition values** dá os valores, como `{\":pk\": \"{{id}}\"}`. **Index** consulta um índice secundário em vez da tabela. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "DynamoDB: Scan Items": {
+    "result": {
+      "items": [
+        {
+          "id": "42",
+          "name": "Ana"
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Reads items across the whole table, up to **Limit**. It reads every item to find them, so prefer **Query Items** on big tables. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+      "pt": "Lê itens da tabela inteira, até **Limit**. Ele lê todos os itens para achar, então prefira **Query Items** em tabelas grandes. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "DynamoDB: List Tables": {
+    "result": {
+      "tables": [
+        "customers",
+        "orders"
+      ]
+    },
+    "notes": {
+      "en": "Lists the tables of the credential's region.",
+      "pt": "Lista as tabelas da região da credencial."
+    }
+  },
+  "Cassandra: Run Query": {
+    "result": {
+      "rows": [
+        {
+          "id": "6f1c...",
+          "name": "Ana"
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Runs a CQL statement on Cassandra or ScyllaDB, in the credential's keyspace: `SELECT * FROM users WHERE id = {{body.id}}`. Statements that return nothing give an empty `rows`. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+      "pt": "Roda um comando CQL no Cassandra ou ScyllaDB, no keyspace da credencial: `SELECT * FROM users WHERE id = {{body.id}}`. Comandos que não devolvem nada dão `rows` vazio. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Neo4j: Run Query": {
+    "result": {
+      "rows": [
+        {
+          "name": "Ana",
+          "friends": 12
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Runs a Cypher query on Neo4j or Aura: `MATCH (p:Person {email: {{body.email}}})-[:KNOWS]->(f) RETURN p.name AS name, count(f) AS friends`. Each row is an object by the names in `RETURN`. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+      "pt": "Roda uma consulta Cypher no Neo4j ou Aura: `MATCH (p:Person {email: {{body.email}}})-[:KNOWS]->(f) RETURN p.name AS name, count(f) AS friends`. Cada linha é um objeto com os nomes do `RETURN`. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  }
+}

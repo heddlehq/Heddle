@@ -1,0 +1,9 @@
+{
+  "Evaluate Code": {
+    "result": 129.9,
+    "notes": {
+      "en": "Runs Elixir or Python with the run's context.\n\n**Elixir** sees `result` (what the previous step left), `context` (the whole context, as a map) and `input` (what an AI Agent passed, when it is a tool). `variable(\"name\")` reads a variable, and `set_result(value)` sets the result.\n\n**Python** sees each key of the context as a name: `result`, `body`, `items`, and the variables too. `variable(\"name\")` and `set_result(value)` work the same.\n\nWhat the code ends with decides the result. A map (Elixir) or a dict (Python) **replaces the context**, so keep what you need: `Map.put(context, \"total\", 10)`. Anything else becomes `result`.\n\n```elixir\nitems = context[\"body\"][\"items\"]\nset_result(Enum.sum(Enum.map(items, & &1[\"price\"])))\n```\n\n```python\nset_result(sum(item[\"price\"] for item in body[\"items\"]))\n```\n\nAn AI Agent never writes this field.",
+      "pt": "Roda Elixir ou Python com o contexto da execução.\n\n**Elixir** enxerga `result` (o que o passo anterior deixou), `context` (o contexto inteiro, como map) e `input` (o que um AI Agent passou, quando é ferramenta). `variable(\"nome\")` lê uma variável, e `set_result(valor)` define o resultado.\n\n**Python** enxerga cada chave do contexto como um nome: `result`, `body`, `items`, e as variáveis também. `variable(\"nome\")` e `set_result(valor)` funcionam igual.\n\nO valor com que o código termina decide o resultado. Um map (Elixir) ou dict (Python) **substitui o contexto**, então mantenha o que precisa: `Map.put(context, \"total\", 10)`. Qualquer outra coisa vira `result`.\n\n```elixir\nitems = context[\"body\"][\"items\"]\nset_result(Enum.sum(Enum.map(items, & &1[\"price\"])))\n```\n\n```python\nset_result(sum(item[\"price\"] for item in body[\"items\"]))\n```\n\nUm AI Agent nunca escreve este campo."
+    }
+  }
+}

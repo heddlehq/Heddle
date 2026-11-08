@@ -1,0 +1,92 @@
+{
+  "Email: Send Email": {
+    "result": {
+      "sent_to": [
+        "ana@example.com",
+        "team@example.com"
+      ]
+    },
+    "notes": {
+      "en": "Sends through the SMTP server of the credential, from its address. **To**, **Cc** and **Bcc** take addresses separated by commas, and the Bcc ones stay out of the headers. **Format** `HTML` sends **Message** as HTML.\n\nTo attach a file, fill in **Attachment name**, like `report.csv`, and **Attachment content**: text, or `{{result}}` after a node that returned a file.\n\nSee [Credentials](/docs/guides/credentials/#email).",
+      "pt": "Envia pelo servidor SMTP da credencial, a partir do endereço dela. **To**, **Cc** e **Bcc** aceitam endereços separados por vírgula, e os de Bcc ficam fora dos cabeçalhos. **Format** `HTML` envia **Message** como HTML.\n\nPara anexar um arquivo, preencha **Attachment name**, como `relatorio.csv`, e **Attachment content**: um texto, ou `{{result}}` depois de um nó que devolveu um arquivo.\n\nVeja [Credenciais](/pt/docs/guides/credentials/#email)."
+    }
+  },
+  "Email: List Emails": {
+    "result": [
+      {
+        "id": 4021,
+        "from": "Ana <ana@example.com>",
+        "to": "orders@example.com",
+        "cc": null,
+        "subject": "Order 4411",
+        "date": "Tue, 12 May 2026 09:14:00 +0000",
+        "unread": true
+      }
+    ],
+    "notes": {
+      "en": "Lists the newest emails of **Folder**, up to **Limit**, that match the filters: **From** and **Subject** hold text the email has, and **Only unread** skips the ones read. It doesn't mark them as read. To read the body, follow with **Email: Get Email**.\n\nIt reads mail through IMAP. See [Credentials](/docs/guides/credentials/#email).",
+      "pt": "Lista os emails mais novos de **Folder**, até **Limit**, que batem com os filtros: **From** e **Subject** contêm um texto que o email tem, e **Only unread** pula os já lidos. Não marca como lido. Para ler o corpo, siga com **Email: Get Email**.\n\nLê emails por IMAP. Veja [Credenciais](/pt/docs/guides/credentials/#email)."
+    }
+  },
+  "Email: Get Email": {
+    "result": {
+      "id": 4021,
+      "from": "Ana <ana@example.com>",
+      "to": "orders@example.com",
+      "cc": null,
+      "subject": "Order 4411",
+      "date": "Tue, 12 May 2026 09:14:00 +0000",
+      "unread": true,
+      "text": "Hi, where is my order?",
+      "html": "",
+      "attachments": [
+        {
+          "name": "receipt.pdf",
+          "type": "application/pdf",
+          "size": 48213
+        }
+      ]
+    },
+    "notes": {
+      "en": "Reads one email, with its text and HTML bodies. Attachments are only described, with name, type and size. **Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now. Reading it doesn't mark it as read.",
+      "pt": "Lê um email, com os corpos em texto e HTML. Os anexos são só descritos, com nome, tipo e tamanho. **Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora. Ler não marca como lido."
+    }
+  },
+  "Email: Mark as Read": {
+    "result": {
+      "id": 4021
+    },
+    "notes": {
+      "en": "**Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now.",
+      "pt": "**Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora."
+    }
+  },
+  "Email: Mark as Unread": {
+    "result": {
+      "id": 4021
+    },
+    "notes": {
+      "en": "**Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now.",
+      "pt": "**Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora."
+    }
+  },
+  "Email: Move Email": {
+    "result": {
+      "id": 4021,
+      "folder": "Archive"
+    },
+    "notes": {
+      "en": "Moves the email to **Target folder**, which must exist. **Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now.",
+      "pt": "Move o email para **Target folder**, que precisa existir. **Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora."
+    }
+  },
+  "Email: Delete Email": {
+    "result": {
+      "id": 4021
+    },
+    "notes": {
+      "en": "Deletes the email for good. To keep it, move it to the trash folder instead. **Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now.",
+      "pt": "Apaga o email de vez. Para guardar, mova para a pasta de lixeira. **Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora."
+    }
+  }
+}

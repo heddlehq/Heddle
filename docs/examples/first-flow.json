@@ -1,0 +1,76 @@
+{
+  "name": "GitHub stars",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "Start",
+      "label": "Start",
+      "controls": {},
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "github",
+      "type": "HTTP Request",
+      "label": "Ask GitHub",
+      "controls": {
+        "method": "GET",
+        "url": "https://api.github.com/repos/heddlehq/Heddle",
+        "headers": "{}",
+        "body": ""
+      },
+      "position": {
+        "x": 260,
+        "y": 0
+      }
+    },
+    {
+      "id": "sentence",
+      "type": "Evaluate Code",
+      "label": "Write a sentence",
+      "controls": {
+        "language": "python",
+        "code_python": "set_result(f\"{result['full_name']} has {result['stargazers_count']} stars\")"
+      },
+      "position": {
+        "x": 520,
+        "y": 0
+      }
+    },
+    {
+      "id": "done",
+      "type": "Output",
+      "label": "Done",
+      "controls": {
+        "status": "success"
+      },
+      "position": {
+        "x": 780,
+        "y": 0
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "start",
+      "sourceOutput": "exec",
+      "target": "github",
+      "targetInput": "exec"
+    },
+    {
+      "source": "github",
+      "sourceOutput": "success",
+      "target": "sentence",
+      "targetInput": "exec"
+    },
+    {
+      "source": "sentence",
+      "sourceOutput": "exec",
+      "target": "done",
+      "targetInput": "exec"
+    }
+  ],
+  "comments": []
+}

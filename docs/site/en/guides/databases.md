@@ -1,4 +1,9 @@
-# Database nodes
+---
+title: Databases
+description: Reach PostgreSQL, MySQL, SQL Server, Oracle, SQLite, MongoDB, Redis, Elasticsearch, DynamoDB, Cassandra and Neo4j safely.
+sidebar:
+  order: 3
+---
 
 The **Database** category reaches the databases your flows use. Each node takes a credential from the **Credentials** page, and answers through its `success` and `error` outputs.
 
@@ -44,6 +49,8 @@ In a MongoDB filter, a value from the run can't hold an operator, so a request t
 
 Decimal numbers come as text, like `"10.50"`, so they don't lose cents. A run holds up to 10,000 rows or documents, and a query that returns more fails: use a limit.
 
+Each node has its page in the [node reference](/docs/nodes/#database), with an example of what it returns.
+
 ## Safety
 
 - **Update** and **Delete** refuse an empty **Where** or **Filter**. To hit everything on purpose, write `1 = 1`.
@@ -52,3 +59,7 @@ Decimal numbers come as text, like `"10.50"`, so they don't lose cents. A run ho
 - SQLite opens a file on the server that runs the flow, so it fits local installs. With several workers, each one sees its own disk.
 
 Connections stay open for five minutes after the last use, with up to five per credential on each worker.
+
+## Tests
+
+For whoever works on Heddle: `docker compose -f docker-compose.databases.yml up -d --wait`, then `HEDDLE_DB_PORT=5436 mix test --include databases`. Without them, only SQLite and PostgreSQL run on a real server.
