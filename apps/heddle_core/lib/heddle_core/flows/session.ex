@@ -61,6 +61,12 @@ defmodule HeddleCore.Flows.Session do
   def leave(flow_id), do: cast_if_running(flow_id, {:leave, self()})
 
   @doc """
+  The draft as the session has it, starting it if needed, without joining it.
+  Returns `{:ok, %{graph: graph, seq: seq, epoch: epoch}}`.
+  """
+  def snapshot(flow_id), do: call(flow_id, :snapshot)
+
+  @doc """
   Applies operations from `user_id`. Returns `{:ok, seq}`, or `{:error, reason}` and
   nothing changes. `meta` may say the `client` and `ref` that sent them.
   """
@@ -235,6 +241,9 @@ defmodule HeddleCore.Flows.Session do
   end
 
   defp handle(:peek, _caller, state), do: {{:ok, state.graph}, state}
+
+  defp handle(:snapshot, _caller, state),
+    do: {{:ok, %{graph: state.graph, seq: state.seq, epoch: state.epoch}}, state}
 
   @impl true
   def handle_cast({:leave, pid}, state), do: {:noreply, drop(state, pid)}

@@ -39,6 +39,8 @@ tags:
     description: Queue and inspect workflow executions.
   - name: Versions
     description: Publish a workflow, and look at or bring back what it had before.
+  - name: Live editing
+    description: Edit a workflow together with others, as the canvas does.
 security:
   - bearerApiKey: []
 paths:
@@ -626,6 +628,155 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+  /api/v1/workflows/{workflow_id}/live:
+    get:
+      operationId: followWorkflow
+      tags:
+        - Live editing
+      summary: Follow the draft as people edit it
+      description: |
+        Requires `workflows:read`, and the role viewer or above.
+
+        A stream of server-sent events. While it is open, the key's owner is on the
+        workflow like anyone with its canvas open: the canvases show them, and the
+        stream says who else is there. Each event has a JSON `data`:
+
+        - `ready`: `client`, `can_edit`, `user_id`, `seq`, `epoch` and `graph`. It comes
+          first, and again whenever the stream lost track of the changes: take its
+          graph as it is.
+        - `change`: `seq`, `epoch`, `ops`, `user_id`, `client`, `ref`, and the `graph`
+          after it. Changes are numbered in the order they were applied. `client` is the
+          one that sent it, so a client knows its own changes.
+        - `presence`: `people`, everyone on the workflow (see `LivePerson`).
+        - `cursor`: `client`, `x` and `y`, where a canvas pointer is on the canvas, or
+          null when it left it.
+
+        A comment line keeps the connection open every 15 seconds.
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+      responses:
+        "200":
+          description: The stream.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/workflows/{workflow_id}/changes:
+    post:
+      operationId: changeWorkflow
+      tags:
+        - Live editing
+      summary: Change the draft, without overwriting what others changed
+      description: |
+        Requires `workflows:write`, and the role editor or above.
+
+        `PUT /api/v1/workflows/{id}` makes the draft the graph it is given, which takes
+        back whatever someone else changed since the client read it. Send here
+        `base`, the graph the client last had, and `graph`, the one it has now: only
+        what changed between the two is applied, on top of what everyone else did
+        meanwhile. Or send `ops`, the operations themselves.
+
+        What changes the same field last wins. Operations on something that is no
+        longer there answer `409`, and nothing changes.
+
+        Live editing counts against its own budget, 1200 requests a minute per key,
+        apart from the 100 of the rest of the API.
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LiveChangeRequest"
+      responses:
+        "200":
+          description: The draft right after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveChangeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The operations no longer apply.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Neither `ops` nor `base` and `graph`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/workflows/{workflow_id}/focus:
+    post:
+      operationId: focusWorkflow
+      tags:
+        - Live editing
+      summary: Say which nodes you point at
+      description: |
+        Requires `workflows:read`.
+
+        Others see the nodes `selected` and the node `editing` in your color, as they
+        see what a canvas selects. `client` is the one the `ready` event of your own
+        live stream gave. A client without a pointer, like a terminal, sends `cursor`
+        too: where it is on the flow, in the coordinates of node positions, which the
+        canvases draw as your cursor. `null` takes it away.
+      security:
+        - bearerApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WorkflowIdByWorkflowId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - client
+              properties:
+                client:
+                  type: string
+                selected:
+                  type: array
+                  items:
+                    type: string
+                editing:
+                  type:
+                    - string
+                    - "null"
+                cursor:
+                  type:
+                    - object
+                    - "null"
+                  properties:
+                    x:
+                      type: number
+                    y:
+                      type: number
+      responses:
+        "204":
+          description: Done.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: The workflow, or a live stream of yours with that client, doesn't exist.
   /api/v1/workflows/{workflow_id}/executions/{public_id}:
     get:
       operationId: getWorkflowExecution
@@ -1131,6 +1282,91 @@ components:
         targetInput:
           type: string
           default: exec
+    LiveGraph:
+      type: object
+      description: A draft as live editing gives it. A node without a position is placed automatically.
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowNode"
+        connections:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowConnection"
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+    LiveChangeRequest:
+      type: object
+      description: Either `ops`, or `base` and `graph`.
+      properties:
+        base:
+          $ref: "#/components/schemas/LiveGraph"
+        graph:
+          $ref: "#/components/schemas/LiveGraph"
+        ops:
+          type: array
+          description: |
+            Operations, applied in order: `add_node` `node`, `remove_node` `id`,
+            `update_node` `id` `set`, `move_nodes` `positions`, `add_connection` and
+            `remove_connection` `connection`, `set_connections` `connections`,
+            `add_comment` `comment`, `remove_comment` `id` and `update_comment` `id` `set`.
+          items:
+            type: object
+            required:
+              - op
+            properties:
+              op:
+                type: string
+            additionalProperties: true
+        client:
+          type: string
+          description: The `client` of your live stream, so its `change` events say which changes are yours.
+        ref:
+          description: Anything, given back in the `change` event.
+    LiveChangeResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            seq:
+              type: integer
+              description: The number of the last change in `graph`.
+            applied:
+              type:
+                - integer
+                - "null"
+              description: The number of this change, or null when there was nothing to change.
+            graph:
+              $ref: "#/components/schemas/LiveGraph"
+    LivePerson:
+      type: object
+      description: Someone on a workflow, once for each canvas or live stream they have open.
+      properties:
+        client:
+          type: string
+        kind:
+          type: string
+          enum:
+            - person
+            - agent
+        user_id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+        selected:
+          type: array
+          items:
+            type: string
+        editing:
+          type:
+            - string
+            - "null"
     AgentTranscript:
       type: object
       required:
