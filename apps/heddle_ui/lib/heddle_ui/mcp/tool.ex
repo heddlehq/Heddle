@@ -7,6 +7,8 @@ defmodule HeddleUI.MCP.Tool do
   alias HeddleCore.ApiKeys.ApiKey
   alias HeddleCore.Flows
 
+  @forbidden "Your role in this workspace doesn't allow this. Ask one of its admins."
+
   @doc """
   Runs `fun` with the caller's scope if its API key has `api_scope`.
   """
@@ -18,8 +20,11 @@ defmodule HeddleUI.MCP.Tool do
     end
   end
 
+  @doc "The error for something the caller's role doesn't allow."
+  def forbidden(frame), do: error(@forbidden, frame)
+
   @doc """
-  Runs `fun` with a flow the caller owns.
+  Runs `fun` with a flow the caller can see.
   """
   def with_flow(scope, id, frame, fun) do
     case Flows.get_flow(scope, id) do
@@ -39,6 +44,9 @@ defmodule HeddleUI.MCP.Tool do
     do: Map.put(input, "section_id", id)
 
   def put_section(input, _params), do: input
+
+  def changeset_error(:forbidden, frame), do: error(@forbidden, frame)
+  def changeset_error(:not_found, frame), do: error("That flow was not found.", frame)
 
   def changeset_error(%Ecto.Changeset{} = changeset, frame) do
     changeset

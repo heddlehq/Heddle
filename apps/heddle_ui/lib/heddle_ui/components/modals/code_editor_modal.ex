@@ -96,7 +96,7 @@ defmodule HeddleUI.Components.Modals.CodeEditorModal do
                 type="submit"
                 variant="success"
               >
-                <.icon name="hero-check" class="w-4 h-4 mr-1" /> {gettext("Save Changes")}
+                <.icon name="hero-check" class="w-4 h-4" /> {gettext("Save Changes")}
               </.button>
             </div>
           </form>

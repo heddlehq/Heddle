@@ -97,11 +97,17 @@ defmodule HeddleUI.TerminalChannelTest do
       assert :error = connect_as(admin)
     end
 
-    test "the flow of someone else", %{admin: admin} do
-      other = flow_fixture(%{user: user_fixture()})
+    test "a flow that doesn't exist", %{admin: admin, flow: flow} do
       {:ok, socket} = connect_as(admin)
 
-      assert {:error, %{reason: "unavailable"}} = join_terminal(socket, other)
+      assert {:error, %{reason: "unavailable"}} = join_terminal(socket, %{flow | id: -1})
+    end
+
+    test "someone who isn't a system admin, even an editor of the flow", %{flow: flow} do
+      editor = user_fixture()
+      member_fixture(HeddleCore.Workspaces.get_workspace(flow.workspace_id), editor, "editor")
+
+      assert :error = connect_as(editor)
     end
   end
 end

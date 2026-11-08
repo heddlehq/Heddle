@@ -52,7 +52,14 @@ defmodule HeddleUI.UserLive.Register do
             {gettext("Create your account")}
           </h1>
           <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            {gettext("You were invited to HeddleCore. Complete the form below.")}
+            <%= if @invite.workspace do %>
+              {gettext("You were invited to join %{workspace} on Heddle as %{role}.",
+                workspace: @invite.workspace.name,
+                role: HeddleUI.Layouts.role_label(@invite.role)
+              )}
+            <% else %>
+              {gettext("You were invited to Heddle. Complete the form below.")}
+            <% end %>
           </p>
         </div>
 

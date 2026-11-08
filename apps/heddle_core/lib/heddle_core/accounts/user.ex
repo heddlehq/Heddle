@@ -11,6 +11,9 @@ defmodule HeddleCore.Accounts.User do
     field :authenticated_at, :utc_datetime, virtual: true
     field :is_system_admin, :boolean, default: false
 
+    # The workspace they last chose. See `HeddleCore.Workspaces.current/1`.
+    field :current_workspace_id, :id
+
     timestamps(type: :utc_datetime)
   end
 

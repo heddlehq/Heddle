@@ -34,7 +34,7 @@ defmodule HeddleUI.FlowLive.IndexTest do
         |> live(~p"/flows")
 
       assert html =~ "My Flow"
-      assert html =~ "My Flows"
+      assert html =~ "Flows"
     end
 
     test "shows empty state when no flows", %{conn: conn} do

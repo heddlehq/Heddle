@@ -1,7 +1,6 @@
 defmodule HeddleUI.PublicAPI.V1.WorkflowControllerTest do
   use HeddleUI.ConnCase, async: true
 
-  alias HeddleCore.ApiKeys
   alias HeddleCore.Flows
 
   import HeddleCore.AccountsFixtures
@@ -236,13 +235,57 @@ defmodule HeddleUI.PublicAPI.V1.WorkflowControllerTest do
     end
   end
 
+  describe "roles in the key's workspace" do
+    setup %{conn: conn} do
+      user = user_fixture()
+      workspace = workspace_fixture(user, role: "editor")
+      flow = flow_fixture(%{user: user, workspace: workspace, name: "Shared"})
+      conn = authorize(conn, user, ["workflows:read", "workflows:write"])
+      member = HeddleCore.Repo.get_by!(HeddleCore.Workspaces.Member, user_id: user.id)
+      %{conn: conn, flow: flow, member: member}
+    end
+
+    test "a key does no more than its owner's role now", %{conn: conn, flow: flow, member: member} do
+      HeddleCore.Repo.update!(Ecto.Changeset.change(member, role: "viewer"))
+
+      assert conn |> get(~p"/api/v1/workflows/#{flow.id}") |> json_response(200)
+
+      assert %{"error" => %{"code" => "forbidden"}} =
+               conn
+               |> put(~p"/api/v1/workflows/#{flow.id}", %{"workflow" => %{"name" => "x"}})
+               |> json_response(403)
+    end
+
+    test "a key stops working when its owner leaves the workspace", %{
+      conn: conn,
+      flow: flow,
+      member: member
+    } do
+      HeddleCore.Repo.delete!(member)
+
+      assert conn |> get(~p"/api/v1/workflows/#{flow.id}") |> json_response(401)
+    end
+
+    test "a key doesn't reach another workspace, even of the same person", %{
+      conn: conn,
+      flow: flow
+    } do
+      other = workspace_fixture(flow |> HeddleCore.Repo.preload(:user) |> Map.get(:user))
+      theirs = flow_fixture(%{user: user_fixture(), workspace: other})
+
+      assert conn |> get(~p"/api/v1/workflows/#{theirs.id}") |> json_response(404)
+    end
+  end
+
   defp authorize(conn, scopes) do
     user = user_fixture()
     authorize(conn, user, scopes)
   end
 
   defp authorize(conn, user, scopes) do
-    {:ok, %{token: token}} = ApiKeys.create_api_key(user, %{name: "test key", scopes: scopes})
+    {:ok, %{token: token}} =
+      HeddleCore.AccountsFixtures.create_api_key(user, %{name: "test key", scopes: scopes})
+
     put_req_header(conn, "authorization", "Bearer #{token}")
   end
 

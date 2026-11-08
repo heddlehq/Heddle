@@ -10,8 +10,11 @@ defmodule HeddleUI.FlowLive.TerminalManager do
   alias HeddleUI.Terminal
 
   @doc "Default terminal-related assigns, merged into the LiveView mount."
-  def initial_assigns(user) do
-    available? = Terminal.available?()
+  # Claude Code runs on the server with its access, so only system admins get it, and
+  # it changes the flow, so only when they can edit it.
+  def initial_assigns(user, can_edit) do
+    available? =
+      can_edit and HeddleCore.Accounts.User.system_admin?(user) and Terminal.available?()
 
     [
       terminal_available: available?,

@@ -4,6 +4,9 @@ defmodule HeddleNodes.Nodes.EmailTest do
   alias HeddleNodes.Nodes.Email
 
   defmodule Vault do
+    # A run asks within its workspace, which these tests leave out.
+    def fetch(_workspace_id, name, kind), do: fetch(name, kind)
+
     def fetch("bad-address", "smtp"),
       do: {:ok, %{"host" => "127.0.0.1", "port" => "1", "from" => "a@b.co"}}
 

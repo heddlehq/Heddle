@@ -7,10 +7,13 @@ defmodule HeddleNodes.RunnerTest do
 
   describe "run/1" do
     test "keeps node controls scoped and records execution history" do
+      user = user_fixture()
+
       {:ok, flow} =
         Flows.create_flow(%{
           name: "Scoped Context Flow",
-          user_id: user_fixture().id,
+          user_id: user.id,
+          workspace_id: workspace_fixture(user).id,
           nodes: [
             %{
               "id" => "1",
@@ -93,10 +96,13 @@ defmodule HeddleNodes.RunnerTest do
     end
 
     test "includes persisted execution input in the initial context" do
+      user = user_fixture()
+
       {:ok, flow} =
         Flows.create_flow(%{
           name: "Input Flow",
-          user_id: user_fixture().id,
+          user_id: user.id,
+          workspace_id: workspace_fixture(user).id,
           nodes: [
             %{
               "id" => "1",

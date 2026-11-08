@@ -6,7 +6,9 @@ defmodule HeddleCore.Accounts do
   import Ecto.Query, warn: false
   alias HeddleCore.Repo
 
-  alias HeddleCore.Accounts.{User, UserToken, UserNotifier, Invite}
+  alias HeddleCore.Accounts.{Invite, Scope, User, UserNotifier, UserToken}
+  alias HeddleCore.Workspaces
+  alias HeddleCore.Workspaces.{Role, Workspace}
 
   ## Database getters
 
@@ -116,20 +118,23 @@ defmodule HeddleCore.Accounts do
   """
   def register_user_with_invite(attrs, %Invite{} = invite) do
     Repo.transaction(fn ->
-      case register_user(attrs) do
-        {:ok, user} ->
-          case mark_invite_used(invite) do
-            {:ok, _updated_invite} ->
-              user
-
-            {:error, _changeset} ->
-              Repo.rollback(:invite_mark_failed)
-          end
-
-        {:error, changeset} ->
-          Repo.rollback(changeset)
+      with {:ok, user} <- register_user(attrs),
+           {:ok, _updated_invite} <- mark_invite_used(invite),
+           {:ok, user} <- join_invited_workspace(user, invite) do
+        user
+      else
+        {:error, %Ecto.Changeset{data: %User{}} = changeset} -> Repo.rollback(changeset)
+        {:error, _reason} -> Repo.rollback(:invite_mark_failed)
       end
     end)
+  end
+
+  defp join_invited_workspace(user, %Invite{workspace_id: nil}), do: {:ok, user}
+
+  defp join_invited_workspace(user, %Invite{workspace_id: workspace_id, role: role}) do
+    with {:ok, _member} <- Workspaces.join(user, workspace_id, role || "viewer") do
+      user |> Ecto.Changeset.change(current_workspace_id: workspace_id) |> Repo.update()
+    end
   end
 
   @doc """
@@ -145,12 +150,18 @@ defmodule HeddleCore.Accounts do
   Registers the first user as system admin (used by the setup flow).
   """
   def register_system_admin(attrs) do
-    %User{}
-    |> User.registration_changeset(attrs)
-    |> User.password_changeset(attrs)
-    |> User.confirm_changeset()
-    |> User.admin_changeset(%{is_system_admin: true})
-    |> Repo.insert()
+    Repo.transact(fn ->
+      with {:ok, user} <-
+             %User{}
+             |> User.registration_changeset(attrs)
+             |> User.password_changeset(attrs)
+             |> User.confirm_changeset()
+             |> User.admin_changeset(%{is_system_admin: true})
+             |> Repo.insert(),
+           :ok <- Workspaces.ensure_first_workspace(user) do
+        {:ok, user}
+      end
+    end)
   end
 
   ## Settings
@@ -396,44 +407,73 @@ defmodule HeddleCore.Accounts do
   ## Invites
 
   @doc """
-  Returns an existing valid invite for the given admin user, or creates a new one.
-  Only one unused, non-expired invite per admin is kept; reusing it avoids creating duplicates.
+  Returns a link-ready invite into `workspace` with `role`, made by the caller, reusing
+  one they made before that is still open. Admins of the workspace can invite.
   """
-  def create_invite_or_reuse(%User{id: user_id} = admin) do
-    unless User.system_admin?(admin) do
-      {:error, :forbidden}
-    else
+  def create_invite(%Scope{user: %User{id: user_id}} = scope, %Workspace{id: ws_id}, role) do
+    with :ok <- Workspaces.authorize(scope, :manage, ws_id),
+         true <- Role.valid?(role) || {:error, :invalid_role} do
       now = DateTime.utc_now()
-      validity_days = Invite.invite_validity_days()
-      expires_at = DateTime.add(now, validity_days, :day)
 
       existing =
         Repo.one(
           from i in Invite,
-            where: i.invited_by_user_id == ^user_id,
-            where: is_nil(i.used_at),
-            where: i.expires_at > ^now,
+            where: i.invited_by_user_id == ^user_id and i.workspace_id == ^ws_id,
+            where: i.role == ^role and is_nil(i.used_at) and i.expires_at > ^now,
             order_by: [desc: i.inserted_at],
             limit: 1
         )
 
       if existing do
-        {:ok, Repo.preload(existing, :invited_by_user)}
+        {:ok, Repo.preload(existing, [:invited_by_user, :workspace])}
       else
-        token = generate_invite_token()
-
-        %Invite{}
+        %Invite{workspace_id: ws_id, role: role}
         |> Invite.changeset(%{
-          token: token,
-          expires_at: expires_at,
+          token: generate_invite_token(),
+          expires_at: DateTime.add(now, Invite.invite_validity_days(), :day),
           invited_by_user_id: user_id
         })
         |> Repo.insert()
         |> case do
-          {:ok, invite} -> {:ok, Repo.preload(invite, :invited_by_user)}
+          {:ok, invite} -> {:ok, Repo.preload(invite, [:invited_by_user, :workspace])}
           err -> err
         end
       end
+    end
+  end
+
+  def create_invite(_scope, _workspace, _role), do: {:error, :forbidden}
+
+  @doc "The invites into `workspace` nobody has used yet. Its admins can see them."
+  def list_open_invites(%Scope{} = scope, %Workspace{id: ws_id}) do
+    if Workspaces.can?(scope, :manage, ws_id) do
+      now = DateTime.utc_now()
+
+      Repo.all(
+        from i in Invite,
+          where: i.workspace_id == ^ws_id and is_nil(i.used_at) and i.expires_at > ^now,
+          order_by: [desc: i.inserted_at],
+          preload: [:invited_by_user]
+      )
+    else
+      []
+    end
+  end
+
+  @doc "Cancels an invite nobody used. The admins of its workspace can."
+  def revoke_invite(%Scope{} = scope, %Invite{} = invite) do
+    allowed? =
+      if invite.workspace_id,
+        do: Workspaces.can?(scope, :manage, invite.workspace_id),
+        else: Scope.system_admin?(scope)
+
+    if allowed?, do: Repo.delete(invite), else: {:error, :forbidden}
+  end
+
+  def get_invite(id) do
+    case Integer.parse(to_string(id)) do
+      {id, ""} -> Repo.get(Invite, id)
+      _other -> nil
     end
   end
 
@@ -447,7 +487,7 @@ defmodule HeddleCore.Accounts do
   Gets an invite by token. Returns nil if not found.
   """
   def get_invite_by_token(token) when is_binary(token) do
-    Repo.get_by(Invite, token: token) |> Repo.preload(:invited_by_user)
+    Repo.get_by(Invite, token: token) |> Repo.preload([:invited_by_user, :workspace])
   end
 
   @doc """
@@ -468,7 +508,7 @@ defmodule HeddleCore.Accounts do
       from i in Invite,
         where: i.invited_by_user_id == ^user_id,
         order_by: [desc: i.inserted_at],
-        preload: [:invited_by_user]
+        preload: [:invited_by_user, :workspace]
     )
   end
 

@@ -55,6 +55,7 @@ defmodule HeddleUI do
 
       on_mount HeddleUI.Plugs.SetLocale
       on_mount HeddleUI.CurrentPath
+      on_mount HeddleUI.WorkspaceHook
 
       unquote(html_helpers())
     end

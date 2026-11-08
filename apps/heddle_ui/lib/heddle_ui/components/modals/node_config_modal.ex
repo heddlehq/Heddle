@@ -8,6 +8,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
   attr :config_modal_open, :boolean, required: true
   attr :editing_node_data, :map, default: nil
   attr :credentials, :list, default: []
+  attr :read_only, :boolean, default: false
 
   def node_config_modal(assigns) do
     ~H"""
@@ -46,131 +47,136 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
           phx-submit="save_node_config"
           class="flex-1 flex flex-col overflow-hidden"
         >
-          <div class="flex-1 p-6 overflow-y-auto space-y-5">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Node Name
-              </label>
-              <input
-                type="text"
-                name="node_label"
-                value={@editing_node_data["label"]}
-                class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
+          <fieldset disabled={@read_only} class="contents">
+            <div class="flex-1 p-6 overflow-y-auto space-y-5">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Node Name
+                </label>
+                <input
+                  type="text"
+                  name="node_label"
+                  value={@editing_node_data["label"]}
+                  class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
+                />
+              </div>
+
+              <%= if @editing_node_data["controls"] do %>
+                <%= for {key, control} <- ordered_controls(@editing_node_data) do %>
+                  <%= if control["type"] == "hidden" do %>
+                    <input type="hidden" name={key} value={control["value"]} />
+                  <% else %>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 first-letter:uppercase">
+                        {control["label"] || String.replace(key, "_", " ")}
+                      </label>
+                      <%= case control["type"] do %>
+                        <% "select" -> %>
+                          <div class="relative">
+                            <select
+                              name={key}
+                              class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150 appearance-none pr-10"
+                            >
+                              <%= for option <- control["options"] || [] do %>
+                                <%= if is_map(option) do %>
+                                  <option
+                                    value={option["value"]}
+                                    selected={option["value"] == control["value"]}
+                                  >
+                                    {option["label"]}
+                                  </option>
+                                <% else %>
+                                  <option value={option} selected={option == control["value"]}>
+                                    {option}
+                                  </option>
+                                <% end %>
+                              <% end %>
+                            </select>
+                            <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400">
+                              <.icon name="hero-chevron-down" class="w-4 h-4" />
+                            </span>
+                          </div>
+                        <% "variable-select" -> %>
+                          <div class="relative">
+                            <select
+                              name={key}
+                              class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150 appearance-none pr-10"
+                            >
+                              <option value="">Select a variable...</option>
+                              <%= for var <- @editing_node_data["variables"] || [] do %>
+                                <option value={var} selected={var == control["value"]}>{var}</option>
+                              <% end %>
+                            </select>
+                            <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400">
+                              <.icon name="hero-chevron-down" class="w-4 h-4" />
+                            </span>
+                          </div>
+                        <% "credential" -> %>
+                          <.credential_field
+                            key={key}
+                            value={control["value"]}
+                            kind={control["credential_kind"]}
+                            credentials={@credentials}
+                            blank={credential_blank(@editing_node_data, control)}
+                          />
+                        <% "model" -> %>
+                          <.model_field
+                            key={key}
+                            fields={
+                              @editing_node_data
+                              |> control_values()
+                              |> with_workspace(@credentials)
+                            }
+                            capability={capability(@editing_node_data)}
+                          />
+                        <% type when type in ["code-icon", "code-button"] -> %>
+                          <.code_field
+                            key={key}
+                            value={control["value"]}
+                            code={
+                              NodeCode.current(NodeCode.from_controls(@editing_node_data["controls"]))
+                            }
+                          />
+                        <% "textarea" -> %>
+                          <textarea
+                            id={"node-field-#{key}"}
+                            name={key}
+                            rows="6"
+                            spellcheck="false"
+                            class="w-full px-4 py-3 rounded-lg font-mono text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
+                          >{control["value"]}</textarea>
+                        <% _ -> %>
+                          <%= if String.length(to_string(control["value"])) > 50 do %>
+                            <textarea
+                              name={key}
+                              rows="4"
+                              class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
+                            >{control["value"]}</textarea>
+                          <% else %>
+                            <input
+                              type="text"
+                              name={key}
+                              value={control["value"]}
+                              class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
+                            />
+                          <% end %>
+                      <% end %>
+                    </div>
+                  <% end %>
+                <% end %>
+              <% else %>
+                <p class="text-sm text-gray-500 dark:text-gray-400 italic">
+                  No configuration options available for this node.
+                </p>
+              <% end %>
+
+              <.node_settings
+                settings={@editing_node_data["settings"] || %{}}
+                type={@editing_node_data["type"]}
+                unpin={@editing_node_data["unpin"] == true}
               />
             </div>
-
-            <%= if @editing_node_data["controls"] do %>
-              <%= for {key, control} <- ordered_controls(@editing_node_data) do %>
-                <%= if control["type"] == "hidden" do %>
-                  <input type="hidden" name={key} value={control["value"]} />
-                <% else %>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 first-letter:uppercase">
-                      {control["label"] || String.replace(key, "_", " ")}
-                    </label>
-                    <%= case control["type"] do %>
-                      <% "select" -> %>
-                        <div class="relative">
-                          <select
-                            name={key}
-                            class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150 appearance-none pr-10"
-                          >
-                            <%= for option <- control["options"] || [] do %>
-                              <%= if is_map(option) do %>
-                                <option
-                                  value={option["value"]}
-                                  selected={option["value"] == control["value"]}
-                                >
-                                  {option["label"]}
-                                </option>
-                              <% else %>
-                                <option value={option} selected={option == control["value"]}>
-                                  {option}
-                                </option>
-                              <% end %>
-                            <% end %>
-                          </select>
-                          <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400">
-                            <.icon name="hero-chevron-down" class="w-4 h-4" />
-                          </span>
-                        </div>
-                      <% "variable-select" -> %>
-                        <div class="relative">
-                          <select
-                            name={key}
-                            class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150 appearance-none pr-10"
-                          >
-                            <option value="">Select a variable...</option>
-                            <%= for var <- @editing_node_data["variables"] || [] do %>
-                              <option value={var} selected={var == control["value"]}>{var}</option>
-                            <% end %>
-                          </select>
-                          <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400">
-                            <.icon name="hero-chevron-down" class="w-4 h-4" />
-                          </span>
-                        </div>
-                      <% "credential" -> %>
-                        <.credential_field
-                          key={key}
-                          value={control["value"]}
-                          kind={control["credential_kind"]}
-                          credentials={@credentials}
-                          blank={credential_blank(@editing_node_data, control)}
-                        />
-                      <% "model" -> %>
-                        <.model_field
-                          key={key}
-                          fields={control_values(@editing_node_data)}
-                          capability={capability(@editing_node_data)}
-                        />
-                      <% type when type in ["code-icon", "code-button"] -> %>
-                        <.code_field
-                          key={key}
-                          value={control["value"]}
-                          code={
-                            NodeCode.current(NodeCode.from_controls(@editing_node_data["controls"]))
-                          }
-                        />
-                      <% "textarea" -> %>
-                        <textarea
-                          id={"node-field-#{key}"}
-                          name={key}
-                          rows="6"
-                          spellcheck="false"
-                          class="w-full px-4 py-3 rounded-lg font-mono text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
-                        >{control["value"]}</textarea>
-                      <% _ -> %>
-                        <%= if String.length(to_string(control["value"])) > 50 do %>
-                          <textarea
-                            name={key}
-                            rows="4"
-                            class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
-                          >{control["value"]}</textarea>
-                        <% else %>
-                          <input
-                            type="text"
-                            name={key}
-                            value={control["value"]}
-                            class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
-                          />
-                        <% end %>
-                    <% end %>
-                  </div>
-                <% end %>
-              <% end %>
-            <% else %>
-              <p class="text-sm text-gray-500 dark:text-gray-400 italic">
-                No configuration options available for this node.
-              </p>
-            <% end %>
-
-            <.node_settings
-              settings={@editing_node_data["settings"] || %{}}
-              type={@editing_node_data["type"]}
-              unpin={@editing_node_data["unpin"] == true}
-            />
-          </div>
-
+          </fieldset>
           <div class="sticky bottom-0 z-10 flex justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
             <button
               type="button"
@@ -180,6 +186,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
               {gettext("Cancel")}
             </button>
             <button
+              :if={not @read_only}
               type="submit"
               class="text-sm font-medium text-primary-content bg-primary hover:bg-primary/90 px-5 py-2.5 rounded-lg transition-colors shadow-sm active:scale-[0.98]"
             >
@@ -366,6 +373,16 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
     """
   end
 
+  # The credential picked is looked up where the run will look: the workspace's own
+  # first, then a shared one.
+  defp with_workspace(fields, credentials) do
+    case Enum.find(credentials, &(&1.name == fields["credential"] and &1.workspace_id)) ||
+           Enum.find(credentials, &(&1.name == fields["credential"])) do
+      nil -> fields
+      credential -> Map.put(fields, "workspace_id", credential.workspace_id)
+    end
+  end
+
   attr :key, :string, required: true
   attr :fields, :map, required: true
   attr :capability, :atom, required: true
@@ -466,7 +483,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
         phx-value-field-name={@key}
         class="absolute bottom-2 right-2 px-3 py-1.5 text-xs h-auto"
       >
-        <.icon name="hero-code-bracket" class="w-3.5 h-3.5 mr-1" /> {gettext("Edit Code")}
+        <.icon name="hero-code-bracket" class="w-3.5 h-3.5" /> {gettext("Edit Code")}
       </.button>
       <input type="hidden" name={@key} value={@value} />
     </div>

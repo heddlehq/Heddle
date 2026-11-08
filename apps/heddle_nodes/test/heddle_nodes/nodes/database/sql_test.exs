@@ -42,6 +42,9 @@ defmodule HeddleNodes.Nodes.Database.SqlTest do
   ]
 
   defmodule Vault do
+    # A run asks within its workspace, which these tests leave out.
+    def fetch(_workspace_id, name, kind), do: fetch(name, kind)
+
     def fetch("db", "sql"), do: {:ok, :persistent_term.get(:heddle_sql_test_credential)}
     def fetch(name, _kind), do: {:error, "no #{name}"}
   end

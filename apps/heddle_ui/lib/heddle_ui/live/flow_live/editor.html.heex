@@ -7,10 +7,13 @@
     flow={@current_flow}
     renaming_flow={@renaming_flow}
     can_replace={@has_changes or @current_flow.nodes not in [nil, []]}
+    can_edit={@can_edit}
+    can_run={@can_run}
   />
   <Layouts.flash_group flash={@flash} />
   <div class="flex-1 flex overflow-hidden">
     <HeddleUI.Components.Flow.NodeSidebar.node_sidebar
+      :if={@can_edit}
       nodes_by_category={@nodes_by_category}
       search_query={@node_search_query}
       collapsed_categories={@collapsed_node_categories}
@@ -70,9 +73,11 @@
           id="flow-canvas"
           class="absolute inset-0 w-full h-full"
           phx-hook="FlowCanvas"
+          data-read-only={to_string(not @can_edit)}
         >
         </div>
         <div
+          :if={@can_edit}
           id="canvas-tools"
           class="absolute top-4 left-4 z-10 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-800"
         >
@@ -82,7 +87,11 @@
           <.canvas_tool kind="section" icon="hero-rectangle-group" label={gettext("Section")} />
         </div>
       </div>
-      <HeddleUI.Components.Flow.RunInspector.run_inspector inspector={@inspector} />
+      <HeddleUI.Components.Flow.RunInspector.run_inspector
+        inspector={@inspector}
+        can_edit={@can_edit}
+        can_run={@can_run}
+      />
       <HeddleUI.Components.Flow.TerminalPanel.terminal_panel
         :if={@terminal_available}
         open={@terminal_open}
@@ -105,6 +114,7 @@
     config_modal_open={@config_modal_open}
     editing_node_data={@editing_node_data}
     credentials={@credentials}
+    read_only={not @can_edit}
   />
   <HeddleUI.Components.Modals.FlowSettingsModal.flow_settings_modal
     open={@flow_settings_open}
