@@ -13,14 +13,15 @@
 
 import { Socket } from "phoenix";
 import { applyOps, diffOps, fieldsOf, normalize } from "./flow_ops.js";
+import { startPresence } from "./presence.js";
 
 const SEND_AFTER = 120;
 const UNDO_MAX = 50;
 
-export function startCollab(editor, { flowId, token, onSaveState, onRemote, onReady, onJoinError }) {
+export function startCollab(editor, { flowId, token, container, avatars, onSaveState, onRemote, onReady, onJoinError }) {
   const socket = new Socket("/flow", { params: { token } });
   socket.connect();
-  const channel = socket.channel(`flow:${flowId}`, {});
+  const channel = socket.channel(`canvas:${flowId}`, {});
 
   let shadow = normalize({});
   let epoch = null;
@@ -69,7 +70,7 @@ export function startCollab(editor, { flowId, token, onSaveState, onRemote, onRe
   // Sends what changed here since the last time. `record` says what undo keeps of it.
   const send = async ({ record = "undo" } = {}) => {
     if (!ready || !canEdit) return;
-    const current = normalize(editor.snapshot());
+    const current = keepDragged(normalize(editor.snapshot()));
     const ops = diffOps(shadow, current);
     if (ops.length === 0) return settle();
 
@@ -101,6 +102,16 @@ export function startCollab(editor, { flowId, token, onSaveState, onRemote, onRe
         pending.delete(ref);
         resync();
       });
+  };
+
+  // Where someone else is dragging something isn't a change of this person: it stays
+  // where the server has it until they drop it.
+  const keepDragged = (graph) => {
+    const dragged = presence ? presence.dragged() : new Set();
+    if (dragged.size === 0) return graph;
+    const before = new Map([...shadow.nodes, ...shadow.comments].map((item) => [item.id, item.position]));
+    const keep = (item) => (dragged.has(item.id) && before.has(item.id) ? { ...item, position: before.get(item.id) } : item);
+    return { ...graph, nodes: graph.nodes.map(keep), comments: graph.comments.map(keep) };
   };
 
   const queue = (fn) => (syncing = syncing.then(fn).catch((error) => console.error(error)));
@@ -135,7 +146,8 @@ export function startCollab(editor, { flowId, token, onSaveState, onRemote, onRe
 
       shadow = applyOps(shadow, change.ops, { skip: pendingFields() });
       await editor.reconcile(shadow);
-      shadow = normalize(editor.snapshot());
+      shadow = keepDragged(normalize(editor.snapshot()));
+      presence && presence.changed(change);
       onRemote && onRemote(change);
       settle();
     });
@@ -159,10 +171,14 @@ export function startCollab(editor, { flowId, token, onSaveState, onRemote, onRe
     redo: () => step(redoStack, undoStack),
   });
 
+  let presence = null;
+
   channel
     .join()
     .receive("ok", async (reply) => {
       client = reply.client;
+      if (presence) presence.rejoined(client);
+      else presence = startPresence(editor, channel, { client, userId: reply.user_id, container, avatars });
       canEdit = reply.can_edit;
       await load(reply);
       onReady && onReady(reply);
@@ -184,8 +200,11 @@ export function startCollab(editor, { flowId, token, onSaveState, onRemote, onRe
       if (pending.size === 0 && !timer) return;
       await new Promise((resolve) => waiters.push(resolve));
     },
+    // The node whose drawer this person has open, for others to see.
+    setEditing: (id) => presence && presence.setEditing(id),
     destroy: () => {
       clearTimeout(timer);
+      if (presence) presence.destroy();
       channel.leave();
       socket.disconnect();
     },

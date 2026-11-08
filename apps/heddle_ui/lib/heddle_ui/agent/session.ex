@@ -173,6 +173,8 @@ defmodule HeddleUI.Agent.Session do
   defp start_turn(state, content) do
     flow = Flows.get_flow(state.scope, state.flow_id)
     run = AgentChat.open(state.scope, flow && flow.workspace_id)
+    # Whoever is on the canvas sees the agent there while it works.
+    if flow && state.scope.user, do: HeddleUI.FlowPresence.track_agent(flow.id, state.scope.user)
     session = self()
     on_event = &send(session, {:harness_event, &1})
 
@@ -275,6 +277,7 @@ defmodule HeddleUI.Agent.Session do
 
   defp end_turn(state, result) do
     AgentChat.close(state.turn.run)
+    if state.scope.user, do: HeddleUI.FlowPresence.untrack_agent(state.flow_id, state.scope.user)
 
     # The Claude Agent removes its key when its process is gone.
     unless state.turn.claude?, do: ApiKeys.delete_api_key(state.turn.run.api_key)

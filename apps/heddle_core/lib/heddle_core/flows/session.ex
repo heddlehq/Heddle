@@ -206,9 +206,18 @@ defmodule HeddleCore.Flows.Session do
         state =
           if ops == [],
             do: state,
-            else: commit(state, graph, ops, user_id, %{client: "server"}, false)
+            else:
+              commit(
+                state,
+                graph,
+                ops,
+                user_id,
+                %{client: Keyword.get(opts, :client, "server")},
+                false
+              )
 
         case save(state, Keyword.get(opts, :checkpoint, true)) do
+          {:ok, nil, state} -> {{:ok, Repo.get(Flow, state.flow_id)}, state}
           {:ok, flow, state} -> {{:ok, flow}, state}
           {:error, reason, state} -> {{:error, reason}, state}
         end
@@ -251,17 +260,20 @@ defmodule HeddleCore.Flows.Session do
 
   # Saves on the way out, and keeps what the people who edited it left.
   @impl true
-  def terminate(_reason, %{graph: graph} = state) when not is_nil(graph) do
-    {_result, flow, _state} = save(state, false)
+  def terminate(_reason, %{graph: graph, edited?: true} = state) when not is_nil(graph) do
+    {_result, _flow, _state} = save(state, false)
 
-    if state.edited? and flow do
-      Versions.checkpoint(flow, state.last_author, flush: false)
+    case Repo.get(Flow, state.flow_id) do
+      nil -> :ok
+      flow -> Versions.checkpoint(flow, state.last_author, flush: false)
     end
 
     :ok
   rescue
     error ->
-      Logger.warning("A flow session didn't save as it stopped: #{Exception.message(error)}")
+      # A test that is over takes its database with it.
+      level = if Application.get_env(:heddle_core, :sandbox_sessions), do: :debug, else: :warning
+      Logger.log(level, "A flow session didn't save as it stopped: #{Exception.message(error)}")
   end
 
   def terminate(_reason, _state), do: :ok
@@ -328,8 +340,7 @@ defmodule HeddleCore.Flows.Session do
     |> then(&if(schedule?, do: schedule_flush(&1), else: &1))
   end
 
-  defp save(%{dirty?: false} = state, _checkpoint?),
-    do: {:ok, Repo.get(Flow, state.flow_id), state}
+  defp save(%{dirty?: false} = state, _checkpoint?), do: {:ok, nil, state}
 
   defp save(state, checkpoint?) do
     state = cancel_flush(state)

@@ -50,7 +50,7 @@ defmodule HeddleUI.FlowChannelTest do
 
   defp join_as(user, flow) do
     {:ok, socket} = connect(FlowSocket, %{"token" => FlowSocket.token(user)})
-    subscribe_and_join(socket, "flow:#{flow.id}", %{})
+    subscribe_and_join(socket, "canvas:#{flow.id}", %{})
   end
 
   test "needs a token" do
@@ -126,5 +126,91 @@ defmodule HeddleUI.FlowChannelTest do
 
     ref = push(socket, "snapshot", %{})
     assert_reply ref, :ok, %{graph: %{nodes: [_, _]}, seq: 1}
+  end
+
+  describe "presence" do
+    test "everyone on the canvas is there, with a name and a color", %{owner: owner, flow: flow} do
+      {:ok, %{client: client}, _socket} = join_as(owner, flow)
+
+      assert_push "presence_state", state
+
+      assert %{metas: [%{kind: "person", user_id: user_id, color: "#" <> _, name: name}]} =
+               state[client]
+
+      assert user_id == owner.id
+      assert is_binary(name)
+    end
+
+    test "cursors go to the others, not to who moved", %{
+      owner: owner,
+      flow: flow,
+      workspace: workspace
+    } do
+      {:ok, %{client: mine}, socket} = join_as(owner, flow)
+      {:ok, _reply, _theirs} = join_as(member(workspace, "viewer"), flow)
+
+      push(socket, "cursor", %{"x" => 120, "y" => -40.5})
+      assert_push "cursor", %{client: ^mine, x: 120, y: -40.5}
+
+      push(socket, "cursor", %{})
+      assert_push "cursor", %{client: ^mine, x: nil}
+    end
+
+    test "what is dragged goes to the others, from those who may edit", %{
+      owner: owner,
+      flow: flow,
+      workspace: workspace
+    } do
+      {:ok, %{client: mine}, socket} = join_as(owner, flow)
+      {:ok, _reply, viewer} = join_as(member(workspace, "viewer"), flow)
+
+      push(socket, "drag", %{"positions" => %{"1" => %{"x" => 5, "y" => 6}}})
+      assert_push "drag", %{client: ^mine, positions: %{"1" => %{"x" => 5}}}
+
+      push(viewer, "drag", %{"positions" => %{"1" => %{"x" => 9, "y" => 9}}})
+      refute_push "drag", %{positions: %{"1" => %{"x" => 9}}}
+    end
+
+    test "what someone selects and has open is part of their presence", %{
+      owner: owner,
+      flow: flow
+    } do
+      {:ok, %{client: client}, socket} = join_as(owner, flow)
+
+      push(socket, "focus", %{"selected" => ["1", 7], "editing" => "1"})
+      _ = :sys.get_state(socket.channel_pid)
+
+      assert %{metas: [%{selected: ["1"], editing: "1"}]} =
+               HeddleUI.FlowPresence.list("canvas:#{flow.id}")[client]
+    end
+
+    test "the agent is there while it works", %{owner: owner, flow: flow} do
+      {:ok, _reply, _socket} = join_as(owner, flow)
+
+      :ok = HeddleUI.FlowPresence.track_agent(flow.id, owner)
+      key = "agent:#{owner.id}"
+
+      assert %{metas: [%{kind: "agent", user_id: user_id}]} =
+               HeddleUI.FlowPresence.list("canvas:#{flow.id}")[key]
+
+      assert user_id == owner.id
+
+      HeddleUI.FlowPresence.untrack_agent(flow.id, owner)
+      refute Map.has_key?(HeddleUI.FlowPresence.list("canvas:#{flow.id}"), key)
+    end
+
+    test "what the agent of the editor changes says so", %{owner: owner, flow: flow} do
+      {:ok, _reply, _socket} = join_as(owner, flow)
+
+      {:ok, _flow} =
+        Flows.update_flow(
+          HeddleCore.Accounts.Scope.for_user(owner),
+          flow,
+          %{nodes: [@start, @output]},
+          client: "agent"
+        )
+
+      assert_push "ops", %{client: "agent"}
+    end
   end
 end

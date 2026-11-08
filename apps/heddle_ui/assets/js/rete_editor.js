@@ -71,6 +71,7 @@ export async function createEditor(container, { readOnly = false } = {}) {
         updateNodeSelectionVisuals();
     };
     const updateNodeSelectionVisuals = () => {
+        if (editor.triggerSelection) editor.triggerSelection([...selectedNodeIds]);
         for (const node of editor.getNodes()) {
             const sel = selectedNodeIds.has(node.id);
             node.selected = sel;
@@ -307,6 +308,16 @@ export async function createEditor(container, { readOnly = false } = {}) {
         dragGroup = { anchor: nodeId, ids: [...ids] };
         window.addEventListener('pointerup', () => { dragGroup = null; }, { once: true });
     };
+
+    // Others see what this person drags as it moves, and the canvas follows them.
+    area.addPipe((context) => {
+        if (!context) return context;
+        if ((context.type === 'translated' || context.type === 'zoomed') && editor.triggerView) editor.triggerView();
+        if (context.type === 'nodetranslated' && !isRestoring && !isImportingData && editor.triggerDrag) {
+            editor.triggerDrag(context.data.id, context.data.position);
+        }
+        return context;
+    });
 
     area.addPipe(async (context) => {
         if (!context || context.type !== 'nodetranslated') return context;
@@ -1344,6 +1355,69 @@ export async function createEditor(container, { readOnly = false } = {}) {
         },
         // What the canvas holds, as it would be saved.
         snapshot: () => getSnapshot(),
+        onSelection: (cb) => {
+            editor.triggerSelection = cb;
+        },
+        onDrag: (cb) => {
+            editor.triggerDrag = cb;
+        },
+        onView: (cb) => {
+            editor.triggerView = cb;
+        },
+        // From the canvas's units to the container's pixels, and back.
+        toScreen: ({ x, y }) => {
+            const { k, x: tx, y: ty } = area.area.transform;
+            return { x: x * k + tx, y: y * k + ty };
+        },
+        toCanvas: (clientX, clientY) => {
+            const rect = container.getBoundingClientRect();
+            const { k, x: tx, y: ty } = area.area.transform;
+            return { x: (clientX - rect.left - tx) / k, y: (clientY - rect.top - ty) / k };
+        },
+        // Brings a point of the canvas to the middle of the view, as when following someone.
+        centerOn: async ({ x, y }) => {
+            const rect = container.getBoundingClientRect();
+            const { k } = area.area.transform;
+            await area.area.translate(rect.width / 2 - x * k, rect.height / 2 - y * k);
+        },
+        // Moves what someone else drags, as it moves. It isn't a change of this person.
+        previewMove: async (positions) => {
+            isImportingData = true;
+            try {
+                for (const [id, position] of Object.entries(positions)) {
+                    if (area.nodeViews.get(id) && position && typeof position.x === 'number') {
+                        await area.translate(id, position);
+                    }
+                }
+            } finally {
+                setTimeout(() => { isImportingData = false; }, 0);
+            }
+        },
+        // Rings the nodes others have selected or open, in their colors: { id: color }.
+        setRemoteMarks: async (marks) => {
+            for (const node of editor.getNodes()) {
+                const mark = marks?.[node.id] || null;
+                if ((node.remote || null) === mark) continue;
+                node.remote = mark;
+                const element = area.nodeViews.get(node.id)?.element;
+                const target = element?.querySelector('custom-node, custom-comment');
+                if (target) {
+                    target.style.setProperty('--remote-color', mark || 'transparent');
+                    target.classList.toggle('remote-marked', !!mark);
+                }
+            }
+        },
+        // Lights up for a moment the nodes someone else just changed, in their color.
+        flash: (ids, color) => {
+            for (const id of ids) {
+                const target = area.nodeViews.get(id)?.element?.querySelector('custom-node, custom-comment');
+                if (!target) continue;
+                target.style.setProperty('--flash-color', color);
+                target.classList.remove('remote-flash');
+                void target.offsetWidth;
+                target.classList.add('remote-flash');
+            }
+        },
         // Undo and redo go to `{ undo, redo }` instead of the canvas's own history.
         setHistory: (handlers) => {
             history = handlers;
