@@ -48,6 +48,7 @@ The **AI** page shows the command with your address filled in. On a local instal
 | `list_executions` | Lists the runs of a flow |
 | `get_execution` | Reads a run |
 | `list_versions` | Lists the versions, with who made each and what changed |
+| `list_spool_tables` | Lists the Spool tables of the workspace, with their columns |
 | `publish_flow` | Publishes the draft, or puts an older version back |
 | `restore_version` | Puts a version in the draft |
 | `chat` | Talks to Heddle's own agent, which answers with this server's model |

@@ -23,6 +23,7 @@ defmodule HeddleUI.MCP.Server do
   component(Tools.RunFlow)
   component(Tools.TestFlow)
   component(Tools.ListVersions)
+  component(Tools.ListSpoolTables)
   component(Tools.PublishFlow)
   component(Tools.RestoreVersion)
   component(Tools.Chat)

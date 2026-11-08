@@ -1,11 +1,11 @@
 ---
 title: Disparando fluxos
-description: Rode um fluxo por webhook, num horário, pela API ou quando outro fluxo falha.
+description: Rode um fluxo por webhook, por um formulário, num horário, pela API ou quando outro fluxo falha.
 sidebar:
   order: 2
 ---
 
-**Run Flow** no editor é para testar. Em produção, os fluxos começam sozinhos: por um webhook, num horário, pela API ou quando outro fluxo falha. Todos esses rodam a [versão publicada](/pt/docs/concepts/versions/), então publique antes.
+**Run Flow** no editor é para testar. Em produção, os fluxos começam sozinhos: por um webhook, quando alguém envia um formulário, num horário, pela API ou quando outro fluxo falha. Todos esses rodam a [versão publicada](/pt/docs/concepts/versions/), então publique antes.
 
 ## Webhooks
 
@@ -47,6 +47,26 @@ O endereço de um webhook é público. Para aceitar só as chamadas que você es
 | Case 1 | o segredo |
 
 Ligue o resto do fluxo em `case 1`, e um **Respond to Webhook** com status `401` em `otherwise`.
+
+## Formulários
+
+O [Form Trigger](/pt/docs/nodes/form-trigger/) dá ao fluxo um formulário que qualquer pessoa com o link pode preencher: um cliente, um lead, um colega sem conta. O painel do nó monta o formulário. Cada campo tem uma **pergunta**, um **tipo** (texto curto, texto longo, e-mail, número, data, escolha ou caixa de seleção), uma **chave** e se é **obrigatório**. A chave acompanha a pergunta até você escrever uma sua.
+
+O link fica no topo do painel, com **Copiar**, **Abrir** e **Testar o rascunho**. Como o webhook, ele mostra o que está publicado, então publique antes de compartilhar. Ele continua o mesmo quando você publica de novo, e **Novo link** troca o link quando o antigo vazou.
+
+O que a pessoa envia fica na execução em `form`, pela chave, e em `result` logo depois do gatilho:
+
+```text
+{{form.email}}    ana@example.com
+{{form.plan}}     Pro
+{{form.terms}}    true
+```
+
+O Heddle confere cada resposta antes de a execução começar: um campo obrigatório precisa estar preenchido, um e-mail precisa parecer um, um número é um número e uma escolha é uma das opções. A caixa de seleção vem como `true` ou `false`, o número como número, e a data como `2026-11-08`.
+
+Depois de enviar, a pessoa vê a **Message after sending**, ou vai para o endereço em **Then go to**. **Accepting answers** em `No` fecha o formulário assim que publicado. A página segue o idioma e o tema de quem a abre, e uma pessoa pode enviar o mesmo formulário dez vezes por minuto.
+
+Para guardar as respostas, ligue um [Spool: Insert Rows](/pt/docs/nodes/spool-insert-rows/) com **Rows** igual a `{{form}}`. **Criar tabela no Spool**, no painel, cria uma tabela com uma coluna para cada campo. Veja [Spool](/pt/docs/guides/spool/).
 
 ## Agendamentos
 

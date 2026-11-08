@@ -45,18 +45,17 @@ defmodule HeddleUI.Layouts do
     ~H"""
     <div class="flex h-screen w-full bg-gray-50 dark:bg-slate-950 overflow-hidden">
       <%= if @current_scope && @current_scope.user do %>
-        <aside class="w-20 lg:w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 flex flex-col items-center lg:items-start py-6 shadow-sm z-20 transition-all duration-300">
-          <div class="px-0 lg:px-6 w-full flex justify-center lg:justify-start mb-6">
+        <aside
+          id="sidebar"
+          class="w-20 lg:w-64 shrink-0 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 flex flex-col z-20"
+        >
+          <div class="h-16 shrink-0 px-0 lg:px-5 flex items-center justify-center lg:justify-start">
             <.link
               navigate={~p"/"}
-              class="flex items-center gap-2 group transition-opacity hover:opacity-80"
+              class="flex items-center gap-2.5 rounded-lg transition-opacity hover:opacity-80"
             >
-              <img
-                src={~p"/images/logo.png"}
-                alt="Heddle"
-                class="w-10 h-10 lg:w-8 lg:h-8 object-contain"
-              />
-              <span class="hidden lg:block text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 tracking-tight">
+              <img src={~p"/images/logo.png"} alt="Heddle" class="size-9 lg:size-7 object-contain" />
+              <span class="hidden lg:block text-lg font-semibold tracking-tight text-gray-900 dark:text-white">
                 Heddle
               </span>
             </.link>
@@ -64,29 +63,45 @@ defmodule HeddleUI.Layouts do
 
           <.workspace_switcher scope={@current_scope} workspaces={assigns[:workspaces] || []} />
 
-          <nav id="sidebar-nav" class="flex-1 w-full px-3 lg:px-4 space-y-1 overflow-y-auto">
-            <.nav_link
-              id="nav-dashboard"
-              navigate={~p"/"}
-              icon="hero-home"
-              label={gettext("Dashboard")}
-              active={@section == :dashboard}
-            />
-            <%= if @current_scope.workspace do %>
+          <nav id="sidebar-nav" class="flex-1 w-full overflow-y-auto px-3 pb-4">
+            <.nav_group id="nav-group-main">
               <.nav_link
-                id="nav-flows"
-                navigate={~p"/flows"}
-                icon="hero-squares-2x2"
-                label={gettext("Flows")}
-                active={@section == :flows}
+                id="nav-dashboard"
+                navigate={~p"/"}
+                icon="hero-home"
+                label={gettext("Dashboard")}
+                active={@section == :dashboard}
               />
-              <.nav_link
-                id="nav-executions"
-                navigate={~p"/executions"}
-                icon="hero-queue-list"
-                label={gettext("Executions")}
-                active={@section == :executions}
-              />
+              <%= if @current_scope.workspace do %>
+                <.nav_link
+                  id="nav-flows"
+                  navigate={~p"/flows"}
+                  icon="hero-squares-2x2"
+                  label={gettext("Flows")}
+                  active={@section == :flows}
+                />
+                <.nav_link
+                  id="nav-executions"
+                  navigate={~p"/executions"}
+                  icon="hero-queue-list"
+                  label={gettext("Executions")}
+                  active={@section == :executions}
+                />
+                <.nav_link
+                  id="nav-spool"
+                  navigate={~p"/spool"}
+                  icon="hero-circle-stack"
+                  label="Spool"
+                  active={@section == :spool}
+                />
+              <% end %>
+            </.nav_group>
+
+            <.nav_group
+              :if={@current_scope.workspace}
+              id="nav-group-workspace"
+              label={gettext("Workspace")}
+            >
               <.nav_link
                 id="nav-credentials"
                 navigate={~p"/credentials"}
@@ -108,12 +123,13 @@ defmodule HeddleUI.Layouts do
                 label={gettext("Members")}
                 active={@section == :workspace}
               />
-            <% end %>
-            <%= if HeddleCore.Accounts.User.system_admin?(@current_scope.user) do %>
-              <p class="hidden lg:block px-3 pt-5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                {gettext("Instance")}
-              </p>
-              <div class="lg:hidden my-3 mx-auto w-8 border-t border-gray-200 dark:border-slate-800" />
+            </.nav_group>
+
+            <.nav_group
+              :if={HeddleCore.Accounts.User.system_admin?(@current_scope.user)}
+              id="nav-group-instance"
+              label={gettext("Instance")}
+            >
               <.nav_link
                 id="nav-ai"
                 navigate={~p"/ai"}
@@ -135,100 +151,10 @@ defmodule HeddleUI.Layouts do
                 label={gettext("Users")}
                 active={@section == :users}
               />
-            <% end %>
+            </.nav_group>
           </nav>
 
-          <div class="px-3 lg:px-4 w-full mt-auto">
-            <div class="hidden lg:block w-full text-xs text-gray-500 dark:text-gray-400 px-2 mt-4">
-              <form id="locale-form" phx-change="change_locale" class="w-full">
-                <label for="locale-select" class="sr-only">Language</label>
-                <select
-                  id="locale-select"
-                  name="locale"
-                  class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-md text-gray-600 dark:text-gray-400 py-1.5 px-2 text-xs focus:ring-1 focus:ring-primary"
-                  onchange="window.location.href = '?locale=' + this.value"
-                >
-                  <option value="en" selected={@locale == "en"}>English</option>
-
-                  <option value="pt_BR" selected={@locale == "pt_BR"}>Português (BR)</option>
-                </select>
-              </form>
-            </div>
-
-            <div class="hidden lg:flex w-full mt-4 justify-between items-center text-xs text-gray-500 dark:text-gray-400 px-2">
-              <span>{gettext("Theme")}</span> <.theme_toggle />
-            </div>
-
-            <div class="mt-6 pt-6 border-t border-gray-100 dark:border-slate-800">
-              <div class="relative group" id="user-menu-root">
-                <.button
-                  id="user-menu-button"
-                  variant="ghost"
-                  phx-click={
-                    JS.toggle(
-                      to: "#user-menu-dropdown",
-                      in:
-                        {"transition ease-out duration-100", "transform opacity-0 scale-95",
-                         "transform opacity-100 scale-100"},
-                      out:
-                        {"transition ease-in duration-75", "transform opacity-100 scale-100",
-                         "transform opacity-0 scale-95"}
-                    )
-                  }
-                  class="w-full !justify-start p-2 rounded-xl"
-                >
-                  <div class="flex items-center w-full">
-                    <div class="flex-shrink-0">
-                      <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-content font-bold text-sm shadow-sm">
-                        {String.at(@current_scope.user.username || @current_scope.user.email, 0)
-                        |> String.upcase()}
-                      </div>
-                    </div>
-
-                    <div class="hidden lg:block ml-3 text-left overflow-hidden">
-                      <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                        {@current_scope.user.username || "User"}
-                      </p>
-
-                      <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {@current_scope.user.email}
-                      </p>
-                    </div>
-
-                    <div class="hidden lg:block ml-auto">
-                      <.icon
-                        name="hero-chevron-down-mini"
-                        class="size-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors"
-                      />
-                    </div>
-                  </div>
-                </.button>
-                <div
-                  id="user-menu-dropdown"
-                  class="absolute bottom-full left-0 mb-2 w-full bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden z-50 hidden"
-                  phx-click-away={JS.hide(to: "#user-menu-dropdown")}
-                >
-                  <div class="p-2 space-y-1">
-                    <.link
-                      navigate={~p"/users/settings"}
-                      class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                    >
-                      <.icon name="hero-cog-6-tooth" class="size-4" /> {gettext("Settings")}
-                    </.link>
-                    <.link
-                      href={~p"/users/log-out"}
-                      method="delete"
-                      class="flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"
-                    >
-                      <.icon name="hero-arrow-right-on-rectangle" class="size-4" /> {gettext(
-                        "Log out"
-                      )}
-                    </.link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <.user_menu user={@current_scope.user} section={@section} />
         </aside>
       <% end %>
 
@@ -298,7 +224,7 @@ defmodule HeddleUI.Layouts do
       navigate={@navigate}
       aria-current={@active && "page"}
       class={[
-        "flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 rounded-lg transition-all group",
+        "flex items-center justify-center lg:justify-start gap-3 px-3 py-2 rounded-lg transition-colors duration-150 group",
         if(@active,
           do: "bg-primary/10 text-primary",
           else:
@@ -320,6 +246,128 @@ defmodule HeddleUI.Layouts do
     </.link>
     """
   end
+
+  attr :id, :string, required: true
+  attr :label, :string, default: nil
+  slot :inner_block, required: true
+
+  # A part of the sidebar. A label names it on wide screens, a line on narrow ones.
+  defp nav_group(assigns) do
+    ~H"""
+    <div id={@id} class={["space-y-0.5", @label && "pt-5"]}>
+      <%= if @label do %>
+        <p class="hidden lg:block px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          {@label}
+        </p>
+        <div class="lg:hidden mx-auto mb-3 w-8 border-t border-gray-200 dark:border-slate-800" />
+      <% end %>
+      {render_slot(@inner_block)}
+    </div>
+    """
+  end
+
+  attr :user, :map, required: true
+  attr :section, :atom, default: nil
+
+  # Who is signed in, with their preferences, their account and the way out.
+  defp user_menu(assigns) do
+    ~H"""
+    <div class="shrink-0 w-full px-3 py-3 border-t border-gray-200 dark:border-slate-800">
+      <div class="relative" id="user-menu-root">
+        <button
+          id="user-menu-button"
+          type="button"
+          aria-haspopup="menu"
+          phx-click={
+            JS.toggle(
+              to: "#user-menu-dropdown",
+              in:
+                {"transition ease-out duration-100", "opacity-0 translate-y-1",
+                 "opacity-100 translate-y-0"},
+              out:
+                {"transition ease-in duration-75", "opacity-100 translate-y-0",
+                 "opacity-0 translate-y-1"}
+            )
+          }
+          class="group w-full flex items-center justify-center lg:justify-start gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+        >
+          <span class="shrink-0 size-9 rounded-lg bg-primary text-primary-content flex items-center justify-center text-sm font-semibold">
+            {initial(@user.username || @user.email)}
+          </span>
+          <span class="hidden lg:block min-w-0 flex-1 text-left">
+            <span class="block text-sm font-medium text-gray-900 dark:text-white truncate">
+              {@user.username || @user.email}
+            </span>
+            <span class="block text-xs text-gray-500 dark:text-gray-400 truncate">
+              {@user.email}
+            </span>
+          </span>
+          <.icon
+            name="hero-chevron-up-down-mini"
+            class="hidden lg:block size-4 shrink-0 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors"
+          />
+        </button>
+
+        <div
+          id="user-menu-dropdown"
+          role="menu"
+          class="hidden absolute bottom-full left-0 mb-2 w-56 lg:w-full bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 overflow-hidden z-50"
+          phx-click-away={JS.hide(to: "#user-menu-dropdown")}
+        >
+          <div class="p-1.5 space-y-0.5">
+            <.user_menu_link
+              id="user-menu-preferences"
+              navigate={~p"/users/preferences"}
+              icon="hero-adjustments-horizontal"
+              label={gettext("Preferences")}
+            />
+            <.user_menu_link
+              id="user-menu-settings"
+              navigate={~p"/users/settings"}
+              icon="hero-user-circle"
+              label={gettext("Account")}
+            />
+            <div class="my-1 border-t border-gray-100 dark:border-slate-800" />
+            <.link
+              id="user-menu-log-out"
+              href={~p"/users/log-out"}
+              method="delete"
+              class="flex items-center gap-3 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+            >
+              <.icon name="hero-arrow-right-on-rectangle" class="size-4" /> {gettext("Log out")}
+            </.link>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :navigate, :string, required: true
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+
+  defp user_menu_link(assigns) do
+    ~H"""
+    <.link
+      id={@id}
+      navigate={@navigate}
+      role="menuitem"
+      class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+    >
+      <.icon name={@icon} class="size-4 text-gray-500 dark:text-gray-400" /> {@label}
+    </.link>
+    """
+  end
+
+  @doc "The `lang` of the page, from a Gettext locale: `pt_BR` is `pt-BR`."
+  def html_lang(locale) when is_binary(locale), do: String.replace(locale, "_", "-")
+  def html_lang(_locale), do: "en"
+
+  @doc "The theme the signed-in person chose, which the root layout applies."
+  def user_theme(%{user: %{theme: theme}}) when is_binary(theme), do: theme
+  def user_theme(_scope), do: nil
 
   attr :scope, :map, required: true
   attr :workspaces, :list, required: true
@@ -450,44 +498,11 @@ defmodule HeddleUI.Layouts do
   defp nav_section("/ai"), do: :ai
   defp nav_section("/flows" <> _), do: :flows
   defp nav_section("/executions" <> _), do: :executions
+  defp nav_section("/spool" <> _), do: :spool
   defp nav_section("/api-keys"), do: :api_keys
   defp nav_section("/credentials"), do: :credentials
   defp nav_section("/users"), do: :users
   defp nav_section("/workspace"), do: :workspace
   defp nav_section("/workspaces"), do: :workspaces
   defp nav_section(_path), do: nil
-
-  @doc """
-  Provides dark vs light theme toggle based on themes defined in app.css.
-
-  See <head> in root.html.heex which applies the theme before page load.
-  """
-  def theme_toggle(assigns) do
-    ~H"""
-    <div class="card relative flex flex-row items-center border-2 border-base-300 bg-base-300 rounded-full">
-      <div class="absolute w-1/3 h-full rounded-full border-1 border-base-200 bg-base-100 brightness-200 left-0 [[data-theme=light]_&]:left-1/3 [[data-theme=dark]_&]:left-2/3 transition-[left]" />
-      <button
-        class="flex p-2 cursor-pointer w-1/3"
-        phx-click={JS.dispatch("phx:set-theme")}
-        data-phx-theme="system"
-      >
-        <.icon name="hero-computer-desktop-micro" class="size-4 opacity-75 hover:opacity-100" />
-      </button>
-      <button
-        class="flex p-2 cursor-pointer w-1/3"
-        phx-click={JS.dispatch("phx:set-theme")}
-        data-phx-theme="light"
-      >
-        <.icon name="hero-sun-micro" class="size-4 opacity-75 hover:opacity-100" />
-      </button>
-      <button
-        class="flex p-2 cursor-pointer w-1/3"
-        phx-click={JS.dispatch("phx:set-theme")}
-        data-phx-theme="dark"
-      >
-        <.icon name="hero-moon-micro" class="size-4 opacity-75 hover:opacity-100" />
-      </button>
-    </div>
-    """
-  end
 end

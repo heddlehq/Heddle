@@ -61,6 +61,8 @@ defmodule HeddleUI.ApiKeyLive.IndexTest do
 
       assert html =~ "Copy this token now"
       assert html =~ "hd_live_"
+      # Its own id, so the browser doesn't keep the name typed in it.
+      assert has_element?(lv, "#api-key-token[value^='hd_live_']")
       assert html =~ "Deploy key"
       assert html =~ "flows:read"
       assert html =~ "flows:write"

@@ -16,6 +16,7 @@ defmodule HeddleUI.Application do
       {DynamicSupervisor, name: HeddleUI.Agent.supervisor(), strategy: :one_for_one},
       {Task.Supervisor, name: HeddleUI.Agent.task_supervisor()},
       HeddleUI.FlowPresence,
+      HeddleUI.FormRateLimit,
       {HeddleUI.MCP.Server,
        transport: {:streamable_http, start: true},
        request_timeout: HeddleUI.MCP.Server.request_timeout()},

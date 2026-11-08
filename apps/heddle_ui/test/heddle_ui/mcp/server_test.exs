@@ -128,11 +128,37 @@ defmodule HeddleUI.MCP.ServerTest do
       assert "list_versions" in names
       assert "publish_flow" in names
       assert "restore_version" in names
+      assert "list_spool_tables" in names
       refute Enum.any?(names, &(&1 =~ "delete"))
     end
   end
 
   describe "reading" do
+    test "lists the Spool tables of the key's workspace, with their columns", %{
+      conn: conn,
+      user: user,
+      scope: scope
+    } do
+      {:ok, _table} =
+        HeddleCore.Spool.create_table(scope, %{
+          "name" => "leads",
+          "columns" => [%{"name" => "email"}, %{"name" => "score", "type" => "number"}]
+        })
+
+      {:ok, _other} = HeddleCore.Spool.create_table(user_scope_fixture(), %{"name" => "theirs"})
+
+      assert %{"tables" => [table]} = payload(call(conn, token(user), "list_spool_tables"))
+
+      assert table == %{
+               "name" => "leads",
+               "rows" => 0,
+               "columns" => [
+                 %{"name" => "email", "type" => "text"},
+                 %{"name" => "score", "type" => "number"}
+               ]
+             }
+    end
+
     test "lists only the flows of the key's workspace", %{conn: conn, user: user, scope: scope} do
       {:ok, flow} = Flows.create_flow(scope, %{name: "Mine", nodes: [], connections: []})
 

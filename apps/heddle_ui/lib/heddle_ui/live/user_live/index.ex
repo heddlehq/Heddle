@@ -46,11 +46,6 @@ defmodule HeddleUI.UserLive.Index do
   end
 
   @impl true
-  def handle_event("change_locale", %{"locale" => locale}, socket) do
-    {:noreply, redirect(socket, to: ~p"/users?locale=#{locale}")}
-  end
-
-  @impl true
   def render(assigns) do
     ~H"""
     <div class="p-6 md:p-8 w-full max-w-7xl mx-auto">

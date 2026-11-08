@@ -311,32 +311,32 @@ const hooks = {
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: { _csrf_token: csrfToken },
+  // The theme this browser shows, which the preferences page marks until the person
+  // saves one of their own.
+  params: () => ({ _csrf_token: csrfToken, theme: document.documentElement.dataset.themeChoice }),
   hooks: hooks,
 })
 
 const primaryColor = getComputedStyle(document.documentElement).getPropertyValue("--color-primary").trim()
 topbar.config({ barColors: { 0: primaryColor }, shadowColor: "rgba(0, 0, 0, .3)" })
+// Copies the value of the element `detail.to` names, and marks the button that asked
+// with data-copied for a moment, which its classes can show.
+window.addEventListener("phx:copy", (e) => {
+  const source = e.detail?.to && document.querySelector(e.detail.to)
+  if (!source || !navigator.clipboard) return
+  navigator.clipboard.writeText(source.value ?? source.textContent).then(() => {
+    e.target.dataset.copied = "true"
+    setTimeout(() => delete e.target.dataset.copied, 1500)
+  })
+})
+
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
 liveSocket.connect()
 
-function initTheme() {
-  const savedTheme = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const html = document.documentElement;
-
-  if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-    html.classList.add('dark');
-    html.setAttribute('data-theme', 'dark');
-  } else {
-    html.classList.remove('dark');
-    html.setAttribute('data-theme', 'light');
-  }
-}
-
-initTheme();
+// The theme is the root layout's: what the person chose, or this browser, or the
+// device. See root.html.heex.
 
 window.liveSocket = liveSocket
 

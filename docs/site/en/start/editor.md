@@ -55,3 +55,7 @@ When an AI is set up, the chat at the bottom right builds and changes flows for 
 ## The terminal
 
 On local installs, an admin can turn on the **Terminal** in the **AI** page. It opens Claude Code in the editor, already connected to this Heddle through MCP. See [MCP](/docs/reference/mcp/).
+
+## Language and theme
+
+The menu under your name, at the bottom of the sidebar, opens **Preferences**: the language of the interface, or the one of your browser, and a light, dark or system theme. They are saved with your account, so they follow you to any browser.

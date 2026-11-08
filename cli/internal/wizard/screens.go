@@ -131,6 +131,8 @@ func buildScreens() []*screen {
 		treadleKeyScreen(),
 		concurrencyScreen(),
 		rescueScreen(),
+		spoolTablesScreen(),
+		spoolRowsScreen(),
 		finishScreen(),
 		reviewScreen(),
 	}
@@ -625,6 +627,48 @@ func rescueScreen() *screen {
 		apply: func(m *model, value string) {
 			if amount, _ := strconv.Atoi(strings.TrimSpace(value)); amount != 60 {
 				m.plan.RescueMinutes = amount
+			}
+		},
+	}
+}
+
+// Spool is the database Heddle keeps for each workspace. Docker reads these from
+// .env too, so they reach either install.
+func spoolTablesScreen() *screen {
+	return &screen{
+		id: "spool-tables", section: sectionFinish, kind: kindInput, advanced: true, when: heddle,
+		title: static(text.T("How many Spool tables can a workspace keep?", "Quantas tabelas do Spool um workspace pode ter?")),
+		hint:  static(text.T("Spool keeps tables inside Heddle's own database, for forms and flows.", "O Spool guarda tabelas no próprio banco do Heddle, para formulários e flows.")),
+		value: func(m *model) string {
+			if m.plan.SpoolMaxTables > 0 {
+				return strconv.Itoa(m.plan.SpoolMaxTables)
+			}
+			return "50"
+		},
+		validate: positive,
+		apply: func(m *model, value string) {
+			if amount, _ := strconv.Atoi(strings.TrimSpace(value)); amount != 50 {
+				m.plan.SpoolMaxTables = amount
+			}
+		},
+	}
+}
+
+func spoolRowsScreen() *screen {
+	return &screen{
+		id: "spool-rows", section: sectionFinish, kind: kindInput, advanced: true, when: heddle,
+		title: static(text.T("How many rows can a Spool table keep?", "Quantas linhas uma tabela do Spool pode ter?")),
+		hint:  static(text.T("A public form can fill a table quickly, so this keeps one from filling the database.", "Um formulário público pode encher uma tabela depressa, então isso impede que uma tabela lote o banco.")),
+		value: func(m *model) string {
+			if m.plan.SpoolMaxRows > 0 {
+				return strconv.Itoa(m.plan.SpoolMaxRows)
+			}
+			return "100000"
+		},
+		validate: positive,
+		apply: func(m *model, value string) {
+			if amount, _ := strconv.Atoi(strings.TrimSpace(value)); amount != 100000 {
+				m.plan.SpoolMaxRows = amount
 			}
 		},
 	}

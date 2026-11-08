@@ -1,0 +1,63 @@
+{
+  "name": "Contact form saved to Spool",
+  "nodes": [
+    {
+      "id": "form",
+      "type": "Form Trigger",
+      "label": "Contact form",
+      "controls": {
+        "title": "Talk to us",
+        "description": "We answer within one business day.",
+        "fields": "[{\"key\":\"name\",\"label\":\"Name\",\"type\":\"text\",\"required\":true},{\"key\":\"email\",\"label\":\"Email\",\"type\":\"email\",\"required\":true},{\"key\":\"topic\",\"label\":\"Topic\",\"type\":\"select\",\"required\":true,\"options\":[\"Sales\",\"Support\",\"Other\"]},{\"key\":\"message\",\"label\":\"Message\",\"type\":\"textarea\",\"required\":true,\"placeholder\":\"How can we help?\"}]",
+        "submit_label": "Send",
+        "success_message": "Thanks! We got your message and will write back soon.",
+        "redirect_url": "",
+        "accepting": "yes"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "save",
+      "type": "Spool: Insert Rows",
+      "label": "Save the message",
+      "controls": {
+        "table": "contacts",
+        "rows": "{{form}}"
+      },
+      "position": {
+        "x": 300,
+        "y": 0
+      }
+    },
+    {
+      "id": "done",
+      "type": "Output",
+      "label": "Done",
+      "controls": {
+        "status": "completed"
+      },
+      "position": {
+        "x": 600,
+        "y": 0
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "form",
+      "sourceOutput": "exec",
+      "target": "save",
+      "targetInput": "exec"
+    },
+    {
+      "source": "save",
+      "sourceOutput": "success",
+      "target": "done",
+      "targetInput": "exec"
+    }
+  ],
+  "comments": []
+}

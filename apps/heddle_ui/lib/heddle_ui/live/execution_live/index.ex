@@ -18,11 +18,6 @@ defmodule HeddleUI.ExecutionLive.Index do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
 
-  @impl true
-  def handle_event("change_locale", %{"locale" => locale}, socket) do
-    {:noreply, redirect(socket, to: ~p"/?locale=#{locale}")}
-  end
-
   defp apply_action(socket, :show, %{"public_id" => public_id}) do
     scope = socket.assigns.current_scope
 
