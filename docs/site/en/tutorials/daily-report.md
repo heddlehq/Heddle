@@ -7,7 +7,9 @@ sidebar:
 
 Every weekday at 08:00 in São Paulo, Heddle reads yesterday's orders, writes them into a CSV and emails it to the sales team. If the database is down, it says so on Slack.
 
-**You will use** [Schedule](/docs/nodes/schedule/), [SQL: Select Rows](/docs/nodes/sql-select-rows/), [Write CSV](/docs/nodes/write-csv/), [Email: Send Email](/docs/nodes/email-send-email/), [Slack: Send Message](/docs/nodes/slack-send-message/). **Import it:** [daily-report.json](/docs/examples/daily-report.json).
+**You will use** [Schedule](/docs/nodes/schedule/), [SQL: Select Rows](/docs/nodes/sql-select-rows/), [Write CSV](/docs/nodes/write-csv/), [Email: Send Email](/docs/nodes/email-send-email/), [Slack: Send Message](/docs/nodes/slack-send-message/).
+
+<!-- flow:daily-report -->
 
 ## Before you start
 

@@ -7,7 +7,9 @@ sidebar:
 
 Os chamados chegam do seu help desk por webhook. A IA lê cada um e decide se é sobre cobrança, bug ou vendas, e o Heddle manda para o canal do Slack desse time. O resto vai para o #suporte.
 
-**Você vai usar** [Webhook](/pt/docs/nodes/webhook/), [Respond to Webhook](/pt/docs/nodes/respond-to-webhook/), [AI: Classify](/pt/docs/nodes/ai-classify/), [Switch](/pt/docs/nodes/switch/), [Slack: Send Message](/pt/docs/nodes/slack-send-message/). **Importe:** [support-triage.json](/docs/examples/support-triage.json).
+**Você vai usar** [Webhook](/pt/docs/nodes/webhook/), [Respond to Webhook](/pt/docs/nodes/respond-to-webhook/), [AI: Classify](/pt/docs/nodes/ai-classify/), [Switch](/pt/docs/nodes/switch/), [Slack: Send Message](/pt/docs/nodes/slack-send-message/).
+
+<!-- flow:support-triage -->
 
 ## Antes de começar
 

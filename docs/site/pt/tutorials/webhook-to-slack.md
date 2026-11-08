@@ -7,7 +7,9 @@ sidebar:
 
 Um formulário no seu site manda cada lead novo para o Heddle. O Heddle avisa o **#vendas** no Slack e responde ao formulário, que pode mostrar "obrigado" ou um erro.
 
-**Você vai usar** [Webhook](/pt/docs/nodes/webhook/), [Slack: Send Message](/pt/docs/nodes/slack-send-message/), [Respond to Webhook](/pt/docs/nodes/respond-to-webhook/). **Importe:** [webhook-to-slack.json](/docs/examples/webhook-to-slack.json).
+**Você vai usar** [Webhook](/pt/docs/nodes/webhook/), [Slack: Send Message](/pt/docs/nodes/slack-send-message/), [Respond to Webhook](/pt/docs/nodes/respond-to-webhook/).
+
+<!-- flow:webhook-to-slack -->
 
 ## Antes de começar
 

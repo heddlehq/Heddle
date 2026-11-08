@@ -7,7 +7,9 @@ sidebar:
 
 Chega um pedido de reembolso. O Heddle pergunta ao #financeiro no Slack, com um link para aprovar e um para recusar, e espera. Quando alguém clica, a execução continua: chama a API de pagamentos ou avisa que foi recusado. Se ninguém decidir em 24 horas, ele avisa.
 
-**Você vai usar** [Webhook](/pt/docs/nodes/webhook/), [Slack: Send Message](/pt/docs/nodes/slack-send-message/), [Wait](/pt/docs/nodes/wait/), [Switch](/pt/docs/nodes/switch/), [HTTP Request](/pt/docs/nodes/http-request/). **Importe:** [refund-approval.json](/docs/examples/refund-approval.json).
+**Você vai usar** [Webhook](/pt/docs/nodes/webhook/), [Slack: Send Message](/pt/docs/nodes/slack-send-message/), [Wait](/pt/docs/nodes/wait/), [Switch](/pt/docs/nodes/switch/), [HTTP Request](/pt/docs/nodes/http-request/).
+
+<!-- flow:refund-approval -->
 
 ## 1. Receba o pedido
 
