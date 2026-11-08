@@ -189,11 +189,8 @@ const hooks = {
 
       editor.onInspect((nodeId) => this.pushEvent("inspector_select_node", { node_id: nodeId }));
 
-      this.handleEvent("update_node_code", ({ nodeId, code_elixir, code_python, fieldName }) => {
-        if (editor.updateNodeCode) {
-          editor.updateNodeCode(nodeId, code_elixir, code_python, fieldName);
-        }
-      });
+      this.handleEvent("update_node_code", inOrder(({ nodeId, code_elixir, code_python, fieldName }) =>
+        editor.updateNodeCode?.(nodeId, code_elixir, code_python, fieldName)));
 
       this.handleEvent("update_node_data", ({ nodeId, data }) => {
         if (editor.updateNodeData) {

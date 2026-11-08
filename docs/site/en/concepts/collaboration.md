@@ -30,6 +30,10 @@ Changes are saved a moment after they are made, and **Saving...** shows next to 
 
 **Ctrl+Z** takes back your own last change, never someone else's. If someone changed the same thing after you, undoing puts back what you had, over theirs.
 
+## In the terminal
+
+[Treadle](https://github.com/heddlehq/Treadle), the terminal editor, edits the same flow live. Whoever has it open there shows up like anyone else: an avatar, rings on the nodes they selected, and a cursor on the one they are on. They see you too, with your cursor. Anything else that edits through the API can do the same, see [Editing together](/docs/reference/api/) in the API.
+
 ## The AI on the canvas
 
 When the AI chat edits a flow, it shows among the avatars while it works, and the nodes it changes flash. Its changes go through the same process as everyone else's, so they never step on what you are doing. The same holds for the API, MCP and imports: what they change shows up on every open canvas.

@@ -36,9 +36,9 @@ As chaves também têm **escopos**, escolhidos na criação: `workflows:read`, `
 | `401` | Sem chave, chave errada, ou o dono saiu do workspace |
 | `403` | O escopo ou o papel não permite |
 | `404` | Não existe, ou está em outro workspace |
-| `409` | O fluxo nunca foi publicado, e a chamada precisa de uma versão publicada |
+| `409` | O fluxo nunca foi publicado, e a chamada precisa de uma versão publicada; ou, no `/changes`, operações sobre algo que não existe mais |
 | `422` | O que foi mandado não é válido: `errors` diz o quê |
-| `429` | Mais de 100 requisições num minuto com esta chave |
+| `429` | Mais de 100 requisições num minuto com esta chave (1200 na edição ao vivo) |
 
 ## Endpoints
 
@@ -103,6 +103,22 @@ Uma execução usa a versão publicada. `"version": "draft"` no corpo roda o ras
 | `POST /api/v1/workflows/{id}/versions/{id da versão}/restore` | Coloca uma versão no rascunho |
 
 Veja [Rascunhos e versões](/pt/docs/concepts/versions/).
+
+### Editar junto
+
+| Método e caminho | Faz |
+| --- | --- |
+| `GET /api/v1/workflows/{id}/live` | Acompanha o rascunho enquanto as pessoas editam, em server-sent events |
+| `POST /api/v1/workflows/{id}/changes` | Muda o rascunho sem desfazer o que os outros mudaram |
+| `POST /api/v1/workflows/{id}/focus` | Diz para quais nós você está apontando |
+
+`PUT` e `PATCH` deixam o rascunho igual ao que você manda, o que desfaz o que outra pessoa mudou desde que você leu. Para editar enquanto outros editam, como o [Treadle](https://github.com/heddlehq/Treadle) faz:
+
+1. Abra o `live`. Enquanto ele está aberto, você está no fluxo como quem tem o canvas aberto: os outros te veem, e o stream diz quem mais está lá. Ele manda primeiro um `ready`, com o seu `client`, se você pode editar (`can_edit`) e o `graph`; depois um `change` com o grafo depois de cada mudança, `presence` quando alguém entra, sai ou seleciona algo, e `cursor` com a posição do ponteiro de cada um. Outro `ready` quer dizer que o stream se perdeu: pegue o grafo dele como está.
+2. Mande cada mudança para `changes` com `base`, o grafo que você tinha por último, e `graph`, o que você tem agora. Só o que mudou entre os dois é aplicado, por cima do que os outros fizeram; a resposta traz o rascunho logo depois. Quem muda o mesmo campo por último ganha.
+3. Mande `focus` com o seu `client` e os nós em `selected`, e os outros os veem na sua cor. Um cliente sem ponteiro, como um terminal, manda também um `cursor`, com `x` e `y` no fluxo, e os canvas o desenham como seu.
+
+A edição ao vivo conta à parte do resto da API, até 1200 requisições por minuto por chave. Veja [Editar junto](/pt/docs/concepts/collaboration/).
 
 ### O agente
 
