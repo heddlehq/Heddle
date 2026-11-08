@@ -735,7 +735,9 @@ paths:
 
         Others see the nodes `selected` and the node `editing` in your color, as they
         see what a canvas selects. `client` is the one the `ready` event of your own
-        live stream gave.
+        live stream gave. A client without a pointer, like a terminal, sends `cursor`
+        too: where it is on the flow, in the coordinates of node positions, which the
+        canvases draw as your cursor. `null` takes it away.
       security:
         - bearerApiKey: []
       parameters:
@@ -759,6 +761,15 @@ paths:
                   type:
                     - string
                     - "null"
+                cursor:
+                  type:
+                    - object
+                    - "null"
+                  properties:
+                    x:
+                      type: number
+                    y:
+                      type: number
       responses:
         "204":
           description: Done.
