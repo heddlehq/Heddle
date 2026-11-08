@@ -1,0 +1,75 @@
+{
+  "Google Sheets: Read Rows": {
+    "result": [
+      [
+        "name",
+        "email"
+      ],
+      [
+        "Ana",
+        "ana@example.com"
+      ],
+      [
+        "Bruno",
+        "bruno@example.com"
+      ]
+    ],
+    "notes": {
+      "en": "Returns the cells of **Range** as a list of rows, each a list of values as they show in the sheet. The header row, when the sheet has one, comes first. **Range** is in A1 notation: `Sheet1!A:Z` is every row of those columns, and `Sheet1!A2:C10` a block.\n\n**Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+      "pt": "Devolve as células de **Range** como uma lista de linhas, cada uma uma lista de valores como aparecem na planilha. A linha de cabeçalho, quando a planilha tem, vem primeiro. **Range** é na notação A1: `Sheet1!A:Z` são todas as linhas dessas colunas, e `Sheet1!A2:C10` um bloco.\n\n**Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+    }
+  },
+  "Google Sheets: Add Rows": {
+    "result": {
+      "updated_rows": 2
+    },
+    "notes": {
+      "en": "Adds the rows after the last one of **Range**. Values are read as if typed, so `=SUM(B2:B9)` is a formula and `2026-05-12` a date. **Rows** is the path to the rows in the context, `result` by default: a list of objects, whose values go in the order of the first one's keys; a list of lists; one row; or one object.\n\n**Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+      "pt": "Adiciona as linhas depois da última de **Range**. Os valores são lidos como se fossem digitados, então `=SUM(B2:B9)` é uma fórmula e `2026-05-12` uma data. **Rows** é o caminho até as linhas no contexto, `result` por padrão: uma lista de objetos, cujos valores vão na ordem das chaves do primeiro; uma lista de listas; uma linha; ou um objeto.\n\n**Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+    }
+  },
+  "Google Sheets: Update Rows": {
+    "result": {
+      "updated_rows": 2
+    },
+    "notes": {
+      "en": "Writes the rows over **Range**, from its first cell. **Rows** is the path to the rows in the context, `result` by default: a list of objects, whose values go in the order of the first one's keys; a list of lists; one row; or one object. **Range** is in A1 notation: `Sheet1!A:Z` is every row of those columns, and `Sheet1!A2:C10` a block.\n\n**Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+      "pt": "Escreve as linhas por cima de **Range**, a partir da primeira célula. **Rows** é o caminho até as linhas no contexto, `result` por padrão: uma lista de objetos, cujos valores vão na ordem das chaves do primeiro; uma lista de listas; uma linha; ou um objeto. **Range** é na notação A1: `Sheet1!A:Z` são todas as linhas dessas colunas, e `Sheet1!A2:C10` um bloco.\n\n**Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+    }
+  },
+  "Google Sheets: Clear Rows": {
+    "result": {
+      "cleared_range": "Sheet1!A2:Z1000"
+    },
+    "notes": {
+      "en": "Empties the cells of **Range**, keeping their formatting. **Range** is in A1 notation: `Sheet1!A:Z` is every row of those columns, and `Sheet1!A2:C10` a block.\n\n**Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+      "pt": "Esvazia as células de **Range**, mantendo a formatação. **Range** é na notação A1: `Sheet1!A:Z` são todas as linhas dessas colunas, e `Sheet1!A2:C10` um bloco.\n\n**Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+    }
+  },
+  "Google Sheets: List Sheets": {
+    "result": [
+      {
+        "id": 0,
+        "title": "Sheet1"
+      },
+      {
+        "id": 18273645,
+        "title": "May"
+      }
+    ],
+    "notes": {
+      "en": "Lists the tabs of the spreadsheet. **Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+      "pt": "Lista as abas da planilha. **Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+    }
+  },
+  "Google Sheets: Create Sheet": {
+    "result": {
+      "id": 18273645,
+      "title": "May"
+    },
+    "notes": {
+      "en": "Adds a tab named **Title**. It fails when one with that name exists. **Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+      "pt": "Adiciona uma aba chamada **Title**. Falha quando já existe uma com esse nome. **Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+    }
+  }
+}

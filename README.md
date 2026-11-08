@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://hex.pm/packages/heddle"><img src="https://img.shields.io/hexpm/v/heddle?style=flat-square&color=6e4a7e&label=hex.pm" alt="Hex.pm" /></a>&nbsp;
-  <a href="https://hexdocs.pm/heddle"><img src="https://img.shields.io/badge/docs-hexdocs-8b5cf6?style=flat-square&logo=elixir&logoColor=white" alt="Docs" /></a>&nbsp;
+  <a href="https://heddlehq.github.io/website/docs/"><img src="https://img.shields.io/badge/docs-heddle-a63a2b?style=flat-square" alt="Docs" /></a>&nbsp;
   <a href="https://github.com/heddlehq/heddle/blob/main/LICENSE"><img src="https://img.shields.io/github/license/heddlehq/heddle?style=flat-square&color=blue" alt="License" /></a>&nbsp;
   <a href="https://github.com/heddlehq/heddle/stargazers"><img src="https://img.shields.io/github/stars/heddlehq/heddle?style=flat-square&color=f5a623&logo=github&cacheSeconds=86400" alt="GitHub Stars" /></a>&nbsp;
   <a href="https://discord.gg/7zjnpna239"><img src="https://img.shields.io/discord/1474594465225117740?style=flat-square&color=5865F2&logo=discord&logoColor=white&label=community" alt="Discord" /></a>
@@ -38,7 +38,7 @@ irm https://heddlehq.github.io/website/install.ps1 | iex
 
 Then `heddle status`, `heddle logs -f`, `heddle doctor` and `heddle update` take it from there: `heddle --help` lists everything.
 
-For servers and other options, see the **[Installation Guide](guides/installation.md)**. For deployment topology and worker scaling, see [guides/scaling.md](guides/scaling.md). To bring your team in, see [guides/workspaces.md](guides/workspaces.md).
+For servers and other options, see the **[Installation Guide](https://heddlehq.github.io/website/docs/start/installation/)**. For deployment topology and worker scaling, see [Scaling](https://heddlehq.github.io/website/docs/self-hosting/scaling/). To bring your team in, see [Workspaces and roles](https://heddlehq.github.io/website/docs/concepts/workspaces/).
 
 Quick local start with Docker Compose:
 

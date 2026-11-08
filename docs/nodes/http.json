@@ -1,0 +1,12 @@
+{
+  "HTTP Request": {
+    "result": {
+      "id": 981,
+      "status": "created"
+    },
+    "notes": {
+      "en": "Calls any HTTP API. **Endpoint URL**, **Headers (JSON)** and **Body** take `{{placeholders}}`. A body that is JSON is sent as JSON, and anything else as text; GET and DELETE send no body.\n\nA `2xx` answer goes down `success` with the decoded body as `result`. Any other status, or no answer, goes down `error` with:\n\n```json\n{\"error\": \"HTTP 404\", \"body\": {\"message\": \"Not found\"}}\n```\n\nWhat you write in **Headers** is saved with the flow, and goes with it when the flow is exported.",
+      "pt": "Chama qualquer API HTTP. **Endpoint URL**, **Headers (JSON)** e **Body** aceitam `{{placeholders}}`. Um corpo em JSON vai como JSON, e qualquer outra coisa vai como texto; GET e DELETE não mandam corpo.\n\nUma resposta `2xx` sai por `success` com o corpo decodificado em `result`. Qualquer outro status, ou nenhuma resposta, sai por `error` com:\n\n```json\n{\"error\": \"HTTP 404\", \"body\": {\"message\": \"Not found\"}}\n```\n\nO que você escreve em **Headers** fica salvo no fluxo, e vai junto quando ele é exportado."
+    }
+  }
+}

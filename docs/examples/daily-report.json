@@ -1,0 +1,110 @@
+{
+  "name": "Daily orders report",
+  "nodes": [
+    {
+      "id": "schedule",
+      "type": "Schedule",
+      "label": "Weekdays at 08:00 in São Paulo",
+      "controls": {
+        "cron": "0 11 * * 1-5"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "orders",
+      "type": "SQL: Select Rows",
+      "label": "Yesterday's orders",
+      "controls": {
+        "credential": "Shop database",
+        "table": "orders",
+        "columns": "id, customer, total, created_at",
+        "where": "created_at >= CURRENT_DATE - 1 AND created_at < CURRENT_DATE",
+        "order_by": "created_at",
+        "limit": "5000",
+        "offset": "0"
+      },
+      "position": {
+        "x": 300,
+        "y": 0
+      }
+    },
+    {
+      "id": "csv",
+      "type": "Write CSV",
+      "label": "Make a CSV",
+      "controls": {
+        "source": "result.rows",
+        "separator": "comma"
+      },
+      "position": {
+        "x": 600,
+        "y": -60
+      }
+    },
+    {
+      "id": "email",
+      "type": "Email: Send Email",
+      "label": "Email the team",
+      "controls": {
+        "credential": "Company mail",
+        "to": "sales@example.com",
+        "cc": "",
+        "bcc": "",
+        "subject": "Orders of yesterday",
+        "message": "Good morning! Yesterday's orders are attached.",
+        "format": "plain",
+        "attachment_name": "orders.csv",
+        "attachment": "{{result}}"
+      },
+      "position": {
+        "x": 900,
+        "y": -60
+      }
+    },
+    {
+      "id": "alert",
+      "type": "Slack: Send Message",
+      "label": "Say the report failed",
+      "controls": {
+        "credential": "Slack",
+        "channel": "C0123456789",
+        "text": "The daily orders report failed: {{result.error}}",
+        "thread_ts": ""
+      },
+      "position": {
+        "x": 600,
+        "y": 120
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "schedule",
+      "sourceOutput": "exec",
+      "target": "orders",
+      "targetInput": "exec"
+    },
+    {
+      "source": "orders",
+      "sourceOutput": "success",
+      "target": "csv",
+      "targetInput": "exec"
+    },
+    {
+      "source": "orders",
+      "sourceOutput": "error",
+      "target": "alert",
+      "targetInput": "exec"
+    },
+    {
+      "source": "csv",
+      "sourceOutput": "success",
+      "target": "email",
+      "targetInput": "exec"
+    }
+  ],
+  "comments": []
+}

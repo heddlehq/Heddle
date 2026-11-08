@@ -1,4 +1,9 @@
-# Workspaces and roles
+---
+title: Workspaces and roles
+description: Where a team keeps its flows, and what each role can do.
+sidebar:
+  order: 5
+---
 
 A workspace is where a team keeps its flows, their runs, credentials and API keys. Nobody outside it sees any of them. The first admin starts in one called **Default**, and every install made before workspaces existed has its flows there.
 
@@ -10,7 +15,7 @@ People join a workspace with a role. Each role can do everything the one above i
 |----------|-------------------------------------------------------------------------|
 | Viewer   | See the flows, their runs, the names of the credentials and the members |
 | Operator | Also run flows, as they were saved                                      |
-| Editor   | Also create, change and delete flows and credentials, and use the agent |
+| Editor   | Also create, change, delete and publish flows, change credentials, and use the agent |
 | Admin    | Also add people, change roles, send invites and rename the workspace    |
 
 A workspace always keeps at least one admin.

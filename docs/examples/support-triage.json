@@ -1,0 +1,173 @@
+{
+  "name": "Support triage",
+  "nodes": [
+    {
+      "id": "hook",
+      "type": "Webhook",
+      "label": "New ticket",
+      "controls": {
+        "method": "POST",
+        "path": "/support"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "ack",
+      "type": "Respond to Webhook",
+      "label": "Answer at once",
+      "controls": {
+        "response_status": "202",
+        "response_body": "{\"received\": true}"
+      },
+      "position": {
+        "x": 260,
+        "y": -140
+      }
+    },
+    {
+      "id": "classify",
+      "type": "AI: Classify",
+      "label": "What is it about?",
+      "controls": {
+        "credential": "",
+        "model": "",
+        "text": "Subject: {{body.subject}}\n\n{{body.message}}",
+        "categories": "billing, bug, sales, other"
+      },
+      "position": {
+        "x": 260,
+        "y": 40
+      }
+    },
+    {
+      "id": "route",
+      "type": "Switch",
+      "label": "Route it",
+      "controls": {
+        "switch_value": "{{result.category}}",
+        "case_1": "billing",
+        "case_2": "bug",
+        "case_3": "sales",
+        "case_4": ""
+      },
+      "position": {
+        "x": 540,
+        "y": 40
+      }
+    },
+    {
+      "id": "billing",
+      "type": "Slack: Send Message",
+      "label": "Tell #billing",
+      "controls": {
+        "credential": "Slack",
+        "channel": "C0BILLING01",
+        "text": "New billing ticket from {{body.email}}: {{body.subject}}",
+        "thread_ts": ""
+      },
+      "position": {
+        "x": 840,
+        "y": -120
+      }
+    },
+    {
+      "id": "bug",
+      "type": "Slack: Send Message",
+      "label": "Tell #bugs",
+      "controls": {
+        "credential": "Slack",
+        "channel": "C0BUGS00001",
+        "text": "New bug report from {{body.email}}: {{body.subject}}",
+        "thread_ts": ""
+      },
+      "position": {
+        "x": 840,
+        "y": 0
+      }
+    },
+    {
+      "id": "sales",
+      "type": "Slack: Send Message",
+      "label": "Tell #sales",
+      "controls": {
+        "credential": "Slack",
+        "channel": "C0SALES0001",
+        "text": "New sales question from {{body.email}}: {{body.subject}}",
+        "thread_ts": ""
+      },
+      "position": {
+        "x": 840,
+        "y": 120
+      }
+    },
+    {
+      "id": "other",
+      "type": "Slack: Send Message",
+      "label": "Tell #support",
+      "controls": {
+        "credential": "Slack",
+        "channel": "C0SUPPORT01",
+        "text": "New ticket from {{body.email}}: {{body.subject}}",
+        "thread_ts": ""
+      },
+      "position": {
+        "x": 840,
+        "y": 240
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "hook",
+      "sourceOutput": "exec",
+      "target": "ack",
+      "targetInput": "exec"
+    },
+    {
+      "source": "hook",
+      "sourceOutput": "exec",
+      "target": "classify",
+      "targetInput": "exec"
+    },
+    {
+      "source": "classify",
+      "sourceOutput": "success",
+      "target": "route",
+      "targetInput": "exec"
+    },
+    {
+      "source": "classify",
+      "sourceOutput": "error",
+      "target": "other",
+      "targetInput": "exec"
+    },
+    {
+      "source": "route",
+      "sourceOutput": "case 1",
+      "target": "billing",
+      "targetInput": "exec"
+    },
+    {
+      "source": "route",
+      "sourceOutput": "case 2",
+      "target": "bug",
+      "targetInput": "exec"
+    },
+    {
+      "source": "route",
+      "sourceOutput": "case 3",
+      "target": "sales",
+      "targetInput": "exec"
+    },
+    {
+      "source": "route",
+      "sourceOutput": "otherwise",
+      "target": "other",
+      "targetInput": "exec"
+    }
+  ],
+  "comments": []
+}
