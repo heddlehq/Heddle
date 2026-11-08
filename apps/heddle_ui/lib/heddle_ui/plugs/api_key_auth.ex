@@ -1,6 +1,9 @@
 defmodule HeddleUI.Plugs.ApiKeyAuth do
   @moduledoc """
   Authenticates public API requests with a Heddle API key.
+
+  `rate_limit:` names the budget of requests the route counts against, see
+  `HeddleUI.Plugs.RateLimit`.
   """
 
   import Plug.Conn
@@ -23,7 +26,7 @@ defmodule HeddleUI.Plugs.ApiKeyAuth do
         conn
         |> assign(:api_key, api_key)
         |> assign(:current_scope, scope)
-        |> HeddleUI.Plugs.RateLimit.call([])
+        |> HeddleUI.Plugs.RateLimit.call(budget: Keyword.get(opts, :rate_limit, :api))
         |> HeddleUI.Plugs.ApiAuditLog.call([])
       else
         forbidden(conn)

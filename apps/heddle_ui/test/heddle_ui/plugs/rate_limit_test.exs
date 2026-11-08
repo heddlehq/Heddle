@@ -41,6 +41,32 @@ defmodule HeddleUI.Plugs.RateLimitTest do
            }
   end
 
+  test "live editing counts against a budget of its own", %{conn: conn} do
+    user = user_fixture()
+
+    {:ok, %{api_key: api_key}} =
+      HeddleCore.AccountsFixtures.create_api_key(user, %{name: "live", scopes: []})
+
+    window = div(System.system_time(:second), 60)
+    api = {api_key.id, window}
+    live = {{:live, api_key.id}, window}
+    :ets.insert(:api_rate_limit, {api, 100})
+
+    on_exit(fn ->
+      if :ets.info(:api_rate_limit) != :undefined do
+        :ets.delete(:api_rate_limit, api)
+        :ets.delete(:api_rate_limit, live)
+      end
+    end)
+
+    conn = Plug.Conn.assign(conn, :api_key, api_key)
+
+    refute RateLimit.call(conn, budget: :live).halted
+
+    :ets.insert(:api_rate_limit, {live, 1200})
+    assert %{halted: true, status: 429} = RateLimit.call(conn, budget: :live)
+  end
+
   defp ensure_ets_table do
     if :ets.info(:api_rate_limit) == :undefined do
       try do

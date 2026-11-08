@@ -156,6 +156,19 @@ defmodule HeddleCore.Flows.SessionTest do
     assert %Version{kind: "checkpoint", nodes: [_, _]} = Versions.latest(flow)
   end
 
+  test "a snapshot gives the draft and its number without joining", %{flow: flow, scope: scope} do
+    {:ok, 1} =
+      Session.apply_ops(flow.id, scope.user.id, [%{"op" => "add_node", "node" => @output}])
+
+    assert {:ok, %{graph: %{nodes: [_, _]}, seq: 1, epoch: epoch}} = Session.snapshot(flow.id)
+    assert is_binary(epoch) or is_integer(epoch)
+
+    assert {:ok, _flow, %{seq: 1}} = Flows.session_snapshot(scope, :view, flow.id)
+
+    assert {:error, :not_found} =
+             Flows.session_snapshot(Scope.for_user(user_fixture()), :view, flow.id)
+  end
+
   test "a session that starts again has another epoch", %{flow: flow} do
     {:ok, %{epoch: first}} = Session.join(flow.id)
     stop(flow.id)
