@@ -7,7 +7,9 @@ sidebar:
 
 A form on your website sends each new lead to Heddle. Heddle tells **#sales** on Slack and answers the form, so it can show "thanks" or an error.
 
-**You will use** [Webhook](/docs/nodes/webhook/), [Slack: Send Message](/docs/nodes/slack-send-message/), [Respond to Webhook](/docs/nodes/respond-to-webhook/). **Import it:** [webhook-to-slack.json](/docs/examples/webhook-to-slack.json).
+**You will use** [Webhook](/docs/nodes/webhook/), [Slack: Send Message](/docs/nodes/slack-send-message/), [Respond to Webhook](/docs/nodes/respond-to-webhook/).
+
+<!-- flow:webhook-to-slack -->
 
 ## Before you start
 

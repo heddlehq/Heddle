@@ -7,7 +7,9 @@ sidebar:
 
 Todo dia útil às 08:00 de São Paulo, o Heddle lê os pedidos de ontem, escreve num CSV e manda por email para o time de vendas. Se o banco estiver fora, ele avisa no Slack.
 
-**Você vai usar** [Schedule](/pt/docs/nodes/schedule/), [SQL: Select Rows](/pt/docs/nodes/sql-select-rows/), [Write CSV](/pt/docs/nodes/write-csv/), [Email: Send Email](/pt/docs/nodes/email-send-email/), [Slack: Send Message](/pt/docs/nodes/slack-send-message/). **Importe:** [daily-report.json](/docs/examples/daily-report.json).
+**Você vai usar** [Schedule](/pt/docs/nodes/schedule/), [SQL: Select Rows](/pt/docs/nodes/sql-select-rows/), [Write CSV](/pt/docs/nodes/write-csv/), [Email: Send Email](/pt/docs/nodes/email-send-email/), [Slack: Send Message](/pt/docs/nodes/slack-send-message/).
+
+<!-- flow:daily-report -->
 
 ## Antes de começar
 

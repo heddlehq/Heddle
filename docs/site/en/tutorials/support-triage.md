@@ -7,7 +7,9 @@ sidebar:
 
 Tickets arrive from your help desk on a webhook. AI reads each one and decides whether it is about billing, a bug or sales, and Heddle sends it to that team's Slack channel. Anything else goes to #support.
 
-**You will use** [Webhook](/docs/nodes/webhook/), [Respond to Webhook](/docs/nodes/respond-to-webhook/), [AI: Classify](/docs/nodes/ai-classify/), [Switch](/docs/nodes/switch/), [Slack: Send Message](/docs/nodes/slack-send-message/). **Import it:** [support-triage.json](/docs/examples/support-triage.json).
+**You will use** [Webhook](/docs/nodes/webhook/), [Respond to Webhook](/docs/nodes/respond-to-webhook/), [AI: Classify](/docs/nodes/ai-classify/), [Switch](/docs/nodes/switch/), [Slack: Send Message](/docs/nodes/slack-send-message/).
+
+<!-- flow:support-triage -->
 
 ## Before you start
 

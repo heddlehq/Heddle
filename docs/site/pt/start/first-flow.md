@@ -66,7 +66,9 @@ Se você mudar alguma coisa depois, o selo diz **Unpublished changes**: a produ�
 
 ## Ou importe pronto
 
-Para pegar o fluxo pronto, baixe [first-flow.json](/docs/examples/first-flow.json), abra um fluxo novo, abra o menu **⋯** ao lado de **Publish** e aperte **Import from a file**.
+O fluxo pronto, para importar:
+
+<!-- flow:first-flow -->
 
 ## Próximos passos
 

@@ -7,7 +7,9 @@ sidebar:
 
 A refund request comes in. Heddle asks #finance on Slack, with a link to approve and one to reject, and waits. When someone clicks, the run goes on: it calls the payments API or says it was rejected. If nobody decides in 24 hours, it says so.
 
-**You will use** [Webhook](/docs/nodes/webhook/), [Slack: Send Message](/docs/nodes/slack-send-message/), [Wait](/docs/nodes/wait/), [Switch](/docs/nodes/switch/), [HTTP Request](/docs/nodes/http-request/). **Import it:** [refund-approval.json](/docs/examples/refund-approval.json).
+**You will use** [Webhook](/docs/nodes/webhook/), [Slack: Send Message](/docs/nodes/slack-send-message/), [Wait](/docs/nodes/wait/), [Switch](/docs/nodes/switch/), [HTTP Request](/docs/nodes/http-request/).
+
+<!-- flow:refund-approval -->
 
 ## 1. Receive the request
 

@@ -66,7 +66,9 @@ Change anything afterwards and the badge says **Unpublished changes**: productio
 
 ## Import it instead
 
-To get the finished flow, download [first-flow.json](/docs/examples/first-flow.json), open a new flow, open the **⋯** menu next to **Publish** and press **Import from a file**.
+The finished flow, ready to import:
+
+<!-- flow:first-flow -->
 
 ## Next
 
