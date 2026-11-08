@@ -18,6 +18,17 @@ defmodule HeddleUI.Router do
 
   HeddleUI.PublicAPI.V1.Routes.public_api_pipelines()
 
+  # A form anyone with its link can fill in, see `HeddleUI.FormController`. It has no
+  # signed-in person, and follows the visitor's language and theme.
+  pipeline :public_form do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :put_root_layout, html: {HeddleUI.Layouts, :root}
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+    plug HeddleUI.Plugs.SetLocale
+  end
+
   pipeline :redirect_if_authenticated do
     plug :redirect_if_user_is_authenticated
   end
@@ -56,6 +67,7 @@ defmodule HeddleUI.Router do
     live_session :require_authenticated_user,
       on_mount: [{HeddleUI.UserAuth, :require_authenticated}] do
       live "/users/settings", UserLive.Settings, :edit
+      live "/users/preferences", UserLive.Preferences, :edit
       live "/", DashboardLive.Index
       live "/users", UserLive.Index, :index
       live "/flows", FlowLive.Index
@@ -66,14 +78,27 @@ defmodule HeddleUI.Router do
       live "/ai", AILive.Index
       live "/api-keys", ApiKeyLive.Index
       live "/credentials", CredentialLive.Index
+      live "/spool", SpoolLive.Index
+      live "/spool/:id", SpoolLive.Table
       live "/workspace", WorkspaceLive.Show
       live "/workspaces", WorkspaceLive.Index
     end
 
     post "/users/update-password", UserSessionController, :update_password
 
+    get "/spool/:id/export", SpoolExportController, :show
+    get "/flows/:id/forms/:node_id/test", FormController, :test
+    post "/flows/:id/forms/:node_id/test", FormController, :submit_test
+
     get "/oauth/authorize", OAuthController, :new
     post "/oauth/authorize", OAuthController, :create
+  end
+
+  scope "/f", HeddleUI do
+    pipe_through :public_form
+
+    get "/:token", FormController, :show
+    post "/:token", FormController, :submit
   end
 
   scope "/", HeddleUI do

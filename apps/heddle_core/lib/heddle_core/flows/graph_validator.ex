@@ -141,6 +141,9 @@ defmodule HeddleCore.Flows.GraphValidator do
         not draft? and invalid_schedule?(node) ->
           {:halt, {:error, :nodes, "contains a Schedule node with an invalid cron expression"}}
 
+        message = not draft? && invalid_form(node) ->
+          {:halt, {:error, :nodes, "contains a Form Trigger that #{message}"}}
+
         true ->
           {:cont, :ok}
       end
@@ -157,6 +160,18 @@ defmodule HeddleCore.Flows.GraphValidator do
   end
 
   defp invalid_schedule?(_node), do: false
+
+  # A form has to be complete to be published, see `Heddle.Form`.
+  defp invalid_form(%{"type" => "Form Trigger", "controls" => controls}) do
+    with {:ok, fields} <- Heddle.Form.parse(controls["fields"]),
+         :ok <- Heddle.Form.validate(fields) do
+      nil
+    else
+      {:error, message} -> message
+    end
+  end
+
+  defp invalid_form(_node), do: nil
 
   defp validate_connections(connections, nodes, definitions) do
     nodes_by_id = Map.new(nodes, &{&1["id"], &1})

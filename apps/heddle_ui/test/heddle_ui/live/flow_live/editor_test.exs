@@ -1596,15 +1596,4 @@ defmodule HeddleUI.FlowLive.EditorTest do
       render_click(lv, "toggle_chat")
     end
   end
-
-  describe "change_locale event" do
-    test "redirects when locale changes", %{conn: conn} do
-      flow = flow_fixture()
-
-      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
-
-      render_click(lv, "change_locale", %{"locale" => "pt_BR"})
-      assert_redirect(lv, "/?locale=pt_BR")
-    end
-  end
 end

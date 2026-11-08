@@ -1,4 +1,86 @@
 {
+  "Spool: Find Rows": {
+    "result": {
+      "rows": [
+        {
+          "id": 12,
+          "email": "ana@example.com",
+          "plan": "Pro",
+          "score": 10,
+          "created_at": "2026-11-08T14:03:12.481Z",
+          "updated_at": "2026-11-08T14:03:12.481Z"
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Reads the rows of a [Spool](/docs/guides/spool/) table that match **Filter**. An empty filter reads them all, up to **Limit** (1,000 at most).\n\n```json\n{\"plan\": \"Pro\", \"score\": {\">=\": 5}, \"email\": {\"contains\": \"@example.com\"}}\n```\n\nThe operators are `=`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `empty` and `in`, and every condition must hold. **Order by** takes columns with `asc` or `desc`, like `score desc, email`. `result.rows` is a list of rows, by column name, with `id`, `created_at` and `updated_at`, and `result.count` how many.\n\nA `{{placeholder}}` in the filter is always a value, sent to the database as a parameter.",
+      "pt": "Lê as linhas de uma tabela do [Spool](/pt/docs/guides/spool/) que batem com **Filter**. Um filtro vazio lê todas, até **Limit** (1.000 no máximo).\n\n```json\n{\"plan\": \"Pro\", \"score\": {\">=\": 5}, \"email\": {\"contains\": \"@example.com\"}}\n```\n\nOs operadores são `=`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `empty` e `in`, e todas as condições precisam valer. **Order by** recebe colunas com `asc` ou `desc`, como `score desc, email`. `result.rows` é uma lista de linhas, pelo nome da coluna, com `id`, `created_at` e `updated_at`, e `result.count` quantas são.\n\nUm `{{placeholder}}` no filtro é sempre um valor, enviado ao banco como parâmetro."
+    }
+  },
+  "Spool: Insert Rows": {
+    "result": {
+      "rows": [
+        {
+          "id": 12,
+          "email": "ana@example.com",
+          "plan": "Pro",
+          "score": 10,
+          "created_at": "2026-11-08T14:03:12.481Z",
+          "updated_at": "2026-11-08T14:03:12.481Z"
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Adds rows to a [Spool](/docs/guides/spool/) table. **Rows** is one object or a list of them, from column name to value, or a single placeholder like `{{form}}`, which saves what a [Form Trigger](/docs/nodes/form-trigger/) received.\n\nEach value is converted to its column's type: `\"7\"` becomes `7` in a number column, and `\"yes\"` becomes `true` in a yes / no column. An unknown column or a value that can't be converted goes out the `error` output, and none of the rows go in. `result.rows` has the rows as saved, with their `id`.",
+      "pt": "Adiciona linhas a uma tabela do [Spool](/pt/docs/guides/spool/). **Rows** é um objeto ou uma lista deles, do nome da coluna para o valor, ou um único placeholder como `{{form}}`, que guarda o que um [Form Trigger](/pt/docs/nodes/form-trigger/) recebeu.\n\nCada valor é convertido para o tipo da coluna: `\"7\"` vira `7` numa coluna de número, e `\"yes\"` vira `true` numa coluna sim / não. Uma coluna desconhecida ou um valor que não pode ser convertido sai pela saída `error`, e nenhuma linha entra. `result.rows` traz as linhas como foram guardadas, com o `id`."
+    }
+  },
+  "Spool: Update Rows": {
+    "result": {
+      "count": 1,
+      "ids": [
+        12
+      ]
+    },
+    "notes": {
+      "en": "Changes the rows of a [Spool](/docs/guides/spool/) table that match **Filter**, which can't be empty. **Values** is an object from column to its new value, and `null` clears a column: `{\"plan\": \"Free\", \"score\": null}`. Columns left out keep their values.\n\n`result.count` is how many rows changed, and `result.ids` which.",
+      "pt": "Altera as linhas de uma tabela do [Spool](/pt/docs/guides/spool/) que batem com **Filter**, que não pode ser vazio. **Values** é um objeto da coluna para o novo valor, e `null` limpa uma coluna: `{\"plan\": \"Free\", \"score\": null}`. As colunas que não aparecem mantêm os valores.\n\n`result.count` é quantas linhas mudaram, e `result.ids` quais."
+    }
+  },
+  "Spool: Upsert Rows": {
+    "result": {
+      "rows": [
+        {
+          "id": 12,
+          "email": "ana@example.com",
+          "plan": "Pro",
+          "score": 10,
+          "created_at": "2026-11-08T14:03:12.481Z",
+          "updated_at": "2026-11-08T14:03:12.481Z"
+        }
+      ],
+      "inserted": 0,
+      "updated": 1
+    },
+    "notes": {
+      "en": "Adds rows to a [Spool](/docs/guides/spool/) table, or changes the row that already has the same value in **Key column**, like `email`. Each row needs a value for the key. A row that exists keeps the columns the new one leaves out.\n\nRuns that upsert into the same table take turns, so two of them can't add the same key twice. `result.inserted` and `result.updated` say how many of each.",
+      "pt": "Adiciona linhas a uma tabela do [Spool](/pt/docs/guides/spool/), ou altera a linha que já tem o mesmo valor em **Key column**, como `email`. Cada linha precisa de um valor para a chave. Uma linha que já existe mantém as colunas que a nova não traz.\n\nExecuções que fazem upsert na mesma tabela esperam a vez, então duas delas não adicionam a mesma chave duas vezes. `result.inserted` e `result.updated` dizem quantas de cada."
+    }
+  },
+  "Spool: Delete Rows": {
+    "result": {
+      "count": 1,
+      "ids": [
+        12
+      ]
+    },
+    "notes": {
+      "en": "Deletes the rows of a [Spool](/docs/guides/spool/) table that match **Filter**, which can't be empty, so a mistake doesn't empty the table: `{\"id\": 12}` or `{\"created_at\": {\"<\": \"2026-01-01\"}}`.\n\n`result.count` is how many rows went, and `result.ids` which.",
+      "pt": "Apaga as linhas de uma tabela do [Spool](/pt/docs/guides/spool/) que batem com **Filter**, que não pode ser vazio, para um engano não esvaziar a tabela: `{\"id\": 12}` ou `{\"created_at\": {\"<\": \"2026-01-01\"}}`.\n\n`result.count` é quantas linhas saíram, e `result.ids` quais."
+    }
+  },
   "SQL: Run Query": {
     "result": {
       "rows": [

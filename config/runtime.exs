@@ -55,6 +55,13 @@ config :heddle_ui, HeddleUI.Endpoint,
 config :heddle_ui, HeddleUI.ApiEndpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+# How much each workspace keeps in Spool, see `HeddleCore.Spool.limits/0`.
+config :heddle_core, :spool,
+  max_tables: env_int.("SPOOL_MAX_TABLES", 50),
+  max_rows: env_int.("SPOOL_MAX_ROWS", 100_000),
+  max_row_bytes: env_int.("SPOOL_MAX_ROW_KB", 64) * 1024,
+  max_find: env_int.("SPOOL_MAX_FIND", 1_000)
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

@@ -27,7 +27,13 @@ defmodule HeddleNodes.ManifestTest do
 
     test "offers each action of a service as its own node" do
       services = HeddleNodes.Nodes.service_categories()
-      actions = Enum.filter(HeddleNodes.get_definitions(), &(&1.category in services))
+      # Spool lives in Heddle, so its nodes need no credential.
+      actions =
+        Enum.filter(
+          HeddleNodes.get_definitions(),
+          &(&1.category in services and &1[:group] != "Spool")
+        )
+
       names = Enum.map(actions, & &1.name)
 
       assert length(actions) == 76
@@ -47,6 +53,7 @@ defmodule HeddleNodes.ManifestTest do
         |> Enum.map(&hd(&1).group)
 
       assert groups == [
+               "Spool",
                "SQL",
                "MongoDB",
                "Redis",

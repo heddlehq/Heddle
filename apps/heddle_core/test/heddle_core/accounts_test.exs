@@ -340,4 +340,35 @@ defmodule HeddleCore.AccountsTest do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
     end
   end
+
+  describe "update_user_preferences/3" do
+    test "saves a known language and theme, and clears them" do
+      user = user_fixture()
+
+      assert {:ok, user} =
+               Accounts.update_user_preferences(user, %{"locale" => "pt_BR", "theme" => "light"},
+                 locales: ["en", "pt_BR"]
+               )
+
+      assert {user.locale, user.theme} == {"pt_BR", "light"}
+
+      assert {:ok, user} =
+               Accounts.update_user_preferences(user, %{"locale" => "", "theme" => ""},
+                 locales: ["en"]
+               )
+
+      assert {user.locale, user.theme} == {nil, nil}
+    end
+
+    test "refuses what the interface doesn't have" do
+      user = user_fixture()
+
+      assert {:error, changeset} =
+               Accounts.update_user_preferences(user, %{"locale" => "xx", "theme" => "pink"},
+                 locales: ["en"]
+               )
+
+      assert %{locale: [_], theme: [_]} = errors_on(changeset)
+    end
+  end
 end

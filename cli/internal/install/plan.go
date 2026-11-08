@@ -38,6 +38,9 @@ type Plan struct {
 	ExecutionConcurrency int // 0 keeps the default.
 	RescueMinutes        int // 0 keeps the default.
 
+	SpoolMaxTables int // 0 keeps the default.
+	SpoolMaxRows   int // 0 keeps the default.
+
 	TreadleHome    string
 	TreadleVersion string
 	TreadleServer  string
@@ -150,6 +153,12 @@ func (p Plan) Settings(env *config.Env) error {
 	}
 	if p.RescueMinutes > 0 {
 		values = append(values, [2]string{"OBAN_RESCUE_AFTER_MINUTES", strconv.Itoa(p.RescueMinutes)})
+	}
+	if p.SpoolMaxTables > 0 {
+		values = append(values, [2]string{"SPOOL_MAX_TABLES", strconv.Itoa(p.SpoolMaxTables)})
+	}
+	if p.SpoolMaxRows > 0 {
+		values = append(values, [2]string{"SPOOL_MAX_ROWS", strconv.Itoa(p.SpoolMaxRows)})
 	}
 
 	for _, pair := range values {

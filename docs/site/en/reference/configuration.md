@@ -34,6 +34,15 @@ Nothing here is required: Heddle starts with sensible defaults. On a local insta
 
 Raise the concurrency and the pools together, within what your Postgres accepts. See [Scaling](/docs/self-hosting/scaling/).
 
+## Spool
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `SPOOL_MAX_TABLES` | `50` | How many [Spool](/docs/guides/spool/) tables a workspace keeps. |
+| `SPOOL_MAX_ROWS` | `100000` | How many rows a table keeps. |
+| `SPOOL_MAX_ROW_KB` | `64` | How big a row can be, in KB. |
+| `SPOOL_MAX_FIND` | `1000` | The most rows one search returns. |
+
 ## AI
 
 | Variable | What it does |

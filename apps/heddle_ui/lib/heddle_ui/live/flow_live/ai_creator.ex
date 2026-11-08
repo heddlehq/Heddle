@@ -28,11 +28,6 @@ defmodule HeddleUI.FlowLive.AICreator do
   end
 
   @impl true
-  def handle_event("change_locale", %{"locale" => locale}, socket) do
-    {:noreply, push_navigate(socket, to: ~p"/flows/new/ai?locale=#{locale}")}
-  end
-
-  @impl true
   def handle_event("send_message", %{"content" => ""}, socket) do
     {:noreply, socket}
   end

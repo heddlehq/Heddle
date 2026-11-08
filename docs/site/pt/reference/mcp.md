@@ -48,6 +48,7 @@ A página **AI** mostra o comando com o seu endereço preenchido. Numa instalaç
 | `list_executions` | Lista as execuções de um fluxo |
 | `get_execution` | Lê uma execução |
 | `list_versions` | Lista as versões, com quem fez cada uma e o que mudou |
+| `list_spool_tables` | Lista as tabelas do Spool do workspace, com as colunas |
 | `publish_flow` | Publica o rascunho, ou coloca uma versão antiga de volta |
 | `restore_version` | Coloca uma versão no rascunho |
 | `chat` | Conversa com o próprio agente do Heddle, que responde com o modelo deste servidor |

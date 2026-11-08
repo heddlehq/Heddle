@@ -89,6 +89,21 @@ func TestSettingsUseThePortNameOfDocker(t *testing.T) {
 	}
 }
 
+func TestSettingsWriteOnlyTheSpoolLimitsThatChange(t *testing.T) {
+	env := &config.Env{}
+	p := plan(t)
+	p.SpoolMaxRows = 5000
+	if err := p.Settings(env); err != nil {
+		t.Fatal(err)
+	}
+	if got := env.Value("SPOOL_MAX_ROWS"); got != "5000" {
+		t.Fatalf("rows: %q", got)
+	}
+	if _, ok := env.Get("SPOOL_MAX_TABLES"); ok {
+		t.Fatal("wrote a limit that keeps its default")
+	}
+}
+
 func cluster(t *testing.T, layout paths.Layout, marker string) {
 	t.Helper()
 	if err := os.MkdirAll(layout.Cluster(), 0o700); err != nil {
