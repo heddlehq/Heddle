@@ -21,6 +21,29 @@ const formatMs = (ms) => {
   return `${Math.floor(ms / 60000)} min`;
 };
 
+// A node with several outputs, like success and error, spreads them along the edge of
+// its circle, so each one can be told apart and dragged from. Sizes are the node's 88px.
+const NODE_RADIUS = 44;
+const SOCKET_HALF = 12;
+const socketAngle = (index, count) => {
+  if (count < 2) return 0;
+  const spread = Math.min(150, 38 * (count - 1));
+  return ((-spread / 2 + (spread / (count - 1)) * index) * Math.PI) / 180;
+};
+const socketPlace = (index, count, side) => {
+  if (count < 2) return '';
+  const angle = socketAngle(index, count);
+  const inset = NODE_RADIUS - NODE_RADIUS * Math.cos(angle);
+  const top = NODE_RADIUS + NODE_RADIUS * Math.sin(angle) - SOCKET_HALF;
+  return `top: ${top.toFixed(1)}px; margin-top: 0; ${side}: ${(inset - SOCKET_HALF).toFixed(1)}px;`;
+};
+const labelPlace = (index, count) => {
+  const angle = socketAngle(index, count);
+  const left = NODE_RADIUS + NODE_RADIUS * Math.cos(angle) + SOCKET_HALF + 4;
+  const top = NODE_RADIUS + NODE_RADIUS * Math.sin(angle) - 8;
+  return `left: ${left.toFixed(1)}px; top: ${top.toFixed(1)}px;`;
+};
+
 export class CustomNodeElement extends LitElement {
   createRenderRoot() {
     return this;
@@ -123,6 +146,32 @@ export class CustomNodeElement extends LitElement {
       }
       .socket-container.right {
         right: -12px;
+      }
+      /* An error output looks like one, so it isn't taken for success. */
+      .socket-container[data-key="error"] {
+        --socket-color: var(--run-error);
+      }
+      /* The names of the outputs of a node with several, shown on hover. */
+      .socket-label {
+        position: absolute;
+        z-index: 101;
+        padding: 0 5px;
+        border-radius: 4px;
+        background: var(--editor-surface);
+        color: var(--editor-text-muted, var(--editor-text));
+        font-size: 10px;
+        line-height: 16px;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      .socket-label[data-key="error"] {
+        color: var(--run-error);
+      }
+      custom-node:hover .socket-label,
+      custom-node[selected] .socket-label {
+        opacity: 1;
       }
       .circular-node.run-success {
         border-color: var(--run-success) !important;
@@ -430,12 +479,17 @@ export class CustomNodeElement extends LitElement {
         </div>`}
       </div>
 
-      ${repeat(inputs, ([key]) => key, ([key, input]) => html`
-        <div class="socket-container left" key="input-${key}" data-key="${key}" data-side="input"></div>
+      ${repeat(inputs, ([key]) => key, ([key, input], index) => html`
+        <div class="socket-container left" key="input-${key}" data-key="${key}" data-side="input"
+          style="${socketPlace(index, inputs.length, 'left')}"></div>
       `)}
 
-      ${repeat(outputs, ([key]) => key, ([key, output]) => html`
-        <div class="socket-container right" key="output-${key}" data-key="${key}" data-side="output"></div>
+      ${repeat(outputs, ([key]) => key, ([key, output], index) => html`
+        <div class="socket-container right" key="output-${key}" data-key="${key}" data-side="output"
+          style="${socketPlace(index, outputs.length, 'right')}"></div>
+        ${outputs.length > 1 ? html`
+          <span class="socket-label" data-key="${key}" style="${labelPlace(index, outputs.length)}">${output?.label || key}</span>
+        ` : ''}
       `)}
     `;
   }
