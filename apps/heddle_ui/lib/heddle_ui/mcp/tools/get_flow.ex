@@ -1,5 +1,8 @@
 defmodule HeddleUI.MCP.Tools.GetFlow do
-  @moduledoc "Returns a flow with its nodes and connections."
+  @moduledoc """
+  Returns a flow with its nodes, connections and comments. A comment of kind section
+  groups the nodes in its `nodes`, and with `manual` they don't run with the flow.
+  """
 
   use Anubis.Server.Component,
     type: :tool,

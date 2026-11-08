@@ -53,6 +53,7 @@ defmodule HeddleUI.Endpoint do
     json_decoder: Phoenix.json_library()
 
   plug HeddleUI.Plugs.WebhookPlug
+  plug HeddleUI.Plugs.ResumePlug
 
   plug Plug.MethodOverride
   plug Plug.Head

@@ -12,12 +12,10 @@ defmodule HeddleUI.FlowLive.Editor do
   alias HeddleUI.Agent
   alias HeddleUI.FlowLive.AgentManager
   alias HeddleUI.FlowLive.TerminalManager
-  alias HeddleUI.FlowLive.{CodeEditorManager, NodePaletteManager}
-
-  @notice_dismiss_timeout 6_000
+  alias HeddleUI.FlowLive.{CodeEditorManager, InspectorManager, NodePaletteManager, NodeSettings}
 
   @impl true
-  def mount(%{"id" => id}, _session, socket) do
+  def mount(%{"id" => id} = params, _session, socket) do
     flow = Flows.get_flow!(socket.assigns.current_scope, id)
 
     if connected?(socket), do: Flows.subscribe_to_flow(flow.id)
@@ -25,6 +23,8 @@ defmodule HeddleUI.FlowLive.Editor do
     {:ok,
      socket
      |> assign(initial_assigns(flow, socket.assigns.current_scope.user))
+     # `?execution=` opens the inspector on that run once the canvas is there.
+     |> assign(inspect_on_load: params["execution"])
      |> AgentManager.follow(), layout: false}
   end
 
@@ -38,27 +38,29 @@ defmodule HeddleUI.FlowLive.Editor do
       editing_node_data: nil,
       credentials: [],
       current_node_id: nil,
-      # Execution result / notice
-      execution_result: nil,
+      # Execution notice
       execution_notice: nil,
-      show_result_modal: false,
-      inspecting_result: false,
       # Testing a webhook
       webhook_test_open: false,
       webhook_test_form: webhook_test_form(%{"method" => "POST", "body" => "{\n  \n}"}),
       webhook_test_error: nil,
       webhook_test_fields: [],
-      webhook_test_input: nil,
-      # Node error modal
-      error_modal_open: false,
-      current_error_message: nil,
-      current_error_node_id: nil,
+      # The input of the next run, when it isn't a plain manual run: a webhook test,
+      # or a run the inspector starts again
+      next_run_input: nil,
+      # The section a run takes alone, see `Heddle.Graph.Section`
+      run_section_id: nil,
+      # Flow settings
+      flow_settings_open: false,
+      flow_settings_form: flow_settings_form(flow),
+      error_flow_options: [],
       # AI chat
       chat_open: false,
       pending_ai_trigger: false,
       ai_configured: Agent.available?()
     ] ++
       AgentManager.initial_assigns() ++
+      InspectorManager.initial_assigns() ++
       TerminalManager.initial_assigns(user) ++
       CodeEditorManager.initial_assigns() ++
       NodePaletteManager.initial_assigns()
@@ -72,7 +74,10 @@ defmodule HeddleUI.FlowLive.Editor do
 
   @impl true
   def handle_event("client_ready", _params, socket) do
-    {:noreply, load_graph(socket, socket.assigns.current_flow)}
+    {:noreply,
+     socket
+     |> load_graph(socket.assigns.current_flow)
+     |> inspect_on_load()}
   end
 
   @impl true
@@ -180,7 +185,10 @@ defmodule HeddleUI.FlowLive.Editor do
 
   @impl true
   def handle_event("node_config_changed", params, socket) do
-    {:noreply, update(socket, :editing_node_data, &put_control_values(&1, params))}
+    {:noreply,
+     update(socket, :editing_node_data, fn node_data ->
+       node_data |> put_control_values(params) |> put_settings_values(params["settings"])
+     end)}
   end
 
   @impl true
@@ -200,30 +208,129 @@ defmodule HeddleUI.FlowLive.Editor do
 
   @impl true
   def handle_event("save_node_config", params, socket) do
-    node_id = socket.assigns.current_node_id
-    config_data = Map.drop(params, ["_csrf_token", "_target", "node_label"])
-    node_label = params["node_label"]
+    case NodeSettings.from_params(params["settings"]) do
+      {:ok, settings} ->
+        {:noreply, save_node_config(socket, params, settings)}
 
-    socket =
-      if node_label && node_label != socket.assigns.editing_node_data["label"] do
-        push_event(socket, "update_node_label", %{nodeId: node_id, label: node_label})
-      else
-        socket
-      end
+      {:error, :invalid_pin} ->
+        {:noreply, put_flash(socket, :error, gettext("The pinned data must be a JSON object."))}
+    end
+  end
 
-    socket = sync_node_sockets(socket, node_id, config_data)
+  # Flow Settings
+  @impl true
+  def handle_event("open_flow_settings", _params, socket) do
+    %{current_scope: scope, current_flow: flow} = socket.assigns
 
-    socket =
-      socket
-      |> push_event("update_node_data", %{nodeId: node_id, data: config_data})
-      |> assign(
-        config_modal_open: false,
-        editing_node_data: nil,
-        current_node_id: nil,
-        inspecting_result: false
-      )
+    options =
+      for other <- Flows.list_flows(scope), other.id != flow.id, do: {other.name, other.id}
 
-    {:noreply, socket}
+    {:noreply,
+     assign(socket,
+       flow_settings_open: true,
+       flow_settings_form: flow_settings_form(flow),
+       error_flow_options: options
+     )}
+  end
+
+  @impl true
+  def handle_event("close_flow_settings", _params, socket) do
+    {:noreply, assign(socket, flow_settings_open: false)}
+  end
+
+  @impl true
+  def handle_event("save_flow_settings", %{"flow_settings" => params}, socket) do
+    %{current_scope: scope, current_flow: flow} = socket.assigns
+
+    case Flows.update_flow_settings(scope, flow, params) do
+      {:ok, flow} ->
+        {:noreply,
+         socket
+         |> assign(current_flow: flow, flow_settings_open: false)
+         |> put_flash(:info, gettext("Flow settings saved."))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Those settings couldn't be saved."))}
+    end
+  end
+
+  # Run Inspector (delegated to InspectorManager)
+  @impl true
+  def handle_event("inspector_select", %{"index" => index}, socket) do
+    {:noreply, InspectorManager.select(socket, InspectorManager.parse_index(index))}
+  end
+
+  @impl true
+  def handle_event("inspector_select_node", %{"node_id" => node_id}, socket) do
+    {:noreply, InspectorManager.select_node(socket, node_id)}
+  end
+
+  @impl true
+  def handle_event("inspector_tab", %{"tab" => tab}, socket) do
+    {:noreply, InspectorManager.tab(socket, tab)}
+  end
+
+  @impl true
+  def handle_event("inspector_toggle", _params, socket) do
+    {:noreply, InspectorManager.toggle(socket)}
+  end
+
+  @impl true
+  def handle_event("inspector_close", _params, socket) do
+    {:noreply, InspectorManager.close(socket)}
+  end
+
+  @impl true
+  def handle_event("inspector_focus", _params, socket) do
+    {:noreply, InspectorManager.focus_node(socket)}
+  end
+
+  @impl true
+  def handle_event("inspector_rerun", _params, socket) do
+    case InspectorManager.rerun_input(socket) do
+      {:ok, input} -> {:noreply, run_with(socket, input)}
+      :error -> {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("inspector_replay", %{"index" => index}, socket) do
+    case InspectorManager.replay_input(socket, InspectorManager.parse_index(index)) do
+      {:ok, input} ->
+        {:noreply, run_with(socket, input)}
+
+      {:error, :incomplete} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext("Only part of what this step got was kept, so it can't run again from here.")
+         )}
+
+      {:error, :not_found} ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("inspector_pin", %{"index" => index}, socket) do
+    case InspectorManager.pin(socket, InspectorManager.parse_index(index)) do
+      {:ok, socket} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :info,
+           gettext("Output pinned. Runs from the editor take it instead of running the node.")
+         )}
+
+      :error ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("inspector_unpin", %{"node" => node_id}, socket) do
+    {:noreply, InspectorManager.unpin(socket, node_id)}
   end
 
   # Flow Saving & Renaming
@@ -277,30 +384,54 @@ defmodule HeddleUI.FlowLive.Editor do
     end
   end
 
-  # Flow Execution & Run
+  # Importing: the flow goes on the canvas unsaved, so it can be looked at, undone
+  # or saved like any change.
   @impl true
-  def handle_event("run_flow", _params, socket) do
-    {:noreply, push_event(socket, "request_save_and_run", %{})}
-  end
+  def handle_event("import_flow", %{"json" => json}, socket) when is_binary(json) do
+    case Flows.import_graph(json) do
+      {:ok, graph} ->
+        {:noreply,
+         socket
+         |> load_graph(%{
+           nodes: graph["nodes"],
+           connections: graph["connections"],
+           comments: graph["comments"]
+         })
+         |> assign(has_changes: true)
+         |> put_flash(:info, gettext("Flow imported. Save it to keep it."))}
 
-  @impl true
-  def handle_event("save_and_run", %{"data" => data}, socket) do
-    if socket.assigns.webhook_test_input == nil and starts_at_webhook?(data) do
-      {:noreply,
-       assign(socket,
-         webhook_test_open: true,
-         webhook_test_error: nil,
-         webhook_test_fields:
-           Graph.body_fields(Graph.new(%{nodes: data["nodes"], connections: []}))
-       )}
-    else
-      {:noreply, save_and_run(socket, data)}
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, import_error(reason))}
     end
   end
 
   @impl true
+  def handle_event("import_flow_too_big", _params, socket) do
+    {:noreply, put_flash(socket, :error, import_error(:too_big))}
+  end
+
+  # Flow Execution & Run
+  @impl true
+  def handle_event("run_flow", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(run_section_id: nil)
+     |> push_event("request_save_and_run", %{})}
+  end
+
+  @impl true
+  def handle_event("run_section", %{"section_id" => id, "data" => data}, socket) do
+    {:noreply, socket |> assign(run_section_id: id) |> run_or_ask(data)}
+  end
+
+  @impl true
+  def handle_event("save_and_run", %{"data" => data}, socket) do
+    {:noreply, run_or_ask(socket, data)}
+  end
+
+  @impl true
   def handle_event("close_webhook_test", _params, socket) do
-    {:noreply, assign(socket, webhook_test_open: false)}
+    {:noreply, assign(socket, webhook_test_open: false, run_section_id: nil)}
   end
 
   @impl true
@@ -313,17 +444,12 @@ defmodule HeddleUI.FlowLive.Editor do
 
         {:noreply,
          socket
-         |> assign(webhook_test_open: false, webhook_test_input: input)
+         |> assign(webhook_test_open: false, next_run_input: input)
          |> push_event("request_save_and_run", %{})}
 
       :error ->
         {:noreply, assign(socket, webhook_test_error: gettext("The body isn't valid JSON."))}
     end
-  end
-
-  @impl true
-  def handle_event("close_result_modal", _params, socket) do
-    {:noreply, assign(socket, show_result_modal: false, inspecting_result: false)}
   end
 
   @impl true
@@ -335,39 +461,14 @@ defmodule HeddleUI.FlowLive.Editor do
   def handle_event("open_execution_result", %{"id" => execution_id}, socket) do
     execution = Executions.get_execution!(execution_id)
 
-    {:noreply,
-     assign(socket,
-       execution_notice: nil,
-       execution_result: execution_modal_result(execution),
-       show_result_modal: true,
-       inspecting_result: false
-     )}
-  end
-
-  @impl true
-  def handle_event("toggle_inspect_result", _params, socket) do
-    {:noreply, assign(socket, inspecting_result: !socket.assigns.inspecting_result)}
-  end
-
-  # Error Details Modal
-  @impl true
-  def handle_event("show_error_details", %{"nodeId" => node_id, "message" => message}, socket) do
-    {:noreply,
-     assign(socket,
-       error_modal_open: true,
-       current_error_node_id: node_id,
-       current_error_message: message
-     )}
-  end
-
-  @impl true
-  def handle_event("close_error_modal", _params, socket) do
-    {:noreply,
-     assign(socket,
-       error_modal_open: false,
-       current_error_node_id: nil,
-       current_error_message: nil
-     )}
+    if execution.flow_id == socket.assigns.current_flow.id do
+      {:noreply,
+       socket
+       |> assign(execution_notice: nil)
+       |> InspectorManager.open(execution)}
+    else
+      {:noreply, socket}
+    end
   end
 
   # Dynamic Node / AST queries
@@ -438,20 +539,6 @@ defmodule HeddleUI.FlowLive.Editor do
 
   # Process Messages (info)
   @impl true
-  def handle_info({:dismiss_execution_notice, execution_id, dismiss_ref}, socket) do
-    notice = socket.assigns.execution_notice
-
-    socket =
-      if notice && notice.execution_id == execution_id && notice.dismiss_ref == dismiss_ref do
-        assign(socket, execution_notice: nil)
-      else
-        socket
-      end
-
-    {:noreply, socket}
-  end
-
-  @impl true
   def handle_info({:dismiss_execution_notice, execution_id}, socket) do
     notice = socket.assigns.execution_notice
 
@@ -467,7 +554,21 @@ defmodule HeddleUI.FlowLive.Editor do
 
   @impl true
   def handle_info({:execution_updated, execution}, socket) do
-    {:noreply, assign(socket, execution_notice: execution_notice(execution.status, execution))}
+    if InspectorManager.showing?(socket, execution.id) do
+      {:noreply, InspectorManager.updated(socket, execution)}
+    else
+      {:noreply, assign(socket, execution_notice: execution_notice(execution.status, execution))}
+    end
+  end
+
+  @impl true
+  def handle_info({:execution_step, execution_id, entry}, socket) do
+    {:noreply, InspectorManager.step(socket, execution_id, entry)}
+  end
+
+  @impl true
+  def handle_info(:inspector_flush, socket) do
+    {:noreply, InspectorManager.flush(socket)}
   end
 
   @impl true
@@ -506,6 +607,71 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   # Private Helpers
+  defp save_node_config(socket, params, settings) do
+    node_id = socket.assigns.current_node_id
+    config_data = Map.drop(params, ["_csrf_token", "_target", "node_label", "settings"])
+    node_label = params["node_label"]
+
+    socket =
+      if node_label && node_label != socket.assigns.editing_node_data["label"] do
+        push_event(socket, "update_node_label", %{nodeId: node_id, label: node_label})
+      else
+        socket
+      end
+
+    socket
+    |> sync_node_sockets(node_id, config_data)
+    |> push_event("update_node_data", %{nodeId: node_id, data: config_data})
+    |> push_event("update_node_settings", %{nodeId: node_id, settings: settings})
+    |> assign(config_modal_open: false, editing_node_data: nil, current_node_id: nil)
+  end
+
+  # Unpinning shows only once saved, so the pinned data stays in the drawer until then.
+  defp put_settings_values(node_data, params) when is_map(params) do
+    unpin = params["unpin"] == "true"
+    pin = get_in(node_data, ["settings", "pin"])
+
+    case NodeSettings.from_params(Map.delete(params, "unpin")) do
+      {:ok, settings} ->
+        settings = if unpin and pin, do: Map.put(settings, "pin", pin), else: settings
+
+        node_data
+        |> Map.put("settings", settings)
+        |> Map.put("unpin", unpin)
+
+      {:error, :invalid_pin} ->
+        node_data
+    end
+  end
+
+  defp put_settings_values(node_data, _params), do: node_data
+
+  defp inspect_on_load(%{assigns: %{inspect_on_load: public_id}} = socket)
+       when is_binary(public_id) do
+    socket = assign(socket, inspect_on_load: nil)
+
+    case Executions.get_execution_by_flow_and_public_id(socket.assigns.current_flow.id, public_id) do
+      nil -> put_flash(socket, :error, gettext("That run was not found in this flow."))
+      execution -> InspectorManager.open(socket, execution)
+    end
+  end
+
+  defp inspect_on_load(socket), do: socket
+
+  # Saves the flow and runs it with `input`, like the run button does.
+  defp run_with(socket, input) do
+    socket
+    |> assign(next_run_input: input, run_section_id: nil)
+    |> push_event("request_save_and_run", %{})
+  end
+
+  defp import_error(:invalid_json), do: gettext("That file isn't JSON.")
+  defp import_error(:not_a_flow), do: gettext("That file isn't a Heddle flow.")
+  defp import_error(:too_big), do: gettext("That file is too big to be a flow.")
+
+  defp import_error(reason) when is_binary(reason),
+    do: gettext("That flow can't be imported: %{reason}.", reason: reason)
+
   defp load_graph(socket, flow) do
     push_event(socket, "load_graph_data", %{
       nodes: Layout.place(flow.nodes, flow.connections),
@@ -571,63 +737,63 @@ defmodule HeddleUI.FlowLive.Editor do
     end)
   end
 
-  defp subscribe_to_execution(socket, execution) do
-    if connected?(socket), do: Executions.subscribe_to_execution(execution)
-    socket
-  end
+  # A run that starts at a Webhook asks for the request first.
+  defp run_or_ask(socket, data) do
+    graph = run_graph(data, socket.assigns.run_section_id)
 
-  defp schedule_execution_notice_dismiss(socket, execution_id) do
-    dismiss_ref = System.unique_integer([:positive])
-    notice = socket.assigns.execution_notice
-
-    Process.send_after(
-      self(),
-      {:dismiss_execution_notice, execution_id, dismiss_ref},
-      @notice_dismiss_timeout
-    )
-
-    if notice && notice.execution_id == execution_id do
-      assign(socket, execution_notice: Map.put(notice, :dismiss_ref, dismiss_ref))
+    if socket.assigns.next_run_input == nil and starts_at_webhook?(graph) do
+      assign(socket,
+        webhook_test_open: true,
+        webhook_test_error: nil,
+        webhook_test_fields: Graph.body_fields(graph)
+      )
     else
-      socket
+      save_and_run(socket, data)
     end
   end
 
-  defp save_and_run(socket, data) do
-    %{current_scope: scope, current_flow: flow, webhook_test_input: input} = socket.assigns
-    socket = assign(socket, webhook_test_input: nil)
+  defp run_graph(data, section_id) do
+    flow = %{nodes: data["nodes"], connections: data["connections"], comments: data["comments"]}
 
-    case Executions.save_and_run(scope, flow, data, input || %{"trigger" => "manual"}) do
+    Graph.new(flow, section: section_id)
+  end
+
+  defp save_and_run(socket, data) do
+    %{current_scope: scope, current_flow: flow, next_run_input: input} = socket.assigns
+    input = run_input(input, socket.assigns.run_section_id)
+    socket = assign(socket, next_run_input: nil, run_section_id: nil)
+
+    case Executions.save_and_run(scope, flow, data, input) do
       {:ok, %{flow: updated_flow, execution: execution}} ->
         socket
-        |> assign(
-          current_flow: updated_flow,
-          has_changes: false,
-          execution_result: nil,
-          execution_notice: execution_notice(:queued, execution),
-          show_result_modal: false,
-          inspecting_result: false
-        )
-        |> subscribe_to_execution(execution)
-        |> schedule_execution_notice_dismiss(execution.id)
-        |> put_flash(:info, "Flow saved and execution queued.")
-        |> push_event("clear_node_errors", %{})
+        |> assign(current_flow: updated_flow, has_changes: false, execution_notice: nil)
+        |> InspectorManager.follow(execution)
 
       {:error, stage, context} ->
         handle_run_failure(socket, stage, context)
     end
   end
 
-  # With a Start, a person can run the flow as it is. A Webhook needs a request.
-  defp starts_at_webhook?(%{"nodes" => nodes}) do
-    graph = Graph.new(%{nodes: nodes, connections: []})
+  # A run from the editor takes the pinned data, and tells the inspector each step.
+  defp run_input(nil, nil), do: %{"trigger" => "manual", "debug" => true}
 
+  defp run_input(nil, section_id),
+    do: %{"trigger" => "section", "section_id" => section_id, "debug" => true}
+
+  defp run_input(input, nil), do: Map.put(input, "debug", true)
+
+  defp run_input(input, section_id),
+    do: Map.merge(input, %{"section_id" => section_id, "debug" => true})
+
+  # With a Start, a person can run the flow as it is. A Webhook needs a request.
+  defp starts_at_webhook?(graph) do
     Graph.of_type(graph, "Webhook") != [] and Graph.of_type(graph, "Start") == []
   end
 
-  defp starts_at_webhook?(_data), do: false
-
   defp webhook_test_form(params), do: to_form(params, as: :webhook_test)
+
+  defp flow_settings_form(flow),
+    do: to_form(%{"error_flow_id" => flow.error_flow_id}, as: :flow_settings)
 
   defp decode_body(body) do
     case String.trim(body || "") do
@@ -690,8 +856,7 @@ defmodule HeddleUI.FlowLive.Editor do
       title: "Execution queued",
       message: "The flow was saved and is waiting for the worker to run.",
       execution_id: execution.id,
-      public_id: execution.public_id,
-      dismiss_ref: nil
+      public_id: execution.public_id
     }
   end
 
@@ -702,8 +867,7 @@ defmodule HeddleUI.FlowLive.Editor do
       title: "Execution finished",
       message: "The flow run is ready to inspect.",
       execution_id: execution.id,
-      public_id: execution.public_id,
-      dismiss_ref: nil
+      public_id: execution.public_id
     }
   end
 
@@ -714,8 +878,18 @@ defmodule HeddleUI.FlowLive.Editor do
       title: "Execution failed",
       message: "The flow run finished with an error. Open it to inspect the details.",
       execution_id: execution.id,
-      public_id: execution.public_id,
-      dismiss_ref: nil
+      public_id: execution.public_id
+    }
+  end
+
+  defp execution_notice("waiting", execution) do
+    %{
+      kind: :info,
+      status: "waiting",
+      title: gettext("Execution waiting"),
+      message: gettext("The flow is paused at a Wait, and goes on by itself when the wait ends."),
+      execution_id: execution.id,
+      public_id: execution.public_id
     }
   end
 
@@ -726,19 +900,7 @@ defmodule HeddleUI.FlowLive.Editor do
       title: "Execution running",
       message: "The worker is processing this flow run.",
       execution_id: execution.id,
-      public_id: execution.public_id,
-      dismiss_ref: nil
-    }
-  end
-
-  defp execution_modal_result(execution) do
-    %{
-      "execution_id" => execution.id,
-      "public_id" => execution.public_id,
-      "status" => execution.status,
-      "result" => execution.result,
-      "error" => execution.error,
-      "logs" => execution.logs
+      public_id: execution.public_id
     }
   end
 end

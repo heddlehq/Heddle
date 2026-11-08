@@ -36,7 +36,16 @@ export class CustomCommentElement extends LitElement {
       getZoom: { attribute: false },
       onChange: { attribute: false },
       onDelete: { attribute: false },
+      // A section only: what keeps it from running, or null, and how to run it.
+      getRunBlocker: { attribute: false },
+      onRun: { attribute: false },
+      settingsOpen: { state: true },
     };
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._closeSettings();
   }
 
   firstUpdated() {
@@ -60,14 +69,98 @@ export class CustomCommentElement extends LitElement {
         class="comment-note ${this.selected || this.editing ? "is-selected" : ""}"
         data-kind=${kind}
         data-color=${color}
+        data-manual=${kind === "section" && this.data.manual ? "true" : "false"}
         style="width: ${width}px; height: ${height}px"
         @mouseup=${this._editOnDoubleClick}
       >
         ${this.selected || this.editing ? this._renderToolbar() : ""}
         ${this.editing ? this._renderInput(text) : this._renderText(text)}
+        ${kind === "section" ? this._renderSectionActions() : ""}
         <div class="comment-resize" @pointerdown=${this._startResize}></div>
       </div>
     `;
+  }
+
+  // Always there, so a section shows whether it runs with the flow without a click.
+  _renderSectionActions() {
+    const manual = this.data.manual === true;
+    const blocker = this.getRunBlocker?.();
+    const runLabel = blocker ? translate(blocker) : translate("Run section");
+
+    return html`
+      <div
+        class="section-actions"
+        @pointerdown=${stop}
+        @mousedown=${hold}
+        @mouseup=${stop}
+        @pointerenter=${() => this.requestUpdate()}
+      >
+        ${manual ? html`<span class="section-badge">${translate("Manual")}</span>` : ""}
+        <button
+          type="button"
+          class="section-action ${this.settingsOpen ? "is-active" : ""}"
+          title=${translate("Section settings")}
+          aria-label=${translate("Section settings")}
+          aria-expanded=${this.settingsOpen ? "true" : "false"}
+          @click=${this._toggleSettings}
+        >
+          <span class="hero-cog-6-tooth w-4 h-4"></span>
+        </button>
+        <button
+          type="button"
+          class="section-action section-run"
+          title=${runLabel}
+          aria-label=${runLabel}
+          ?disabled=${!!blocker}
+          @click=${() => this.onRun?.()}
+        >
+          <span class="hero-play w-4 h-4"></span>
+        </button>
+        ${this.settingsOpen ? this._renderSettings(manual) : ""}
+      </div>
+    `;
+  }
+
+  _renderSettings(manual) {
+    return html`
+      <div class="section-settings" role="dialog" aria-label=${translate("Section settings")}>
+        <label class="section-setting">
+          <span class="section-setting-text">
+            <span class="section-setting-title">${translate("Run with the flow")}</span>
+            <span class="section-setting-hint">
+              ${translate("When off, it runs only from the play button.")}
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            role="switch"
+            class="section-switch"
+            .checked=${!manual}
+            @change=${(e) => this._set({ manual: !e.target.checked })}
+          />
+        </label>
+      </div>
+    `;
+  }
+
+  _toggleSettings = () => {
+    if (this.settingsOpen) {
+      this._closeSettings();
+      return;
+    }
+
+    this.settingsOpen = true;
+    // The press that opened it is already over, so it doesn't close it again.
+    setTimeout(() => document.addEventListener("pointerdown", this._closeOnOutside, true));
+  };
+
+  _closeOnOutside = (e) => {
+    if (!this.querySelector(".section-actions")?.contains(e.target)) this._closeSettings();
+  };
+
+  _closeSettings() {
+    this.settingsOpen = false;
+    document.removeEventListener("pointerdown", this._closeOnOutside, true);
   }
 
   _renderToolbar() {

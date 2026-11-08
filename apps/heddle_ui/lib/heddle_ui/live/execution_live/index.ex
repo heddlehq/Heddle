@@ -1,6 +1,7 @@
 defmodule HeddleUI.ExecutionLive.Index do
   use HeddleUI, :live_view
 
+  alias Heddle.Graph
   alias HeddleUI.Components.ResultFile
 
   on_mount {HeddleUI.UserAuth, :require_system_admin}
@@ -141,12 +142,16 @@ defmodule HeddleUI.ExecutionLive.Index do
                     Trigger: {get_trigger(@selected_execution)}
                   </p>
                   <%= if @selected_execution.flow do %>
-                    <div class="mt-2">
+                    <div class="mt-3">
                       <.link
-                        navigate={~p"/flows/#{@selected_execution.flow.id}"}
-                        class="text-xs font-semibold text-primary hover:underline"
+                        id="inspect-execution"
+                        navigate={
+                          ~p"/flows/#{@selected_execution.flow.id}?execution=#{@selected_execution.public_id}"
+                        }
+                        class="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-content shadow-sm transition hover:opacity-90"
                       >
-                        Open Flow
+                        <.icon name="hero-magnifying-glass" class="size-4" />
+                        {gettext("Inspect in the editor")}
                       </.link>
                     </div>
                   <% end %>
@@ -176,6 +181,8 @@ defmodule HeddleUI.ExecutionLive.Index do
                   <pre class="mt-2 overflow-x-auto text-xs text-red-800 dark:text-red-300 font-mono whitespace-pre-wrap"><%= Jason.encode!(@selected_execution.error, pretty: true) %></pre>
                 </div>
               <% end %>
+
+              <.waiting execution={@selected_execution} />
 
               <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
                 <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -252,11 +259,24 @@ defmodule HeddleUI.ExecutionLive.Index do
   defp status_badge_classes("failed"),
     do: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300"
 
+  defp status_badge_classes("waiting"),
+    do: "bg-violet-100 text-violet-800 dark:bg-violet-950/60 dark:text-violet-300"
+
   defp status_badge_classes("running"),
     do: "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300"
 
   defp status_badge_classes(_queued),
     do: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+
+  defp get_trigger(%{input: %{"section_id" => id}, flow: flow}) do
+    name =
+      case Enum.find(Graph.sections(flow || %{}), &(&1.id == to_string(id))) do
+        %{name: name} when name != "" -> name |> String.split("\n") |> hd()
+        _gone -> gettext("Untitled")
+      end
+
+    gettext("Section: %{name}", name: name)
+  end
 
   defp get_trigger(execution) do
     if is_map(execution.input) do
@@ -265,6 +285,74 @@ defmodule HeddleUI.ExecutionLive.Index do
       "manual"
     end
   end
+
+  attr :execution, :map, required: true
+
+  # Where a run a Wait paused stands, and what makes it go on.
+  defp waiting(%{execution: %{status: "waiting", paused: %{"wait" => wait}}} = assigns) do
+    assigns =
+      assign(assigns,
+        node: waiting_node(assigns.execution, wait["node_id"]),
+        resume_at: parse_datetime(wait["resume_at"]),
+        call?: wait["call"] == true,
+        resume_url: Executions.resume_url(assigns.execution)
+      )
+
+    ~H"""
+    <div
+      id="execution-waiting"
+      class="rounded-xl border border-violet-200 bg-violet-50 p-5 dark:border-violet-900/60 dark:bg-violet-950/40"
+    >
+      <div class="flex items-center gap-2">
+        <.icon name="hero-pause-circle" class="h-5 w-5 text-violet-700 dark:text-violet-300" />
+        <h3 class="text-sm font-semibold text-violet-900 dark:text-violet-200">
+          {gettext("Waiting at %{node}", node: @node)}
+        </h3>
+      </div>
+      <p class="mt-2 text-sm text-violet-900 dark:text-violet-200">
+        <%= cond do %>
+          <% @call? && @resume_at -> %>
+            {gettext(
+              "It goes on when its address is called, or through timeout at %{time}.",
+              time: format_datetime(@resume_at)
+            )}
+          <% @call? -> %>
+            {gettext("It goes on when its address is called.")}
+          <% true -> %>
+            {gettext("It goes on at %{time}.", time: format_datetime(@resume_at))}
+        <% end %>
+      </p>
+      <%= if @call? && @resume_url do %>
+        <p
+          id="execution-resume-url"
+          class="mt-3 select-all break-all rounded-lg bg-white px-3 py-2 font-mono text-xs text-gray-800 dark:bg-slate-900 dark:text-gray-200"
+        >
+          {@resume_url}
+        </p>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp waiting(assigns), do: ~H""
+
+  defp waiting_node(%{flow: %HeddleCore.Flows.Flow{} = flow}, node_id) do
+    case Graph.get(Graph.new(flow), node_id) do
+      %{label: label} when is_binary(label) and label != "" -> label
+      _other -> gettext("a Wait")
+    end
+  end
+
+  defp waiting_node(_execution, _node_id), do: gettext("a Wait")
+
+  defp parse_datetime(text) when is_binary(text) do
+    case DateTime.from_iso8601(text) do
+      {:ok, at, _offset} -> at
+      _invalid -> nil
+    end
+  end
+
+  defp parse_datetime(_text), do: nil
 
   defp format_datetime(nil), do: "—"
 

@@ -21,7 +21,7 @@ defmodule HeddleUI.MCP.Tools.GetExecution do
       Tool.with_flow(scope, id, frame, fn flow ->
         case Executions.get_execution_by_flow_and_public_id(flow.id, public_id) do
           nil -> Tool.error("Execution #{public_id} was not found.", frame)
-          execution -> Tool.reply(ExecutionJSON.show(%{execution: execution}).data, frame)
+          execution -> Tool.reply(ExecutionJSON.for_agent(%{execution: execution}).data, frame)
         end
       end)
     end)

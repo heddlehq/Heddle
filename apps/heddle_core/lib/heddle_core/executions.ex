@@ -5,6 +5,7 @@ defmodule HeddleCore.Executions do
 
   import Ecto.Query, warn: false
 
+  alias Heddle.Graph
   alias HeddleCore.Executions.Execution
   alias HeddleCore.Flows.Flow
   alias HeddleCore.Pagination
@@ -14,6 +15,8 @@ defmodule HeddleCore.Executions do
   @response_channel :webhook_responses
   @response_timeout :timer.seconds(30)
   @await_timeout to_timeout(minute: 2)
+  # How long a call waits for a run that hasn't reached its Wait yet.
+  @call_timeout to_timeout(second: 5)
   @response_poll 250
   @public_id_retry_attempts 8
   @public_id_first_words ~w(blue bright calm clear crisp fresh green lean quiet rapid sharp steady swift)
@@ -85,6 +88,19 @@ defmodule HeddleCore.Executions do
     Phoenix.PubSub.subscribe(HeddleCore.PubSub, execution_topic(execution_id))
   end
 
+  @doc """
+  Tells whoever follows `execution_id` that a step ended, with its log entry, so the
+  editor can show a run as it goes. Subscribers receive
+  `{:execution_step, execution_id, entry}`.
+  """
+  def broadcast_step(execution_id, entry) do
+    Phoenix.PubSub.broadcast(
+      HeddleCore.PubSub,
+      execution_topic(execution_id),
+      {:execution_step, execution_id, entry}
+    )
+  end
+
   def broadcast_execution_updated(%Execution{} = execution) do
     execution = Repo.preload(execution, :flow)
 
@@ -123,6 +139,78 @@ defmodule HeddleCore.Executions do
   end
 
   @doc """
+  Starts the error flow of the flow `execution` ran, if it has one, with what failed.
+
+  The error flow begins at its Error Trigger, with `error` and `execution` in the
+  context, see `HeddleNodes.Nodes.ErrorTrigger`. A run of an error flow never starts
+  another, so two flows can't keep starting each other.
+
+  Returns `{:ok, execution}` with the run it started, or `:none`.
+  """
+  def start_error_flow(%Execution{} = execution, error) do
+    case Repo.preload(execution, [flow: :error_flow], force: true) do
+      %Execution{input: %{"trigger" => "error"}} ->
+        :none
+
+      %Execution{flow: %Flow{error_flow: %Flow{} = error_flow} = flow} = execution ->
+        start_execution(error_flow, error_input(execution, flow, error))
+
+      _execution ->
+        :none
+    end
+  end
+
+  defp error_input(execution, flow, error) do
+    node_id = error["node_id"]
+    node = node_id && Graph.get(Graph.new(flow), node_id)
+
+    %{
+      "trigger" => "error",
+      "error" => %{
+        "message" => error["message"],
+        "node_id" => node_id,
+        "node_label" => node && node.label,
+        "node_type" => node && node.type
+      },
+      "execution" => %{
+        "id" => execution.public_id,
+        "flow_id" => flow.id,
+        "flow_name" => flow.name,
+        "url" => public_url() <> "/flows/#{flow.id}?execution=#{execution.public_id}"
+      }
+    }
+  end
+
+  @doc """
+  The input that runs `execution` again as it was first run, from the editor.
+  """
+  def rerun_input(%Execution{input: input}), do: Map.put(input || %{}, "debug", true)
+
+  @doc """
+  The input that runs a flow again from the step of `execution` at `index` of its logs,
+  with the context that step got. See `HeddleNodes.Runner.run/3`.
+
+  Returns `{:ok, input}`, or `{:error, reason}` with `:not_found`, or `:incomplete`
+  when the run kept only part of that context.
+  """
+  def replay_input(%Execution{logs: logs}, index) when is_integer(index) do
+    case Enum.at(logs || [], index) do
+      %{"node_id" => node_id, "data" => %{"input" => input} = data} when is_map(input) ->
+        if data["truncated"] do
+          {:error, :incomplete}
+        else
+          {:ok, Map.merge(input, %{"replay_from" => node_id, "debug" => true})}
+        end
+
+      %{"node_id" => _node_id} ->
+        {:error, :incomplete}
+
+      nil ->
+        {:error, :not_found}
+    end
+  end
+
+  @doc """
   Builds the input of a run that behaves as if `request` had reached the Webhook node.
 
   `request` takes `"body"`, and optionally `"method"`, `"headers"` and `"query_params"`.
@@ -136,8 +224,8 @@ defmodule HeddleCore.Executions do
   @doc """
   Runs `flow` with `input` and waits for it to finish.
 
-  Returns `{:ok, execution}` whether the run succeeded or failed, and
-  `{:error, :timeout}` if it takes longer than `timeout`.
+  Returns `{:ok, execution}` whether the run succeeded, failed or is waiting at a Wait,
+  and `{:error, :timeout}` if it takes longer than `timeout`.
   """
   def start_and_await(%Flow{id: flow_id}, input, timeout \\ @await_timeout) do
     with {:ok, %Execution{} = execution} <- create_execution(%{flow_id: flow_id, input: input}) do
@@ -152,7 +240,7 @@ defmodule HeddleCore.Executions do
   defp await_finish(id, timeout) do
     receive do
       {:execution_updated, %Execution{id: ^id, status: status} = execution}
-      when status in ["succeeded", "failed"] ->
+      when status in ["waiting", "succeeded", "failed"] ->
         {:ok, execution}
     after
       timeout -> {:error, :timeout}
@@ -208,7 +296,7 @@ defmodule HeddleCore.Executions do
       {"failed", _response} ->
         {:error, :failed}
 
-      {"succeeded", _response} ->
+      {status, _response} when status in ["waiting", "succeeded"] ->
         {:error, :no_response}
 
       _still_going ->
@@ -235,6 +323,167 @@ defmodule HeddleCore.Executions do
     %{execution_id: execution.id}
     |> Oban.Job.new(queue: :executions, worker: @flow_execution_worker, max_attempts: 3)
     |> then(&Oban.insert(running_oban() || oban_name(), &1))
+  end
+
+  @doc """
+  The address that resumes `execution` when a Wait waits for a call. A flow reads it
+  as `{{resume_url}}`.
+  """
+  def resume_url(%Execution{resume_token: token}) when is_binary(token) do
+    public_url() <> "/api/resume/" <> token
+  end
+
+  def resume_url(_execution), do: nil
+
+  defp public_url do
+    :heddle_core
+    |> Application.get_env(:public_url, "http://localhost:4000")
+    |> String.trim_trailing("/")
+  end
+
+  @doc """
+  Saves a run a Wait paused, and schedules what ends the wait.
+
+  `paused` is what `HeddleNodes.Runner` returned. A wait for a time gets a job at that
+  time. A wait for a call is ended by `resume_by_call/3`, or by a job at its time
+  limit when it has one. Each pause gets its own id, so a job left from an earlier one
+  can't resume a later one.
+
+  Returns `{:ok, execution}`, or `{:error, :unsaveable}` when the run holds a value
+  that can't be stored.
+  """
+  def pause(%Execution{} = execution, %{"wait" => wait} = paused) do
+    wait_id = Base.url_encode64(:crypto.strong_rand_bytes(12), padding: false)
+    paused = Map.put(paused, "wait_id", wait_id)
+
+    changes = [
+      status: "waiting",
+      paused: paused,
+      logs: get_in(paused, ["context", "logs"]) || execution.logs
+    ]
+
+    with {:ok, _json} <- encode(paused),
+         {:ok, %{execution: execution}} <-
+           Ecto.Multi.new()
+           |> Ecto.Multi.update(:execution, Ecto.Changeset.change(execution, changes))
+           |> schedule_resume(execution, wait_id, wait)
+           |> Repo.transaction() do
+      {:ok, execution}
+    end
+  end
+
+  defp encode(paused) do
+    case Jason.encode(paused) do
+      {:ok, json} -> {:ok, json}
+      {:error, _reason} -> {:error, :unsaveable}
+    end
+  end
+
+  defp schedule_resume(multi, execution, wait_id, %{"resume_at" => at} = wait)
+       when is_binary(at) do
+    {:ok, at, _offset} = DateTime.from_iso8601(at)
+    by = if wait["call"], do: "timeout", else: "time"
+
+    Oban.insert(
+      running_oban() || oban_name(),
+      multi,
+      :resume,
+      resume_job(execution, wait_id, by, %{}, scheduled_at: at)
+    )
+  end
+
+  defp schedule_resume(multi, _execution, _wait_id, _wait), do: multi
+
+  # Unique, so a second call to the same address doesn't resume the run twice.
+  defp resume_job(execution, wait_id, by, args, opts \\ []) do
+    %{execution_id: execution.id, wait_id: wait_id, by: by}
+    |> Map.merge(args)
+    |> Oban.Job.new(
+      [
+        queue: :executions,
+        worker: @flow_execution_worker,
+        max_attempts: 3,
+        unique: [keys: [:execution_id, :wait_id, :by], period: :infinity]
+      ] ++ opts
+    )
+  end
+
+  @doc """
+  Resumes the run whose address has `token`, where a Wait waits for a call, with
+  `request` as the result of that Wait.
+
+  A run that hasn't reached its Wait yet is given up to `:timeout` ms to get there,
+  because a flow often sends the address just before it waits.
+
+  Returns `{:ok, execution}`, or `{:error, reason}` with `:not_found`,
+  `:already_resumed`, `:not_waiting` or `:finished`.
+  """
+  def resume_by_call(token, request, opts \\ []) when is_binary(token) do
+    deadline = System.monotonic_time(:millisecond) + Keyword.get(opts, :timeout, @call_timeout)
+
+    case Repo.get_by(Execution, resume_token: token) do
+      nil -> {:error, :not_found}
+      execution -> call(execution, request, deadline, Keyword.get(opts, :poll, @response_poll))
+    end
+  end
+
+  defp call(execution, request, deadline, poll) do
+    case execution do
+      %Execution{status: "waiting", paused: %{"wait_id" => id, "wait" => %{"call" => true}}} ->
+        job = resume_job(execution, id, "call", %{request: request})
+
+        case Oban.insert(running_oban() || oban_name(), job) do
+          {:ok, %Oban.Job{conflict?: true}} -> {:error, :already_resumed}
+          {:ok, _job} -> {:ok, execution}
+          {:error, reason} -> {:error, reason}
+        end
+
+      %Execution{status: status} when status in ["queued", "running"] ->
+        if System.monotonic_time(:millisecond) < deadline do
+          Process.sleep(poll)
+          call(Repo.reload!(execution), request, deadline, poll)
+        else
+          {:error, :not_waiting}
+        end
+
+      %Execution{status: "waiting"} ->
+        {:error, :not_waiting}
+
+      %Execution{} ->
+        {:error, :finished}
+    end
+  end
+
+  @doc """
+  Takes a paused run for the job `job_id`, which ends the wait `wait_id`.
+
+  Only one job takes it: the others, like a time limit that came after the call, find
+  it gone. The job that took it can take it again on a retry.
+
+  Returns `{:ok, execution}` or `:error`.
+  """
+  def claim_resume(execution_id, wait_id, job_id) do
+    job_id = to_string(job_id)
+
+    query =
+      from e in Execution,
+        where: e.id == ^execution_id,
+        where: fragment("?->>'wait_id' = ?", e.paused, ^wait_id),
+        where:
+          e.status == "waiting" or
+            (e.status == "running" and fragment("?->>'resumed_by' = ?", e.paused, ^job_id)),
+        select: e,
+        update: [
+          set: [
+            status: "running",
+            paused: fragment("jsonb_set(?, '{resumed_by}', to_jsonb(?::text))", e.paused, ^job_id)
+          ]
+        ]
+
+    case Repo.update_all(query, []) do
+      {1, [execution]} -> {:ok, execution}
+      {0, _none} -> :error
+    end
   end
 
   @doc """
@@ -323,6 +572,7 @@ defmodule HeddleCore.Executions do
         finished_at: timestamp()
       })
     )
+    |> Ecto.Changeset.put_change(:paused, nil)
     |> Repo.update()
   end
 
@@ -337,6 +587,7 @@ defmodule HeddleCore.Executions do
         finished_at: timestamp()
       })
     )
+    |> Ecto.Changeset.put_change(:paused, nil)
     |> Repo.update()
   end
 
@@ -380,7 +631,7 @@ defmodule HeddleCore.Executions do
   end
 
   defp insert_execution(attrs) do
-    %Execution{}
+    %Execution{resume_token: Base.url_encode64(:crypto.strong_rand_bytes(24), padding: false)}
     |> Execution.changeset(attrs)
     |> Repo.insert()
   end

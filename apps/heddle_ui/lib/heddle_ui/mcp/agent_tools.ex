@@ -64,7 +64,9 @@ defmodule HeddleUI.MCP.AgentTools do
           {:error, "Flow #{id} was not found."}
 
         flow ->
+          section = args["section_id"] || args[:section_id]
           input = args["input"] || args[:input]
+          input = if section, do: Map.put(input || %{}, "section_id", section), else: input
           send(parent, {ref, :run_requested, %{flow_id: flow.id, name: flow.name, input: input}})
           {:ok, "The user will be asked to confirm. Stop here and tell them."}
       end

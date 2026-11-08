@@ -319,6 +319,102 @@ test.describe('Flow Editor', () => {
       expect(await layer('note')).toBe('-1');
     });
 
+    test('selects what is inside a section with Shift and a box drawn on it', async ({ page }) => {
+      await addComment(page, 'Group', 'section');
+      await addComment(page, 'Inside');
+
+      const section = page.locator('.comment-note[data-kind="section"]');
+      const inside = page.locator('.comment-note[data-kind="note"]');
+      const box = await section.boundingBox();
+
+      await page.keyboard.down('Shift');
+      await page.mouse.move(box.x + 10, box.y + box.height - 10);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width - 20, box.y + 40, { steps: 5 });
+      await page.mouse.up();
+      await page.keyboard.up('Shift');
+
+      await expect(inside).toHaveClass(/is-selected/);
+      await expect(section).not.toHaveClass(/is-selected/);
+    });
+
+    test('still picks a section with a Shift click', async ({ page }) => {
+      await addComment(page, 'Group', 'section');
+
+      const section = page.locator('.comment-note[data-kind="section"]');
+      const box = await section.boundingBox();
+      await expect(section).not.toHaveClass(/is-selected/);
+      await page.keyboard.down('Shift');
+      await page.mouse.click(box.x + 10, box.y + box.height - 10);
+      await page.keyboard.up('Shift');
+
+      await expect(section).toHaveClass(/is-selected/);
+    });
+
+    // A Logger in the middle of the canvas, and a section moved over it.
+    const sectionAroundNode = async (page) => {
+      await addNodeViaContextMenu(page, 'Logger');
+      await addComment(page, 'Billing', 'section');
+
+      const section = page.locator('.comment-note[data-kind="section"]');
+      const node = page.locator('custom-node').first();
+      const s = await section.boundingBox();
+      const n = await node.boundingBox();
+      await dragBy(page, section, n.x + n.width / 2 - (s.x + s.width / 2), n.y + n.height / 2 - (s.y + s.height / 2));
+
+      return { section, node };
+    };
+
+    test('moves what is inside a section along with it', async ({ page }) => {
+      const { section, node } = await sectionAroundNode(page);
+      const before = await node.boundingBox();
+
+      await dragBy(page, section, 80, 40);
+
+      const after = await node.boundingBox();
+      expect(Math.abs(after.x - before.x - 80)).toBeLessThan(3);
+      expect(Math.abs(after.y - before.y - 40)).toBeLessThan(3);
+    });
+
+    test('sets a section to run only by hand from its gear, and keeps it', async ({ page }) => {
+      await addComment(page, 'Billing', 'section');
+      const section = page.locator('.comment-note[data-kind="section"]');
+
+      await page.getByRole('button', { name: 'Section settings' }).click();
+      const toggle = page.getByRole('switch', { name: /Run with the flow/ });
+      await expect(toggle).toBeChecked();
+      await toggle.uncheck();
+
+      await expect(section).toHaveAttribute('data-manual', 'true');
+      await expect(section.locator('.section-badge')).toBeVisible();
+
+      await page.locator('header').click();
+      await expect(page.locator('.section-settings')).toHaveCount(0);
+
+      await save(page);
+      await page.reload();
+      await waitForLiveView(page);
+
+      await expect(page.locator('.comment-note[data-kind="section"]')).toHaveAttribute('data-manual', 'true');
+    });
+
+    test('cannot run a section with nothing in it', async ({ page }) => {
+      await addComment(page, 'Empty', 'section');
+
+      await expect(page.getByRole('button', { name: 'Put nodes in this section to run it' })).toBeDisabled();
+    });
+
+    test('runs a section from its play button', async ({ page }) => {
+      await sectionAroundNode(page);
+      await page.locator('.section-run').hover();
+
+      const run = page.getByRole('button', { name: 'Run section' });
+      await expect(run).toBeEnabled();
+      await run.click();
+
+      await expect(page.locator('#run-inspector')).toBeVisible({ timeout: 10000 });
+    });
+
     test('adds a comment from the context menu where it was clicked', async ({ page }) => {
       const rete = page.locator('#flow-canvas');
       const canvas = await rete.boundingBox();
@@ -467,7 +563,7 @@ test.describe('Flow Editor', () => {
       await expect(page.locator('custom-node')).toHaveCount(0);
 
       await page.getByRole('button', { name: 'Run Flow' }).click();
-      await expect(page.getByText('Execution queued')).toBeVisible();
+      await expect(page.locator('#run-inspector-status')).toHaveText(/Queued/i);
     });
   });
 
@@ -714,6 +810,44 @@ test.describe('Flow Editor', () => {
 
       const node = page.locator('custom-node').first();
       await expect(node.locator('custom-socket')).toHaveCount(3, { timeout: 5000 });
+    });
+  });
+
+  test.describe('Import', () => {
+    const flow = {
+      nodes: [
+        { id: 'hook', type: 'Webhook', label: 'New lead', controls: { method: 'POST', path: '/leads' }, position: { x: 0, y: 0 } },
+        { id: 'log', type: 'Logger', label: 'Log it', controls: { level: 'info', message: 'A lead' }, position: { x: 220, y: 0 } },
+      ],
+      connections: [{ source: 'hook', sourceOutput: 'exec', target: 'log', targetInput: 'exec' }],
+      comments: [],
+    };
+
+    const importFile = async (page, name, content) => {
+      const chooser = page.waitForEvent('filechooser');
+      await page.locator('#import-flow').click();
+      await (await chooser).setFiles({ name, mimeType: 'application/json', buffer: Buffer.from(content) });
+    };
+
+    test('puts a flow from a file on the canvas, and saving keeps it', async ({ page }) => {
+      await importFile(page, 'leads.json', JSON.stringify(flow));
+
+      await expect(page.locator('custom-node')).toHaveCount(2, { timeout: 5000 });
+      await expect(page.getByText('Flow imported')).toBeVisible({ timeout: 5000 });
+
+      await page.getByRole('button', { name: 'Save Changes' }).click();
+      await expect(page.getByText('You have unsaved changes')).toBeHidden({ timeout: 5000 });
+
+      await page.reload();
+      await waitForLiveView(page);
+      await expect(page.locator('custom-node')).toHaveCount(2, { timeout: 5000 });
+    });
+
+    test('says why a file is not a flow, and leaves the canvas alone', async ({ page }) => {
+      await importFile(page, 'notes.json', '{"name": "Not a flow"}');
+
+      await expect(page.getByText("That file isn't a Heddle flow.")).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('custom-node')).toHaveCount(0);
     });
   });
 });

@@ -4,6 +4,7 @@ import Config
 config :pbkdf2_elixir, :rounds, 1
 config :heddle_core, Oban, testing: :manual
 config :heddle_ui, :webhook_response, timeout: 300, poll: 5
+config :heddle_ui, :resume_call, timeout: 300, poll: 5
 config :heddle_worker, Oban, testing: :manual
 config :heddle_core, :log_email_notifications?, false
 config :heddle_core, :async_api_key_touch?, false

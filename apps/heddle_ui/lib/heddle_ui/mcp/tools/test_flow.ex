@@ -4,7 +4,8 @@ defmodule HeddleUI.MCP.Tools.TestFlow do
   context it ended with, what it answered and the steps it took. Use it to check a
   change really works. For a flow that starts at a Webhook node, send webhook with the
   body of the request, as if it had been called. Otherwise, the fields of input become
-  variables of the run. It has real side effects, so the user may be asked first.
+  variables of the run. With section_id, it runs only that section of the flow, the id
+  of a comment of kind section. It has real side effects, so the user may be asked first.
   """
 
   use Anubis.Server.Component,
@@ -23,6 +24,8 @@ defmodule HeddleUI.MCP.Tools.TestFlow do
 
     field :webhook, :map,
       description: "The request to simulate: body, and optionally method, query_params, headers"
+
+    field :section_id, :string, description: "Run only this section of the flow"
   end
 
   @impl true
@@ -30,8 +33,9 @@ defmodule HeddleUI.MCP.Tools.TestFlow do
     Tool.authorize(frame, "executions:write", fn scope ->
       Tool.with_flow(scope, id, frame, fn flow ->
         with :ok <- AgentChat.confirm_run(frame.assigns.api_key, flow),
-             {:ok, execution} <- Executions.start_and_await(flow, input(params)) do
-          Tool.reply(ExecutionJSON.show(%{execution: execution}).data, frame)
+             input = Tool.put_section(input(params), params),
+             {:ok, execution} <- Executions.start_and_await(flow, input) do
+          Tool.reply(ExecutionJSON.for_agent(%{execution: execution}).data, frame)
         else
           {:error, :timeout} -> Tool.error("The flow is still running after 2 minutes.", frame)
           {:error, message} when is_binary(message) -> Tool.error(message, frame)
