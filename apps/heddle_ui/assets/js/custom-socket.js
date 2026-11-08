@@ -13,7 +13,7 @@ export class CustomSocketElement extends LitElement {
       .socket {
         width: 100% !important;
         height: 100% !important;
-        background: var(--color-primary) !important;
+        background: var(--socket-color, var(--color-primary)) !important;
         border: 2px solid var(--editor-surface) !important;
         border-radius: 50%;
         cursor: pointer;
@@ -22,7 +22,7 @@ export class CustomSocketElement extends LitElement {
         display: block !important;
       }
       .socket:hover {
-        background: color-mix(in oklab, var(--color-primary) 80%, black) !important;
+        background: color-mix(in oklab, var(--socket-color, var(--color-primary)) 80%, black) !important;
         border-width: 3px !important;
         transform: scale(1.1);
       }
