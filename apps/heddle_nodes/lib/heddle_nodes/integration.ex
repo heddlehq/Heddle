@@ -45,12 +45,14 @@ defmodule HeddleNodes.Integration do
   end
 
   @doc """
-  Returns the values of the credential the node picked.
+  Returns the values of the credential the node picked, as its flow's workspace sees
+  it: one of its own, or one shared with every workspace.
 
   heddle_core is only a test dependency of this app, so the store comes from config.
   """
   def credential(context, kind) do
-    Application.fetch_env!(:heddle_nodes, :credentials_client).fetch(context["credential"], kind)
+    Application.fetch_env!(:heddle_nodes, :credentials_client)
+    |> apply(:fetch, [context["workspace_id"], context["credential"], kind])
   end
 
   @doc """

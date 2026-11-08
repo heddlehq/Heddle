@@ -4,7 +4,6 @@ defmodule HeddleUI.MCP.ServerTest do
   import HeddleCore.AccountsFixtures
 
   alias HeddleCore.Accounts.Scope
-  alias HeddleCore.ApiKeys
   alias HeddleCore.Executions
   alias HeddleCore.Flows
   alias HeddleUI.AgentChat
@@ -17,7 +16,9 @@ defmodule HeddleUI.MCP.ServerTest do
   end
 
   defp token(user, scopes \\ @all_scopes) do
-    {:ok, %{token: token}} = ApiKeys.create_api_key(user, %{name: "mcp", scopes: scopes})
+    {:ok, %{token: token}} =
+      HeddleCore.AccountsFixtures.create_api_key(user, %{name: "mcp", scopes: scopes})
+
     token
   end
 
@@ -74,6 +75,33 @@ defmodule HeddleUI.MCP.ServerTest do
   defp payload(%{"content" => [%{"text" => text} | _]}), do: Jason.decode!(text)
   defp text(%{"content" => [%{"text" => text} | _]}), do: text
 
+  describe "roles" do
+    test "a viewer reads flows, and can't change or run them", %{conn: conn} do
+      admin = user_fixture()
+      workspace = workspace_fixture(admin)
+      flow = HeddleCore.FlowsFixtures.flow_fixture(%{user: admin, workspace: workspace})
+      viewer = user_fixture()
+      member_fixture(workspace, viewer, "viewer")
+      token = token(viewer)
+
+      assert %{"flows" => [%{"id" => id}]} = payload(call(conn, token, "list_flows"))
+      assert id == flow.id
+
+      for {tool, args} <- [
+            {"update_flow", %{flow_id: to_string(flow.id), name: "x"}},
+            {"run_flow", %{flow_id: to_string(flow.id)}},
+            {"create_flow", %{name: "x", nodes: []}}
+          ] do
+        result = call(conn, token, tool, args)
+        assert result["isError"], tool
+        assert text(result) =~ "role", tool
+      end
+
+      assert Flows.get_flow!(flow.id).name == flow.name
+      assert Executions.list_executions_for_flow(flow) == []
+    end
+  end
+
   describe "authentication" do
     test "rejects a request without an API key", %{conn: conn} do
       conn = conn |> put_req_header("content-type", "application/json") |> post("/mcp", "{}")
@@ -102,10 +130,10 @@ defmodule HeddleUI.MCP.ServerTest do
   end
 
   describe "reading" do
-    test "lists only the caller's flows", %{conn: conn, user: user, scope: scope} do
+    test "lists only the flows of the key's workspace", %{conn: conn, user: user, scope: scope} do
       {:ok, flow} = Flows.create_flow(scope, %{name: "Mine", nodes: [], connections: []})
 
-      other = Scope.for_user(system_admin_fixture())
+      other = user_scope_fixture()
       {:ok, _other} = Flows.create_flow(other, %{name: "Theirs", nodes: [], connections: []})
 
       result = call(conn, token(user), "list_flows")
@@ -114,8 +142,8 @@ defmodule HeddleUI.MCP.ServerTest do
       assert id == flow.id
     end
 
-    test "doesn't reveal another user's flow", %{conn: conn, user: user} do
-      other = Scope.for_user(system_admin_fixture())
+    test "doesn't reveal the flow of another workspace", %{conn: conn, user: user} do
+      other = user_scope_fixture()
       {:ok, flow} = Flows.create_flow(other, %{name: "Theirs", nodes: [], connections: []})
 
       result = call(conn, token(user), "get_flow", %{flow_id: to_string(flow.id)})
@@ -185,7 +213,9 @@ defmodule HeddleUI.MCP.ServerTest do
   describe "run_flow with an agent key" do
     setup %{user: user, scope: scope} do
       {:ok, flow} = Flows.create_flow(scope, %{name: "Flow", nodes: [], connections: []})
-      {:ok, %{api_key: api_key, token: token}} = ApiKeys.create_agent_key(user)
+
+      {:ok, %{api_key: api_key, token: token}} =
+        HeddleCore.AccountsFixtures.create_agent_key(user)
 
       %{flow: flow, api_key: api_key, token: token}
     end

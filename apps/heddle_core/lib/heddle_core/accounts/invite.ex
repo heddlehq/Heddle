@@ -1,6 +1,9 @@
 defmodule HeddleCore.Accounts.Invite do
   @moduledoc """
   Schema for user invite tokens. Invites expire after 7 days and can be used once.
+
+  An invite brings the person into a workspace with a role. One without a workspace
+  only creates the account.
   """
   use Ecto.Schema
   import Ecto.Changeset
@@ -11,8 +14,10 @@ defmodule HeddleCore.Accounts.Invite do
     field :token, :string
     field :expires_at, :utc_datetime
     field :used_at, :utc_datetime
+    field :role, :string
 
     belongs_to :invited_by_user, HeddleCore.Accounts.User
+    belongs_to :workspace, HeddleCore.Workspaces.Workspace
 
     timestamps(type: :utc_datetime)
   end

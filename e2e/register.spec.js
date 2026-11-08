@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { waitForLiveView, loginViaUI } from './helpers.js';
 
 test.describe('Register with invite', () => {
-  test('new user cannot access flows (redirect to dashboard)', async ({ browser }) => {
+  test('new user joins the workspace of the invite, with its role', async ({ browser }) => {
     const adminContext = await browser.newContext({ storageState: 'e2e/.auth/user.json' });
     const adminPage = await adminContext.newPage();
     await adminPage.goto('/users');
@@ -30,7 +30,10 @@ test.describe('Register with invite', () => {
 
     await guestPage.goto('/flows');
     await waitForLiveView(guestPage);
-    await expect(guestPage).toHaveURL(/\//);
+    await expect(guestPage).toHaveURL(/\/flows$/);
+    await expect(guestPage.getByRole('heading', { name: 'Flows', level: 1 })).toBeVisible();
+    await expect(guestPage.locator('#workspace-switcher-button')).toContainText('Default');
+    await expect(guestPage.locator('#workspace-switcher-button')).toContainText('Editor');
     await guestContext.close();
   });
 });

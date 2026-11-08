@@ -157,7 +157,7 @@ docker compose up -d --build
 This starts the UI, a worker and Postgres. The first build takes a few minutes.
 
 ### 2. Create your admin account
-Visit [`localhost:4000`](http://localhost:4000). The first visit asks you to create the admin account.
+Visit [`localhost:4000`](http://localhost:4000). The first visit asks you to create the admin account, which starts in a workspace called Default. To bring your team in, see [Workspaces and roles](workspaces.md).
 
 From another machine, use this computer's address, like `http://192.168.1.50:4000`.
 

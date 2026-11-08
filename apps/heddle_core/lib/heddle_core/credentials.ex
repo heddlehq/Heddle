@@ -10,8 +10,10 @@ defmodule HeddleCore.Credentials do
 
   import Ecto.Query, warn: false
 
+  alias HeddleCore.Accounts.Scope
   alias HeddleCore.Credentials.Credential
   alias HeddleCore.Repo
+  alias HeddleCore.Workspaces
 
   @version 1
   @encryption [
@@ -187,31 +189,104 @@ defmodule HeddleCore.Credentials do
 
   def kind(id), do: Enum.find(@kinds, &(&1.id == id))
 
-  def list_credentials do
-    Repo.all(from c in Credential, order_by: c.name)
+  @doc """
+  The credentials the caller's workspace can use: its own and the shared ones, by name.
+  """
+  def list_credentials(%Scope{} = scope) do
+    workspace_id = scope.workspace && scope.workspace.id
+
+    if Workspaces.can?(scope, :view, workspace_id) do
+      Repo.all(
+        from c in Credential,
+          where: c.workspace_id == ^workspace_id or is_nil(c.workspace_id),
+          order_by: [asc: c.name, asc_nulls_last: c.workspace_id]
+      )
+    else
+      []
+    end
   end
 
-  def get_credential!(id), do: Repo.get!(Credential, id)
+  @doc "The credentials shared with every workspace, by name."
+  def list_shared_credentials do
+    Repo.all(from c in Credential, where: is_nil(c.workspace_id), order_by: c.name)
+  end
+
+  @doc "Gets a credential the caller's workspace can use, or nil."
+  def get_credential(%Scope{} = scope, id) do
+    with {id, ""} <- Integer.parse(to_string(id)),
+         %Credential{} = credential <- Repo.get(Credential, id),
+         true <- visible?(scope, credential) do
+      credential
+    else
+      _other -> nil
+    end
+  end
+
+  # A shared one is visible to anyone who works in some workspace.
+  defp visible?(scope, %Credential{workspace_id: nil}),
+    do: Scope.system_admin?(scope) or Workspaces.can?(scope, :view)
+
+  defp visible?(scope, %Credential{workspace_id: id}), do: Workspaces.can?(scope, :view, id)
+
+  @doc """
+  Whether the caller may change `credential`: the editors of its workspace, or system
+  admins for a shared one.
+  """
+  def can_change?(%Scope{} = scope, %Credential{workspace_id: nil}),
+    do: Scope.system_admin?(scope)
+
+  def can_change?(%Scope{} = scope, %Credential{workspace_id: id}),
+    do: Workspaces.can?(scope, :edit, id)
 
   def change_credential(%Credential{} = credential, attrs \\ %{}) do
     Credential.changeset(credential, attrs, kind_ids())
   end
 
   @doc """
-  Creates a credential from `name`, `kind` and the `values` of that kind's fields.
+  Creates a credential from `name`, `kind` and the `values` of that kind's fields, in
+  the caller's workspace. With `"shared" => true`, a system admin shares it with every
+  workspace instead.
   """
-  def create_credential(attrs) do
-    save(%Credential{}, attrs, %{})
+  def create_credential(%Scope{} = scope, attrs) do
+    attrs = Map.new(attrs, fn {key, value} -> {to_string(key), value} end)
+
+    cond do
+      attrs["shared"] in [true, "true"] and Scope.system_admin?(scope) ->
+        save(%Credential{}, attrs, %{})
+
+      attrs["shared"] in [true, "true"] ->
+        {:error, :forbidden}
+
+      scope.workspace && Workspaces.can?(scope, :edit, scope.workspace.id) ->
+        save(%Credential{workspace_id: scope.workspace.id}, attrs, %{})
+
+      true ->
+        {:error, :forbidden}
+    end
+  end
+
+  @doc """
+  Creates a credential in the workspace with `workspace_id`, or a shared one with nil,
+  for what isn't a person, such as seeds and tests.
+  """
+  def insert_credential(attrs, workspace_id) do
+    save(%Credential{workspace_id: workspace_id}, attrs, %{})
   end
 
   @doc """
   Updates a credential. A secret left blank keeps the value it had.
   """
-  def update_credential(%Credential{} = credential, attrs) do
-    save(credential, attrs, stored_values(credential))
+  def update_credential(%Scope{} = scope, %Credential{} = credential, attrs) do
+    if can_change?(scope, credential) do
+      save(credential, attrs, stored_values(credential))
+    else
+      {:error, :forbidden}
+    end
   end
 
-  def delete_credential(%Credential{} = credential), do: Repo.delete(credential)
+  def delete_credential(%Scope{} = scope, %Credential{} = credential) do
+    if can_change?(scope, credential), do: Repo.delete(credential), else: {:error, :forbidden}
+  end
 
   @doc """
   Returns the values that aren't secret, to fill in a form.
@@ -223,17 +298,31 @@ defmodule HeddleCore.Credentials do
   end
 
   @doc """
-  Returns the values of the credential called `name`, which must be of `kind`.
+  Returns the values of the credential called `name`, which must be of `kind`, as a
+  run in the workspace with `workspace_id` sees it: its own first, then the shared
+  ones. With a nil `workspace_id`, only the shared ones.
   """
-  def fetch(name, kind) when is_binary(name) and is_binary(kind) do
-    case Repo.one(from c in Credential, where: c.name == ^name, select: {c.kind, c.data}) do
+  def fetch(workspace_id, name, kind) when is_binary(name) and is_binary(kind) do
+    query =
+      from c in Credential,
+        where: c.name == ^name,
+        order_by: [asc_nulls_last: c.workspace_id],
+        limit: 1,
+        select: {c.kind, c.data}
+
+    query =
+      if is_nil(workspace_id),
+        do: where(query, [c], is_nil(c.workspace_id)),
+        else: where(query, [c], c.workspace_id == ^workspace_id or is_nil(c.workspace_id))
+
+    case Repo.one(query) do
       nil -> {:error, ~s(There is no credential called "#{name}".)}
       {^kind, data} -> decrypt(name, kind, data)
       {other, _data} -> {:error, ~s(The credential "#{name}" is for #{other}, not #{kind}.)}
     end
   end
 
-  def fetch(_name, _kind), do: {:error, "Pick a credential for this node."}
+  def fetch(_workspace_id, _name, _kind), do: {:error, "Pick a credential for this node."}
 
   defp save(credential, attrs, current) do
     attrs = Map.new(attrs, fn {key, value} -> {to_string(key), value} end)

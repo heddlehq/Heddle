@@ -8,6 +8,15 @@ defmodule HeddleUI.FallbackController do
     |> render(:"404")
   end
 
+  # The key's owner can see this, but their role in its workspace doesn't let them do it.
+  def call(conn, {:error, :forbidden}) do
+    conn
+    |> put_status(:forbidden)
+    |> json(
+      HeddleUI.ApiError.format(:forbidden, "Your role in this workspace doesn't allow this.")
+    )
+  end
+
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)

@@ -40,11 +40,14 @@ defmodule HeddleUI.Components.Modals.NodeConfigModalTest do
   describe "the model of an AI node" do
     setup do
       {:ok, _credential} =
-        Credentials.create_credential(%{
-          "name" => "gemini",
-          "kind" => "ai",
-          "values" => %{"provider" => "google", "api_key" => "k"}
-        })
+        Credentials.insert_credential(
+          %{
+            "name" => "gemini",
+            "kind" => "ai",
+            "values" => %{"provider" => "google", "api_key" => "k"}
+          },
+          nil
+        )
 
       :ok
     end
@@ -68,7 +71,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModalTest do
       |> render_component(
         config_modal_open: true,
         editing_node_data: data,
-        credentials: Credentials.list_credentials()
+        credentials: Credentials.list_shared_credentials()
       )
       |> LazyHTML.from_fragment()
     end

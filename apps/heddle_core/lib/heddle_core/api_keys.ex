@@ -1,13 +1,18 @@
 defmodule HeddleCore.ApiKeys do
   @moduledoc """
   API key management and authentication.
+
+  A key belongs to a person and one workspace. It reaches only that workspace, with
+  the role its owner has there at the time of each request, and only what its scopes
+  allow: see `HeddleCore.Accounts.Scope.for_api_key/1`.
   """
 
   import Ecto.Query, warn: false
 
-  alias HeddleCore.Accounts.User
+  alias HeddleCore.Accounts.{Scope, User}
   alias HeddleCore.ApiKeys.ApiKey
   alias HeddleCore.Repo
+  alias HeddleCore.Workspaces
 
   @prefix_size 8
   @secret_size 32
@@ -17,11 +22,46 @@ defmodule HeddleCore.ApiKeys do
   @agent_key_scopes ~w(workflows:read workflows:write nodes:read executions:read executions:write)
   @agent_key_lifetime_seconds 3600
 
-  def create_api_key(%User{id: user_id}, attrs \\ %{}) do
-    create_api_key(user_id, Map.new(attrs), @max_create_attempts)
+  @doc """
+  Creates a key for the caller, in the workspace they work in. Its scopes must be ones
+  their role there reaches: see `ApiKey.scopes_for/1`.
+  """
+  def create_api_key(
+        %Scope{api_key: nil, user: %User{} = user, workspace: %{id: id}} = scope,
+        attrs
+      ) do
+    attrs = Map.new(attrs)
+    scopes = attrs[:scopes] || attrs["scopes"] || []
+    allowed = ApiKey.scopes_for(scope.role)
+
+    if scope.role && Enum.all?(scopes, &(&1 in allowed)) do
+      create_api_key(user, id, attrs)
+    else
+      {:error, :forbidden}
+    end
   end
 
-  defp create_api_key(user_id, attrs, attempts_left) when attempts_left > 0 do
+  def create_api_key(%Scope{}, _attrs), do: {:error, :forbidden}
+
+  @doc """
+  Creates a key for `user` in the workspace with `workspace_id`, which they must be in.
+  """
+  def create_api_key(%User{} = user, workspace_id, attrs) do
+    if Workspaces.role_of(user, workspace_id) do
+      attrs = attrs |> Map.new() |> Map.drop([:workspace_id, "workspace_id"])
+      attrs = Map.new(attrs, fn {key, value} -> {to_atom_key(key), value} end)
+
+      insert_api_key(user.id, Map.put(attrs, :workspace_id, workspace_id), @max_create_attempts)
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  @fields %{"name" => :name, "scopes" => :scopes, "expires_at" => :expires_at}
+  defp to_atom_key(key) when is_atom(key), do: key
+  defp to_atom_key(key), do: Map.get(@fields, key, key)
+
+  defp insert_api_key(user_id, attrs, attempts_left) when attempts_left > 0 do
     prefix = generate_prefix()
     token = build_token(prefix)
 
@@ -40,14 +80,14 @@ defmodule HeddleCore.ApiKeys do
 
       {:error, changeset} ->
         if prefix_collision?(changeset) do
-          create_api_key(user_id, Map.drop(attrs, [:prefix, :key_hash]), attempts_left - 1)
+          insert_api_key(user_id, Map.drop(attrs, [:prefix, :key_hash]), attempts_left - 1)
         else
           {:error, changeset}
         end
     end
   end
 
-  defp create_api_key(user_id, attrs, 0) do
+  defp insert_api_key(user_id, attrs, 0) do
     prefix = generate_prefix()
     token = build_token(prefix)
 
@@ -83,10 +123,10 @@ defmodule HeddleCore.ApiKeys do
 
   It is hidden from `list_api_keys/0,1`: it belongs to a run, not to the user.
   """
-  def create_agent_key(%User{} = user) do
+  def create_agent_key(%User{} = user, workspace_id) do
     expires_at = DateTime.add(DateTime.utc_now(:second), @agent_key_lifetime_seconds)
 
-    create_api_key(user, %{
+    create_api_key(user, workspace_id, %{
       name: @agent_key_name,
       scopes: @agent_key_scopes,
       expires_at: expires_at
@@ -102,17 +142,39 @@ defmodule HeddleCore.ApiKeys do
 
   def delete_api_key(%ApiKey{} = api_key), do: Repo.delete(api_key, allow_stale: true)
 
-  def revoke_api_key(%ApiKey{} = api_key) do
-    api_key
-    |> ApiKey.revoke_changeset()
-    |> Repo.update()
+  @doc "Revokes a key: its owner can, and the admins of its workspace."
+  def revoke_api_key(%Scope{} = scope, %ApiKey{} = api_key) do
+    if can_revoke?(scope, api_key) do
+      api_key
+      |> ApiKey.revoke_changeset()
+      |> Repo.update()
+    else
+      {:error, :forbidden}
+    end
   end
 
-  def get_api_key!(id) do
-    ApiKey
-    |> Repo.get!(id)
-    |> Repo.preload(:user)
+  def can_revoke?(%Scope{api_key: nil, user: %User{id: user_id}} = scope, %ApiKey{} = api_key) do
+    api_key.user_id == user_id or Workspaces.can?(scope, :manage, api_key.workspace_id)
   end
+
+  def can_revoke?(_scope, _api_key), do: false
+
+  @doc "Gets a key of the caller's workspace that they may see, or nil."
+  def get_api_key(%Scope{} = scope, id) do
+    with {id, ""} <- Integer.parse(to_string(id)),
+         %ApiKey{} = api_key <- Repo.get(ApiKey, id),
+         true <- visible?(scope, api_key) do
+      Repo.preload(api_key, :user)
+    else
+      _other -> nil
+    end
+  end
+
+  defp visible?(%Scope{user: %User{id: user_id}} = scope, %ApiKey{} = api_key) do
+    api_key.user_id == user_id or Workspaces.can?(scope, :manage, api_key.workspace_id)
+  end
+
+  defp visible?(_scope, _api_key), do: false
 
   def list_api_keys do
     Repo.all(
@@ -123,14 +185,24 @@ defmodule HeddleCore.ApiKeys do
     )
   end
 
-  def list_api_keys(%User{id: user_id}) do
-    Repo.all(
+  @doc """
+  The keys of the workspace the caller works in: their own, or every one for its admins.
+  """
+  def list_api_keys(%Scope{user: %User{id: user_id}, workspace: %{id: workspace_id}} = scope) do
+    query =
       from key in ApiKey,
-        where: key.user_id == ^user_id and key.name != ^@agent_key_name,
+        where: key.workspace_id == ^workspace_id and key.name != ^@agent_key_name,
         preload: [:user],
         order_by: [desc: key.inserted_at]
-    )
+
+    cond do
+      Workspaces.can?(scope, :manage, workspace_id) -> Repo.all(query)
+      Workspaces.role(scope, workspace_id) -> Repo.all(where(query, [k], k.user_id == ^user_id))
+      true -> []
+    end
   end
+
+  def list_api_keys(%Scope{}), do: []
 
   def hash_token(token), do: :crypto.hash(:sha256, token)
 

@@ -5,7 +5,6 @@ defmodule HeddleUI.MCP.ChatTest do
   import HeddleCore.AccountsFixtures
 
   alias HeddleCore.Accounts.Scope
-  alias HeddleCore.ApiKeys
   alias HeddleCore.Executions
   alias HeddleCore.Flows
   alias HeddleUI.FakeLLMAgent
@@ -44,7 +43,9 @@ defmodule HeddleUI.MCP.ChatTest do
   end
 
   defp token(user, scopes) do
-    {:ok, %{token: token}} = ApiKeys.create_api_key(user, %{name: "chat", scopes: scopes})
+    {:ok, %{token: token}} =
+      HeddleCore.AccountsFixtures.create_api_key(user, %{name: "chat", scopes: scopes})
+
     token
   end
 
@@ -176,7 +177,7 @@ defmodule HeddleUI.MCP.ChatTest do
   end
 
   test "can't ask to run someone else's flow", %{conn: conn, token: token} do
-    other = Scope.for_user(system_admin_fixture())
+    other = user_scope_fixture()
     {:ok, theirs} = Flows.create_flow(other, %{name: "Theirs", nodes: [], connections: []})
 
     FakeLLMAgent.script([{:tool, "run_flow", %{flow_id: to_string(theirs.id)}}, "No."])
@@ -235,7 +236,7 @@ defmodule HeddleUI.MCP.ChatTest do
   end
 
   test "isn't open to the Claude Agent", %{conn: conn, user: user} do
-    {:ok, %{token: token}} = ApiKeys.create_agent_key(user)
+    {:ok, %{token: token}} = HeddleCore.AccountsFixtures.create_agent_key(user)
 
     assert chat(conn, token, %{messages: @hello})["isError"]
   end

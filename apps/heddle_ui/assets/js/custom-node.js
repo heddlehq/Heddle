@@ -33,7 +33,8 @@ export class CustomNodeElement extends LitElement {
       selected: { type: Boolean, reflect: true },
       onConfig: { attribute: false },
       onDelete: { attribute: false },
-      onInspect: { attribute: false }
+      onInspect: { attribute: false },
+      readOnly: { type: Boolean }
     };
   }
 
@@ -402,7 +403,7 @@ export class CustomNodeElement extends LitElement {
           <span class="hero-cog-6-tooth w-4 h-4"></span>
         </div>
 
-        <div 
+        ${this.readOnly ? "" : html`<div 
           class="node-action-btn delete" 
           title="Delete Node"
           @pointerdown=${(e) => e.stopPropagation()}
@@ -413,7 +414,7 @@ export class CustomNodeElement extends LitElement {
           }}
         >
           <span class="hero-x-mark w-4 h-4"></span>
-        </div>
+        </div>`}
       </div>
 
       ${repeat(inputs, ([key]) => key, ([key, input]) => html`

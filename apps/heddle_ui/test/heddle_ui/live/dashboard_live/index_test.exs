@@ -14,7 +14,7 @@ defmodule HeddleUI.DashboardLive.IndexTest do
 
     test "renders dashboard with flows for system admin", %{conn: conn} do
       admin = system_admin_fixture()
-      flow_fixture(%{name: "Test Flow", user_id: admin.id})
+      flow_fixture(%{name: "Test Flow", user: admin})
 
       {:ok, _lv, html} =
         conn
@@ -27,7 +27,7 @@ defmodule HeddleUI.DashboardLive.IndexTest do
       assert html =~ "Manage Flows"
     end
 
-    test "shows restricted message and no flows for non-admin", %{conn: conn} do
+    test "tells someone in no workspace to ask for one", %{conn: conn} do
       user = user_fixture()
 
       {:ok, _lv, html} =
@@ -36,7 +36,7 @@ defmodule HeddleUI.DashboardLive.IndexTest do
         |> live(~p"/")
 
       assert html =~ "Dashboard"
-      assert html =~ "Contact an administrator"
+      assert html =~ "Ask an admin to add you"
       refute html =~ "Total Workflows"
       refute html =~ "Manage Flows"
       refute html =~ "Recent Workflows"

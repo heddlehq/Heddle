@@ -6,6 +6,12 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
   alias HeddleNodes.Runner
 
   defmodule Vault do
+    # Tells the test which workspace a run looked in.
+    def fetch(workspace_id, name, kind) do
+      send(self(), {:credential_workspace, workspace_id})
+      fetch(name, kind)
+    end
+
     def fetch("main", "slack"), do: {:ok, %{"token" => "xoxb-1"}}
 
     def fetch("aws", "s3") do
@@ -80,6 +86,43 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
       assert {:ok, context} = Runner.run(flow(["error"]), %{})
       assert context["result"]["error"] =~ "gone"
       assert Enum.any?(context["logs"], &(&1["node_id"] == "ko"))
+    end
+  end
+
+  describe "the workspace of a run" do
+    test "a node looks for its credential in its flow's workspace, whatever the run sets" do
+      flow = %{
+        id: 1,
+        workspace_id: 42,
+        nodes: [
+          %{"id" => "start", "type" => "Start", "label" => "Start", "controls" => %{}},
+          %{
+            "id" => "slack",
+            "type" => "Slack: Send Message",
+            "label" => "Slack",
+            "controls" => %{
+              "credential" => "main",
+              "channel" => "#general",
+              "text" => "hi",
+              "workspace_id" => 999,
+              "flow_id" => 7
+            }
+          }
+        ],
+        connections: [
+          %{
+            "source" => "start",
+            "sourceOutput" => "exec",
+            "target" => "slack",
+            "targetInput" => "exec"
+          }
+        ]
+      }
+
+      Runner.run(flow, %{"workspace_id" => 5})
+
+      assert_received {:credential_workspace, 42}
+      refute_received {:credential_workspace, _other}
     end
   end
 
