@@ -10,7 +10,7 @@ async function createApiKey(page) {
   await page.locator("input[name='api_key[scopes][]'][value='workflows:write']").check();
   await page.getByRole('button', { name: 'Generate API key' }).click();
 
-  const token = page.locator('input[readonly]').first();
+  const token = page.locator('#api-key-token');
   await expect(token).toBeVisible({ timeout: 5000 });
   return token.inputValue();
 }
