@@ -5,6 +5,10 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
   attr :flow, :any, required: true
   attr :renaming_flow, :boolean, default: false
 
+  attr :can_replace, :boolean,
+    default: false,
+    doc: "whether importing would replace a flow on the canvas"
+
   def flow_header(assigns) do
     ~H"""
     <header class="flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 z-10 h-16 shadow-md dark:shadow-black/50">
@@ -75,6 +79,37 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
         >
           <.icon name="hero-squares-2x2" class="w-4 h-4" />
           <span class="hidden sm:inline">Flows</span>
+        </.button>
+        <.button
+          id="import-flow"
+          type="button"
+          phx-hook="ImportFlow"
+          variant="ghost"
+          class="h-9 px-3"
+          title={gettext("Import a flow from a JSON file")}
+          data-replace={to_string(@can_replace)}
+          data-confirm-replace={
+            gettext("The imported flow takes the place of the one on the canvas. Import it?")
+          }
+        >
+          <.icon name="hero-arrow-up-tray" class="w-4 h-4" />
+          <span class="hidden sm:inline">{gettext("Import")}</span>
+        </.button>
+        <.button
+          id="open-flow-settings"
+          type="button"
+          phx-click="open_flow_settings"
+          variant="ghost"
+          class="relative h-9 px-3"
+          title={gettext("Flow settings")}
+        >
+          <.icon name="hero-cog-6-tooth" class="w-4 h-4" />
+          <span class="hidden sm:inline">{gettext("Settings")}</span>
+          <span
+            :if={@flow.error_flow_id}
+            class="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary"
+            title={gettext("This flow has an error flow")}
+          />
         </.button>
         <div class="h-5 w-px bg-gray-200 dark:bg-slate-700 mx-1"></div>
 

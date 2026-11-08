@@ -9,8 +9,17 @@ import { repeat } from "lit/directives/repeat.js";
  * hero-code-bracket-solid hero-globe-alt-solid hero-document-text-solid
  * hero-cube hero-circle-stack hero-arrows-pointing-out
  * hero-arrows-pointing-in hero-magnifying-glass hero-clock 
- * hero-adjustments-horizontal hero-tag
+ * hero-adjustments-horizontal hero-tag hero-exclamation-triangle-solid
+ * hero-check-micro hero-x-mark-micro hero-minus-micro hero-bookmark-solid
  */
+
+const formatMs = (ms) => {
+  if (ms == null) return '';
+  if (ms < 1) return '<1 ms';
+  if (ms < 1000) return `${Math.round(ms)} ms`;
+  if (ms < 60000) return `${(ms / 1000).toFixed(ms < 10000 ? 2 : 1)} s`;
+  return `${Math.floor(ms / 60000)} min`;
+};
 
 export class CustomNodeElement extends LitElement {
   createRenderRoot() {
@@ -24,8 +33,7 @@ export class CustomNodeElement extends LitElement {
       selected: { type: Boolean, reflect: true },
       onConfig: { attribute: false },
       onDelete: { attribute: false },
-      error: { type: String, reflect: true },
-      onErrorDetails: { attribute: false }
+      onInspect: { attribute: false }
     };
   }
 
@@ -115,26 +123,103 @@ export class CustomNodeElement extends LitElement {
       .socket-container.right {
         right: -12px;
       }
-      .error-node-btn {
+      .circular-node.run-success {
+        border-color: var(--run-success) !important;
+        box-shadow: 0 0 0 4px color-mix(in oklab, var(--run-success) 16%, transparent);
+      }
+      .circular-node.run-error {
+        border-color: var(--run-error) !important;
+        box-shadow: 0 0 0 4px color-mix(in oklab, var(--run-error) 20%, transparent);
+        animation: run-error-in 0.6s ease-out;
+      }
+      .circular-node.run-continued {
+        border-color: var(--run-warning) !important;
+        box-shadow: 0 0 0 4px color-mix(in oklab, var(--run-warning) 18%, transparent);
+      }
+      .circular-node.run-skipped {
+        border-style: dashed !important;
+        border-color: var(--run-skipped) !important;
+        opacity: 0.75;
+      }
+      .circular-node.run-focused {
+        box-shadow: 0 0 0 4px var(--editor-surface), 0 0 0 7px var(--color-primary) !important;
+      }
+      .circular-node.run-focused::after {
+        content: "";
         position: absolute;
-        top: -4px;
-        left: -4px;
-        background: var(--color-error);
-        color: var(--color-error-content);
-        border: 2px solid var(--editor-surface);
+        inset: -3px;
         border-radius: 50%;
-        width: 24px;
-        height: 24px;
+        border: 2px solid var(--color-primary);
+        animation: run-ripple 1.2s ease-out 2;
+        pointer-events: none;
+      }
+      @keyframes run-error-in {
+        0% { transform: scale(1); }
+        30% { transform: scale(1.08); }
+        100% { transform: scale(1); }
+      }
+      @keyframes run-ripple {
+        from { transform: scale(1); opacity: 0.8; }
+        to { transform: scale(1.5); opacity: 0; }
+      }
+      .run-pill {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px 2px 4px;
+        border-radius: 999px;
+        border: 1px solid var(--editor-border);
+        background: var(--editor-surface);
+        color: var(--editor-muted);
+        font-size: 11px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        cursor: pointer;
+        z-index: 40;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+        transition: opacity 0.15s, transform 0.15s;
+        animation: run-pill-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .run-pill:hover { transform: translateX(-50%) translateY(-1px); }
+      custom-node:hover .run-pill { opacity: 0; pointer-events: none; }
+      .run-pill .run-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        color: var(--editor-surface);
+      }
+      .run-pill.success .run-icon { background: var(--run-success); }
+      .run-pill.error .run-icon { background: var(--run-error); }
+      .run-pill.continued .run-icon { background: var(--run-warning); }
+      .run-pill.skipped .run-icon { background: var(--run-skipped); }
+      .run-pill.error { color: var(--run-error); border-color: color-mix(in oklab, var(--run-error) 45%, transparent); }
+      .run-pill .run-count { color: var(--editor-text); }
+      @keyframes run-pill-in {
+        from { opacity: 0; transform: translateX(-50%) translateY(-4px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+      .pin-badge {
+        position: absolute;
+        top: -6px;
+        left: -6px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 50;
-        animation: node-pulse 2s infinite;
-      }
-      @keyframes node-pulse {
-        0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-error) 70%, transparent); }
-        70% { box-shadow: 0 0 0 8px transparent; }
-        100% { box-shadow: 0 0 0 0 transparent; }
+        background: var(--color-primary);
+        color: var(--color-primary-content);
+        border: 2px solid var(--editor-surface);
+        z-index: 30;
       }
       .node-actions-container {
         position: absolute;
@@ -256,7 +341,7 @@ export class CustomNodeElement extends LitElement {
       <div class="node-name">${this.data.label}</div>
 
       <div 
-        class="circular-node ${this.selected ? 'is-selected' : ''}" 
+        class="circular-node ${this.selected ? 'is-selected' : ''} ${this._runClass()} ${this.data.runFocused ? 'run-focused' : ''}" 
         style="border-color: color-mix(in oklab, ${nodeColor} 67%, transparent)"
         @pointerdown=${(e) => {
           if (e.shiftKey) {
@@ -286,15 +371,10 @@ export class CustomNodeElement extends LitElement {
             </svg>
           </div>
         ` : ''}
-        ${this.error ? html`
-          <div 
-            class="error-node-btn"
-            style="position: absolute; top: -4px; left: -4px; background: var(--color-error); color: var(--color-error-content); border: 2px solid var(--editor-surface); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; z-index: 50; animation: node-pulse 2s infinite;"
-            @click=${(e) => {
-              e.stopPropagation();
-              if (this.onErrorDetails) this.onErrorDetails();
-            }}
-          >!</div>
+        ${this.data.settings?.pin ? html`
+          <div class="pin-badge" title="${window.Translations?.["Pinned data"] || "Pinned data"}">
+            <span class="hero-bookmark-solid w-3 h-3"></span>
+          </div>
         ` : ''}
 
         <div class="icon-container" style="color: ${nodeColor}">
@@ -305,6 +385,8 @@ export class CustomNodeElement extends LitElement {
           <div class="language-badge">${langLabel}</div>
         ` : ''}
       </div>
+
+      ${this.data.run ? this._runPill() : ''}
 
       <div class="node-actions-container">
         <div 
@@ -341,6 +423,40 @@ export class CustomNodeElement extends LitElement {
       ${repeat(outputs, ([key]) => key, ([key, output]) => html`
         <div class="socket-container right" key="output-${key}" data-key="${key}" data-side="output"></div>
       `)}
+    `;
+  }
+
+  // What the run being inspected did here, which the canvas keeps on the node as
+  // `run`: { status, continued, count, duration_ms }. `runFocused` is set while the
+  // inspector looks at one of its steps.
+  _runState() {
+    const run = this.data.run;
+    if (!run) return null;
+    return run.status === 'error' && run.continued ? 'continued' : run.status;
+  }
+
+  _runClass() {
+    const state = this._runState();
+    return state ? `run-${state}` : '';
+  }
+
+  _runPill() {
+    const state = this._runState();
+    const icon = { success: 'hero-check-micro', error: 'hero-x-mark-micro', continued: 'hero-x-mark-micro' }[state] || 'hero-minus-micro';
+    return html`
+      <div
+        class="run-pill ${state}"
+        title="${window.Translations?.["Inspect this step"] || "Inspect this step"}"
+        @pointerdown=${(e) => e.stopPropagation()}
+        @click=${(e) => {
+          e.stopPropagation();
+          if (this.onInspect) this.onInspect();
+        }}
+      >
+        <span class="run-icon"><span class="${icon} w-3 h-3"></span></span>
+        <span>${formatMs(this.data.run.duration_ms)}</span>
+        ${this.data.run.count > 1 ? html`<span class="run-count">×${this.data.run.count}</span>` : ''}
+      </div>
     `;
   }
 

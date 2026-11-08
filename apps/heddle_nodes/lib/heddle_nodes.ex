@@ -14,12 +14,14 @@ defmodule HeddleNodes do
     DynamoDB,
     Elasticsearch,
     Email,
+    ErrorTrigger,
     Eval,
     ForEach,
     Ftp,
     GoogleSheets,
     HttpRequest,
     Logger,
+    Merge,
     MongoDB,
     Neo4j,
     Output,
@@ -30,7 +32,9 @@ defmodule HeddleNodes do
     Slack,
     Sql,
     Start,
+    Switch,
     Variable,
+    Wait,
     Webhook
   }
 
@@ -39,6 +43,7 @@ defmodule HeddleNodes do
       Start,
       Webhook,
       Schedule,
+      ErrorTrigger,
       Variable,
       Eval,
       Csv.Read,
@@ -131,7 +136,10 @@ defmodule HeddleNodes do
       AI.Classify,
       AI.ExtractData,
       Condition,
+      Switch,
       ForEach,
+      Merge,
+      Wait,
       Logger,
       Output,
       RespondToWebhook

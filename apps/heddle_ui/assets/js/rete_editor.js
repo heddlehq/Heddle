@@ -77,6 +77,63 @@ export async function createEditor(container) {
         }
     };
 
+    const isSection = (node) => node?.type === COMMENT_TYPE && node.kind === 'section';
+
+    // What the run being inspected did: the wires it went through, as
+    // "source:output" => "success" | "error". Each node keeps its own in `node.run`.
+    let runWires = new Map();
+    const wireKey = (source, output) => `${source}:${output}`;
+    // The node element keeps the same `data`, so it must be told to draw again.
+    const repaintNode = async (id) => {
+        await area.update('node', id);
+        area.nodeViews.get(id)?.element?.querySelector('custom-node')?.requestUpdate();
+    };
+
+    // Where a node is on the canvas, in its own units, whatever the zoom.
+    const boundsOf = (node) => {
+        const view = area.nodeViews.get(node.id);
+        if (!view) return null;
+        const comment = node.type === COMMENT_TYPE;
+        return {
+            x: view.position.x,
+            y: view.position.y,
+            width: comment ? node.width : view.element.offsetWidth,
+            height: comment ? node.height : view.element.offsetHeight
+        };
+    };
+
+    // What a section holds: everything whose middle is inside it, other sections too.
+    const nodesInside = (section) => {
+        const box = boundsOf(section);
+        if (!box) return [];
+        return editor.getNodes().filter(node => {
+            if (node.id === section.id) return false;
+            const b = boundsOf(node);
+            if (!b) return false;
+            const cx = b.x + b.width / 2;
+            const cy = b.y + b.height / 2;
+            return cx >= box.x && cx <= box.x + box.width && cy >= box.y && cy <= box.y + box.height;
+        });
+    };
+
+    // The steps a section holds, top to bottom: the order its entry nodes run in.
+    const sectionNodeIds = (section) => nodesInside(section)
+        .filter(node => node.type !== COMMENT_TYPE)
+        .map(node => ({ id: node.id, ...boundsOf(node) }))
+        .sort((a, b) => a.y - b.y || a.x - b.x)
+        .map(node => node.id);
+
+    // The same checks the server makes, so the play button says why it can't run.
+    const runBlocker = (section) => {
+        const members = new Set(sectionNodeIds(section));
+        if (members.size === 0) return "Put nodes in this section to run it";
+        const ledTo = new Set(editor.getConnections()
+            .filter(c => members.has(c.source) && members.has(c.target))
+            .map(c => c.target));
+        if ([...members].every(id => ledTo.has(id))) return "Nothing in this section can start a run";
+        return null;
+    };
+
     AreaExtensions.selectableNodes(area, AreaExtensions.selector(), {
         accumulating: AreaExtensions.accumulateOnCtrl(),
     });
@@ -108,6 +165,8 @@ export async function createEditor(container) {
                                     pushUndo();
                                 }}
                                 .onDelete=${() => editor.removeNode(data.payload.id)}
+                                .getRunBlocker=${() => runBlocker(data.payload)}
+                                .onRun=${() => editor.triggerRunSection?.(data.payload.id)}
                             ></custom-comment>`;
                     }
 
@@ -126,6 +185,7 @@ export async function createEditor(container) {
                                 }
                                 await editor.removeNode(nodeId);
                             }}
+                .onInspect=${() => editor.triggerInspect?.(data.payload.id)}
                 .onConfig=${() => {
                                 if (editor.triggerNodeConfig) {
                                     const node = data.payload;
@@ -136,6 +196,7 @@ export async function createEditor(container) {
                                         type: node.type,
                                         icon: node.icon,
                                         controls: {},
+                                        settings: node.settings || {},
                                         variables: variables
                                     };
 
@@ -154,20 +215,6 @@ export async function createEditor(container) {
                                     editor.triggerNodeConfig(node.id, cleanData);
                                 }
                             }}
-                .onErrorDetails=${() => {
-                                if (editor.triggerErrorDetails) {
-                                    const node = data.payload;
-                                    const view = area.nodeViews.get(node.id);
-                                    let message = "Error details not available";
-                                    if (view && view.element) {
-                                        const customNode = view.element.querySelector('custom-node');
-                                        if (customNode && customNode.error) {
-                                            message = customNode.error;
-                                        }
-                                    }
-                                    editor.triggerErrorDetails(node.id, message);
-                                }
-                            }}
                 .onControlChange=${(key, value) => {
                                 if (editor.triggerChange) {
                                     const node = data.payload;
@@ -182,11 +229,13 @@ export async function createEditor(container) {
                 connection(data) {
                     const connId = data.payload?.id;
                     const selected = connId ? selectedConnectionIds.has(connId) : false;
+                    const taken = data.payload ? runWires.get(wireKey(data.payload.source, data.payload.sourceOutput)) : null;
                     return (props) =>
                         html`<custom-connection
                             .path=${props.path}
                             .connectionId=${connId}
                             .selected=${selected}
+                            .taken=${taken || ''}
                             data-connection-id=${connId || ''}
                             @connection-click=${(e) => {
                                 if (e.detail && e.detail.connectionId) {
@@ -221,15 +270,30 @@ export async function createEditor(container) {
         }
         window.removeEventListener('pointerup', clearMultiDragCursor);
     };
+    // What follows the node being dragged: the rest of the selection, and what the
+    // sections among them hold. It is taken when the press starts, so a section
+    // moved over a node doesn't pick it up on the way.
+    let dragGroup = null;
+    const startDragGroup = (nodeId) => {
+        const anchors = selectedNodeIds.has(nodeId) && selectedNodeIds.size > 1 ? [...selectedNodeIds] : [nodeId];
+        const ids = new Set(anchors);
+        for (const id of anchors) {
+            const node = editor.getNode(id);
+            if (isSection(node)) nodesInside(node).forEach(inside => ids.add(inside.id));
+        }
+        ids.delete(nodeId);
+        dragGroup = { anchor: nodeId, ids: [...ids] };
+        window.addEventListener('pointerup', () => { dragGroup = null; }, { once: true });
+    };
+
     area.addPipe(async (context) => {
         if (!context || context.type !== 'nodetranslated') return context;
         if (isTranslatingSelection) return context;
         if (!isRestoring && !isImportingData) trackMove();
         const { id: draggedId, position, previous } = context.data;
         const delta = { x: position.x - previous.x, y: position.y - previous.y };
-        if (selectedNodeIds.size <= 1) return context;
-        if (!selectedNodeIds.has(draggedId)) return context;
-        const selected = editor.getNodes().filter(n => selectedNodeIds.has(n.id));
+        if (!dragGroup || dragGroup.anchor !== draggedId || dragGroup.ids.length === 0) return context;
+        const selected = dragGroup.ids.map(id => editor.getNode(id)).filter(Boolean);
         if (!isMultiNodeDragging) {
             isMultiNodeDragging = true;
             container.style.cursor = 'grabbing';
@@ -263,7 +327,10 @@ export async function createEditor(container) {
         if (editor.triggerChange) editor.triggerChange();
     };
 
-    const commentFields = ({ kind, color, text, width, height }) => ({ kind, color, text, width, height });
+    const commentFields = ({ kind, color, text, width, height, manual }) =>
+        kind === 'section'
+            ? { kind, color, text, width, height, manual: manual === true }
+            : { kind, color, text, width, height };
 
     const trackMove = () => {
         if (translateDebounce) clearTimeout(translateDebounce);
@@ -286,6 +353,25 @@ export async function createEditor(container) {
         };
     };
 
+    // Settings can give any node an `error` output. It goes when they stop giving it,
+    // unless the node has one of its own.
+    const syncErrorOutput = (node) => {
+        const own = (node.ownOutputs || []).includes('error');
+        const wanted = node.settings?.on_error === 'output';
+        if (wanted && !node.outputs.error) {
+            node.addOutput('error', new ClassicPreset.Output(socket));
+            return true;
+        }
+        if (!wanted && !own && node.outputs.error) {
+            editor.getConnections()
+                .filter(c => c.source === node.id && c.sourceOutput === 'error')
+                .forEach(c => editor.removeConnection(c.id));
+            node.removeOutput('error');
+            return true;
+        }
+        return false;
+    };
+
     const addHiddenControl = (node, key, value) => {
         const control = new ClassicPreset.InputControl("text", { initial: value });
         control.value = value;
@@ -300,20 +386,18 @@ export async function createEditor(container) {
         for (const node of editor.getNodes()) {
             const position = area.nodeViews.get(node.id)?.position || { x: 0, y: 0 };
             if (node.type === COMMENT_TYPE) {
-                comments.push({ ...commentFields(node), id: node.id, position });
+                const comment = { ...commentFields(node), id: node.id, position };
+                if (isSection(node)) comment.nodes = sectionNodeIds(node);
+                comments.push(comment);
                 continue;
             }
             const controls = {};
             Object.keys(node.controls).forEach(key => {
                 controls[key] = node.controls[key].value;
             });
-            nodes.push({
-                id: node.id,
-                type: node.type,
-                label: node.label,
-                controls,
-                position
-            });
+            const stored = { id: node.id, type: node.type, label: node.label, controls, position };
+            if (node.settings && Object.keys(node.settings).length > 0) stored.settings = node.settings;
+            nodes.push(stored);
         }
         for (const conn of editor.getConnections()) {
             connections.push({
@@ -344,7 +428,7 @@ export async function createEditor(container) {
         redoStack.length = 0;
     };
 
-    const commentKey = ({ id, kind, color, text, width, height }) => JSON.stringify([id, kind, color, text, width, height]);
+    const commentKey = ({ id, kind, color, text, width, height, manual }) => JSON.stringify([id, kind, color, text, width, height, manual]);
 
     const isSameSnapshot = (a, b) => {
         if (a.nodes.length !== b.nodes.length || a.connections.length !== b.connections.length) return false;
@@ -475,6 +559,8 @@ export async function createEditor(container) {
     let isSelecting = false;
     let selectionStartX = 0;
     let selectionStartY = 0;
+    // The section a Shift press started on: a press that does not drag picks it instead.
+    let selectionSectionId = null;
 
     const createSelectionBox = () => {
         const box = document.createElement('div');
@@ -506,6 +592,17 @@ export async function createEditor(container) {
     };
 
     const selectNodesInBox = () => {
+        if (selectionBox.style.display === 'none') {
+            if (selectionSectionId) {
+                if (selectedNodeIds.has(selectionSectionId)) deselectNode(selectionSectionId);
+                else selectNode(selectionSectionId, true);
+            } else {
+                clearNodeSelection();
+            }
+            finishBoxSelection();
+            return;
+        }
+
         const boxRect = selectionBox.getBoundingClientRect();
         const { k, x: tx, y: ty } = area.area.transform;
         
@@ -527,8 +624,10 @@ export async function createEditor(container) {
                 const nodeBottom = (nodeRect.bottom - ty) / k;
                 
                 const overlaps = !(nodeRight < boxLeft || nodeLeft > boxRight || nodeBottom < boxTop || nodeTop > boxBottom);
-                
-                if (overlaps) nodesInBox.push(node);
+                // A section holds the nodes being picked, so it only counts when the box takes all of it.
+                const encloses = nodeLeft >= boxLeft && nodeRight <= boxRight && nodeTop >= boxTop && nodeBottom <= boxBottom;
+
+                if (isSection(node) ? encloses : overlaps) nodesInBox.push(node);
             }
         });
         
@@ -543,14 +642,19 @@ export async function createEditor(container) {
             }
         });
         editor.getConnections().forEach(c => area.update('connection', c.id));
-        
+
+        finishBoxSelection();
+    };
+
+    const finishBoxSelection = () => {
         selectionBox.style.display = 'none';
-        
+
         if (area.area.privateDragInit) {
             area.area.setDragHandler(area.area.privateDragInit);
         }
-        
+
         isSelecting = false;
+        selectionSectionId = null;
     };
 
     const handleSelectionMove = (e) => {
@@ -563,10 +667,29 @@ export async function createEditor(container) {
     const handleSelectionUp = (e) => {
         if (isSelecting) {
             e.preventDefault();
-            document.removeEventListener('mousemove', handleSelectionMove);
-            document.removeEventListener('mouseup', handleSelectionUp);
+            document.removeEventListener('pointermove', handleSelectionMove);
+            document.removeEventListener('pointerup', handleSelectionUp);
             selectNodesInBox();
         }
+    };
+
+    // Pointer events, not mouse ones: a press on a section is held back at pointerdown,
+    // and the browser then sends no mouse events until it is released.
+    const startBoxSelection = (e, sectionId = null) => {
+        e.preventDefault();
+        e.stopPropagation();
+        isSelecting = true;
+        selectionSectionId = sectionId;
+
+        area.area.privateDragInit = area.area.dragHandler;
+        area.area.setDragHandler(null);
+
+        selectionStartX = e.clientX;
+        selectionStartY = e.clientY;
+        updateSelectionBox(selectionStartX, selectionStartY, selectionStartX, selectionStartY);
+
+        document.addEventListener('pointermove', handleSelectionMove);
+        document.addEventListener('pointerup', handleSelectionUp);
     };
 
     document.addEventListener('pointerdown', (e) => {
@@ -587,6 +710,12 @@ export async function createEditor(container) {
                 }
             }
         }
+        // Shift on a section draws a box over what it holds, as on the background.
+        if (e.shiftKey && isSection(editor.getNode(clickedNodeId)) &&
+            !e.target.closest?.('.comment-toolbar, .comment-resize, textarea')) {
+            startBoxSelection(e, clickedNodeId);
+            return;
+        }
         if ((e.shiftKey || e.ctrlKey || e.metaKey) && clickedNodeId) {
             if (selectedNodeIds.has(clickedNodeId)) {
                 deselectNode(clickedNodeId);
@@ -601,6 +730,7 @@ export async function createEditor(container) {
             if (!selectedNodeIds.has(clickedNodeId)) {
                 selectNode(clickedNodeId, false);
             }
+            startDragGroup(clickedNodeId);
         }
     }, true);
     container.addEventListener('mousedown', (e) => {
@@ -631,19 +761,7 @@ export async function createEditor(container) {
         }
         
         if (e.shiftKey && isBackground) {
-            e.preventDefault();
-            e.stopPropagation();
-            isSelecting = true;
-            
-            area.area.privateDragInit = area.area.dragHandler;
-            area.area.setDragHandler(null);
-            
-            selectionStartX = e.clientX;
-            selectionStartY = e.clientY;
-            updateSelectionBox(selectionStartX, selectionStartY, selectionStartX, selectionStartY);
-            
-            document.addEventListener('mousemove', handleSelectionMove);
-            document.addEventListener('mouseup', handleSelectionUp);
+            startBoxSelection(e);
         }
         else if (isBackground && e.button === 0) {
             clearNodeSelection();
@@ -854,7 +972,7 @@ export async function createEditor(container) {
             let position = { x: 0, y: 0 };
             const view = area.nodeViews.get(node.id);
             if (view && view.position) position = { x: view.position.x, y: view.position.y };
-            const copied = { type: node.type, label: node.label, data: { ...node.data }, position, originalId: node.id };
+            const copied = { type: node.type, label: node.label, data: { ...node.data }, settings: node.settings, position, originalId: node.id };
             if (node.type === COMMENT_TYPE) {
                 copied.comment = commentFields(node);
             }
@@ -879,7 +997,7 @@ export async function createEditor(container) {
                 await processAddComment({ ...nodeData.comment, id: newId, position });
                 continue;
             }
-            const newData = { ...nodeData.data, id: newId, label: nodeData.label, position };
+            const newData = { ...nodeData.data, id: newId, label: nodeData.label, settings: nodeData.settings, position };
             const definition = editor.nodeDefinitions && editor.nodeDefinitions[nodeData.type];
             if (definition) await processAddNode(nodeData.type, definition, newData);
         }
@@ -995,10 +1113,11 @@ export async function createEditor(container) {
         }
     });
 
-    const processAddComment = async ({ id, kind = 'note', color, text = "", width, height, position, startEditing = false }) => {
+    const processAddComment = async ({ id, kind = 'note', color, text = "", width, height, manual = false, position, startEditing = false }) => {
         const node = new ClassicPreset.Node(COMMENT_TYPE);
         node.type = COMMENT_TYPE;
         node.kind = kind;
+        node.manual = manual === true;
         node.color = color || defaultCommentColor(kind);
         node.text = text;
         node.width = width || COMMENT_KINDS[kind].width;
@@ -1044,6 +1163,11 @@ export async function createEditor(container) {
                 node.addOutput(outputName, new ClassicPreset.Output(socket));
             });
         }
+
+        // How the node behaves when it runs, see Heddle.Graph.Settings.
+        node.ownOutputs = definition.outputs || [];
+        if (data?.settings && Object.keys(data.settings).length > 0) node.settings = { ...data.settings };
+        syncErrorOutput(node);
 
         const uiFields = definition.ui_fields || [];
 
@@ -1191,14 +1315,15 @@ export async function createEditor(container) {
         onCanvasClick: (cb) => {
             editor.triggerCanvasClick = cb;
         },
-        onErrorDetails: (cb) => {
-            editor.triggerErrorDetails = cb;
-        },
         onCreateNode: (cb) => {
             editor.triggerCreateNode = cb;
         },
         onDrop: (cb) => {
             editor.handleDrop = cb;
+        },
+        // Called with the id of a section whose play button was pressed.
+        onRunSection: (cb) => {
+            editor.triggerRunSection = cb;
         },
         updateNodeCode: async (nodeId, code_elixir, code_python, fieldName) => {
             const node = editor.getNode(nodeId);
@@ -1294,31 +1419,81 @@ export async function createEditor(container) {
             }
             return getSnapshot();
         },
-        addNodeError: (nodeId, message) => {
-            const view = area.nodeViews.get(nodeId);
-            if (view && view.element) {
-                const customNode = view.element.querySelector('custom-node');
-                if (customNode) {
-                    customNode.classList.add('error');
-                    customNode.error = message;
-                } else {
-                    view.element.classList.add('error');
-                }
-            } else {
-                console.warn("ReteEditor: View or element not found for nodeId", nodeId);
+        updateNodeSettings: async (nodeId, settings) => {
+            const node = editor.getNode(nodeId);
+            if (!node) return;
+
+            node.settings = settings && Object.keys(settings).length > 0 ? { ...settings } : undefined;
+            syncErrorOutput(node);
+            await repaintNode(nodeId);
+            processChange();
+        },
+        // Pins data to a node, or unpins it with null, keeping its other settings.
+        pinNode: async (nodeId, pin) => {
+            const node = editor.getNode(nodeId);
+            if (!node) return;
+
+            const settings = { ...(node.settings || {}) };
+            if (pin) settings.pin = pin; else delete settings.pin;
+            node.settings = Object.keys(settings).length > 0 ? settings : undefined;
+            await repaintNode(nodeId);
+            processChange();
+        },
+        // Paints what a run did: { nodes: { id: { status, count, duration_ms } }, wires: [[id, output]] }.
+        setRunState: async ({ nodes, wires }) => {
+            runWires = new Map((wires || []).map(([id, output]) => [wireKey(id, output), output === 'error' ? 'error' : 'success']));
+            for (const node of editor.getNodes()) {
+                if (node.type === COMMENT_TYPE) continue;
+                const run = nodes?.[node.id] || null;
+                if (!run && !node.run && !node.runFocused) continue;
+                node.run = run;
+                if (!run) node.runFocused = false;
+                await repaintNode(node.id);
+            }
+            for (const conn of editor.getConnections()) await area.update('connection', conn.id);
+        },
+        // Adds the steps that just ended to what the canvas shows.
+        addRunSteps: async (steps) => {
+            const touched = new Set();
+            for (const step of steps) {
+                const node = editor.getNode(step.node_id);
+                if (!node) continue;
+                const before = node.run;
+                node.run = {
+                    status: step.status,
+                    continued: step.continued === true,
+                    count: (before?.count || 0) + 1,
+                    duration_ms: Math.round(((before?.duration_ms || 0) + (step.duration_ms || 0)) * 100) / 100
+                };
+                touched.add(node.id);
+                if (step.status !== 'skipped') runWires.set(wireKey(step.node_id, step.output), step.output === 'error' ? 'error' : 'success');
+            }
+            for (const id of touched) await repaintNode(id);
+            for (const conn of editor.getConnections()) {
+                if (touched.has(conn.source)) await area.update('connection', conn.id);
             }
         },
-        clearNodeErrors: () => {
-            area.nodeViews.forEach(view => {
-                if (view.element) {
-                    view.element.classList.remove('error');
-                    const customNode = view.element.querySelector('custom-node');
-                    if (customNode) {
-                        customNode.classList.remove('error');
-                        customNode.error = null;
-                    }
-                }
-            });
+        // Marks the node of the step the inspector looks at, and brings it into view.
+        focusRunNode: async (nodeId) => {
+            for (const node of editor.getNodes()) {
+                const focused = node.id === nodeId;
+                if (node.runFocused === focused) continue;
+                node.runFocused = focused;
+                await repaintNode(node.id);
+            }
+            const view = area.nodeViews.get(nodeId);
+            if (!view) return;
+            const { k } = area.area.transform;
+            const rect = container.getBoundingClientRect();
+            const box = view.element.getBoundingClientRect();
+            const inside = box.left >= rect.left + 40 && box.right <= rect.right - 40 && box.top >= rect.top + 40 && box.bottom <= rect.bottom - 40;
+            if (inside) return;
+            const width = view.element.offsetWidth || 88;
+            const height = view.element.offsetHeight || 88;
+            await area.area.translate(rect.width / 2 - (view.position.x + width / 2) * k, rect.height / 2 - (view.position.y + height / 2) * k);
+        },
+        onInspect: (cb) => {
+            editor.triggerInspect = cb;
         },
     };
 }

@@ -168,6 +168,34 @@ defmodule HeddleCore.Flows do
   end
 
   @doc """
+  Changes the settings of a flow, see `Flow.settings_changeset/2`. An error flow must
+  be another flow of the same person.
+  """
+  def update_flow_settings(%Scope{} = scope, %Flow{} = flow, attrs) do
+    flow = get_flow!(scope, flow.id)
+    attrs = Map.new(attrs, fn {key, value} -> {to_string(key), value} end)
+
+    case attrs["error_flow_id"] do
+      blank when blank in [nil, ""] ->
+        save_settings(flow, %{"error_flow_id" => nil})
+
+      id ->
+        case get_flow(scope, id) do
+          nil -> {:error, :error_flow_not_found}
+          error_flow -> save_settings(flow, %{"error_flow_id" => error_flow.id})
+        end
+    end
+  end
+
+  defp save_settings(flow, attrs) do
+    with {:ok, flow} <- flow |> Flow.settings_changeset(attrs) |> Repo.update() do
+      HeddleCore.Flows.Cache.invalidate(flow.id)
+      broadcast_flow_updated(flow)
+      {:ok, flow}
+    end
+  end
+
+  @doc """
   Deletes a flow.
 
   ## Examples
@@ -202,6 +230,14 @@ defmodule HeddleCore.Flows do
   def change_flow(%Flow{} = flow, attrs \\ %{}) do
     Flow.changeset(flow, attrs)
   end
+
+  @doc """
+  Reads a flow from the JSON of a file, to import it. See `HeddleCore.Flows.Import`.
+
+  Returns `{:ok, %{"nodes" => ..., "connections" => ..., "comments" => ...}}` or
+  `{:error, reason}`.
+  """
+  defdelegate import_graph(json), to: HeddleCore.Flows.Import, as: :read
 
   @doc """
   Gets the first flow or creates a default one if none exist.

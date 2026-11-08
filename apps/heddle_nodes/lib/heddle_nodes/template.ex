@@ -2,8 +2,8 @@ defmodule HeddleNodes.Template do
   @moduledoc """
   Reads values from a run's context, and fills `{{name}}` placeholders with them.
 
-  A name can be a dotted path, like `body.user.name`. Flow variables come first,
-  then the context.
+  A name can be a dotted path, like `body.user.name`, where a number picks an item of
+  a list, like `body.items.0.name`. Flow variables come first, then the context.
   """
 
   @placeholder ~r/\{\{(.*?)\}\}/
@@ -97,6 +97,15 @@ defmodule HeddleNodes.Template do
 
   defp dig(value, []), do: value
   defp dig(%{} = value, [key | rest]), do: value |> Map.get(key) |> dig(rest)
+
+  # `items.0.name` reads the first item of a list.
+  defp dig(list, [index | rest]) when is_list(list) do
+    case Integer.parse(index) do
+      {position, ""} when position >= 0 -> list |> Enum.at(position) |> dig(rest)
+      _not_a_position -> nil
+    end
+  end
+
   defp dig(_value, _path), do: nil
 
   defp to_text(nil), do: ""

@@ -278,6 +278,15 @@ defmodule HeddleUI.MCP.ServerTest do
       assert Executions.get_execution_by_flow_and_public_id(flow.id, public_id)
     end
 
+    test "runs only a section when given one", %{conn: conn, user: user, scope: scope} do
+      {:ok, flow} = Flows.create_flow(scope, %{name: "Flow", nodes: [], connections: []})
+
+      call(conn, token(user), "run_flow", %{flow_id: to_string(flow.id), section_id: "billing"})
+
+      assert [%{input: %{"trigger" => "mcp", "section_id" => "billing"}}] =
+               Executions.list_executions_for_flow(flow)
+    end
+
     test "needs the executions:write scope", %{conn: conn, user: user, scope: scope} do
       {:ok, flow} = Flows.create_flow(scope, %{name: "Flow", nodes: [], connections: []})
 

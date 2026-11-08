@@ -35,6 +35,32 @@ export class CustomConnectionElement extends LitElement {
       path.visible:hover {
         stroke-width: 6px;
       }
+      /* The wires the run being inspected went through. */
+      path.visible.taken-success,
+      path.visible.taken-error {
+        stroke-dasharray: 12 6;
+        animation: wire-flow 0.7s linear 4;
+      }
+      path.visible.taken-success {
+        stroke: var(--run-success);
+      }
+      path.visible.taken-error {
+        stroke: var(--run-error);
+      }
+      path.visible.taken-success.selected,
+      path.visible.taken-error.selected {
+        stroke: var(--color-primary);
+      }
+      @keyframes wire-flow {
+        from { stroke-dashoffset: 18; }
+        to { stroke-dashoffset: 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        path.visible.taken-success,
+        path.visible.taken-error {
+          animation: none;
+        }
+      }
     `;
   }
 
@@ -42,7 +68,9 @@ export class CustomConnectionElement extends LitElement {
     return {
       path: { type: String },
       connectionId: { type: String },
-      selected: { type: Boolean }
+      selected: { type: Boolean },
+      // "success" or "error" when the run being inspected went through this wire.
+      taken: { type: String }
     };
   }
 
@@ -51,7 +79,7 @@ export class CustomConnectionElement extends LitElement {
       <svg>
         <path class="hit-area" d="${this.path}" @click=${this._onClick} @contextmenu=${this._onContextMenu}></path>
         <path
-          class="visible ${this.selected ? 'selected' : ''}"
+          class="visible ${this.selected ? 'selected' : ''} ${this.taken ? `taken-${this.taken}` : ''}"
           d="${this.path}"
         ></path>
       </svg>

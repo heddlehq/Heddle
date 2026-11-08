@@ -6,7 +6,9 @@
     has_changes={@has_changes}
     flow={@current_flow}
     renaming_flow={@renaming_flow}
+    can_replace={@has_changes or @current_flow.nodes not in [nil, []]}
   />
+  <Layouts.flash_group flash={@flash} />
   <div class="flex-1 flex overflow-hidden">
     <HeddleUI.Components.Flow.NodeSidebar.node_sidebar
       nodes_by_category={@nodes_by_category}
@@ -45,7 +47,16 @@
         "Write something": "<%= gettext("Write something") %>",
         "Name this section": "<%= gettext("Name this section") %>",
         "Color": "<%= gettext("Color") %>",
-        "Delete": "<%= gettext("Delete") %>"
+        "Delete": "<%= gettext("Delete") %>",
+        "Manual": "<%= gettext("Manual") %>",
+        "Run section": "<%= gettext("Run section") %>",
+        "Section settings": "<%= gettext("Section settings") %>",
+        "Run with the flow": "<%= gettext("Run with the flow") %>",
+        "When off, it runs only from the play button.": "<%= gettext("When off, it runs only from the play button.") %>",
+        "Put nodes in this section to run it": "<%= gettext("Put nodes in this section to run it") %>",
+        "Nothing in this section can start a run": "<%= gettext("Nothing in this section can start a run") %>",
+        "Pinned data": "<%= gettext("Pinned data") %>",
+        "Inspect this step": "<%= gettext("Inspect this step") %>"
       };
     </script>
 
@@ -71,6 +82,7 @@
           <.canvas_tool kind="section" icon="hero-rectangle-group" label={gettext("Section")} />
         </div>
       </div>
+      <HeddleUI.Components.Flow.RunInspector.run_inspector inspector={@inspector} />
       <HeddleUI.Components.Flow.TerminalPanel.terminal_panel
         :if={@terminal_available}
         open={@terminal_open}
@@ -94,15 +106,10 @@
     editing_node_data={@editing_node_data}
     credentials={@credentials}
   />
-  <HeddleUI.Components.Modals.ErrorModal.error_modal
-    error_modal_open={@error_modal_open}
-    current_error_node_id={@current_error_node_id}
-    current_error_message={@current_error_message}
-  />
-  <HeddleUI.Components.Modals.ExecutionResultModal.execution_result_modal
-    show_result_modal={@show_result_modal}
-    execution_result={@execution_result}
-    inspecting_result={@inspecting_result}
+  <HeddleUI.Components.Modals.FlowSettingsModal.flow_settings_modal
+    open={@flow_settings_open}
+    form={@flow_settings_form}
+    options={@error_flow_options}
   />
   <HeddleUI.Components.Modals.WebhookTestModal.webhook_test_modal
     open={@webhook_test_open}
