@@ -30,6 +30,10 @@ As mudanças são salvas logo depois de feitas, e **Saving...** aparece ao lado 
 
 **Ctrl+Z** volta a sua última mudança, nunca a de outra pessoa. Se alguém mudou a mesma coisa depois de você, desfazer coloca de volta o que você tinha, por cima do dela.
 
+## No terminal
+
+O [Treadle](https://github.com/heddlehq/Treadle), o editor de terminal, edita o mesmo fluxo ao vivo. Quem está com ele aberto lá aparece como qualquer pessoa: um avatar, anéis nos nós que selecionou e um cursor no nó em que está. Essa pessoa também te vê, com o seu cursor. Qualquer outro cliente que edite pela API pode fazer o mesmo: veja [Editar junto](/pt/docs/reference/api/) na API.
+
 ## A IA no canvas
 
 Quando o chat de IA edita um fluxo, ele aparece entre os avatares enquanto trabalha, e os nós que ele muda piscam. As mudanças dele passam pelo mesmo processo que as de todo mundo, então nunca atropelam o que você está fazendo. O mesmo vale para a API, o MCP e as importações: o que eles mudam aparece em todo canvas aberto.
