@@ -34,6 +34,12 @@ defmodule HeddleUI.MCP.Tool do
 
   def error(message, frame), do: {:reply, Response.error(Response.tool(), message), frame}
 
+  @doc "Runs only the section in `:section_id`, when there is one. See `Heddle.Graph.Section`."
+  def put_section(input, %{section_id: id}) when is_binary(id) and id != "",
+    do: Map.put(input, "section_id", id)
+
+  def put_section(input, _params), do: input
+
   def changeset_error(%Ecto.Changeset{} = changeset, frame) do
     changeset
     |> Ecto.Changeset.traverse_errors(fn {message, _opts} -> message end)

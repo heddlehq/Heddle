@@ -396,4 +396,88 @@ defmodule HeddleNodes.RunnerUnitTest do
       assert context["request_path"] == "/hook"
     end
   end
+
+  describe "run/3 — sections" do
+    defp variable(id, value) do
+      node(id, "Variable", %{"var_name" => id, "var_value" => value, "var_type" => "String"})
+    end
+
+    defp with_section(flow, nodes, attrs \\ %{}) do
+      section =
+        Map.merge(%{"id" => "s", "kind" => "section", "text" => "", "nodes" => nodes}, attrs)
+
+      Map.put(flow, :comments, [section])
+    end
+
+    defp ran(context), do: Enum.map(context["logs"], &{&1["node_id"], &1["status"]})
+
+    test "a branch that reaches a manual section stops there, and the run still succeeds" do
+      f =
+        [node("start", "Start"), variable("a", "1"), variable("b", "2")]
+        |> flow([connection("start", "exec", "a"), connection("a", "exec", "b")])
+        |> with_section(["a", "b"], %{"manual" => true})
+
+      assert {:ok, context} = Runner.run(f)
+      assert ran(context) == [{"start", "success"}, {"a", "skipped"}]
+      refute Map.has_key?(context, "a")
+    end
+
+    test "runs a section alone, from its entry nodes, and never leaves it" do
+      f =
+        [node("start", "Start"), variable("a", "1"), variable("b", "2"), variable("out", "3")]
+        |> flow([
+          connection("start", "exec", "a"),
+          connection("a", "exec", "b"),
+          connection("b", "exec", "out")
+        ])
+        |> with_section(["a", "b"], %{"manual" => true})
+
+      assert {:ok, context} = Runner.run(f, %{"trigger" => "section", "section_id" => "s"})
+      assert ran(context) == [{"a", "success"}, {"b", "success"}]
+      assert context["trigger"] == "section"
+      refute Map.has_key?(context, "section_id")
+    end
+
+    test "a section that runs with the flow can be run alone too" do
+      f =
+        [node("start", "Start"), variable("a", "1")]
+        |> flow([connection("start", "exec", "a")])
+        |> with_section(["a"])
+
+      assert {:ok, context} = Runner.run(f, %{"section_id" => "s"})
+      assert ran(context) == [{"a", "success"}]
+    end
+
+    test "never starts at a Start in a manual section" do
+      f =
+        [node("start", "Start"), node("hook", "Webhook")]
+        |> flow()
+        |> with_section(["start"], %{"manual" => true})
+
+      assert {:ok, %{"logs" => [%{"node_id" => "hook"}]}} = Runner.run(f)
+
+      only_manual =
+        [node("start", "Start")] |> flow() |> with_section(["start"], %{"manual" => true})
+
+      assert {:error, "Every node this flow can start from is in a manual section.", nil, _} =
+               Runner.run(only_manual)
+    end
+
+    test "says when the section is not there, or has nothing to start from" do
+      f = [variable("a", "1")] |> flow() |> with_section([])
+
+      assert {:error, "This section was not found.", nil, _} =
+               Runner.run(f, %{"section_id" => "x"})
+
+      assert {:error, "This section has no node to start from.", nil, _} =
+               Runner.run(f, %{"section_id" => "s"})
+    end
+
+    test "a Webhook in a manual section is not there for a request" do
+      f = [node("hook", "Webhook")] |> flow() |> with_section(["hook"], %{"manual" => true})
+
+      assert {:error, "No Webhook node found in flow", nil, _} = Runner.run_from_webhook(f, %{})
+      assert {:ok, _context} = Runner.run_from_webhook(f, %{"body" => %{}}, section: "s")
+    end
+  end
 end

@@ -358,6 +358,85 @@ defmodule HeddleUI.FlowLive.EditorTest do
     end
   end
 
+  describe "importing a flow" do
+    @imported %{
+      "nodes" => [
+        %{
+          "id" => "hook",
+          "type" => "Webhook",
+          "label" => "New lead",
+          "controls" => %{"method" => "POST", "path" => "/leads"},
+          "position" => %{"x" => 0, "y" => 0}
+        },
+        %{
+          "id" => "tell",
+          "type" => "Slack: Send Message",
+          "label" => "Tell sales",
+          "controls" => %{"credential" => "99", "channel" => "#sales", "text" => "New lead"},
+          "position" => %{"x" => 200, "y" => 0}
+        }
+      ],
+      "connections" => [
+        %{
+          "source" => "hook",
+          "sourceOutput" => "exec",
+          "target" => "tell",
+          "targetInput" => "exec"
+        }
+      ]
+    }
+
+    test "has a button that asks before replacing a flow with nodes", %{conn: conn} do
+      empty = flow_fixture()
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{empty.id}")
+      assert has_element?(lv, ~s(#import-flow[phx-hook="ImportFlow"][data-replace="false"]))
+
+      full =
+        flow_fixture(%{
+          nodes: [%{"id" => "s", "type" => "Start", "label" => "Start", "controls" => %{}}]
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{full.id}")
+      assert has_element?(lv, ~s(#import-flow[data-replace="true"]))
+    end
+
+    test "puts the flow on the canvas unsaved, without its credentials", %{conn: conn} do
+      flow = flow_fixture()
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      html = render_hook(lv, "import_flow", %{"json" => Jason.encode!(@imported)})
+
+      assert_push_event(lv, "load_graph_data", %{nodes: nodes, connections: [_connection]})
+      assert Enum.find(nodes, &(&1["id"] == "tell"))["controls"]["credential"] == ""
+      assert html =~ "unsaved changes"
+      assert has_element?(lv, "#flash-info", "Flow imported")
+      assert HeddleCore.Flows.get_flow!(flow.id).nodes == []
+    end
+
+    test "says why a file can't be imported", %{conn: conn} do
+      flow = flow_fixture()
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      render_hook(lv, "import_flow", %{"json" => "not json"})
+      assert has_element?(lv, "#flash-error", "isn't JSON")
+
+      render_hook(lv, "import_flow", %{"json" => ~s({"name": "Leads"})})
+      assert has_element?(lv, "#flash-error", "isn't a Heddle flow")
+
+      bad =
+        put_in(@imported, ["connections"], [
+          %{hd(@imported["connections"]) | "sourceOutput" => "nope"}
+        ])
+
+      html = render_hook(lv, "import_flow", %{"json" => Jason.encode!(bad)})
+      assert has_element?(lv, "#flash-error", "can't be imported")
+      refute html =~ "unsaved changes"
+
+      render_hook(lv, "import_flow_too_big", %{})
+      assert has_element?(lv, "#flash-error", "too big")
+    end
+  end
+
   describe "save_graph_data event" do
     test "saves graph data and clears has_changes", %{conn: conn} do
       flow = flow_fixture()
@@ -691,6 +770,103 @@ defmodule HeddleUI.FlowLive.EditorTest do
 
       assert html =~ "No configuration options"
     end
+
+    test "saves how the node behaves when it fails", %{conn: conn} do
+      flow = flow_fixture()
+
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      render_hook(lv, "open_node_config", %{
+        "nodeId" => "n1",
+        "nodeData" => %{
+          "id" => "n1",
+          "type" => "Evaluate Code",
+          "label" => "Code",
+          "controls" => %{},
+          "settings" => %{"retries" => 2}
+        }
+      })
+
+      assert has_element?(lv, "#node-settings-retries[value=\"2\"]")
+      # Code has no error output of its own, so it can be given one.
+      assert has_element?(lv, "#node-settings-on-error-output")
+
+      render_change(lv, "node_config_changed", %{"settings" => %{"retries" => "0"}})
+      assert has_element?(lv, "#node-settings-delay[disabled]")
+
+      render_submit(lv, "save_node_config", %{
+        "node_label" => "Code",
+        "settings" => %{"retries" => "3", "retry_delay" => "2", "on_error" => "continue"}
+      })
+
+      assert_push_event(lv, "update_node_settings", %{
+        nodeId: "n1",
+        settings: %{"retries" => 3, "retry_delay" => 2, "on_error" => "continue"}
+      })
+    end
+
+    test "edits and unpins the data pinned to a node", %{conn: conn} do
+      flow = flow_fixture()
+
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      render_hook(lv, "open_node_config", %{
+        "nodeId" => "n1",
+        "nodeData" => %{
+          "id" => "n1",
+          "type" => "HTTP Request",
+          "label" => "API",
+          "controls" => %{},
+          "settings" => %{"pin" => %{"output" => "success", "data" => %{"result" => 1}}}
+        }
+      })
+
+      assert has_element?(lv, "#node-settings-pin")
+      refute has_element?(lv, "#node-settings-on-error-output")
+
+      # Unpinning shows only once saved.
+      render_change(lv, "node_config_changed", %{
+        "settings" => %{"pin_output" => "success", "pin_data" => "{}", "unpin" => "true"}
+      })
+
+      assert has_element?(lv, "#node-settings-unpin[checked]")
+
+      html =
+        render_submit(lv, "save_node_config", %{
+          "node_label" => "API",
+          "settings" => %{"pin_output" => "success", "pin_data" => "not json"}
+        })
+
+      assert html =~ "The pinned data must be a JSON object."
+
+      render_submit(lv, "save_node_config", %{
+        "node_label" => "API",
+        "settings" => %{"pin_output" => "success", "pin_data" => "{}", "unpin" => "true"}
+      })
+
+      assert_push_event(lv, "update_node_settings", %{nodeId: "n1", settings: settings})
+      assert settings == %{}
+    end
+  end
+
+  describe "flow settings" do
+    test "picks the flow that runs when a run fails", %{conn: conn} do
+      flow = flow_fixture(%{name: "Orders"})
+      alerts = flow_fixture(%{name: "Alerts"})
+
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      lv |> element("#open-flow-settings") |> render_click()
+      assert has_element?(lv, "#flow-settings-modal option", "Alerts")
+      refute has_element?(lv, "#flow-settings-modal option", "Orders")
+
+      lv
+      |> form("#flow-settings-form", flow_settings: %{error_flow_id: alerts.id})
+      |> render_submit()
+
+      refute has_element?(lv, "#flow-settings-modal")
+      assert Flows.get_flow!(flow.id).error_flow_id == alerts.id
+    end
   end
 
   describe "create_node_modal" do
@@ -752,27 +928,6 @@ defmodule HeddleUI.FlowLive.EditorTest do
     end
   end
 
-  describe "error_modal" do
-    test "opens and closes error modal", %{conn: conn} do
-      flow = flow_fixture()
-
-      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
-
-      html =
-        render_hook(lv, "show_error_details", %{
-          "nodeId" => "eval_1",
-          "message" => "undefined function foo/0"
-        })
-
-      assert html =~ "Node Execution Error"
-      assert html =~ "eval_1"
-      assert html =~ "undefined function foo/0"
-
-      html = render_click(lv, "close_error_modal")
-      refute html =~ "Node Execution Error"
-    end
-  end
-
   describe "save_and_run queueing" do
     test "creates a manual execution and enqueues the Oban worker", %{conn: conn} do
       flow =
@@ -801,15 +956,19 @@ defmodule HeddleUI.FlowLive.EditorTest do
           }
         })
 
-      assert html =~ "Execution queued"
-      assert has_element?(lv, "#execution-queue-notice")
-      refute html =~ "Execution Output"
+      assert html =~ "Run inspector"
+      assert has_element?(lv, "#run-inspector-status", "Queued")
+      refute has_element?(lv, "#execution-queue-notice")
 
       assert [execution] = Executions.list_executions_for_flow(flow)
       assert execution.status == "queued"
-      assert execution.input == %{"trigger" => "manual"}
+      # A run from the editor takes the pinned data and reports each step.
+      assert execution.input == %{"trigger" => "manual", "debug" => true}
       assert html =~ execution.public_id
-      assert has_element?(lv, "a[href=\"/executions/#{execution.public_id}\"]", "View execution")
+      # The inspector opens as a bar, and shows the run when opened.
+      refute has_element?(lv, "#run-timeline")
+      render_click(lv, "inspector_toggle")
+      assert has_element?(lv, "#run-timeline-waiting")
 
       assert_enqueued(
         worker: @flow_execution_worker,
@@ -817,11 +976,11 @@ defmodule HeddleUI.FlowLive.EditorTest do
         args: %{execution_id: execution.id}
       )
 
-      render_click(lv, "dismiss_execution_notice")
-      refute has_element?(lv, "#execution-queue-notice")
+      render_click(lv, "inspector_close")
+      refute has_element?(lv, "#run-inspector")
     end
 
-    test "automatically dismisses the queued execution notice", %{conn: conn} do
+    test "once the inspector is closed, the run reports through the notice", %{conn: conn} do
       flow = flow_fixture()
 
       {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
@@ -831,56 +990,157 @@ defmodule HeddleUI.FlowLive.EditorTest do
       })
 
       assert [execution] = Executions.list_executions_for_flow(flow)
-      assert has_element?(lv, "#execution-queue-notice")
+      render_click(lv, "inspector_close")
 
-      send(lv.pid, {:dismiss_execution_notice, execution.id})
+      {:ok, execution} = Executions.mark_succeeded(execution, %{"result" => 1})
+      send(lv.pid, {:execution_updated, execution})
 
+      assert has_element?(lv, "#execution-queue-notice", "Execution finished")
+
+      lv |> element("#open-execution-result") |> render_click()
+
+      assert has_element?(lv, "#run-inspector-status", "Succeeded")
       refute has_element?(lv, "#execution-queue-notice")
     end
 
-    test "replaces the queued notice when execution finishes", %{conn: conn} do
+    test "follows the run step by step, then shows what it saved", %{conn: conn} do
       flow = flow_fixture()
 
       {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
 
-      html =
-        render_hook(lv, "save_and_run", %{
-          "data" => %{"nodes" => flow.nodes, "connections" => flow.connections}
-        })
+      render_hook(lv, "save_and_run", %{
+        "data" => %{"nodes" => flow.nodes, "connections" => flow.connections}
+      })
 
-      assert html =~ "Execution queued"
       assert [execution] = Executions.list_executions_for_flow(flow)
 
+      step = %{
+        "node_id" => "1",
+        "node_type" => "Start",
+        "status" => "success",
+        "output" => "exec",
+        "started_at" => "2026-11-08T10:00:00.000000Z",
+        "duration_ms" => 1.5,
+        "data" => %{"input" => %{"trigger" => "manual"}, "output" => %{}}
+      }
+
+      render_click(lv, "inspector_toggle")
+      send(lv.pid, {:execution_step, execution.id, step})
+      send(lv.pid, :inspector_flush)
+
+      assert has_element?(lv, "#run-step-0", "Start")
+      assert has_element?(lv, "#run-inspector-status", "Running")
+
+      failed = %{
+        "node_id" => "2",
+        "node_type" => "Output",
+        "label" => "Finish",
+        "status" => "error",
+        "output" => "error",
+        "error" => "it broke",
+        "attempts" => 3,
+        "retry_errors" => ["first", "second"],
+        "started_at" => "2026-11-08T10:00:00.002000Z",
+        "duration_ms" => 3.0,
+        "data" => %{"input" => %{"trigger" => "manual"}, "output" => %{}}
+      }
+
       {:ok, execution} =
-        Executions.mark_succeeded(execution, %{
-          "result" => 999,
-          "status" => "success",
-          "trigger" => "manual",
-          "variables" => %{"x" => 999}
+        Executions.mark_failed(execution, %{"message" => "it broke", "node_id" => "2"}, %{
+          logs: [step, failed]
         })
 
       send(lv.pid, {:execution_updated, execution})
 
-      html = render(lv)
-      assert html =~ "Execution finished"
-      refute html =~ "Execution queued"
-      refute has_element?(lv, "a[href=\"/executions/#{execution.public_id}\"]", "View execution")
-      assert has_element?(lv, "#open-execution-result", "View result")
+      assert has_element?(lv, "#run-inspector-status", "Failed")
+      # A failed run opens at the step that failed, on its error.
+      assert has_element?(lv, "#run-step-name", "Finish")
+      assert has_element?(lv, "#run-step-error", "it broke")
+      assert has_element?(lv, "#run-step-error", "second")
 
-      html =
-        lv
-        |> element("#open-execution-result")
-        |> render_click()
+      lv |> element("#run-step-0") |> render_click()
+      assert has_element?(lv, "#run-step-name", "Start")
+      assert has_element?(lv, "#run-json-0-output") == false
+      assert has_element?(lv, "#run-tab-input")
 
-      assert html =~ "Execution Output"
-      assert html =~ "variables"
-      assert html =~ "999"
-      refute html =~ "%{"
-      refute has_element?(lv, "#execution-queue-notice")
+      lv |> element("#run-tab-input") |> render_click()
+      assert has_element?(lv, "json-tree#run-json-0-input")
 
-      send(lv.pid, {:dismiss_execution_notice, execution.id})
+      lv |> element("#run-step-result") |> render_click()
+      assert has_element?(lv, "#run-step-detail", "it broke")
+    end
 
-      refute has_element?(lv, "#execution-queue-notice")
+    test "runs again with the input of the run, and from a step with what it got",
+         %{conn: conn} do
+      flow = flow_fixture()
+
+      {:ok, execution} =
+        Executions.create_execution(%{
+          flow_id: flow.id,
+          input: %{"trigger" => "manual", "name" => "Ana"},
+          logs: [
+            %{
+              "node_id" => "1",
+              "node_type" => "Start",
+              "status" => "success",
+              "output" => "exec",
+              "data" => %{"input" => %{"name" => "Ana", "result" => 1}, "output" => %{}}
+            }
+          ]
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}?execution=#{execution.public_id}")
+      render_hook(lv, "client_ready", %{})
+
+      assert has_element?(lv, "#run-inspector")
+      refute has_element?(lv, "#run-step-detail")
+
+      # Picking the node on the canvas opens the panel at its step.
+      render_hook(lv, "inspector_select_node", %{"node_id" => "1"})
+      assert has_element?(lv, "#run-step-name", "Start")
+
+      lv |> element("#run-step-replay") |> render_click()
+      assert_push_event(lv, "request_save_and_run", %{})
+
+      render_hook(lv, "save_and_run", %{
+        "data" => %{"nodes" => flow.nodes, "connections" => flow.connections}
+      })
+
+      assert %{input: input} =
+               flow
+               |> Executions.list_executions_for_flow()
+               |> Enum.find(&(&1.id != execution.id))
+
+      assert input == %{"name" => "Ana", "result" => 1, "replay_from" => "1", "debug" => true}
+    end
+
+    test "pins the output of a step to its node on the canvas", %{conn: conn} do
+      flow = flow_fixture()
+
+      {:ok, execution} =
+        Executions.create_execution(%{
+          flow_id: flow.id,
+          logs: [
+            %{
+              "node_id" => "1",
+              "node_type" => "Start",
+              "status" => "success",
+              "output" => "exec",
+              "data" => %{"input" => %{}, "output" => %{"result" => 42}}
+            }
+          ]
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}?execution=#{execution.public_id}")
+      render_hook(lv, "client_ready", %{})
+      render_hook(lv, "inspector_select_node", %{"node_id" => "1"})
+
+      lv |> element("#run-step-pin") |> render_click()
+
+      assert_push_event(lv, "pin_node", %{
+        nodeId: "1",
+        pin: %{"output" => "exec", "data" => %{"result" => 42}}
+      })
     end
 
     test "queues execution without running runtime errors inside the LiveView", %{conn: conn} do
@@ -915,9 +1175,9 @@ defmodule HeddleUI.FlowLive.EditorTest do
           "data" => %{"nodes" => flow.nodes, "connections" => flow.connections}
         })
 
-      assert html =~ "Execution queued"
-      assert has_element?(lv, "#execution-queue-notice")
-      refute html =~ "Execution Output"
+      assert html =~ "Run inspector"
+      assert has_element?(lv, "#run-inspector-status", "Queued")
+      refute has_element?(lv, "#execution-queue-notice")
 
       assert [execution] = Executions.list_executions_for_flow(flow)
 
@@ -1024,6 +1284,95 @@ defmodule HeddleUI.FlowLive.EditorTest do
     end
   end
 
+  describe "running a section" do
+    setup %{conn: conn} do
+      user = system_admin_fixture()
+      Process.put(:heddle_owner, user)
+      flow = flow_fixture()
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/flows/#{flow.id}")
+
+      %{lv: lv, flow: flow}
+    end
+
+    defp section_data(type) do
+      node = %{
+        "id" => "entry",
+        "type" => type,
+        "label" => type,
+        "controls" => %{},
+        "position" => %{"x" => 0, "y" => 0}
+      }
+
+      section = %{
+        "id" => "billing",
+        "kind" => "section",
+        "color" => "default",
+        "text" => "Billing",
+        "position" => %{"x" => -20, "y" => -20},
+        "width" => 520,
+        "height" => 320,
+        "manual" => true,
+        "nodes" => ["entry"]
+      }
+
+      %{"nodes" => [node], "connections" => [], "comments" => [section]}
+    end
+
+    test "saves the flow and runs that section alone", %{lv: lv, flow: flow} do
+      render_hook(lv, "run_section", %{"section_id" => "billing", "data" => section_data("Start")})
+
+      assert [%{input: %{"trigger" => "section", "section_id" => "billing"}}] =
+               Executions.list_executions_for_flow(flow)
+
+      assert [%{"manual" => true, "nodes" => ["entry"]}] =
+               HeddleCore.Flows.get_flow!(flow.id).comments
+    end
+
+    test "asks for the request when the section starts at a Webhook", %{lv: lv, flow: flow} do
+      data = section_data("Webhook")
+      render_hook(lv, "run_section", %{"section_id" => "billing", "data" => data})
+
+      assert has_element?(lv, "#webhook-test-form")
+
+      lv
+      |> form("#webhook-test-form")
+      |> render_submit(%{webhook_test: %{method: "POST", body: ~s({"x": 1})}})
+
+      assert_push_event(lv, "request_save_and_run", %{})
+      render_hook(lv, "save_and_run", %{"data" => data})
+
+      assert [%{input: %{"trigger" => "webhook", "section_id" => "billing"}}] =
+               Executions.list_executions_for_flow(flow)
+    end
+
+    test "forgets the section when the request is not sent", %{lv: lv, flow: flow} do
+      render_hook(lv, "run_section", %{
+        "section_id" => "billing",
+        "data" => section_data("Webhook")
+      })
+
+      render_click(lv, "close_webhook_test")
+
+      data = %{section_data("Start") | "comments" => []}
+      render_hook(lv, "save_and_run", %{"data" => data})
+
+      assert [%{input: %{"trigger" => "manual"} = input}] =
+               Executions.list_executions_for_flow(flow)
+
+      refute Map.has_key?(input, "section_id")
+    end
+
+    test "a Start in a manual section doesn't count when the whole flow runs", %{lv: lv} do
+      %{"nodes" => [start], "comments" => [section]} = section_data("Start")
+      hook = %{start | "id" => "hook", "type" => "Webhook", "label" => "Webhook"}
+      data = %{"nodes" => [start, hook], "connections" => [], "comments" => [section]}
+
+      render_hook(lv, "save_and_run", %{"data" => data})
+
+      assert has_element?(lv, "#webhook-test-form")
+    end
+  end
+
   describe "save_and_run with errors" do
     test "queues execution even when the flow has no Start node", %{conn: conn} do
       flow =
@@ -1046,9 +1395,9 @@ defmodule HeddleUI.FlowLive.EditorTest do
           "data" => %{"nodes" => flow.nodes, "connections" => flow.connections}
         })
 
-      assert html =~ "Execution queued"
-      assert has_element?(lv, "#execution-queue-notice")
-      refute html =~ "Execution Output"
+      assert html =~ "Run inspector"
+      assert has_element?(lv, "#run-inspector-status", "Queued")
+      refute has_element?(lv, "#execution-queue-notice")
 
       assert [execution] = Executions.list_executions_for_flow(flow)
 
@@ -1101,9 +1450,9 @@ defmodule HeddleUI.FlowLive.EditorTest do
           "data" => %{"nodes" => flow.nodes, "connections" => flow.connections}
         })
 
-      assert html =~ "Execution queued"
-      assert has_element?(lv, "#execution-queue-notice")
-      refute html =~ "Execution Output"
+      assert html =~ "Run inspector"
+      assert has_element?(lv, "#run-inspector-status", "Queued")
+      refute has_element?(lv, "#execution-queue-notice")
 
       assert [execution] = Executions.list_executions_for_flow(flow)
 
@@ -1153,9 +1502,9 @@ defmodule HeddleUI.FlowLive.EditorTest do
           "data" => %{"nodes" => flow.nodes, "connections" => flow.connections}
         })
 
-      assert html =~ "Execution queued"
-      assert has_element?(lv, "#execution-queue-notice")
-      refute html =~ "Execution Output"
+      assert html =~ "Run inspector"
+      assert has_element?(lv, "#run-inspector-status", "Queued")
+      refute has_element?(lv, "#execution-queue-notice")
 
       assert [execution] = Executions.list_executions_for_flow(flow)
 

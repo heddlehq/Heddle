@@ -14,7 +14,8 @@ defmodule HeddleUI.Components.Modals.NodeConfigModalTest do
     (&NodeConfigModal.node_config_modal/1)
     |> render_component(config_modal_open: true, editing_node_data: data)
     |> LazyHTML.from_fragment()
-    |> LazyHTML.query("label")
+    # The node's settings come after its controls.
+    |> LazyHTML.query("label:not(#node-settings label)")
     |> Enum.map(&(&1 |> LazyHTML.text() |> String.trim()))
   end
 

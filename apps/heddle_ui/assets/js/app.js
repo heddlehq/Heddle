@@ -5,8 +5,33 @@ import topbar from "../vendor/topbar"
 import { CodeEditorHook, loadMonaco } from "./code_editor"
 import { WebhookBodyHook } from "./webhook_body"
 import { TerminalHook } from "./terminal"
+import "./json-tree"
+
+// A flow is a few hundred kilobytes at most. A bigger file is something else.
+const MAX_IMPORT_BYTES = 2 * 1024 * 1024
 
 const hooks = {
+  // Reads a flow from a JSON file and hands it to the server, which checks it.
+  ImportFlow: {
+    mounted() {
+      this.el.addEventListener("click", () => {
+        const input = document.createElement("input")
+        input.type = "file"
+        input.accept = ".json,application/json"
+        input.addEventListener("change", async () => {
+          const file = input.files?.[0]
+          if (!file) return
+          if (file.size > MAX_IMPORT_BYTES) {
+            this.pushEvent("import_flow_too_big", {})
+            return
+          }
+          if (this.el.dataset.replace === "true" && !window.confirm(this.el.dataset.confirmReplace)) return
+          this.pushEvent("import_flow", { json: await file.text() })
+        })
+        input.click()
+      })
+    },
+  },
   CodeEditor: CodeEditorHook,
   WebhookBody: WebhookBodyHook,
   Terminal: TerminalHook,
@@ -111,6 +136,13 @@ const hooks = {
       // Use event delegation for draggables to avoid MutationObserver performance issues
       document.addEventListener('dragstart', handleDragStart);
 
+      if (editor.onRunSection) {
+        editor.onRunSection(async (sectionId) => {
+          const data = await editor.exportData();
+          this.pushEvent("run_section", { section_id: sectionId, data });
+        });
+      }
+
       this.handleEvent("request_save_and_run", async () => {
         if (editor.exportData) {
           const data = await editor.exportData();
@@ -118,13 +150,24 @@ const hooks = {
         }
       });
 
-      this.handleEvent("load_graph_data", async ({ nodes, connections, comments, definitions }) => {
-        if (editor.importData) {
-          await editor.importData({ nodes, connections, comments, definitions });
-        } else {
-          console.error("Editor importData method missing!");
-        }
-      });
+      // What changes the whole canvas runs one after the other: a run's state that
+      // arrives while the flow is still loading must wait for its nodes.
+      let queue = Promise.resolve();
+      const inOrder = (fn) => (payload) => {
+        queue = queue.then(() => fn(payload)).catch((error) => console.error(error));
+      };
+
+      this.handleEvent("load_graph_data", inOrder(async ({ nodes, connections, comments, definitions }) => {
+        await editor.importData({ nodes, connections, comments, definitions });
+      }));
+
+      this.handleEvent("run_state", inOrder((state) => editor.setRunState(state)));
+      this.handleEvent("run_steps", inOrder(({ steps }) => editor.addRunSteps(steps)));
+      this.handleEvent("run_focus", inOrder(({ nodeId }) => editor.focusRunNode(nodeId)));
+      this.handleEvent("update_node_settings", inOrder(({ nodeId, settings }) => editor.updateNodeSettings(nodeId, settings)));
+      this.handleEvent("pin_node", inOrder(({ nodeId, pin }) => editor.pinNode(nodeId, pin)));
+
+      editor.onInspect((nodeId) => this.pushEvent("inspector_select_node", { node_id: nodeId }));
 
       this.handleEvent("update_node_code", ({ nodeId, code_elixir, code_python, fieldName }) => {
         if (editor.updateNodeCode) {
@@ -166,11 +209,6 @@ const hooks = {
         });
       }
 
-      if (editor.onErrorDetails) {
-        editor.onErrorDetails((nodeId, message) => {
-          this.pushEvent("show_error_details", { nodeId, message });
-        });
-      }
 
       if (editor.onNodeConfig) {
         editor.onNodeConfig((nodeId, nodeData) => {
@@ -190,19 +228,6 @@ const hooks = {
         });
       }
 
-      this.handleEvent("highlight_node_error", ({ nodeId, message }) => {
-        if (editor.addNodeError) {
-          editor.addNodeError(nodeId, message);
-        } else {
-          console.error("Editor addNodeError method missing!");
-        }
-      });
-
-      this.handleEvent("clear_node_errors", () => {
-        if (editor.clearNodeErrors) {
-          editor.clearNodeErrors();
-        }
-      });
 
       this.destroyed = () => {
         if (editor.destroy) editor.destroy();

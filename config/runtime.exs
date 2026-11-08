@@ -129,6 +129,11 @@ if config_env() == :prod do
   # personal machine must not be reachable from the network.
   listen_ip = if local_install?, do: {127, 0, 0, 1}, else: {0, 0, 0, 0, 0, 0, 0, 0}
 
+  # Where a Wait's address points, for the workers that build it.
+  config :heddle_core,
+         :public_url,
+         if(public_host?, do: "https://#{host}", else: "http://localhost:#{port}")
+
   config :heddle_ui, :force_ssl, public_host?
   config :heddle_ui, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 

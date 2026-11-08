@@ -113,7 +113,14 @@ test.describe('Flow written outside the canvas', () => {
     const name = page.locator('custom-node .node-name').filter({ hasText: 'Receive Input' });
 
     await expect(name).toBeVisible();
-    await expect(name).toHaveCSS('user-select', 'none');
+    // WebKit only reports the prefixed property.
+    const selectable = await name.evaluate((element) => {
+      const style = getComputedStyle(element);
+
+      return style.userSelect || style.webkitUserSelect;
+    });
+
+    expect(selectable).toBe('none');
 
     await dragNode(page, page.locator('custom-node .circular-node').first());
 
@@ -222,7 +229,92 @@ test.describe('Testing a webhook', () => {
     await page.locator('#webhook-test-run').click();
 
     await expect(page.locator('#webhook-test-form')).toHaveCount(0);
-    await expect(page.getByText('Execution queued')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#run-inspector-status')).toHaveText(/Queued/i, { timeout: 5000 });
+  });
+});
+
+test.describe('How a node behaves when it fails, and the run inspector', () => {
+  test.describe.configure({ timeout: 60000 });
+
+  test.beforeEach(async ({ page, request }) => {
+    const token = await createApiKey(page);
+    const flowId = await openNewFlow(page);
+
+    const response = await request.put(`/api/v1/workflows/${flowId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: {
+        workflow: {
+          nodes: [
+            { id: 'start', type: 'Start', label: 'Start', controls: {} },
+            {
+              id: 'code',
+              type: 'Evaluate Code',
+              label: 'Price',
+              controls: { language: 'elixir', code_elixir: '42' },
+              settings: {
+                retries: 2,
+                on_error: 'output',
+                pin: { output: 'exec', data: { result: 42 } },
+              },
+            },
+          ],
+          connections: [{ source: 'start', sourceOutput: 'exec', target: 'code' }],
+        },
+      },
+    });
+    expect(response.status(), await response.text()).toBe(200);
+    await expect(page.locator('custom-node')).toHaveCount(2, { timeout: 5000 });
+  });
+
+  test('shows the pinned data and the error output its settings give it', async ({ page }) => {
+    const code = page.locator('custom-node').filter({ hasText: 'Price' });
+
+    await expect(code.locator('.pin-badge')).toBeVisible();
+    // Its input, its output and the error output it doesn't have on its own.
+    await expect(code.locator('custom-socket')).toHaveCount(3);
+  });
+
+  test('changes them in the drawer, and keeps them after saving', async ({ page }) => {
+    const code = page.locator('custom-node').filter({ hasText: 'Price' });
+    await code.hover();
+    await code.locator('.node-action-btn.config').click();
+
+    await expect(page.locator('#node-settings-retries')).toHaveValue('2');
+    await expect(page.locator('#node-settings-pin-data')).toHaveValue(/42/);
+
+    await page.locator('#node-settings-on-error-continue').check();
+    await page.locator('#node-settings-unpin').check();
+    await page.locator('#node-config-form').getByRole('button', { name: 'Save' }).click();
+
+    await expect(code.locator('.pin-badge')).toHaveCount(0);
+    await expect(code.locator('custom-socket')).toHaveCount(2);
+
+    await page.getByRole('button', { name: 'Save Changes' }).click();
+    await expect(page.getByText('You have unsaved changes')).toBeHidden({ timeout: 5000 });
+
+    await page.reload();
+    await waitForLiveView(page);
+    const reloaded = page.locator('custom-node').filter({ hasText: 'Price' });
+    await expect(reloaded.locator('custom-socket')).toHaveCount(2, { timeout: 5000 });
+    await expect(reloaded.locator('.pin-badge')).toHaveCount(0);
+  });
+
+  test('opens the inspector on a run, and closes it', async ({ page }) => {
+    await page.getByRole('button', { name: 'Run Flow' }).click();
+
+    await expect(page.locator('#run-inspector')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#run-inspector-status')).toHaveText(/Queued/i);
+    // It opens as a bar, so the run doesn't take the canvas away.
+    await expect(page.locator('#run-timeline')).toHaveCount(0);
+
+    await page.locator('#run-inspector-toggle').click();
+    await expect(page.locator('#run-timeline-waiting')).toBeVisible();
+
+    await page.locator('#run-inspector-toggle').click();
+    await expect(page.locator('#run-timeline')).toHaveCount(0);
+
+    await page.locator('#run-inspector-close').click();
+    await expect(page.locator('#run-inspector')).toHaveCount(0);
   });
 });
 
@@ -270,6 +362,60 @@ test.describe('Terminal', () => {
     await expect(page.locator('#terminal-screen .xterm')).toBeVisible();
 
     await setTerminal(page, false);
+  });
+
+  test.describe('keys', () => {
+    // What the terminal sends to the program, whatever the program does with it.
+    const openTerminal = async (page) => {
+      await setTerminal(page, true);
+      await openNewFlow(page);
+      await page.locator('#terminal-open-button').click();
+      await expect(page.locator('#terminal-screen .xterm')).toBeVisible({ timeout: 10000 });
+
+      await page.evaluate(() => {
+        window.terminalKeys = [];
+        document.querySelector('#terminal-screen').xterm.onData((data) => window.terminalKeys.push(data));
+      });
+      await page.locator('#terminal-screen .xterm-helper-textarea').focus();
+    };
+
+    const sent = (page) => page.evaluate(() => window.terminalKeys.join(''));
+
+    test('sends only the accented letter of a dead key', async ({ page, browserName }) => {
+      test.skip(browserName !== 'chromium', 'Composition needs the Chrome DevTools Protocol');
+      await openTerminal(page);
+
+      const cdp = await page.context().newCDPSession(page);
+
+      // What fcitx does on Wayland: the dead key opens a composition, and the next key
+      // reaches the page with its real code before the composition ends.
+      await cdp.send('Input.imeSetComposition', { text: '´', selectionStart: 1, selectionEnd: 1 });
+      await cdp.send('Input.dispatchKeyEvent', {
+        type: 'rawKeyDown',
+        key: 'e',
+        code: 'KeyE',
+        windowsVirtualKeyCode: 69,
+      });
+      await cdp.send('Input.insertText', { text: 'é' });
+      await cdp.send('Input.dispatchKeyEvent', {
+        type: 'keyUp',
+        key: 'e',
+        code: 'KeyE',
+        windowsVirtualKeyCode: 69,
+      });
+
+      await expect.poll(() => sent(page)).toBe('é');
+    });
+
+    test('breaks the line with Shift and Enter, and sends with Enter', async ({ page }) => {
+      await openTerminal(page);
+
+      await page.keyboard.press('Shift+Enter');
+      await expect.poll(() => sent(page)).toBe('\x1b\r');
+
+      await page.keyboard.press('Enter');
+      await expect.poll(() => sent(page)).toBe('\x1b\r\r');
+    });
   });
 });
 

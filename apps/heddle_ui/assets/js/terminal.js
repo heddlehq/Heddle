@@ -3,6 +3,10 @@ import { Socket } from "phoenix"
 // The screen of the terminal. It talks to the server on a socket of its own, because a
 // terminal sends a message for every key and repaint, and LiveView is for something else.
 
+// What Alt and Enter send. A terminal has nothing for Shift and Enter, and this is what
+// Claude Code takes as a new line. A plain carriage return sends the message.
+const NEW_LINE = "\x1b\r";
+
 const palette = () => {
     const style = getComputedStyle(document.documentElement);
     const color = (name) => style.getPropertyValue(name).trim();
@@ -72,6 +76,7 @@ export const TerminalHook = {
         this.useGpu(WebglAddon);
         this.fitAddon.fit();
 
+        this.term.attachCustomKeyEventHandler((event) => this.handleKey(event));
         this.term.onData((data) => this.channel?.push("input", { data }));
         this.term.onResize(({ cols, rows }) => this.channel?.push("resize", { cols, rows }));
 
@@ -79,6 +84,24 @@ export const TerminalHook = {
         this.socket.connect();
         this.connect();
         this.term.focus();
+    },
+
+    // Returns whether xterm should handle the key.
+    handleKey(event) {
+        // xterm ends a composition when a key arrives with its real code, and sends what's
+        // in it. With fcitx that's how the letter after a dead key arrives, so the accent
+        // went out on its own. The composition ends by itself, with the accented letter.
+        if (event.isComposing) return false;
+
+        const onlyShift = event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey;
+
+        if (event.key === "Enter" && onlyShift) {
+            event.preventDefault();
+            if (event.type === "keydown") this.term.input(NEW_LINE);
+            return false;
+        }
+
+        return true;
     },
 
     useGpu(WebglAddon) {

@@ -5,7 +5,7 @@ defmodule HeddleCore.Executions.Execution do
   alias HeddleCore.Flows.Flow
 
   @primary_key {:id, :binary_id, autogenerate: true}
-  @statuses ~w(queued running succeeded failed)
+  @statuses ~w(queued running waiting succeeded failed)
 
   schema "executions" do
     field :public_id, :string
@@ -15,6 +15,10 @@ defmodule HeddleCore.Executions.Execution do
     field :error, :map
     field :logs, {:array, :map}, default: []
     field :response, :map
+    # What is left of a run a Wait paused. See `HeddleNodes.Runner`.
+    field :paused, :map
+    # The secret part of the address that resumes a Wait on a call.
+    field :resume_token, :string, redact: true
     field :started_at, :utc_datetime
     field :finished_at, :utc_datetime
 
@@ -45,5 +49,6 @@ defmodule HeddleCore.Executions.Execution do
     |> assoc_constraint(:flow)
     |> check_constraint(:status, name: :executions_status_check)
     |> unique_constraint(:public_id)
+    |> unique_constraint(:resume_token)
   end
 end

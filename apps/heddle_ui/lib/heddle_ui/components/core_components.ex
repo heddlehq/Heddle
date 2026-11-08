@@ -108,7 +108,7 @@ defmodule HeddleUI.CoreComponents do
     }
 
     base_classes =
-      "inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all focus:ring-2 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+      "inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer focus:ring-2 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
 
     variant_classes = Map.get(variants, assigns[:variant])
 
