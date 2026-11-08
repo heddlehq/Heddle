@@ -202,7 +202,6 @@ defmodule HeddleUI.Plugs.WebhookPlugTest do
 
     flow_fixture(%{
       published: Keyword.get(opts, :published, true),
-      published: Keyword.get(opts, :published, true),
       nodes: [
         %{
           "id" => "1",

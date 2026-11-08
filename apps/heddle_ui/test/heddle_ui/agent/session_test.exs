@@ -216,6 +216,34 @@ defmodule HeddleUI.Agent.SessionTest do
     refute_received {:agent_event, %{type: "permission", permission: %{flow_name: _name}}}
   end
 
+  test "asks before publishing, even after being told to always allow runs", %{
+    scope: scope,
+    flow: flow,
+    id: id
+  } do
+    FakeHarnessModel.script([
+      {:tool, "test_flow", %{flow_id: id}},
+      {:tool, "publish_flow", %{flow_id: id}},
+      "Published."
+    ])
+
+    :ok = Agent.send_message(scope, flow.id, "test it and publish it")
+
+    asked()
+    :ok = Agent.decide(scope, flow.id, "always")
+    finish_run(flow)
+
+    assert_receive {:agent_event,
+                    %{type: "permission", permission: %{action: "publish", flow_name: _name}}},
+                   2000
+
+    published_before = Flows.get_flow!(flow.id).published_version_id
+    :ok = Agent.decide(scope, flow.id, "once")
+    idle()
+
+    assert Flows.get_flow!(flow.id).published_version_id != published_before
+  end
+
   test "gives a refusal to the model instead of running", %{scope: scope, flow: flow, id: id} do
     FakeHarnessModel.script([{:tool, "test_flow", %{flow_id: id}}, "Ok, I won't."])
 

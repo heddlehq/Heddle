@@ -165,9 +165,10 @@ defmodule HeddleCore.Flows do
   one they can only see, and `{:error, :not_found}` for one they can't.
 
   The caller counts among who changed the draft, and a draft edited for a while is
-  kept as a checkpoint, see `HeddleCore.Flows.Versions`.
+  kept as a checkpoint, see `HeddleCore.Flows.Versions`, unless `checkpoint: false`:
+  for a save that is kept as a version right after anyway.
   """
-  def update_flow(%Scope{} = scope, %Flow{} = flow, attrs) do
+  def update_flow(%Scope{} = scope, %Flow{} = flow, attrs, opts \\ []) do
     with {:ok, flow} <- fetch_for(scope, :edit, flow.id) do
       attrs =
         attrs
@@ -190,8 +191,12 @@ defmodule HeddleCore.Flows do
       |> put_contributor(author_id)
       |> save_draft()
       |> tap(fn
-        {:ok, flow} -> HeddleCore.Flows.Versions.checkpoint_if_due(flow, author_id)
-        _error -> :ok
+        {:ok, flow} ->
+          if Keyword.get(opts, :checkpoint, true),
+            do: HeddleCore.Flows.Versions.checkpoint_if_due(flow, author_id)
+
+        _error ->
+          :ok
       end)
     end
   end
