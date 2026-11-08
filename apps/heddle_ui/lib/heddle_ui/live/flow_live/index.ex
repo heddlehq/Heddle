@@ -61,13 +61,13 @@ defmodule HeddleUI.FlowLive.Index do
             navigate={~p"/flows/new/ai"}
             variant="outline"
           >
-            <.icon name="hero-sparkles" class="h-4 w-4 mr-1" /> {gettext("Create with AI")}
+            <.icon name="hero-sparkles" class="h-4 w-4" /> {gettext("Create with AI")}
           </.button>
           <.button
             phx-click="create_flow"
             variant="primary"
           >
-            <.icon name="hero-plus" class="h-4 w-4 mr-1" /> {gettext("New Flow")}
+            <.icon name="hero-plus" class="h-4 w-4" /> {gettext("New Flow")}
           </.button>
         </div>
       </div>
@@ -105,7 +105,7 @@ defmodule HeddleUI.FlowLive.Index do
               variant="primary"
               class="px-6 py-3"
             >
-              <.icon name="hero-plus" class="h-5 w-5 mr-1" /> {gettext("Create your first flow")}
+              <.icon name="hero-plus" class="h-5 w-5" /> {gettext("Create your first flow")}
             </.button>
           </div>
         <% else %>

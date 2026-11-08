@@ -18,8 +18,8 @@ defmodule HeddleUI.Components.Invites do
   def invite_link(assigns) do
     ~H"""
     <div class="space-y-3">
-      <div class="flex flex-wrap items-end gap-3">
-        <div class="flex-1 min-w-0">
+      <div class="flex items-end gap-3">
+        <div class="min-w-0 flex-1">
           <.input
             type="text"
             id={@id}
@@ -29,8 +29,14 @@ defmodule HeddleUI.Components.Invites do
             readonly
           />
         </div>
-        <.button href={invite_url(@invite)} target="_blank" variant="outline">
-          <.icon name="hero-arrow-top-right-on-square" class="h-4 w-4 mr-1" />
+        <.button
+          href={invite_url(@invite)}
+          target="_blank"
+          variant="outline"
+          size="field"
+          class="mb-3"
+        >
+          <.icon name="hero-arrow-top-right-on-square" class="h-4 w-4" />
           {gettext("Open link")}
         </.button>
       </div>

@@ -88,10 +88,15 @@ defmodule HeddleUI.CoreComponents do
       <.button>Send!</.button>
       <.button phx-click="go" variant="primary">Send!</.button>
       <.button navigate={~p"/"}>Home</.button>
+
+  With `size="field"`, it has the height and corners of an `input/1`, for a button
+  beside a field. In a row aligned at the bottom, give it `class="mb-3"`: below its
+  input, an `input/1` keeps the 4px padding of `fieldset` and its `mb-2`.
   """
   attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
   attr :class, :any, default: nil
   attr :variant, :string, values: ~w(primary outline ghost success danger)
+  attr :size, :string, default: "md", values: ~w(md field)
   slot :inner_block, required: true
 
   def button(assigns) do
@@ -108,12 +113,20 @@ defmodule HeddleUI.CoreComponents do
     }
 
     base_classes =
-      "inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer focus:ring-2 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+      "inline-flex shrink-0 items-center justify-center gap-1.5 text-sm font-medium transition-all cursor-pointer focus:ring-2 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+
+    # `field` matches `field_classes/0`: py-3 and a line of text-sm, with a border.
+    sizes = %{"md" => "px-4 py-2 rounded-lg", "field" => "h-[46px] px-5 rounded-xl"}
 
     variant_classes = Map.get(variants, assigns[:variant])
 
     assigns =
-      assign(assigns, :class, [base_classes, variant_classes, assigns.class])
+      assign(assigns, :class, [
+        base_classes,
+        Map.fetch!(sizes, assigns.size),
+        variant_classes,
+        assigns.class
+      ])
 
     if assigns.rest[:href] || assigns.rest[:navigate] || assigns.rest[:patch] do
       ~H"""

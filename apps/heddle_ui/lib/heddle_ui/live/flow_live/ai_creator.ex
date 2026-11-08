@@ -259,7 +259,7 @@ defmodule HeddleUI.FlowLive.AICreator do
                 variant="primary"
                 class="w-full sm:w-auto shrink-0"
               >
-                <.icon name="hero-check" class="w-4 h-4 mr-1.5" />
+                <.icon name="hero-check" class="w-4 h-4.5" />
                 {gettext("Yes, Build This Flow")}
               </.button>
             </div>

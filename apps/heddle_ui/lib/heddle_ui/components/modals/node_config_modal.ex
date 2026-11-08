@@ -483,7 +483,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
         phx-value-field-name={@key}
         class="absolute bottom-2 right-2 px-3 py-1.5 text-xs h-auto"
       >
-        <.icon name="hero-code-bracket" class="w-3.5 h-3.5 mr-1" /> {gettext("Edit Code")}
+        <.icon name="hero-code-bracket" class="w-3.5 h-3.5" /> {gettext("Edit Code")}
       </.button>
       <input type="hidden" name={@key} value={@value} />
     </div>
