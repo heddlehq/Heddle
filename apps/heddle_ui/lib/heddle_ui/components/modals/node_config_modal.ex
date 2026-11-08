@@ -44,7 +44,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
         <form
           id="node-config-form"
           phx-change="node_config_changed"
-          phx-submit="save_node_config"
+          phx-submit="node_config_changed"
           class="flex-1 flex flex-col overflow-hidden"
         >
           <fieldset disabled={@read_only} class="contents">
@@ -173,26 +173,11 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
               <.node_settings
                 settings={@editing_node_data["settings"] || %{}}
                 type={@editing_node_data["type"]}
-                unpin={@editing_node_data["unpin"] == true}
+                pin_invalid={@editing_node_data["pin_invalid"] == true}
+                read_only={@read_only}
               />
             </div>
           </fieldset>
-          <div class="sticky bottom-0 z-10 flex justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <button
-              type="button"
-              phx-click="close_config_modal"
-              class="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-4 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              {gettext("Cancel")}
-            </button>
-            <button
-              :if={not @read_only}
-              type="submit"
-              class="text-sm font-medium text-primary-content bg-primary hover:bg-primary/90 px-5 py-2.5 rounded-lg transition-colors shadow-sm active:scale-[0.98]"
-            >
-              {gettext("Save")}
-            </button>
-          </div>
         </form>
       <% end %>
     </div>
@@ -201,7 +186,8 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
 
   attr :settings, :map, required: true
   attr :type, :string, default: nil
-  attr :unpin, :boolean, default: false
+  attr :pin_invalid, :boolean, default: false
+  attr :read_only, :boolean, default: false
 
   # How the node behaves when it runs, see `Heddle.Graph.Settings`.
   defp node_settings(assigns) do
@@ -302,26 +288,21 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
       <div
         :if={@values["pin"]}
         id="node-settings-pin"
-        class={[
-          "space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3 transition-opacity",
-          @unpin && "opacity-50"
-        ]}
+        class="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3"
       >
         <div class="flex items-center justify-between gap-2">
           <p class="flex items-center gap-1.5 text-sm font-semibold text-primary">
             <.icon name="hero-bookmark-solid" class="size-4" /> {gettext("Pinned data")}
           </p>
-          <label class="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">
-            <input
-              id="node-settings-unpin"
-              type="checkbox"
-              name="settings[unpin]"
-              value="true"
-              checked={@unpin}
-              class="size-3.5 rounded border-gray-300 accent-primary text-primary focus:ring-primary/30 dark:border-slate-600 dark:bg-slate-800"
-            />
-            {gettext("Unpin")}
-          </label>
+          <button
+            :if={not @read_only}
+            id="node-settings-unpin"
+            type="button"
+            phx-click="unpin_node"
+            class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white"
+          >
+            <.icon name="hero-x-mark-mini" class="size-3.5" /> {gettext("Unpin")}
+          </button>
         </div>
         <p class="text-xs text-gray-500 dark:text-gray-400">
           {gettext(
@@ -337,6 +318,13 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
           spellcheck="false"
           class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-xs text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-100"
         >{@values["pin_data"]}</textarea>
+        <p
+          :if={@pin_invalid}
+          id="node-settings-pin-invalid"
+          class="text-xs text-red-600 dark:text-red-400"
+        >
+          {gettext("Not a JSON object yet: the node keeps the last data that was.")}
+        </p>
       </div>
     </section>
     """

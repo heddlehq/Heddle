@@ -23,6 +23,21 @@ test.describe('Flow Editor', () => {
     await expect(page.getByRole('link', { name: 'Flows' })).toBeVisible();
   });
 
+  test('keeps the less used actions in a menu next to Publish', async ({ page }) => {
+    const icon = page.locator('#flow-menu-button .hero-ellipsis-horizontal-mini');
+    const box = await icon.boundingBox();
+    expect(box.width).toBeGreaterThanOrEqual(16);
+
+    await page.locator('#flow-menu-button').click();
+    await expect(page.locator('#open-versions')).toBeVisible();
+    await expect(page.locator('#open-flow-settings')).toBeVisible();
+    await expect(page.locator('#import-flow')).toBeVisible();
+
+    await page.locator('#open-versions').click();
+    await expect(page.locator('#flow-menu')).toBeHidden();
+    await expect(page.locator('#version-history')).toBeVisible({ timeout: 5000 });
+  });
+
   test('displays node sidebar with categories', async ({ page }) => {
     await expect(page.locator('aside')).toBeVisible();
     await expect(page.getByText('Nodes')).toBeVisible();
@@ -697,7 +712,8 @@ test.describe('Flow Editor', () => {
       const query = page.locator('textarea[name="sql"]');
       await expect(query).toBeVisible({ timeout: 5000 });
       await query.fill('SELECT *\nFROM items\nWHERE id = {{id}}');
-      await page.locator('#node-config-form').getByRole('button', { name: 'Save' }).click();
+      await waitSaved(page);
+      await page.keyboard.press('Escape');
       await expect(query).toBeHidden({ timeout: 5000 });
 
       await node.hover();
@@ -827,6 +843,7 @@ test.describe('Flow Editor', () => {
 
     const importFile = async (page, name, content) => {
       const chooser = page.waitForEvent('filechooser');
+      await page.locator('#flow-menu-button').click();
       await page.locator('#import-flow').click();
       await (await chooser).setFiles({ name, mimeType: 'application/json', buffer: Buffer.from(content) });
     };
