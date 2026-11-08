@@ -68,12 +68,22 @@ const hooks = {
         }
       });
 
-      this.handleEvent("request_graph_data", async () => {
-        if (editor.exportData) {
-          const data = await editor.exportData();
-          this.pushEvent("save_graph_data", { data });
-        }
+      // The canvas edits the flow with whoever else has it open, and the server saves
+      // what changes. See collab.js.
+      const { startCollab } = await import("./collab.js");
+      const saveState = document.getElementById("save-state");
+      const collab = startCollab(editor, {
+        flowId: container.dataset.flowId,
+        token: container.dataset.socketToken,
+        onSaveState: (state) => {
+          if (!saveState) return;
+          saveState.dataset.state = state;
+          const text = { saved: "Saved", saving: "Saving...", offline: "Reconnecting..." }[state];
+          saveState.textContent = (window.Translations && window.Translations[text]) || text;
+        },
+        onJoinError: () => this.pushEvent("canvas_join_failed", {}),
       });
+      this.collab = collab;
 
       if (editor.onDrop) {
         editor.onDrop(async (name, position) => {
@@ -140,24 +150,21 @@ const hooks = {
 
       if (editor.onRunSection) {
         editor.onRunSection(async (sectionId) => {
-          const data = await editor.exportData();
+          await collab.flush();
+          const data = editor.snapshot();
           this.pushEvent("run_section", { section_id: sectionId, data });
         });
       }
 
-      // Publishing takes what the canvas has, saved or not.
+      // Publishing and running take what the canvas has, once the server has it too.
       this.handleEvent("request_publish_data", async () => {
-        if (editor.exportData) {
-          const data = await editor.exportData();
-          this.pushEvent("publish_graph_data", { data });
-        }
+        await collab.flush();
+        this.pushEvent("publish_graph_data", {});
       });
 
       this.handleEvent("request_save_and_run", async () => {
-        if (editor.exportData) {
-          const data = await editor.exportData();
-          this.pushEvent("save_and_run", { data });
-        }
+        await collab.flush();
+        this.pushEvent("save_and_run", { data: editor.snapshot() });
       });
 
       // What changes the whole canvas runs one after the other: a run's state that
@@ -208,9 +215,7 @@ const hooks = {
       });
 
       if (editor.onChange) {
-        editor.onChange(() => {
-          this.pushEvent("graph_changed", {});
-        });
+        editor.onChange(() => collab.changed());
       }
 
       if (editor.onCodeEdit) {
@@ -240,6 +245,7 @@ const hooks = {
 
 
       this.destroyed = () => {
+        collab.destroy();
         if (editor.destroy) editor.destroy();
       };
 

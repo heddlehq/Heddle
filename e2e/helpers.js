@@ -32,3 +32,8 @@ export async function clickAndWaitForNavigation(page, locator, urlPattern, timeo
     await expect(page).toHaveURL(urlPattern, { timeout: Math.floor(timeout / 2) });
   }
 }
+
+// The canvas saves as it changes, see collab.js: this waits until the server has it.
+export async function waitSaved(page, timeout = 5000) {
+  await expect(page.locator('#save-state')).toHaveAttribute('data-state', 'saved', { timeout });
+}

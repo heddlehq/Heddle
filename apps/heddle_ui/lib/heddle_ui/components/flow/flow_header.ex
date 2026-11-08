@@ -1,7 +1,6 @@
 defmodule HeddleUI.Components.Flow.FlowHeader do
   use HeddleUI, :html
 
-  attr :has_changes, :boolean, required: true
   attr :flow, :any, required: true
   attr :renaming_flow, :boolean, default: false
   attr :can_edit, :boolean, default: true
@@ -67,6 +66,17 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
               </h1>
 
               <.publish_status status={@status} number={@published_number} />
+              <%!-- The canvas says how saving goes, see collab.js. The page leaves what is
+                   inside alone, attributes too. --%>
+              <span :if={@can_edit} id="save-state-holder" phx-update="ignore">
+                <span
+                  id="save-state"
+                  data-state="saving"
+                  class="save-state text-xs text-gray-500 dark:text-gray-400"
+                >
+                  {gettext("Saving...")}
+                </span>
+              </span>
               <span
                 :if={not @can_edit}
                 id="flow-read-only"
@@ -165,24 +175,6 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
         </.button>
       </div>
     </header>
-
-    <%!-- Always here: a sibling appearing would make LiveView move the canvas, and whatever is being typed on it would lose focus. --%>
-    <div id="unsaved-changes">
-      <%= if @has_changes do %>
-        <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white dark:bg-slate-800 px-6 py-3 rounded-full shadow-lg dark:shadow-black/50 border border-gray-200 dark:border-slate-700 z-50 flex items-center gap-4 animate-bounce-in">
-          <span class="text-sm font-medium text-gray-700 dark:text-slate-200">
-            You have unsaved changes
-          </span>
-          <.button
-            phx-click="save_graph"
-            variant="success"
-            class="px-6 py-2 rounded-full"
-          >
-            {gettext("Save Changes")}
-          </.button>
-        </div>
-      <% end %>
-    </div>
     """
   end
 

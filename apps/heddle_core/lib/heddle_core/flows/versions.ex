@@ -261,14 +261,16 @@ defmodule HeddleCore.Flows.Versions do
   changed since, or a new `"run"` version. Returns `{:ok, version}`.
   """
   def freeze_draft(%Flow{} = flow, author_id \\ nil) do
+    flow = Flows.saved_draft(flow)
+
     case latest(flow) do
       %Version{} = version ->
         if same_graph?(flow, version),
           do: {:ok, version},
-          else: insert(flow, %{kind: "run"}, author_id, from_draft: true)
+          else: insert(flow, %{kind: "run"}, author_id, from_draft: true, flush: false)
 
       nil ->
-        insert(flow, %{kind: "run"}, author_id, from_draft: true)
+        insert(flow, %{kind: "run"}, author_id, from_draft: true, flush: false)
     end
   end
 
@@ -277,17 +279,20 @@ defmodule HeddleCore.Flows.Versions do
   Returns `{:ok, version}` with the version that has it, or `{:ok, nil}` for a flow
   with nothing on it and nothing kept yet.
   """
-  def checkpoint(%Flow{} = flow, author_id \\ nil) do
+  def checkpoint(%Flow{} = flow, author_id \\ nil, opts \\ []) do
+    # A session keeps its own draft, and doesn't ask itself to save it.
+    flow = if Keyword.get(opts, :flush, true), do: Flows.saved_draft(flow), else: flow
+
     case latest(flow) do
       %Version{} = version ->
         if same_graph?(flow, version),
           do: {:ok, version},
-          else: insert(flow, %{kind: "checkpoint"}, author_id, from_draft: true)
+          else: insert(flow, %{kind: "checkpoint"}, author_id, from_draft: true, flush: false)
 
       nil ->
         if empty_graph?(flow),
           do: {:ok, nil},
-          else: insert(flow, %{kind: "checkpoint"}, author_id, from_draft: true)
+          else: insert(flow, %{kind: "checkpoint"}, author_id, from_draft: true, flush: false)
     end
   end
 
@@ -295,15 +300,15 @@ defmodule HeddleCore.Flows.Versions do
   Keeps the draft of `flow` when the newest version is older than
   `checkpoint_every_minutes/0`, so a long edit can be brought back to where it was.
   """
-  def checkpoint_if_due(%Flow{} = flow, author_id \\ nil, now \\ DateTime.utc_now()) do
+  def checkpoint_if_due(%Flow{} = flow, author_id \\ nil, now \\ DateTime.utc_now(), opts \\ []) do
     case latest(flow) do
       %Version{inserted_at: at} = version ->
         if DateTime.diff(now, at, :minute) >= @checkpoint_every_minutes,
-          do: checkpoint(flow, author_id),
+          do: checkpoint(flow, author_id, opts),
           else: {:ok, version}
 
       nil ->
-        checkpoint(flow, author_id)
+        checkpoint(flow, author_id, opts)
     end
   end
 
@@ -341,6 +346,9 @@ defmodule HeddleCore.Flows.Versions do
   ## Helpers
 
   defp insert(%Flow{} = flow, attrs, author_id, opts) do
+    if opts[:from_draft] && Keyword.get(opts, :flush, true),
+      do: HeddleCore.Flows.Session.flush(flow.id)
+
     Repo.transact(fn ->
       flow = Repo.one!(from f in Flow, where: f.id == ^flow.id, lock: "FOR UPDATE")
 
@@ -357,6 +365,9 @@ defmodule HeddleCore.Flows.Versions do
           else: %{}
 
       contributors = if opts[:from_draft], do: flow.draft_contributor_ids || [], else: []
+      graph = Map.merge(graph, Map.take(attrs, [:nodes, :connections, :comments]))
+
+      if opts[:publish], do: publishable!(graph)
 
       changeset =
         %Version{
@@ -380,6 +391,14 @@ defmodule HeddleCore.Flows.Versions do
       {:ok, version} -> broadcast_versions_changed(version.flow_id)
       _error -> :ok
     end)
+  end
+
+  # A draft may hold what is still being typed. What runs has to be complete.
+  defp publishable!(graph) do
+    case HeddleCore.Flows.GraphValidator.validate(graph[:nodes] || [], graph[:connections] || []) do
+      :ok -> :ok
+      {:error, field, message} -> Repo.rollback({:invalid, "#{field} #{message}"})
+    end
   end
 
   defp after_insert(flow, version, opts) do

@@ -20,7 +20,11 @@ defmodule HeddleUI.FlowLive.CodeEditorManager do
       current_code_tab: "elixir",
       current_field_name: nil,
       current_language: "elixir",
-      available_variables: []
+      available_variables: [],
+      # What the code was when it opened, to tell whether someone changed it since.
+      code_base: nil,
+      code_conflict: nil,
+      code_revision: 0
     ]
   end
 
@@ -57,6 +61,8 @@ defmodule HeddleUI.FlowLive.CodeEditorManager do
 
   defp open(socket, code, field_name) do
     assign(socket,
+      code_base: %{elixir: code.code_elixir, python: code.code_python},
+      code_conflict: nil,
       modal_open: true,
       current_code_elixir: code.code_elixir,
       current_code_python: code.code_python,
@@ -97,40 +103,89 @@ defmodule HeddleUI.FlowLive.CodeEditorManager do
   Saves the edited code. Updates either the node configuration drawer data or pushes
   an `update_node_code` event to the canvas.
   """
-  def save(socket, %{"code_elixir" => code_elixir, "code_python" => code_python}) do
+  def save(socket, %{"code_elixir" => code_elixir, "code_python" => code_python} = params) do
     node_id = socket.assigns.current_node_id
     field_name = socket.assigns.current_field_name
+    theirs = if params["overwrite"] == "true", do: nil, else: changed_since_open(socket)
 
-    if socket.assigns.config_modal_open do
-      updated_node_data =
-        socket.assigns.editing_node_data
-        |> put_in(["controls", "code_elixir", "value"], code_elixir)
-        |> put_in(["controls", "code_python", "value"], code_python)
-        |> clear_older_code()
+    cond do
+      theirs ->
+        assign(socket, code_conflict: theirs)
 
-      assign(socket,
-        modal_open: false,
-        current_code_elixir: "",
-        current_code_python: "",
-        current_field_name: nil,
-        editing_node_data: updated_node_data
-      )
-    else
-      socket
-      |> push_event("update_node_code", %{
-        nodeId: node_id,
-        code_elixir: code_elixir,
-        code_python: code_python,
-        fieldName: field_name
-      })
-      |> assign(
-        modal_open: false,
-        current_node_id: nil,
-        current_code_elixir: "",
-        current_code_python: "",
-        current_field_name: nil
-      )
+      socket.assigns.config_modal_open ->
+        save_in_drawer(socket, code_elixir, code_python)
+
+      true ->
+        save_on_canvas(socket, node_id, field_name, code_elixir, code_python)
     end
+  end
+
+  @doc "Takes the code someone else saved, in place of what was being typed."
+  def load_theirs(%{assigns: %{code_conflict: %{} = theirs}} = socket) do
+    assign(socket,
+      current_code_elixir: theirs.elixir,
+      current_code_python: theirs.python,
+      code_base: theirs,
+      code_conflict: nil,
+      # A new editor, with their code in it.
+      code_revision: socket.assigns.code_revision + 1
+    )
+  end
+
+  def load_theirs(socket), do: socket
+
+  # The last one to save wins, but nobody overwrites someone else's code unknowingly.
+  defp changed_since_open(%{assigns: %{code_base: %{} = base, current_node_id: id}} = socket)
+       when is_binary(id) do
+    with %{} = flow <-
+           HeddleCore.Flows.get_flow(socket.assigns.current_scope, socket.assigns.current_flow.id),
+         %{} = node <- Enum.find(flow.nodes || [], &(to_string(&1["id"]) == id)) do
+      now = %{
+        elixir: get_in(node, ["controls", "code_elixir"]) || "",
+        python: get_in(node, ["controls", "code_python"]) || ""
+      }
+
+      if now != base and not (now.elixir == "" and now.python == ""), do: now
+    else
+      _none -> nil
+    end
+  end
+
+  defp changed_since_open(_socket), do: nil
+
+  defp save_in_drawer(socket, code_elixir, code_python) do
+    updated_node_data =
+      socket.assigns.editing_node_data
+      |> put_in(["controls", "code_elixir", "value"], code_elixir)
+      |> put_in(["controls", "code_python", "value"], code_python)
+      |> clear_older_code()
+
+    assign(socket,
+      modal_open: false,
+      current_code_elixir: "",
+      current_code_python: "",
+      current_field_name: nil,
+      code_conflict: nil,
+      editing_node_data: updated_node_data
+    )
+  end
+
+  defp save_on_canvas(socket, node_id, field_name, code_elixir, code_python) do
+    socket
+    |> push_event("update_node_code", %{
+      nodeId: node_id,
+      code_elixir: code_elixir,
+      code_python: code_python,
+      fieldName: field_name
+    })
+    |> assign(
+      modal_open: false,
+      current_node_id: nil,
+      current_code_elixir: "",
+      current_code_python: "",
+      current_field_name: nil,
+      code_conflict: nil
+    )
   end
 
   # The code now lives in the fields of each language. Left in place, the older

@@ -39,7 +39,9 @@ defmodule HeddleCore.MixProject do
       {:jason, "~> 1.2"},
       {:oban, "~> 2.0"},
       {:req, "~> 0.5"},
-      {:phoenix_pubsub, "~> 2.1"}
+      {:phoenix_pubsub, "~> 2.1"},
+      # One editing session per flow across the cluster, see `HeddleCore.Flows.Session`.
+      {:horde, "~> 0.9"}
     ]
   end
 end

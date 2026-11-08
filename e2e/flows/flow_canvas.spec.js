@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { waitForLiveView, clickAndWaitForNavigation } from '../helpers.js';
+import { waitForLiveView, clickAndWaitForNavigation, waitSaved } from '../helpers.js';
 
 async function createApiKey(page) {
   await page.goto('/api-keys');
@@ -85,17 +85,22 @@ test.describe('Flow written outside the canvas', () => {
     await waitForLiveView(page);
     await expect(page.locator('custom-node')).toHaveCount(3, { timeout: 5000 });
 
-    await expect(page.getByText('You have unsaved changes')).toHaveCount(0);
+    await waitSaved(page);
   });
 
-  test('has something to save once a node moves', async ({ page }) => {
+  test('saves where a node was moved', async ({ page, request }) => {
     await page.reload();
     await waitForLiveView(page);
     await expect(page.locator('custom-node')).toHaveCount(3, { timeout: 5000 });
+    const read = async () => (await (await request.get(`/api/v1/workflows/${flowId}`, { headers })).json()).data;
+    const before = (await read()).nodes.find((n) => n.id === 'hook').position;
 
     await dragNode(page, page.locator('custom-node .circular-node').first());
+    await page.waitForTimeout(600);
+    await waitSaved(page);
 
-    await expect(page.getByText('You have unsaved changes')).toBeVisible({ timeout: 3000 });
+    const after = (await read()).nodes.find((n) => n.id === 'hook').position;
+    expect(after).not.toEqual(before);
   });
 
   test('gets its nodes placed apart from each other', async ({ page }) => {
@@ -129,8 +134,8 @@ test.describe('Flow written outside the canvas', () => {
 
   test('keeps everything the canvas does not show when saved', async ({ page, request }) => {
     await dragNode(page, page.locator('custom-node .circular-node').first());
-    await page.getByRole('button', { name: 'Save Changes' }).click();
-    await expect(page.getByText('You have unsaved changes')).not.toBeVisible();
+    await page.waitForTimeout(600);
+    await waitSaved(page);
 
     const response = await request.get(`/api/v1/workflows/${flowId}`, { headers });
     const { data } = await response.json();
@@ -289,8 +294,7 @@ test.describe('How a node behaves when it fails, and the run inspector', () => {
     await expect(code.locator('.pin-badge')).toHaveCount(0);
     await expect(code.locator('custom-socket')).toHaveCount(2);
 
-    await page.getByRole('button', { name: 'Save Changes' }).click();
-    await expect(page.getByText('You have unsaved changes')).toBeHidden({ timeout: 5000 });
+    await waitSaved(page);
 
     await page.reload();
     await waitForLiveView(page);

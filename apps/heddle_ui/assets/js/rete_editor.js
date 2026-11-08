@@ -1041,7 +1041,12 @@ export async function createEditor(container, { readOnly = false } = {}) {
         }
     };
 
+    // While people edit together, undoing takes back only what this person did, which
+    // the collaboration knows: see collab.js.
+    let history = null;
+
     const doUndo = async () => {
+        if (history) return history.undo();
         if (undoStack.length < 2) return;
         redoStack.push(getSnapshot());
         undoStack.pop();
@@ -1050,6 +1055,7 @@ export async function createEditor(container, { readOnly = false } = {}) {
         processChange();
     };
     const doRedo = async () => {
+        if (history) return history.redo();
         if (redoStack.length === 0) return;
         undoStack.push(getSnapshot());
         const toRestore = redoStack.pop();
@@ -1335,6 +1341,122 @@ export async function createEditor(container, { readOnly = false } = {}) {
 
         onChange: (cb) => {
             editor.triggerChange = cb;
+        },
+        // What the canvas holds, as it would be saved.
+        snapshot: () => getSnapshot(),
+        // Undo and redo go to `{ undo, redo }` instead of the canvas's own history.
+        setHistory: (handlers) => {
+            history = handlers;
+        },
+        // Brings the canvas to `graph`, touching only what differs, so whatever someone
+        // else changed appears without redrawing the rest or moving the view. Nothing
+        // here counts as a change of this person.
+        reconcile: async ({ nodes = [], connections = [], comments = [] }) => {
+            const definitions = editor.nodeDefinitions || {};
+            if (translateDebounce) {
+                clearTimeout(translateDebounce);
+                translateDebounce = null;
+            }
+            isImportingData = true;
+            try {
+                const wanted = new Map(nodes.map(n => [n.id, n]));
+                const wantedComments = new Map(comments.map(c => [c.id, c]));
+                const sameComment = (node, c) =>
+                    node.kind === c.kind && node.color === (c.color || node.color) && node.text === (c.text ?? '') &&
+                    node.width === (c.width || node.width) && node.height === (c.height || node.height) &&
+                    (node.manual === true) === (c.manual === true);
+
+                for (const node of [...editor.getNodes()]) {
+                    const isComment = node.type === COMMENT_TYPE;
+                    const target = isComment ? wantedComments.get(node.id) : wanted.get(node.id);
+                    const keep = target && (isComment ? sameComment(node, target) : node.type === target.type);
+                    if (keep) continue;
+                    for (const conn of editor.getConnections().filter(c => c.source === node.id || c.target === node.id)) {
+                        await editor.removeConnection(conn.id);
+                    }
+                    selectedNodeIds.delete(node.id);
+                    await editor.removeNode(node.id);
+                }
+
+                const moveTo = async (id, position) => {
+                    const view = area.nodeViews.get(id);
+                    if (!position || !view) return;
+                    if (view.position.x !== position.x || view.position.y !== position.y) await area.translate(id, position);
+                };
+
+                for (const data of nodes) {
+                    const node = editor.getNode(data.id);
+                    if (!node) {
+                        await processAddNode(data.type, definitionFor(data, connections, definitions), data);
+                        continue;
+                    }
+                    let changed = false;
+                    if (data.label !== undefined && data.label !== node.label) {
+                        node.label = data.label;
+                        changed = true;
+                    }
+                    for (const [key, value] of Object.entries(data.controls || {})) {
+                        if (node.controls[key]) {
+                            if (JSON.stringify(node.controls[key].value) !== JSON.stringify(value)) {
+                                node.controls[key].value = value;
+                                changed = true;
+                            }
+                        } else {
+                            addHiddenControl(node, key, value);
+                            changed = true;
+                        }
+                    }
+                    const settings = data.settings && Object.keys(data.settings).length > 0 ? data.settings : undefined;
+                    if (JSON.stringify(settings) !== JSON.stringify(node.settings)) {
+                        node.settings = settings ? { ...settings } : undefined;
+                        syncErrorOutput(node);
+                        changed = true;
+                    }
+                    if (changed) await repaintNode(node.id);
+                    await moveTo(node.id, data.position);
+                }
+
+                for (const comment of comments) {
+                    if (!editor.getNode(comment.id)) await processAddComment(comment);
+                    else await moveTo(comment.id, comment.position);
+                }
+
+                // Connections leaving one output run in their order, so an output whose
+                // order differs gets all of them again, in the order wanted.
+                const key = c => `${c.source}|${c.sourceOutput}|${c.target}|${c.targetInput}`;
+                const wantedKeys = new Set(connections.map(key));
+                for (const conn of [...editor.getConnections()]) {
+                    if (!wantedKeys.has(key(conn))) await editor.removeConnection(conn.id);
+                }
+                const groups = new Map();
+                for (const c of connections) {
+                    const g = `${c.source}|${c.sourceOutput}`;
+                    if (!groups.has(g)) groups.set(g, []);
+                    groups.get(g).push(c);
+                }
+                for (const [group, wantedGroup] of groups) {
+                    const present = editor.getConnections().filter(c => `${c.source}|${c.sourceOutput}` === group);
+                    const presentKeys = present.map(key);
+                    const prefix = presentKeys.every((k, i) => k === key(wantedGroup[i]));
+                    if (!prefix) {
+                        for (const conn of present) await editor.removeConnection(conn.id);
+                    }
+                    const have = new Set(prefix ? presentKeys : []);
+                    for (const c of wantedGroup) {
+                        if (have.has(key(c))) continue;
+                        const source = editor.getNode(c.source);
+                        const target = editor.getNode(c.target);
+                        if (!source || !target) continue;
+                        try {
+                            await editor.addConnection(new ClassicPreset.Connection(source, c.sourceOutput, target, c.targetInput));
+                        } catch (e) {
+                            console.error("Failed to add connection:", c, e);
+                        }
+                    }
+                }
+            } finally {
+                setTimeout(() => { isImportingData = false; }, 0);
+            }
         },
         onCodeEdit: (cb) => {
             editor.triggerCodeEdit = cb;

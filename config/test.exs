@@ -22,7 +22,9 @@ config :heddle_core, HeddleCore.Repo,
   port: String.to_integer(System.get_env("HEDDLE_DB_PORT", "5432")),
   database: "heddle_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2
+  # A server started here for E2E holds a connection in every editor's session and
+  # channel, as the sandbox gives each process its own.
+  pool_size: System.schedulers_online() * 4
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
@@ -53,3 +55,6 @@ config :phoenix,
 config :heddle_ai, :text_default, nil
 config :heddle_ai, :claude_binary, nil
 config :heddle_nodes, :req_plug, {Req.Test, HeddleNodes.Nodes.HttpRequest}
+
+# A flow session goes soon after its last editor leaves, so it doesn't keep a connection.
+config :heddle_core, session_idle_after: 2_000

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { waitForLiveView, clickAndWaitForNavigation } from '../helpers.js';
+import { waitForLiveView, clickAndWaitForNavigation, waitSaved } from '../helpers.js';
 
 test.describe('Flow Editor', () => {
   test.describe.configure({ timeout: 60000 });
@@ -250,10 +250,7 @@ test.describe('Flow Editor', () => {
       await expect(note(page).last().locator('textarea')).toHaveCount(0);
     };
 
-    const save = async (page) => {
-      await page.getByRole('button', { name: 'Save Changes' }).click();
-      await expect(page.getByText('You have unsaved changes')).not.toBeVisible();
-    };
+    const save = (page) => waitSaved(page);
 
     const dragBy = async (page, locator, dx, dy) => {
       const box = await locator.boundingBox();
@@ -443,7 +440,6 @@ test.describe('Flow Editor', () => {
       await save(page);
 
       await dragBy(page, note(page).locator('.comment-note'), 80, 40);
-      await expect(page.getByText('You have unsaved changes')).toBeVisible();
 
       await note(page).hover();
       await dragBy(page, note(page).locator('.comment-resize'), 60, 30);
@@ -458,17 +454,24 @@ test.describe('Flow Editor', () => {
       expect(await placement(page)).toEqual(before);
     });
 
-    test('moving a node asks to save', async ({ page }) => {
+    test('keeps where a node was moved, without a save button', async ({ page }) => {
       await addNodeViaContextMenu(page, 'Logger');
       await expect(page.locator('custom-node')).toHaveCount(1);
       await save(page);
 
       await dragBy(page, page.locator('custom-node .circular-node'), 80, 40);
+      const where = () => page.locator('custom-node').evaluate((el) => el.parentElement.style.transform);
+      const before = await where();
+      await page.waitForTimeout(600);
+      await save(page);
 
-      await expect(page.getByText('You have unsaved changes')).toBeVisible();
+      await page.reload();
+      await waitForLiveView(page);
+      await expect(page.locator('custom-node')).toHaveCount(1, { timeout: 5000 });
+      expect(await where()).toEqual(before);
     });
 
-    test('clicking a comment does not ask to save', async ({ page }) => {
+    test('clicking a comment changes nothing', async ({ page }) => {
       await addComment(page, 'Still');
       await page.waitForTimeout(600);
       await save(page);
@@ -476,7 +479,7 @@ test.describe('Flow Editor', () => {
       await note(page).click();
       await page.waitForTimeout(600);
 
-      await expect(page.getByText('You have unsaved changes')).not.toBeVisible();
+      await expect(page.locator('#save-state')).toHaveAttribute('data-state', 'saved');
     });
 
     test('edits a comment with a double click', async ({ page }) => {
@@ -647,9 +650,7 @@ test.describe('Flow Editor', () => {
         await addNodeViaContextMenu(page, name);
 
         await expect(page.locator('custom-node')).toHaveCount(1, { timeout: 5000 });
-
-        await page.getByRole('button', { name: 'Save Changes' }).click();
-        await expect(page.getByText('You have unsaved changes')).toBeHidden({ timeout: 5000 });
+        await waitSaved(page);
       });
     }
 
@@ -829,14 +830,12 @@ test.describe('Flow Editor', () => {
       await (await chooser).setFiles({ name, mimeType: 'application/json', buffer: Buffer.from(content) });
     };
 
-    test('puts a flow from a file on the canvas, and saving keeps it', async ({ page }) => {
+    test('puts a flow from a file on the canvas, and keeps it', async ({ page }) => {
       await importFile(page, 'leads.json', JSON.stringify(flow));
 
       await expect(page.locator('custom-node')).toHaveCount(2, { timeout: 5000 });
       await expect(page.getByText('Flow imported')).toBeVisible({ timeout: 5000 });
-
-      await page.getByRole('button', { name: 'Save Changes' }).click();
-      await expect(page.getByText('You have unsaved changes')).toBeHidden({ timeout: 5000 });
+      await waitSaved(page);
 
       await page.reload();
       await waitForLiveView(page);
