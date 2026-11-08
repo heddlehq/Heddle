@@ -17,7 +17,7 @@ defmodule HeddleUI.FlowSocket do
   @salt "flow socket"
   @max_age to_timeout(day: 1) |> div(1000)
 
-  channel "flow:*", HeddleUI.FlowChannel
+  channel "canvas:*", HeddleUI.FlowChannel
 
   @doc "The token a canvas connects with, for `user`."
   def token(%User{id: id}), do: Phoenix.Token.sign(HeddleUI.Endpoint, @salt, id)

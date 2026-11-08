@@ -140,6 +140,10 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
             title={gettext("This flow has an error flow")}
           />
         </.button>
+        <%!-- Who else is on the canvas, see presence.js. The page leaves it alone. --%>
+        <div id="presence-holder" phx-update="ignore" class="hidden sm:block">
+          <div id="presence-avatars" class="flex items-center -space-x-1.5" data-count="0"></div>
+        </div>
         <.button
           id="open-versions"
           type="button"

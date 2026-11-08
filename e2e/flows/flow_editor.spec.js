@@ -460,8 +460,9 @@ test.describe('Flow Editor', () => {
       await save(page);
 
       await dragBy(page, page.locator('custom-node .circular-node'), 80, 40);
-      const where = () => page.locator('custom-node').evaluate((el) => el.parentElement.style.transform);
+      const where = () => page.locator('custom-node').evaluate((el) => { let e = el; while (e && !e.style?.transform) e = e.parentElement; return e ? e.style.transform : ''; });
       const before = await where();
+      expect(before).toContain('translate');
       await page.waitForTimeout(600);
       await save(page);
 
