@@ -33,6 +33,7 @@ defmodule HeddleUI.PublicAPI.V1.AgentController do
       case Agent.send_message(conn.assigns.current_scope, flow.id, content) do
         :ok -> send_resp(conn, :accepted, "")
         {:error, :busy} -> conflict(conn, "The agent is still working.")
+        {:error, :forbidden} -> {:error, :forbidden}
       end
     end
   end
@@ -42,6 +43,7 @@ defmodule HeddleUI.PublicAPI.V1.AgentController do
     with {:ok, flow} <- fetch_flow(conn, id) do
       case Agent.decide(conn.assigns.current_scope, flow.id, decision) do
         :ok -> send_resp(conn, :no_content, "")
+        {:error, :forbidden} -> {:error, :forbidden}
         {:error, _reason} -> conflict(conn, "Nothing is waiting for an answer.")
       end
     end

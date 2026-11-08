@@ -10,7 +10,8 @@ defmodule HeddleUI.TerminalChannel do
 
   @impl true
   def join("terminal:" <> flow_id, %{"cols" => cols, "rows" => rows}, socket) do
-    with %{} = flow <- Flows.get_flow(socket.assigns.current_scope, flow_id),
+    # Claude Code changes the flow, so the Terminal is for those who can edit it.
+    with {:ok, flow} <- Flows.fetch_for(socket.assigns.current_scope, :edit, flow_id),
          {:ok, terminal} <- Terminal.open(socket.assigns.current_scope, flow, {cols, rows}) do
       {:ok, assign(socket, :terminal, terminal)}
     else

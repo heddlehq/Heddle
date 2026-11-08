@@ -27,9 +27,10 @@ defmodule HeddleUI.MCP.Tools.RunFlow do
         input = params |> Map.get(:input) |> Kernel.||(%{}) |> Map.put_new("trigger", "mcp")
 
         with :ok <- AgentChat.confirm_run(frame.assigns.api_key, flow),
-             {:ok, execution} <- Executions.start_execution(flow, input) do
+             {:ok, execution} <- Executions.run(scope, flow, input) do
           Tool.reply(ExecutionJSON.show(%{execution: execution}).data, frame)
         else
+          {:error, :forbidden} -> Tool.forbidden(frame)
           {:error, message} when is_binary(message) -> Tool.error(message, frame)
           {:error, _reason} -> Tool.error("The flow could not be started.", frame)
         end

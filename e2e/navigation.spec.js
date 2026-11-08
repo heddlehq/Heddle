@@ -2,12 +2,14 @@ import { test, expect } from '@playwright/test';
 import { waitForLiveView } from './helpers.js';
 
 const PAGES = [
-  { link: 'My Flows', url: /\/flows$/ },
+  { link: 'Flows', url: /\/flows$/ },
   { link: 'Dashboard', url: /\/$/ },
   { link: 'Executions', url: /\/executions$/ },
   { link: 'Dashboard', url: /\/$/ },
   { link: 'API keys', url: /\/api-keys$/ },
   { link: 'Users', url: /\/users$/ },
+  { link: 'Members', url: /\/workspace$/ },
+  { link: 'Workspaces', url: /\/workspaces$/ },
   { link: 'Dashboard', url: /\/$/ },
 ];
 
@@ -24,7 +26,7 @@ test.describe('Sidebar navigation', () => {
     });
 
     for (const { link, url } of PAGES) {
-      await page.locator('aside nav').getByRole('link', { name: link }).click();
+      await page.locator('aside nav').getByRole('link', { name: link, exact: true }).click();
       await expect(page).toHaveURL(url, { timeout: 5000 });
       await waitForLiveView(page);
 
@@ -39,10 +41,10 @@ test.describe('Sidebar navigation', () => {
     await expect(current).toHaveCount(1);
     await expect(current).toHaveText('Dashboard');
 
-    await nav.getByRole('link', { name: 'My Flows' }).click();
+    await nav.getByRole('link', { name: 'Flows', exact: true }).click();
     await expect(page).toHaveURL(/\/flows$/, { timeout: 5000 });
 
     await expect(current).toHaveCount(1);
-    await expect(current).toHaveText('My Flows');
+    await expect(current).toHaveText('Flows');
   });
 });

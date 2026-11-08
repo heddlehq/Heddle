@@ -9,7 +9,7 @@ defmodule HeddleWorker.FlowExecutionWorker do
   alias HeddleCore.Flows
   alias HeddleNodes.Runner
 
-  @internal_result_keys ["flow_id", "logs"]
+  @internal_result_keys ["flow_id", "workspace_id", "logs"]
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"execution_id" => execution_id}}) do

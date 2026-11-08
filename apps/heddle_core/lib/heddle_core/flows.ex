@@ -1,6 +1,10 @@
 defmodule HeddleCore.Flows do
   @moduledoc """
   The Flows context.
+
+  A flow belongs to a workspace. What a person does goes through the functions that
+  take a `HeddleCore.Accounts.Scope`, which check their role there: see
+  `HeddleCore.Workspaces.Role`.
   """
 
   import Ecto.Query, warn: false
@@ -9,86 +13,87 @@ defmodule HeddleCore.Flows do
   alias HeddleCore.Accounts.Scope
   alias HeddleCore.Flows.Flow
   alias HeddleCore.Pagination
+  alias HeddleCore.Workspaces
 
   @doc """
-  Returns the list of flows.
-
-  ## Examples
-
-      iex> list_flows()
-      [%Flow{}, ...]
-
+  Every flow, in every workspace. For what runs flows on its own, such as the
+  scheduler: a person's view goes through the functions that take a scope.
   """
   def list_flows do
     Repo.all(Flow)
   end
 
   @doc """
-  Returns every flow with a node of `type`, whoever owns it.
+  Returns every flow with a node of `type`, in any workspace.
   """
   def list_flows_with_node(type) do
     Repo.all(from f in Flow, where: fragment("? @> ?::jsonb", f.nodes, ^[%{type: type}]))
   end
 
+  @doc "The flows of the workspace the caller works in."
   def list_flows(%Scope{} = scope) do
     scope
-    |> scope_query()
+    |> workspace_query()
+    |> order_by([f], desc: f.inserted_at)
     |> Repo.all()
   end
 
   def list_flows_page(%Scope{} = scope, opts \\ %{}) do
     scope
-    |> scope_query()
+    |> workspace_query()
     |> order_by([f], desc: f.inserted_at)
     |> Pagination.paginate(Repo, opts)
   end
 
   @doc """
-  Gets a single flow.
+  Gets a flow by id, for what runs flows on its own.
 
   Raises `Ecto.NoResultsError` if the Flow does not exist.
-
-  ## Examples
-
-      iex> get_flow!(123)
-      %Flow{}
-
-      iex> get_flow!(456)
-      ** (Ecto.NoResultsError)
-
   """
   def get_flow!(id), do: Repo.get!(Flow, id)
 
+  @doc """
+  Gets a flow the caller may see, in any of their workspaces.
+
+  Raises `Ecto.NoResultsError` otherwise, so a flow they can't see looks like one that
+  doesn't exist.
+  """
   def get_flow!(%Scope{} = scope, id) do
-    scope
-    |> scope_query()
-    |> Repo.get!(id)
+    get_flow(scope, id) || raise Ecto.NoResultsError, queryable: Flow
   end
 
   def get_flow(id), do: Repo.get(Flow, id)
 
+  @doc "Gets a flow the caller may see, in any of their workspaces, or nil."
   def get_flow(%Scope{} = scope, id) do
-    scope
-    |> scope_query()
-    |> Repo.get(id)
+    with {:ok, id} <- cast_id(id),
+         %Flow{} = flow <- Repo.get(Flow, id),
+         true <- Workspaces.can?(scope, :view, flow.workspace_id) do
+      flow
+    else
+      _other -> nil
+    end
   end
 
+  defp cast_id(id) when is_integer(id), do: {:ok, id}
+
+  defp cast_id(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {id, ""} -> {:ok, id}
+      _other -> :error
+    end
+  end
+
+  defp cast_id(_id), do: :error
+
   @doc """
-  Creates a flow.
-
-  ## Examples
-
-      iex> create_flow(%{field: value})
-      {:ok, %Flow{}}
-
-      iex> create_flow(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  Creates a flow from `attrs`, which must hold its `workspace_id`. For what isn't a
+  person, such as seeds and tests: a person creates one with `create_flow/2`.
   """
   def create_flow(attrs \\ %{}) do
     result =
       %Flow{}
-      |> Flow.changeset(attrs)
+      |> Flow.create_changeset(attrs)
       |> Repo.insert()
 
     case result do
@@ -101,27 +106,31 @@ defmodule HeddleCore.Flows do
     end
   end
 
-  def create_flow(%Scope{user: %{id: user_id}}, attrs) do
-    attrs =
+  @doc """
+  Creates a flow in the workspace the caller works in, as its author. Editors can.
+  """
+  def create_flow(%Scope{workspace: %{id: workspace_id}, user: user} = scope, attrs) do
+    with :ok <- Workspaces.authorize(scope, :edit, workspace_id) do
       attrs
       |> Map.new()
-      |> Map.drop([:user_id, "user_id"])
-      |> put_owner_id(user_id)
+      |> Map.drop([:user_id, "user_id", :workspace_id, "workspace_id"])
+      |> put_owner(user && user.id, workspace_id)
+      |> create_flow()
+    end
+  end
 
-    create_flow(attrs)
+  def create_flow(%Scope{}, _attrs), do: {:error, :forbidden}
+
+  defp put_owner(attrs, user_id, workspace_id) do
+    if attrs |> Map.keys() |> Enum.any?(&is_binary/1) do
+      Map.merge(attrs, %{"user_id" => user_id, "workspace_id" => workspace_id})
+    else
+      Map.merge(attrs, %{user_id: user_id, workspace_id: workspace_id})
+    end
   end
 
   @doc """
-  Updates a flow.
-
-  ## Examples
-
-      iex> update_flow(flow, %{field: new_value})
-      {:ok, %Flow{}}
-
-      iex> update_flow(flow, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  Updates a flow, for what isn't a person. A person changes one with `update_flow/3`.
   """
   def update_flow(%Flow{} = flow, attrs) do
     result =
@@ -156,101 +165,70 @@ defmodule HeddleCore.Flows do
 
   defp flow_topic(flow_id), do: "flow:#{flow_id}"
 
+  @doc """
+  Changes a flow the caller may edit. Returns `{:error, :forbidden}` for one they can
+  only see, and `{:error, :not_found}` for one they can't.
+  """
   def update_flow(%Scope{} = scope, %Flow{} = flow, attrs) do
-    flow = get_flow!(scope, flow.id)
+    with {:ok, flow} <- fetch_for(scope, :edit, flow.id) do
+      attrs =
+        attrs
+        |> Map.new()
+        |> Map.drop([:user_id, "user_id", :workspace_id, "workspace_id"])
 
-    attrs =
-      attrs
-      |> Map.new()
-      |> Map.drop([:user_id, "user_id"])
-
-    update_flow(flow, attrs)
+      update_flow(flow, attrs)
+    end
   end
 
-  @doc """
-  Deletes a flow.
-
-  ## Examples
-
-      iex> delete_flow(flow)
-      {:ok, %Flow{}}
-
-      iex> delete_flow(flow)
-      {:error, %Ecto.Changeset{}}
-
-  """
+  @doc "Deletes a flow, for what isn't a person."
   def delete_flow(%Flow{} = flow) do
     HeddleCore.Flows.Cache.invalidate(flow.id)
     HeddleCore.Webhooks.unregister_flow(flow)
     Repo.delete(flow)
   end
 
+  @doc "Deletes a flow the caller may edit."
   def delete_flow(%Scope{} = scope, %Flow{} = flow) do
-    flow = get_flow!(scope, flow.id)
-    delete_flow(flow)
+    with {:ok, flow} <- fetch_for(scope, :edit, flow.id) do
+      delete_flow(flow)
+    end
+  end
+
+  @doc """
+  Gets a flow for `action`: `{:ok, flow}`, `{:error, :forbidden}` when the caller can
+  see it but not do that, or `{:error, :not_found}`.
+  """
+  def fetch_for(%Scope{} = scope, action, id) do
+    case get_flow(scope, id) do
+      nil ->
+        {:error, :not_found}
+
+      flow ->
+        with :ok <- Workspaces.authorize(scope, action, flow.workspace_id), do: {:ok, flow}
+    end
+  end
+
+  @doc "Whether the caller may do `action` with `flow`."
+  def can?(%Scope{} = scope, action, %Flow{workspace_id: workspace_id}) do
+    Workspaces.can?(scope, action, workspace_id)
   end
 
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking flow changes.
-
-  ## Examples
-
-      iex> change_flow(flow)
-      %Ecto.Changeset{data: %Flow{}}
-
   """
   def change_flow(%Flow{} = flow, attrs \\ %{}) do
     Flow.changeset(flow, attrs)
   end
 
-  @doc """
-  Gets the first flow or creates a default one if none exist.
-  """
-  def get_first_or_create_default_flow do
-    case Repo.one(from f in Flow, limit: 1) do
-      nil ->
-        case default_owner_id() do
-          nil ->
-            {:error,
-             Flow.changeset(%Flow{}, %{name: "My First Flow", nodes: [], connections: []})}
-
-          user_id ->
-            create_flow(%{
-              name: "My First Flow",
-              nodes: [],
-              connections: [],
-              user_id: user_id
-            })
-        end
-
-      flow ->
-        {:ok, flow}
+  defp workspace_query(%Scope{workspace: %{id: workspace_id}} = scope) do
+    if Workspaces.can?(scope, :view, workspace_id) do
+      from f in Flow, where: f.workspace_id == ^workspace_id
+    else
+      from f in Flow, where: false
     end
   end
 
-  defp scope_query(%Scope{user: %{id: user_id}}) do
-    from f in Flow, where: f.user_id == ^user_id
-  end
-
-  defp default_owner_id do
-    Repo.one(
-      from u in HeddleCore.Accounts.User,
-        order_by: [desc: u.is_system_admin, asc: u.inserted_at, asc: u.id],
-        select: u.id,
-        limit: 1
-    )
-  end
-
-  defp put_owner_id(attrs, user_id) do
-    key =
-      if attrs |> Map.keys() |> Enum.any?(&is_binary/1) do
-        "user_id"
-      else
-        :user_id
-      end
-
-    Map.put(attrs, key, user_id)
-  end
+  defp workspace_query(%Scope{}), do: from(f in Flow, where: false)
 
   alias HeddleCore.Flows.ExecutionLog
 

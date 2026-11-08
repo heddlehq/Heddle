@@ -75,7 +75,7 @@ defmodule HeddleUI.NavigationTest do
       end
     end
 
-    test "keeps My Flows active on the AI creator" do
+    test "keeps Flows active on the AI creator" do
       scope = Scope.for_user(system_admin_fixture())
 
       html =
@@ -107,7 +107,7 @@ defmodule HeddleUI.NavigationTest do
       assert current_pages(document) == 1
     end
 
-    test "keeps My Flows active on a flow page" do
+    test "keeps Flows active on a flow page" do
       scope = Scope.for_user(system_admin_fixture())
 
       html =

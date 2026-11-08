@@ -18,7 +18,11 @@ defmodule HeddleCore.OAuthTest do
 
   defp code_for(user) do
     client = OAuth.get_client("treadle")
-    {:ok, code} = OAuth.create_authorization_code(user, client, @redirect_uri, challenge())
+    workspace = ensure_workspace(user)
+
+    {:ok, code} =
+      OAuth.create_authorization_code(user, workspace.id, client, @redirect_uri, challenge())
+
     code
   end
 
@@ -113,6 +117,36 @@ defmodule HeddleCore.OAuthTest do
       assert {:error, :invalid_grant} = exchange("nope")
       assert {:error, :invalid_grant} = OAuth.exchange_code(%{})
       assert {:error, :invalid_grant} = OAuth.exchange_code(%{"code" => %{"a" => "b"}})
+    end
+  end
+
+  describe "create_authorization_code/5" do
+    test "the token reaches the workspace picked, within the person's role there" do
+      user = user_fixture()
+      workspace = workspace_fixture(user, role: "viewer")
+      client = OAuth.get_client("treadle")
+
+      {:ok, code} =
+        OAuth.create_authorization_code(user, workspace.id, client, @redirect_uri, challenge())
+
+      assert {:ok, %{access_token: token, scopes: scopes}} = exchange(code)
+      assert {:ok, %ApiKey{workspace_id: id}} = ApiKeys.authenticate(token)
+      assert id == workspace.id
+      assert "workflows:read" in scopes
+      refute "workflows:write" in scopes
+    end
+
+    test "refuses a workspace the person isn't in" do
+      other = workspace_fixture(user_fixture())
+
+      assert {:error, :forbidden} =
+               OAuth.create_authorization_code(
+                 user_fixture(),
+                 other.id,
+                 OAuth.get_client("treadle"),
+                 @redirect_uri,
+                 challenge()
+               )
     end
   end
 end

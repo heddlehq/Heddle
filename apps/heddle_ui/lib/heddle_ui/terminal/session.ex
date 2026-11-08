@@ -35,7 +35,7 @@ defmodule HeddleUI.Terminal.Session do
 
     {:ok, _apps} = Application.ensure_all_started(:erlexec)
 
-    run = AgentChat.open(Keyword.fetch!(opts, :scope))
+    run = AgentChat.open(Keyword.fetch!(opts, :scope), Keyword.fetch!(opts, :flow).workspace_id)
     {cols, rows} = Keyword.fetch!(opts, :size)
 
     {:ok, pid, os_pid} =

@@ -9,14 +9,18 @@ defmodule HeddleCore.FlowsFixtures do
         Process.get(:heddle_owner) || HeddleCore.AccountsFixtures.user_fixture()
       end)
 
+    workspace =
+      Map.get_lazy(attrs, :workspace, fn -> HeddleCore.AccountsFixtures.ensure_workspace(user) end)
+
     {:ok, flow} =
       attrs
-      |> Map.delete(:user)
+      |> Map.drop([:user, :workspace])
       |> Enum.into(%{
         name: "Test Flow",
         nodes: [],
         connections: [],
-        user_id: user.id
+        user_id: user.id,
+        workspace_id: workspace.id
       })
       |> normalize_graph()
       |> Flows.create_flow()

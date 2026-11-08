@@ -1,7 +1,6 @@
 defmodule HeddleUI.ApiModeTest do
   use HeddleUI.ConnCase, async: false
 
-  alias HeddleCore.ApiKeys
   import HeddleCore.AccountsFixtures
   import HeddleCore.FlowsFixtures
 
@@ -56,7 +55,9 @@ defmodule HeddleUI.ApiModeTest do
   end
 
   defp authorize(conn, user, scopes) do
-    {:ok, %{token: token}} = ApiKeys.create_api_key(user, %{name: "test key", scopes: scopes})
+    {:ok, %{token: token}} =
+      HeddleCore.AccountsFixtures.create_api_key(user, %{name: "test key", scopes: scopes})
+
     put_req_header(conn, "authorization", "Bearer #{token}")
   end
 end

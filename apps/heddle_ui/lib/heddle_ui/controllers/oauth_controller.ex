@@ -5,6 +5,7 @@ defmodule HeddleUI.OAuthController do
   use HeddleUI, :controller
 
   alias HeddleCore.OAuth
+  alias HeddleCore.Workspaces
 
   plug :put_view, html: HeddleUI.OAuthHTML
 
@@ -12,7 +13,14 @@ defmodule HeddleUI.OAuthController do
 
   def new(conn, params) do
     with_valid_request(conn, params, fn conn, client ->
-      render(conn, :new, client: client, form_params: Map.take(params, @form_params))
+      scope = conn.assigns.current_scope
+
+      render(conn, :new,
+        client: client,
+        form_params: Map.take(params, @form_params),
+        workspaces: Workspaces.list_workspaces(scope),
+        current_workspace_id: scope.workspace && scope.workspace.id
+      )
     end)
   end
 
@@ -20,14 +28,19 @@ defmodule HeddleUI.OAuthController do
     with_valid_request(conn, params, fn conn, client ->
       user = conn.assigns.current_scope.user
 
+      # The app reaches one workspace, picked here, with the person's role in it.
       case OAuth.create_authorization_code(
              user,
+             parse_id(params["workspace_id"]),
              client,
              params["redirect_uri"],
              params["code_challenge"]
            ) do
         {:ok, code} ->
           redirect_to_client(conn, params, code: code)
+
+        {:error, :forbidden} ->
+          redirect_to_client(conn, params, error: "access_denied")
 
         {:error, _changeset} ->
           redirect_to_client(conn, params, error: "server_error")
@@ -59,6 +72,13 @@ defmodule HeddleUI.OAuthController do
 
       true ->
         fun.(conn, client)
+    end
+  end
+
+  defp parse_id(id) do
+    case Integer.parse(to_string(id)) do
+      {id, ""} -> id
+      _other -> nil
     end
   end
 

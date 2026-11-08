@@ -29,7 +29,9 @@ const hooks = {
     async mounted() {
       const { createEditor } = await import("./rete_editor.js");
       const container = this.el;
-      const editor = await createEditor(container);
+      const editor = await createEditor(container, {
+        readOnly: container.dataset.readOnly === "true",
+      });
 
       // Loads ahead of time, so the code modal doesn't wait for it.
       const whenIdle = window.requestIdleCallback || setTimeout;

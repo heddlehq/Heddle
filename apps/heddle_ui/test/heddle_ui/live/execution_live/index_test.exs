@@ -9,6 +9,7 @@ defmodule HeddleUI.ExecutionLive.IndexTest do
 
   setup %{conn: conn} do
     admin = system_admin_fixture()
+    Process.put(:heddle_owner, admin)
     %{conn: log_in_user(conn, admin), user: admin}
   end
 

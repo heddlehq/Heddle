@@ -3,7 +3,7 @@ defmodule HeddleUI.ExecutionLive.Index do
 
   alias HeddleUI.Components.ResultFile
 
-  on_mount {HeddleUI.UserAuth, :require_system_admin}
+  on_mount {HeddleUI.UserAuth, {:require_workspace, :view}}
 
   alias HeddleCore.Executions
 
@@ -23,18 +23,22 @@ defmodule HeddleUI.ExecutionLive.Index do
   end
 
   defp apply_action(socket, :show, %{"public_id" => public_id}) do
-    execution = Executions.get_execution_by_public_id!(public_id)
+    scope = socket.assigns.current_scope
+
+    execution =
+      Executions.get_execution_by_public_id(scope, public_id) ||
+        raise Ecto.NoResultsError, queryable: HeddleCore.Executions.Execution
 
     socket
     |> assign(page_title: gettext("Execution"))
-    |> assign(executions: Executions.list_executions())
+    |> assign(executions: Executions.list_executions(scope))
     |> assign(selected_execution: execution)
   end
 
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(page_title: gettext("Executions"))
-    |> assign(executions: Executions.list_executions())
+    |> assign(executions: Executions.list_executions(socket.assigns.current_scope))
     |> assign(selected_execution: nil)
   end
 

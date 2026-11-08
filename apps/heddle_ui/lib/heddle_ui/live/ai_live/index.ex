@@ -316,7 +316,7 @@ defmodule HeddleUI.AILive.Index do
   end
 
   defp ai_credentials do
-    for %{kind: "ai", name: name} <- Credentials.list_credentials(), do: name
+    for %{kind: "ai", name: name} <- Credentials.list_shared_credentials(), do: name
   end
 
   attr :state, :atom, required: true

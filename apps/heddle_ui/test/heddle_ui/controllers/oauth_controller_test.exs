@@ -54,11 +54,27 @@ defmodule HeddleUI.OAuthControllerTest do
   describe "with a session" do
     setup :register_and_log_in_user
 
+    setup %{user: user} do
+      %{workspace: HeddleCore.AccountsFixtures.workspace_fixture(user)}
+    end
+
     test "shows what the app is asking for", %{conn: conn} do
       html = conn |> get(~p"/oauth/authorize?#{params()}") |> html_response(200)
 
       assert html =~ "Treadle"
       assert html =~ "Create and change workflows"
+      assert html =~ ~s(id="oauth-workspace")
+    end
+
+    test "approving for a workspace the person isn't in is denied", %{conn: conn} do
+      other =
+        HeddleCore.AccountsFixtures.workspace_fixture(HeddleCore.AccountsFixtures.user_fixture())
+
+      form = Map.merge(params(), %{"decision" => "allow", "workspace_id" => other.id})
+
+      conn = post(conn, ~p"/oauth/authorize", form)
+
+      assert %{"error" => "access_denied"} = callback_query(conn)
     end
 
     test "refuses to render for an unknown client or a non-loopback redirect", %{conn: conn} do
@@ -78,8 +94,10 @@ defmodule HeddleUI.OAuthControllerTest do
       assert %{"error" => "invalid_request", "state" => "abc123"} = callback_query(conn)
     end
 
-    test "approving delivers a code that the token endpoint trades for a key", %{conn: conn} do
-      conn = post(conn, ~p"/oauth/authorize", Map.put(params(), "decision", "allow"))
+    test "approving delivers a code that the token endpoint trades for a key",
+         %{conn: conn, workspace: workspace} do
+      form = Map.merge(params(), %{"decision" => "allow", "workspace_id" => workspace.id})
+      conn = post(conn, ~p"/oauth/authorize", form)
       assert %{"code" => code, "state" => "abc123"} = callback_query(conn)
 
       body =

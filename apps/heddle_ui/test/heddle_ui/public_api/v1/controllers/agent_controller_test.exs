@@ -6,7 +6,6 @@ defmodule HeddleUI.PublicAPI.V1.AgentControllerTest do
   import HeddleCore.FlowsFixtures
 
   alias HeddleCore.Accounts.Scope
-  alias HeddleCore.ApiKeys
   alias HeddleUI.Agent
   alias HeddleUI.FakeHarnessModel
   alias HeddleUI.PublicAPI.V1.AgentEvents
@@ -28,7 +27,9 @@ defmodule HeddleUI.PublicAPI.V1.AgentControllerTest do
   end
 
   defp authorize(conn, user, scopes \\ ~w(workflows:read workflows:write)) do
-    {:ok, %{token: token}} = ApiKeys.create_api_key(user, %{name: "test", scopes: scopes})
+    {:ok, %{token: token}} =
+      HeddleCore.AccountsFixtures.create_api_key(user, %{name: "test", scopes: scopes})
+
     put_req_header(conn, "authorization", "Bearer #{token}")
   end
 

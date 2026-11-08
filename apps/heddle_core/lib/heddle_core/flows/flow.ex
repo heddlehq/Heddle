@@ -5,6 +5,7 @@ defmodule HeddleCore.Flows.Flow do
   alias Heddle.Graph
   alias HeddleCore.Accounts.User
   alias HeddleCore.Flows.GraphValidator
+  alias HeddleCore.Workspaces.Workspace
 
   schema "flows" do
     field :name, :string
@@ -13,17 +14,30 @@ defmodule HeddleCore.Flows.Flow do
     field :comments, {:array, :map}, default: []
 
     belongs_to :user, User
+    belongs_to :workspace, Workspace
     has_many :executions, HeddleCore.Executions.Execution
 
     timestamps(type: :utc_datetime)
   end
 
+  @doc """
+  For a new flow. Its workspace and author are set by `HeddleCore.Flows`, never taken
+  from what a client sends.
+  """
+  def create_changeset(flow, attrs) do
+    flow
+    |> cast(attrs, [:user_id, :workspace_id])
+    |> validate_required([:workspace_id])
+    |> assoc_constraint(:user)
+    |> assoc_constraint(:workspace)
+    |> changeset(attrs)
+  end
+
   @doc false
   def changeset(flow, attrs) do
     flow
-    |> cast(attrs, [:name, :nodes, :connections, :comments, :user_id])
-    |> validate_required([:name, :user_id])
-    |> assoc_constraint(:user)
+    |> cast(attrs, [:name, :nodes, :connections, :comments])
+    |> validate_required([:name])
     |> update_change(:nodes, &Graph.normalize_nodes/1)
     |> update_change(:connections, &Graph.normalize_connections/1)
     |> validate_graph()

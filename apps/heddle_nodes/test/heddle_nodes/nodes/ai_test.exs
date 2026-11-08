@@ -7,6 +7,9 @@ defmodule HeddleNodes.Nodes.AITest do
   @png <<0x89, "PNG", 1, 2, 3>>
 
   defmodule Vault do
+    # A run asks within its workspace, which these tests leave out.
+    def fetch(_workspace_id, name, kind), do: fetch(name, kind)
+
     def fetch("gemini", "ai"), do: {:ok, %{"provider" => "google", "api_key" => "g-key"}}
     def fetch(name, _kind), do: {:error, "no #{inspect(name)}"}
   end

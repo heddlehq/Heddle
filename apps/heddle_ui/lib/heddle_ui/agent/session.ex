@@ -17,6 +17,7 @@ defmodule HeddleUI.Agent.Session do
 
   alias HeddleAI.Agents.FlowCopilot
   alias HeddleAI.Harness
+  alias HeddleCore.Accounts.Scope
   alias HeddleCore.AgentConversations
   alias HeddleCore.ApiKeys
   alias HeddleCore.Executions
@@ -160,7 +161,8 @@ defmodule HeddleUI.Agent.Session do
   def handle_info(_message, state), do: noreply(state)
 
   defp start_turn(state, content) do
-    run = AgentChat.open(state.scope)
+    flow = Flows.get_flow(state.scope, state.flow_id)
+    run = AgentChat.open(state.scope, flow && flow.workspace_id)
     session = self()
     on_event = &send(session, {:harness_event, &1})
 
@@ -206,7 +208,8 @@ defmodule HeddleUI.Agent.Session do
   defp read_new_failure(_execution, _seen, _on_event), do: :ok
 
   defp run_llm(turn, run, system, content, on_event) do
-    frame = %{assigns: %{api_key: run.api_key, current_scope: turn.scope}}
+    # The tools act as the run's key: in the flow's workspace, with the person's role.
+    frame = %{assigns: %{api_key: run.api_key, current_scope: Scope.for_api_key(run.api_key)}}
 
     history = FlowCopilot.without_state(turn.history)
 
