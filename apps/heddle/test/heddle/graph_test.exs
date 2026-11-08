@@ -156,4 +156,78 @@ defmodule Heddle.GraphTest do
       assert [%{"targetInput" => "other"}] = Graph.normalize_connections([connection])
     end
   end
+
+  describe "sections" do
+    defp section(id, nodes, attrs \\ %{}) do
+      Map.merge(
+        %{"id" => id, "kind" => "section", "text" => "Billing", "nodes" => nodes},
+        attrs
+      )
+    end
+
+    defp flow(comments) do
+      %{
+        nodes: [node_map("start", "Start"), node_map("a", "Variable"), node_map("b", "Variable")],
+        connections: [connection("start", "a"), connection("a", "b")],
+        comments: comments
+      }
+    end
+
+    test "leave out the nodes of a manual section, and what leads to them is held back" do
+      graph = Graph.new(flow([section("s", ["a", "b"], %{"manual" => true})]))
+
+      assert Enum.map(graph.nodes, & &1.id) == ["start"]
+      assert Graph.get(graph, "a") == nil
+      assert Graph.next(graph, Graph.get(graph, "start"), "exec") == []
+      assert [%Node{id: "a"}] = Graph.held_back(graph, Graph.get(graph, "start"), "exec")
+      assert Graph.holds_back?(graph)
+    end
+
+    test "keep the nodes of a section that runs with the flow" do
+      graph = Graph.new(flow([section("s", ["a", "b"])]))
+
+      assert Enum.map(graph.nodes, & &1.id) == ["start", "a", "b"]
+      refute Graph.holds_back?(graph)
+    end
+
+    test "a manual section holds back the nodes of the sections inside it" do
+      comments = [section("outer", ["a", "b"], %{"manual" => true}), section("inner", ["b"])]
+
+      assert Enum.map(Graph.new(flow(comments)).nodes, & &1.id) == ["start"]
+    end
+
+    test "take one section alone, with the connections inside it" do
+      graph = Graph.new(flow([section("s", ["a", "b"], %{"manual" => true})]), section: "s")
+
+      assert %Graph.Section{id: "s", name: "Billing", manual: true} = Graph.section(graph)
+      assert Enum.map(graph.nodes, & &1.id) == ["a", "b"]
+      assert [%Node{id: "a"}] = Graph.entries(graph)
+      assert [%Node{id: "b"}] = Graph.next(graph, Graph.get(graph, "a"), "exec")
+      refute Graph.holds_back?(graph)
+    end
+
+    test "start a section from every node nothing in it leads to, in the order it lists them" do
+      flow = %{flow([]) | comments: [section("s", ["b", "start"])], connections: []}
+
+      assert ["b", "start"] =
+               flow |> Graph.new(section: "s") |> Graph.entries() |> Enum.map(& &1.id)
+    end
+
+    test "take nothing for a section that is not there, or for ids of nodes that are gone" do
+      graph = Graph.new(flow([section("s", ["gone"])]), section: "missing")
+
+      assert Graph.section(graph) == nil
+      assert graph.nodes == []
+      assert Graph.entries(Graph.new(flow([section("s", ["gone"])]), section: "s")) == []
+    end
+
+    test "read only sections, among the comments" do
+      comments = [
+        %{"id" => "n", "kind" => "note", "text" => "x", "manual" => true, "nodes" => ["a"]}
+      ]
+
+      assert Graph.sections(flow(comments)) == []
+      assert length(Graph.new(flow(comments)).nodes) == 3
+    end
+  end
 end

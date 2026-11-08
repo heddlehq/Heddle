@@ -164,6 +164,31 @@ defmodule HeddleCore.Flows.GraphValidatorTest do
       assert {:error, :connections, "references an unknown target input"} =
                GraphValidator.validate(@valid_nodes, connections, manifest: Manifest)
     end
+
+    test "accepts a node's settings, and refuses ones it doesn't take" do
+      [start, output] = @valid_nodes
+      retrying = Map.put(start, "settings", %{"retries" => 2, "on_error" => "continue"})
+
+      assert GraphValidator.validate([retrying, output], @valid_connections, manifest: Manifest) ==
+               :ok
+
+      wrong = Map.put(start, "settings", %{"retries" => 99})
+
+      assert {:error, :nodes, "contains a node with invalid settings"} =
+               GraphValidator.validate([wrong, output], @valid_connections, manifest: Manifest)
+    end
+
+    test "accepts a connection from the error output that a node's settings give it" do
+      [start, output] = @valid_nodes
+      [connection] = @valid_connections
+      from_error = %{connection | "sourceOutput" => "error"}
+
+      assert {:error, :connections, "references an unknown source output"} =
+               GraphValidator.validate(@valid_nodes, [from_error], manifest: Manifest)
+
+      start = Map.put(start, "settings", %{"on_error" => "output"})
+      assert GraphValidator.validate([start, output], [from_error], manifest: Manifest) == :ok
+    end
   end
 
   describe "validate_comments/1" do
@@ -188,6 +213,34 @@ defmodule HeddleCore.Flows.GraphValidatorTest do
         comment = %{@comment | "kind" => kind, "color" => color}
 
         assert GraphValidator.validate_comments([comment]) == :ok
+      end
+    end
+
+    test "accepts what a section holds, and whether it runs with the flow" do
+      section = %{@comment | "kind" => "section"}
+
+      for fields <- [
+            %{"manual" => true, "nodes" => ["a", 2]},
+            %{"manual" => false, "nodes" => []}
+          ] do
+        assert GraphValidator.validate_comments([Map.merge(section, fields)]) == :ok
+      end
+    end
+
+    test "rejects section fields that are wrong, or on what isn't a section" do
+      section = %{@comment | "kind" => "section"}
+
+      invalid = [
+        Map.put(section, "manual", "yes"),
+        Map.put(section, "nodes", "a"),
+        Map.put(section, "nodes", [""]),
+        Map.put(@comment, "manual", true),
+        Map.put(@comment, "nodes", ["a"])
+      ]
+
+      for comment <- invalid do
+        assert {:error, :comments, "contains an invalid comment"} =
+                 GraphValidator.validate_comments([comment])
       end
     end
 

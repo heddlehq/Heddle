@@ -536,6 +536,7 @@ components:
         enum:
           - queued
           - running
+          - waiting
           - succeeded
           - failed
       description: Filter executions by status.
@@ -706,7 +707,10 @@ components:
     Comment:
       type: object
       additionalProperties: false
-      description: Text written on the canvas. It is not part of the graph and never runs.
+      description: >-
+        Text written on the canvas. It never runs, but a `section` groups the nodes
+        drawn inside it: with `manual`, they don't run with the flow, only when a run is
+        given its `section_id`.
       required:
         - id
         - kind
@@ -744,6 +748,21 @@ components:
         height:
           type: number
           exclusiveMinimum: 0
+        manual:
+          type: boolean
+          default: false
+          description: >-
+            Only on a section. Its nodes don't run with the flow: a branch that reaches
+            one stops there, and their Start, Schedule and Webhook nodes don't fire.
+        nodes:
+          type: array
+          description: >-
+            Only on a section. The ids of the nodes drawn inside it, kept by the canvas,
+            in the order its entry nodes run.
+          items:
+            oneOf:
+              - type: string
+              - type: integer
     FlowNode:
       type: object
       additionalProperties: false
@@ -905,7 +924,10 @@ components:
           type: object
           additionalProperties: true
           default: {}
-          description: Execution input. The API sets `trigger` to `api` when absent.
+          description: >-
+            Execution input. The API sets `trigger` to `api` when absent. With
+            `section_id`, the id of a section comment, it runs only that section, from
+            each node nothing in it leads to.
     ExecutionListResponse:
       type: object
       required:
@@ -945,6 +967,67 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/Execution"
+    ExecutionStep:
+      type: object
+      additionalProperties: true
+      properties:
+        node_id:
+          type: string
+        node_type:
+          type: string
+        label:
+          type: string
+          description: The name of the node, when it isn't its type.
+        status:
+          type: string
+          enum: [success, error, skipped]
+        output:
+          type: string
+          description: The output the run left the node through.
+        started_at:
+          type: string
+          format: date-time
+        duration_ms:
+          type: number
+        attempts:
+          type: integer
+          description: How many tries the step took, when it took more than one.
+        retry_errors:
+          type: array
+          items:
+            type: string
+          description: Why each try before the last one failed.
+        error:
+          type: string
+        continued:
+          type: boolean
+          description: The step failed, and the run went on with the error as its result.
+        pinned:
+          type: boolean
+          description: The step took the data pinned to its node instead of running.
+        data:
+          description: >-
+            The context the step got and what it changed, cut to a size that can be
+            kept. Only the first 500 steps of a run keep it.
+          type: object
+          properties:
+            input:
+              type: object
+              additionalProperties: true
+            output:
+              type: object
+              additionalProperties: true
+            removed:
+              type: array
+              items:
+                type: string
+            truncated:
+              type: boolean
+              description: Part of the data was cut, so it isn't the whole value.
+            omitted:
+              type: boolean
+              description: The run had too many steps to keep this one's data.
+
     Execution:
       type: object
       required:
@@ -969,6 +1052,7 @@ components:
           enum:
             - queued
             - running
+            - waiting
             - succeeded
             - failed
         input:
@@ -985,10 +1069,29 @@ components:
             - "null"
           additionalProperties: true
         logs:
+          description: >-
+            One entry for each step the run took, in order.
           type: array
           items:
-            type: object
-            additionalProperties: true
+            $ref: "#/components/schemas/ExecutionStep"
+        waiting:
+          description: >-
+            Where a run a Wait node paused stands, while its status is `waiting`.
+            It goes on by itself at `until`, or when the address the flow reads as
+            `{{resume_url}}` is called, when `for_call` is true.
+          type:
+            - object
+            - "null"
+          properties:
+            node_id:
+              type: string
+            until:
+              type:
+                - string
+                - "null"
+              format: date-time
+            for_call:
+              type: boolean
         started_at:
           type:
             - string

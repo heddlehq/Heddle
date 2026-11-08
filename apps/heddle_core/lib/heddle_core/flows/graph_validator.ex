@@ -8,11 +8,12 @@ defmodule HeddleCore.Flows.GraphValidator do
   """
 
   alias Heddle.Graph
+  alias Heddle.Graph.Settings
   alias HeddleCore.Flows.Schedule
 
-  @node_keys ~w(id type label controls position)
+  @node_keys ~w(id type label controls settings position)
   @connection_keys ~w(source sourceOutput target targetInput)
-  @comment_keys ~w(id kind color text position width height)
+  @comment_keys ~w(id kind color text position width height manual nodes)
   @comment_kinds ~w(title text note section)
   @comment_colors ~w(default yellow green blue red)
 
@@ -48,13 +49,25 @@ defmodule HeddleCore.Flows.GraphValidator do
     not unknown_keys?(comment, @comment_keys) and present_id?(comment["id"]) and
       comment["kind"] in @comment_kinds and comment["color"] in @comment_colors and
       is_binary(comment["text"]) and valid_position?(comment["position"]) and
-      positive_number?(comment["width"]) and positive_number?(comment["height"])
+      positive_number?(comment["width"]) and positive_number?(comment["height"]) and
+      valid_section_fields?(comment)
+  end
+
+  # What a section holds, see `Heddle.Graph.Section`. Only a section has it.
+  defp valid_section_fields?(%{"kind" => "section"} = comment) do
+    comment["manual"] in [nil, true, false] and
+      (is_nil(comment["nodes"]) or
+         (is_list(comment["nodes"]) and Enum.all?(comment["nodes"], &present_id?/1)))
+  end
+
+  defp valid_section_fields?(comment) do
+    not Map.has_key?(comment, "manual") and not Map.has_key?(comment, "nodes")
   end
 
   defp validate_graph([], [], _opts), do: :ok
 
   defp validate_graph(nodes, connections, opts) do
-    with {:ok, definitions} <- node_definitions(opts),
+    with {:ok, definitions} <- definitions(opts),
          :ok <- validate_nodes(nodes, definitions),
          :ok <- validate_connections(connections, nodes, definitions) do
       :ok
@@ -71,7 +84,11 @@ defmodule HeddleCore.Flows.GraphValidator do
 
   defp validate_list(field, _value), do: {:error, field, "must be a list"}
 
-  defp node_definitions(opts) do
+  @doc """
+  The definitions of the nodes a flow can use, by name, from the manifest in
+  `:manifest` or the configured one.
+  """
+  def definitions(opts \\ []) do
     manifest =
       Keyword.get_lazy(opts, :manifest, fn ->
         Application.get_env(:heddle_core, :graph_manifest, HeddleNodes)
@@ -110,6 +127,9 @@ defmodule HeddleCore.Flows.GraphValidator do
 
         not is_map(node["controls"]) ->
           {:halt, {:error, :nodes, "contains a node without controls"}}
+
+        not Settings.valid?(node["settings"]) ->
+          {:halt, {:error, :nodes, "contains a node with invalid settings"}}
 
         not Map.has_key?(definitions, node["type"]) ->
           {:halt, {:error, :nodes, "contains unknown node type"}}
@@ -169,7 +189,13 @@ defmodule HeddleCore.Flows.GraphValidator do
       not present_string?(connection["targetInput"])
   end
 
+  # Settings can give any node an `error` output, see `Heddle.Graph.Settings`.
   defp output_exists?(definitions, node, output) do
+    (output == "error" and Settings.error_output?(node["settings"])) or
+      defined_output?(definitions, node, output)
+  end
+
+  defp defined_output?(definitions, node, output) do
     definitions
     |> Map.fetch!(node["type"])
     |> Map.get(:outputs, [])

@@ -1,6 +1,13 @@
 defmodule HeddleWorker.FlowExecutionWorker do
   @moduledoc """
   Oban worker responsible for running persisted flow executions.
+
+  A job with a `wait_id` resumes a run a Wait paused, with `by` saying what ended the
+  wait. Only the first job to claim the pause runs it. See `Executions.pause/2`.
+
+  A run started from the editor has `"debug"` in its input: it takes the data pinned to
+  nodes, and tells the editor about each step as it ends. A run that fails starts the
+  error flow of its flow, see `Executions.start_error_flow/2`.
   """
 
   use Oban.Worker, queue: :executions, max_attempts: 3
@@ -12,18 +19,30 @@ defmodule HeddleWorker.FlowExecutionWorker do
   @internal_result_keys ["flow_id", "logs"]
 
   @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"execution_id" => id, "wait_id" => wait_id} = args, id: job_id}) do
+    case Executions.claim_resume(id, wait_id, job_id) do
+      {:ok, execution} ->
+        flow = Flows.get_flow!(execution.flow_id)
+        resumption = Map.take(args, ["by", "request"])
+
+        flow
+        |> Runner.resume(execution.paused, resumption, run_options(execution))
+        |> persist(execution)
+
+      # Something else ended this wait first.
+      :error ->
+        :ok
+    end
+  end
+
   def perform(%Oban.Job{args: %{"execution_id" => execution_id}}) do
     execution = Executions.get_execution!(execution_id)
     flow = Flows.get_flow!(execution.flow_id)
 
     with {:ok, running_execution} <- Executions.mark_running(execution) do
-      case run_flow(flow, running_execution) do
-        {:ok, context} ->
-          persist_success(running_execution, context)
-
-        {:error, reason, node_id, context} ->
-          persist_failure(running_execution, reason, node_id, context)
-      end
+      flow
+      |> run_flow(running_execution)
+      |> persist(running_execution)
     end
   end
 
@@ -31,12 +50,51 @@ defmodule HeddleWorker.FlowExecutionWorker do
     {:error, {:missing_execution_id, args}}
   end
 
+  defp persist({:ok, context}, execution), do: persist_success(execution, context)
+
+  defp persist({:error, reason, node_id, context}, execution),
+    do: persist_failure(execution, reason, node_id, context)
+
+  defp persist({:wait, paused}, execution) do
+    case Executions.pause(execution, paused) do
+      {:ok, execution} ->
+        Executions.broadcast_execution_updated(execution)
+        :ok
+
+      {:error, :unsaveable} ->
+        message = "This run holds a value that can't be saved, so it can't wait."
+
+        persist_failure(
+          execution,
+          message,
+          get_in(paused, ["wait", "node_id"]),
+          paused["context"]
+        )
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp run_options(execution) do
+    debug = match?(%{"debug" => true}, execution.input)
+
+    [
+      on_respond: &Executions.put_response(execution, &1),
+      resume_url: Executions.resume_url(execution),
+      debug: debug
+    ] ++ if(debug, do: [on_step: &Executions.broadcast_step(execution.id, &1)], else: [])
+  end
+
   defp run_flow(flow, execution) do
-    opts = [on_respond: &Executions.put_response(execution, &1)]
+    opts = run_options(execution)
 
     case execution.input do
-      %{"trigger" => "webhook", "request" => request} ->
-        Runner.run_from_webhook(flow, request, opts)
+      %{"replay_from" => _node_id} = input ->
+        Runner.run(flow, input, opts)
+
+      %{"trigger" => "webhook", "request" => request} = input ->
+        Runner.run_from_webhook(flow, request, [section: input["section_id"]] ++ opts)
 
       input ->
         Runner.run(flow, input, opts)
@@ -67,6 +125,7 @@ defmodule HeddleWorker.FlowExecutionWorker do
     case Executions.mark_failed(execution, error, failure_details(context)) do
       {:ok, execution} ->
         Executions.broadcast_execution_updated(execution)
+        Executions.start_error_flow(execution, error)
         :ok
 
       {:error, changeset} ->

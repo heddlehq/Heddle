@@ -13,6 +13,8 @@ defmodule HeddleCore.Flows.Flow do
     field :comments, {:array, :map}, default: []
 
     belongs_to :user, User
+    # The flow that runs when a run of this one fails, see `HeddleCore.Executions`.
+    belongs_to :error_flow, __MODULE__
     has_many :executions, HeddleCore.Executions.Execution
 
     timestamps(type: :utc_datetime)
@@ -28,6 +30,19 @@ defmodule HeddleCore.Flows.Flow do
     |> update_change(:connections, &Graph.normalize_connections/1)
     |> validate_graph()
     |> validate_comments()
+  end
+
+  @doc """
+  Changes how the flow runs, apart from its graph: for now, its error flow. The caller
+  checks the error flow is one the person may use.
+  """
+  def settings_changeset(flow, attrs) do
+    flow
+    |> cast(attrs, [:error_flow_id])
+    |> validate_change(:error_flow_id, fn :error_flow_id, id ->
+      if id == flow.id, do: [error_flow_id: "can't be the flow itself"], else: []
+    end)
+    |> assoc_constraint(:error_flow)
   end
 
   defp validate_graph(changeset) do

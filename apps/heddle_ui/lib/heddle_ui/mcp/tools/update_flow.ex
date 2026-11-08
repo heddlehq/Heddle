@@ -1,8 +1,9 @@
 defmodule HeddleUI.MCP.Tools.UpdateFlow do
   @moduledoc """
   Replaces the name, nodes or connections of a flow. Read it with get_flow first and
-  send the complete list of nodes. Every node needs id, type and controls. Nodes keep
-  their place on the canvas, and new ones are placed automatically.
+  send the complete list of nodes. Every node needs id, type and controls, and may have
+  settings: retries, retry_delay, retry_backoff and on_error. Nodes keep their place on
+  the canvas, and new ones are placed automatically.
   """
 
   use Anubis.Server.Component, type: :tool, name: "update_flow"

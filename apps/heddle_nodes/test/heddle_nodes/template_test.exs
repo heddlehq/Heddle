@@ -17,6 +17,14 @@ defmodule HeddleNodes.TemplateTest do
                "Ana"
     end
 
+    test "picks an item of a list by its position" do
+      context = %{"body" => %{"items" => [%{"name" => "a"}, %{"name" => "b"}]}}
+
+      assert Template.fetch(context, "body.items.1.name") == "b"
+      assert Template.fetch(context, "body.items.5.name") == nil
+      assert Template.fetch(context, "body.items.first") == nil
+    end
+
     test "is nil for what isn't there" do
       assert Template.fetch(%{"body" => %{}}, "body.user.name") == nil
       assert Template.fetch(%{"body" => "text"}, "body.user") == nil

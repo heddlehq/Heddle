@@ -68,7 +68,7 @@ defmodule HeddleCore.ExecutionsTest do
       flow = flow_fixture()
 
       assert {:error, changeset} =
-               Executions.create_execution(%{flow_id: flow.id, status: "waiting"})
+               Executions.create_execution(%{flow_id: flow.id, status: "paused"})
 
       assert %{status: ["is invalid"]} = errors_on(changeset)
     end
@@ -200,6 +200,110 @@ defmodule HeddleCore.ExecutionsTest do
       refute Map.has_key?(context, :flow)
       assert Repo.aggregate(Oban.Job, :count, :id) == 0
       assert Executions.list_executions_for_flow(flow.id) == []
+    end
+  end
+
+  describe "error flows" do
+    setup do
+      unless oban_running?(HeddleCore.Oban) do
+        start_supervised!({Oban, name: HeddleCore.Oban, repo: Repo, testing: :manual})
+      end
+
+      user = user_fixture()
+
+      node = %{"id" => "api", "type" => "Start", "label" => "Call the API", "controls" => %{}}
+      flow = flow_fixture(%{user: user, name: "Orders", nodes: [node]})
+      error_flow = flow_fixture(%{user: user, name: "Alerts"})
+
+      %{scope: user_scope_fixture(user), flow: flow, error_flow: error_flow}
+    end
+
+    test "a failed run starts the error flow of its flow, with what failed", context do
+      {:ok, flow} =
+        HeddleCore.Flows.update_flow_settings(context.scope, context.flow, %{
+          error_flow_id: context.error_flow.id
+        })
+
+      {:ok, failed} = Executions.create_execution(%{flow_id: flow.id, input: %{}})
+
+      assert {:ok, run} =
+               Executions.start_error_flow(failed, %{"message" => "boom", "node_id" => "api"})
+
+      assert run.flow_id == context.error_flow.id
+
+      assert %{
+               "trigger" => "error",
+               "error" => %{"message" => "boom", "node_label" => "Call the API"},
+               "execution" => %{"flow_name" => "Orders", "url" => url}
+             } = run.input
+
+      assert url =~ "/flows/#{flow.id}?execution=#{failed.public_id}"
+    end
+
+    test "nothing starts without an error flow, or from a run of an error flow", context do
+      {:ok, failed} = Executions.create_execution(%{flow_id: context.flow.id, input: %{}})
+      assert Executions.start_error_flow(failed, %{"message" => "boom"}) == :none
+
+      {:ok, flow} =
+        HeddleCore.Flows.update_flow_settings(context.scope, context.flow, %{
+          error_flow_id: context.error_flow.id
+        })
+
+      {:ok, failed} =
+        Executions.create_execution(%{flow_id: flow.id, input: %{"trigger" => "error"}})
+
+      assert Executions.start_error_flow(failed, %{"message" => "boom"}) == :none
+    end
+
+    test "a flow can't be its own error flow, nor one of someone else", context do
+      assert {:error, %Ecto.Changeset{}} =
+               HeddleCore.Flows.update_flow_settings(context.scope, context.flow, %{
+                 error_flow_id: context.flow.id
+               })
+
+      other = flow_fixture(%{user: user_fixture()})
+
+      assert {:error, :error_flow_not_found} =
+               HeddleCore.Flows.update_flow_settings(context.scope, context.flow, %{
+                 error_flow_id: other.id
+               })
+
+      assert {:ok, %{error_flow_id: nil}} =
+               HeddleCore.Flows.update_flow_settings(context.scope, context.flow, %{
+                 error_flow_id: ""
+               })
+    end
+  end
+
+  describe "replay_input/2" do
+    test "runs again from a step with the context it got, from the editor" do
+      execution = %Execution{
+        logs: [
+          %{"node_id" => "start", "data" => %{"input" => %{}}},
+          %{"node_id" => "api", "data" => %{"input" => %{"name" => "Ana"}}}
+        ]
+      }
+
+      assert Executions.replay_input(execution, 1) ==
+               {:ok, %{"name" => "Ana", "replay_from" => "api", "debug" => true}}
+    end
+
+    test "refuses a step that kept only part of its context, or none" do
+      execution = %Execution{
+        logs: [
+          %{"node_id" => "a", "data" => %{"input" => %{}, "truncated" => true}},
+          %{"node_id" => "b", "data" => %{"omitted" => true}}
+        ]
+      }
+
+      assert Executions.replay_input(execution, 0) == {:error, :incomplete}
+      assert Executions.replay_input(execution, 1) == {:error, :incomplete}
+      assert Executions.replay_input(execution, 2) == {:error, :not_found}
+    end
+
+    test "rerun_input/1 takes the input of the run, as a run from the editor" do
+      assert Executions.rerun_input(%Execution{input: %{"trigger" => "manual"}}) ==
+               %{"trigger" => "manual", "debug" => true}
     end
   end
 

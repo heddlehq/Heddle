@@ -47,6 +47,42 @@ defmodule HeddleUI.ExecutionLive.IndexTest do
     end
   end
 
+  describe "a run that waits" do
+    defp paused(execution, wait) do
+      paused = %{"wait" => wait, "context" => %{"logs" => []}, "frames" => []}
+      {:ok, execution} = Executions.pause(execution, paused)
+      execution
+    end
+
+    test "says where it waits and gives the address that resumes it", %{conn: conn} do
+      flow =
+        flow_fixture(%{
+          nodes: [%{"id" => "w", "type" => "Wait", "label" => "Approval", "controls" => %{}}],
+          connections: []
+        })
+
+      execution =
+        %{flow: flow}
+        |> execution_fixture()
+        |> paused(%{"node_id" => "w", "call" => true})
+
+      {:ok, lv, _html} = live(conn, ~p"/executions/#{execution.public_id}")
+
+      assert has_element?(lv, "#execution-waiting", "Approval")
+      assert has_element?(lv, "#execution-resume-url", execution.resume_token)
+    end
+
+    test "keeps the address out of a wait for a time", %{conn: conn} do
+      at = DateTime.utc_now() |> DateTime.add(600) |> DateTime.to_iso8601()
+      execution = paused(execution_fixture(), %{"node_id" => "w", "resume_at" => at})
+
+      {:ok, lv, _html} = live(conn, ~p"/executions/#{execution.public_id}")
+
+      assert has_element?(lv, "#execution-waiting")
+      refute has_element?(lv, "#execution-resume-url")
+    end
+  end
+
   describe "index" do
     test "lists executions with status and flow name", %{conn: conn} do
       flow = flow_fixture(%{name: "Billing Flow"})
@@ -87,7 +123,12 @@ defmodule HeddleUI.ExecutionLive.IndexTest do
       assert html =~ "manual"
       assert html =~ "node_id"
       assert has_element?(lv, "#execution-detail")
-      assert has_element?(lv, "a[href=\"/flows/#{flow.id}\"]", "Open Flow")
+      assert has_element?(lv, "a[href=\"/flows/#{flow.id}\"]", "Report Flow")
+
+      assert has_element?(
+               lv,
+               "#inspect-execution[href=\"/flows/#{flow.id}?execution=#{execution.public_id}\"]"
+             )
     end
   end
 end
