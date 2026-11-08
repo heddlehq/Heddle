@@ -36,18 +36,35 @@ defmodule HeddleUI.Plugs.WebhookPlug do
 
   def call(conn, _opts), do: conn
 
+  # A webhook runs what the flow publishes, never its draft. See
+  # `HeddleCore.Flows.Versions`.
   defp execute_webhook(conn, flow_id) do
     flow =
       case HeddleCore.Flows.Cache.get(flow_id) do
         nil ->
-          flow = HeddleCore.Flows.get_flow!(flow_id)
-          HeddleCore.Flows.Cache.put(flow)
+          flow =
+            flow_id |> HeddleCore.Flows.get_flow!() |> HeddleCore.Flows.Versions.published_flow()
+
+          if flow, do: HeddleCore.Flows.Cache.put(flow)
           flow
 
         cached ->
           cached
       end
 
+    if flow, do: run_webhook(conn, flow), else: not_found(conn)
+  rescue
+    Ecto.NoResultsError -> not_found(conn)
+  end
+
+  defp not_found(conn) do
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(404, Jason.encode!(%{error: "Flow not found"}))
+    |> halt()
+  end
+
+  defp run_webhook(conn, flow) do
     with {:ok, execution} <- create_webhook_execution(flow, conn),
          {:ok, _job} <- HeddleCore.Executions.enqueue_execution(execution) do
       if responds?(flow) do
@@ -62,12 +79,6 @@ defmodule HeddleUI.Plugs.WebhookPlug do
         |> send_resp(500, Jason.encode!(%{error: "Execution could not be queued"}))
         |> halt()
     end
-  rescue
-    Ecto.NoResultsError ->
-      conn
-      |> put_resp_content_type("application/json")
-      |> send_resp(404, Jason.encode!(%{error: "Flow not found"}))
-      |> halt()
   end
 
   defp responds?(flow) do
@@ -119,6 +130,7 @@ defmodule HeddleUI.Plugs.WebhookPlug do
   defp create_webhook_execution(flow, conn) do
     HeddleCore.Executions.create_execution(%{
       flow_id: flow.id,
+      flow_version_id: flow.published_version_id,
       input: %{
         "trigger" => "webhook",
         "request" => %{

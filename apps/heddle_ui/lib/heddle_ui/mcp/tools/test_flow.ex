@@ -1,6 +1,6 @@
 defmodule HeddleUI.MCP.Tools.TestFlow do
   @moduledoc """
-  Runs the saved version of a flow and waits for it, returning its status, error, the
+  Runs the draft of a flow, as it is saved now, and waits for it, returning its status, error, the
   context it ended with, what it answered and the steps it took. Use it to check a
   change really works. For a flow that starts at a Webhook node, send webhook with the
   body of the request, as if it had been called. Otherwise, the fields of input become
@@ -34,7 +34,7 @@ defmodule HeddleUI.MCP.Tools.TestFlow do
       Tool.with_flow(scope, id, frame, fn flow ->
         with :ok <- AgentChat.confirm_run(frame.assigns.api_key, flow),
              input = Tool.put_section(input(params), params),
-             {:ok, execution} <- Executions.run_and_await(scope, flow, input) do
+             {:ok, execution} <- Executions.run_and_await(scope, flow, input, version: :draft) do
           Tool.reply(ExecutionJSON.for_agent(%{execution: execution}).data, frame)
         else
           {:error, :forbidden} -> Tool.forbidden(frame)

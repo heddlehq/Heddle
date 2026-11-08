@@ -9,6 +9,9 @@
     can_replace={@has_changes or @current_flow.nodes not in [nil, []]}
     can_edit={@can_edit}
     can_run={@can_run}
+    status={VersionsManager.status(assigns)}
+    published_number={@published_version && @published_version.number}
+    versions_open={@versions_open}
   />
   <Layouts.flash_group flash={@flash} />
   <div class="flex-1 flex overflow-hidden">
@@ -64,28 +67,45 @@
     </script>
 
     <div class="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div
-        class="relative min-h-0 flex-1 bg-gray-100 dark:bg-slate-900"
-        id="flow-canvas-container"
-        phx-update="ignore"
-      >
+      <div id="flow-canvas-area" class="relative flex min-h-0 flex-1 flex-col">
         <div
-          id="flow-canvas"
-          class="absolute inset-0 w-full h-full"
-          phx-hook="FlowCanvas"
-          data-read-only={to_string(not @can_edit)}
+          class="relative min-h-0 flex-1 bg-gray-100 dark:bg-slate-900"
+          id="flow-canvas-container"
+          phx-update="ignore"
         >
+          <div
+            id="flow-canvas"
+            class="absolute inset-0 w-full h-full"
+            phx-hook="FlowCanvas"
+            data-read-only={to_string(not @can_edit)}
+          >
+          </div>
+          <div
+            :if={@can_edit}
+            id="canvas-tools"
+            class="absolute top-4 left-4 z-10 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+          >
+            <.canvas_tool kind="title" icon="hero-h1" label={gettext("Title")} />
+            <.canvas_tool kind="text" icon="hero-bars-3-bottom-left" label={gettext("Text")} />
+            <.canvas_tool kind="note" icon="hero-document-text" label={gettext("Note")} />
+            <.canvas_tool kind="section" icon="hero-rectangle-group" label={gettext("Section")} />
+          </div>
         </div>
-        <div
-          :if={@can_edit}
-          id="canvas-tools"
-          class="absolute top-4 left-4 z-10 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-800"
-        >
-          <.canvas_tool kind="title" icon="hero-h1" label={gettext("Title")} />
-          <.canvas_tool kind="text" icon="hero-bars-3-bottom-left" label={gettext("Text")} />
-          <.canvas_tool kind="note" icon="hero-document-text" label={gettext("Note")} />
-          <.canvas_tool kind="section" icon="hero-rectangle-group" label={gettext("Section")} />
-        </div>
+        <%!-- After the canvas, never before it: a sibling appearing before it would make LiveView move it. --%>
+        <HeddleUI.Components.Flow.VersionPreview.version_preview
+          preview={@version_preview}
+          published_id={@current_flow.published_version_id}
+          can_edit={@can_edit}
+          history_open={@versions_open}
+        />
+        <HeddleUI.Components.Flow.VersionHistory.version_history
+          open={@versions_open}
+          versions={@streams.versions}
+          count={@versions_count}
+          published_id={@current_flow.published_version_id}
+          previewing_id={@version_preview && @version_preview.version.id}
+          can_edit={@can_edit}
+        />
       </div>
       <HeddleUI.Components.Flow.RunInspector.run_inspector
         inspector={@inspector}
@@ -120,6 +140,11 @@
     open={@flow_settings_open}
     form={@flow_settings_form}
     options={@error_flow_options}
+  />
+  <HeddleUI.Components.Modals.PublishModal.publish_modal
+    open={@publish_open}
+    form={@publish_form}
+    status={VersionsManager.status(assigns)}
   />
   <HeddleUI.Components.Modals.WebhookTestModal.webhook_test_modal
     open={@webhook_test_open}

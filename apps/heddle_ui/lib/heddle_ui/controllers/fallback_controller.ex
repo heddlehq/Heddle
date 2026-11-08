@@ -17,6 +17,18 @@ defmodule HeddleUI.FallbackController do
     )
   end
 
+  # Production runs what a flow publishes, and this one publishes nothing yet.
+  def call(conn, {:error, :not_published}) do
+    conn
+    |> put_status(:conflict)
+    |> json(
+      HeddleUI.ApiError.format(
+        :not_published,
+        "This workflow has no published version. Publish it, or run its draft with version=draft."
+      )
+    )
+  end
+
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)

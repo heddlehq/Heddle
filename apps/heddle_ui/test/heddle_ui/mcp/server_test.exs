@@ -125,6 +125,9 @@ defmodule HeddleUI.MCP.ServerTest do
       assert "update_flow" in names
       assert "run_flow" in names
       assert "chat" in names
+      assert "list_versions" in names
+      assert "publish_flow" in names
+      assert "restore_version" in names
       refute Enum.any?(names, &(&1 =~ "delete"))
     end
   end
@@ -295,6 +298,75 @@ defmodule HeddleUI.MCP.ServerTest do
       refute Process.alive?(owner)
       assert result["isError"]
       assert Executions.list_executions_for_flow(flow) == []
+    end
+  end
+
+  describe "versions" do
+    test "lists the versions and publishes the draft", %{conn: conn, user: user, scope: scope} do
+      {:ok, flow} = Flows.create_flow(scope, %{name: "Flow", nodes: [], connections: []})
+      token = token(user)
+
+      assert %{"versions" => []} =
+               payload(call(conn, token, "list_versions", %{flow_id: to_string(flow.id)}))
+
+      result = call(conn, token, "publish_flow", %{flow_id: to_string(flow.id), note: "First"})
+
+      assert %{"number" => 1, "live" => true, "note" => "First"} = payload(result)
+
+      assert %{"versions" => [%{"number" => 1, "live" => true}]} =
+               payload(call(conn, token, "list_versions", %{flow_id: to_string(flow.id)}))
+    end
+
+    test "an agent key publishes only once the person approves", %{
+      conn: conn,
+      user: user,
+      scope: scope
+    } do
+      {:ok, flow} = Flows.create_flow(scope, %{name: "Flow", nodes: [], connections: []})
+      {:ok, %{api_key: api_key, token: token}} = create_agent_key(user)
+      Registry.register(AgentChat.registry(), api_key.id, nil)
+      session = open_session(conn, token)
+
+      task =
+        Task.async(fn ->
+          conn
+          |> rpc(
+            token,
+            session,
+            "tools/call",
+            %{name: "publish_flow", arguments: %{flow_id: to_string(flow.id)}},
+            2
+          )
+          |> decode()
+          |> Map.fetch!("result")
+        end)
+
+      assert_receive {:agent_run_confirmation, %{ref: ref, reply_to: pid, action: "publish"}},
+                     2_000
+
+      assert Flows.get_flow!(flow.id).published_version_id == nil
+
+      send(pid, {:agent_run_decision, ref, false})
+
+      result = Task.await(task)
+      assert result["isError"]
+      assert text(result) =~ "refused to publish"
+      assert Flows.get_flow!(flow.id).published_version_id == nil
+    end
+
+    test "restores a version into the draft", %{conn: conn, user: user, scope: scope} do
+      {:ok, flow} = Flows.create_flow(scope, %{name: "Flow", nodes: [@logger], connections: []})
+      {:ok, version} = HeddleCore.Flows.Versions.publish(scope, flow)
+      {:ok, _flow} = Flows.update_flow(scope, flow, %{nodes: []})
+
+      result =
+        call(conn, token(user), "restore_version", %{
+          flow_id: to_string(flow.id),
+          version_id: to_string(version.id)
+        })
+
+      assert %{"nodes" => [_node]} = payload(result)
+      assert [_node] = Flows.get_flow!(flow.id).nodes
     end
   end
 

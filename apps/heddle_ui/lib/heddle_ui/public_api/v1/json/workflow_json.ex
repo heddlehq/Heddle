@@ -19,6 +19,9 @@ defmodule HeddleUI.PublicAPI.V1.WorkflowJSON do
       nodes: Layout.place(workflow.nodes, workflow.connections),
       connections: Graph.normalize_connections(workflow.connections),
       comments: workflow.comments,
+      # The graph above is the draft. Production runs this version, and a workflow
+      # without one isn't in production yet.
+      published_version_id: workflow.published_version_id,
       inserted_at: workflow.inserted_at,
       updated_at: workflow.updated_at
     }

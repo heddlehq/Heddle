@@ -93,7 +93,11 @@ if config_env() == :prod do
       plugins: [
         {Oban.Plugins.Lifeline,
          rescue_after: :timer.minutes(env_int.("OBAN_RESCUE_AFTER_MINUTES", 60))},
-        {Oban.Plugins.Cron, crontab: [{"* * * * *", HeddleWorker.ScheduleWorker}]}
+        {Oban.Plugins.Cron,
+         crontab: [
+           {"* * * * *", HeddleWorker.ScheduleWorker},
+           {"17 3 * * *", HeddleWorker.VersionPruneWorker}
+         ]}
       ],
       repo: HeddleCore.Repo
   end
