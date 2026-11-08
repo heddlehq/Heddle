@@ -57,6 +57,16 @@
       "pt": "Pausa a execução sem ocupar nenhum worker enquanto espera. Sobrevive a reinícios e dura no máximo um ano.\n\n- **For a while**: **How long** e **Unit**.\n- **Until a date**: uma data ISO 8601 em UTC, como `2026-12-24T18:00:00Z`. Uma data que já passou não para a execução.\n- **Until a call**: a execução segue quando alguém chama `{{resume_url}}`, que já está no contexto antes do Wait, então mande ele antes, por email ou para uma API. A requisição que chamou vira `result`. Com **How long** preenchido, a execução sai por `timeout` se a chamada não vier a tempo.\n\nUm Wait não pode ser ferramenta de um AI Agent."
     }
   },
+  "Subflow": {
+    "result": {
+      "approved": true,
+      "score": 0.92
+    },
+    "notes": {
+      "en": "Runs another flow of this workspace, picked in **Flow**, from its **Subflow Trigger**. **Data** is JSON, or a placeholder like `{{result}}`, and becomes the `result` of that flow.\n\n- **Wait for it to finish**: goes on through `success` with the `result` the other flow ended with, or through `error` when it failed, with why.\n- **Start it and go on**: goes on at once, with the run it started: `{\"execution_id\": \"8f3k2m\", \"flow_id\": 12, \"flow_name\": \"Score lead\"}`.\n\nThe other flow runs its published version, so publish it first. A flow that pauses at a **Wait** can only be started, not waited for. A flow can't call itself, directly or through others, and flows call each other 8 levels deep at most.",
+      "pt": "Executa outro fluxo deste workspace, escolhido em **Flow**, a partir do **Subflow Trigger** dele. **Data** é um JSON, ou um placeholder como `{{result}}`, e vira o `result` daquele fluxo.\n\n- **Wait for it to finish**: segue por `success` com o `result` com que o outro fluxo terminou, ou por `error` quando ele falhou, com o motivo.\n- **Start it and go on**: segue na hora, com a execução que iniciou: `{\"execution_id\": \"8f3k2m\", \"flow_id\": 12, \"flow_name\": \"Pontuar lead\"}`.\n\nO outro fluxo roda a versão publicada dele, então publique antes. Um fluxo que pausa num **Wait** só pode ser iniciado, não esperado. Um fluxo não pode chamar a si mesmo, direto ou por outros, e os fluxos se chamam no máximo 8 níveis abaixo."
+    }
+  },
   "Output": {
     "result": null,
     "notes": {

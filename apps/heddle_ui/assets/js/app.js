@@ -5,6 +5,7 @@ import topbar from "../vendor/topbar"
 import { CodeEditorHook, loadMonaco } from "./code_editor"
 import { WebhookBodyHook } from "./webhook_body"
 import { TerminalHook } from "./terminal"
+import { FlowDragHook } from "./flow_drag"
 import "./json-tree"
 
 // A flow is a few hundred kilobytes at most. A bigger file is something else.
@@ -35,6 +36,7 @@ const hooks = {
   CodeEditor: CodeEditorHook,
   WebhookBody: WebhookBodyHook,
   Terminal: TerminalHook,
+  FlowDrag: FlowDragHook,
   NodeSearch: {
     mounted() {
       this.el.focus();
