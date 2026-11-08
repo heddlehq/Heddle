@@ -61,15 +61,18 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
                 {@flow.name}
               </h1>
 
-              <.button
+              <%!-- Always there, quiet until the title is pointed at: hidden, nobody found it. --%>
+              <button
                 :if={@can_edit}
+                id="rename-flow"
+                type="button"
                 phx-click="edit_flow_name"
-                variant="ghost"
-                class="p-1 opacity-0 group-hover/title:opacity-100 transition-opacity"
+                class="shrink-0 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 group-hover/title:text-gray-600 dark:text-gray-500 dark:hover:bg-slate-700 dark:hover:text-gray-200 dark:group-hover/title:text-gray-300"
                 title={gettext("Rename flow")}
+                aria-label={gettext("Rename flow")}
               >
                 <.icon name="hero-pencil" class="w-3.5 h-3.5" />
-              </.button>
+              </button>
               <button
                 id="publish-status-versions"
                 type="button"

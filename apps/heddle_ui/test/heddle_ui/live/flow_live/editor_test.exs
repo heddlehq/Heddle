@@ -255,6 +255,18 @@ defmodule HeddleUI.FlowLive.EditorTest do
   end
 
   describe "flow name renaming" do
+    # It was only shown while the title was pointed at, so it looked missing.
+    test "the pencil beside the name is always there, and renames", %{conn: conn} do
+      flow = flow_fixture(%{name: "Original Name"})
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      refute has_element?(lv, "#rename-flow[class*=opacity-0]")
+
+      lv |> element("#rename-flow") |> render_click()
+
+      assert has_element?(lv, "#flow-name-input")
+    end
+
     test "enter rename mode and cancel", %{conn: conn} do
       flow = flow_fixture(%{name: "Original Name"})
 
