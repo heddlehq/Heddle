@@ -2,6 +2,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
   use HeddleUI, :html
 
   alias HeddleUI.AIChoices
+  alias HeddleUI.Components.Flow.FormFieldsEditor
   alias HeddleUI.FlowLive.NodeCode
   alias HeddleUI.FlowLive.NodeSettings
 
@@ -9,6 +10,8 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
   attr :editing_node_data, :map, default: nil
   attr :credentials, :list, default: []
   attr :read_only, :boolean, default: false
+  attr :form_link, :map, default: nil
+  attr :can_run, :boolean, default: false
 
   def node_config_modal(assigns) do
     ~H"""
@@ -62,6 +65,13 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
                   class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
                 />
               </div>
+
+              <.form_link
+                :if={@form_link}
+                link={@form_link}
+                read_only={@read_only}
+                can_run={@can_run}
+              />
 
               <%= if @editing_node_data["controls"] do %>
                 <%= for {key, control} <- ordered_controls(@editing_node_data) do %>
@@ -139,6 +149,12 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
                               NodeCode.current(NodeCode.from_controls(@editing_node_data["controls"]))
                             }
                           />
+                        <% "form_fields" -> %>
+                          <FormFieldsEditor.form_fields
+                            key={key}
+                            value={control["value"]}
+                            read_only={@read_only}
+                          />
                         <% "textarea" -> %>
                           <textarea
                             id={"node-field-#{key}"}
@@ -184,6 +200,111 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
       <% end %>
     </div>
     """
+  end
+
+  attr :link, :map, required: true
+  attr :read_only, :boolean, default: false
+  attr :can_run, :boolean, default: false
+
+  # Where a Form Trigger is filled in, and what can be done with its link.
+  defp form_link(assigns) do
+    ~H"""
+    <div
+      id="form-link"
+      class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
+    >
+      <div class="flex items-center justify-between gap-2">
+        <p class="text-sm font-medium text-gray-900 dark:text-white">{gettext("Form link")}</p>
+        <span
+          :if={not @link.published}
+          id="form-link-unpublished"
+          class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+        >
+          {gettext("Publish to open it")}
+        </span>
+        <span
+          :if={@link.published}
+          class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+        >
+          {gettext("Live")}
+        </span>
+      </div>
+      <div class="mt-2 flex gap-2">
+        <input
+          id="form-link-url"
+          type="text"
+          readonly
+          value={@link.url}
+          class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-xs text-gray-700 focus:border-primary focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300"
+        />
+        <button
+          id="form-link-copy"
+          type="button"
+          phx-click={JS.dispatch("phx:copy", detail: %{to: "#form-link-url"})}
+          class="group inline-flex shrink-0 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 transition-colors hover:border-primary hover:text-primary dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300"
+        >
+          <.icon name="hero-clipboard-document-mini" class="size-4 group-data-[copied]:hidden" />
+          <.icon
+            name="hero-check-mini"
+            class="hidden size-4 text-emerald-600 group-data-[copied]:block"
+          />
+          <span class="group-data-[copied]:hidden">{gettext("Copy")}</span>
+          <span class="hidden group-data-[copied]:inline">{gettext("Copied")}</span>
+        </button>
+      </div>
+      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+        {form_link_hint()}
+      </p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <a
+          :if={@link.published}
+          id="form-link-open"
+          href={@link.url}
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+        >
+          <.icon name="hero-arrow-top-right-on-square-mini" class="size-4" /> {gettext("Open")}
+        </a>
+        <a
+          :if={@can_run}
+          id="form-link-test"
+          href={@link.test_url}
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+        >
+          <.icon name="hero-beaker-mini" class="size-4" /> {gettext("Test the draft")}
+        </a>
+        <button
+          :if={not @read_only}
+          id="form-link-table"
+          type="button"
+          phx-click="form_create_table"
+          class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200/60 dark:text-gray-300 dark:hover:bg-slate-700"
+        >
+          <.icon name="hero-circle-stack-mini" class="size-4" /> {gettext("Create Spool table")}
+        </button>
+        <button
+          :if={not @read_only}
+          id="form-link-regenerate"
+          type="button"
+          phx-click="form_regenerate_link"
+          data-confirm={gettext("The current link will stop working. Make a new one?")}
+          class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200/60 dark:text-gray-300 dark:hover:bg-slate-700"
+        >
+          <.icon name="hero-arrow-path-mini" class="size-4" /> {gettext("New link")}
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  defp form_link_hint do
+    gettext(
+      "Anyone with the link can send the form, which runs what is published. What was sent is in %{placeholder}.",
+      placeholder: "{{form}}"
+    )
   end
 
   attr :settings, :map, required: true

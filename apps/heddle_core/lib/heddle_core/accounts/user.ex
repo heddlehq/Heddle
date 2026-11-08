@@ -14,6 +14,10 @@ defmodule HeddleCore.Accounts.User do
     # The workspace they last chose. See `HeddleCore.Workspaces.current/1`.
     field :current_workspace_id, :id
 
+    # What they chose for the interface, nil until they do. See `preferences_changeset/3`.
+    field :locale, :string
+    field :theme, :string
+
     timestamps(type: :utc_datetime)
   end
 
@@ -33,6 +37,26 @@ defmodule HeddleCore.Accounts.User do
     |> cast(attrs, [:email, :username])
     |> validate_email(opts)
     |> validate_username(opts)
+  end
+
+  @themes ~w(system light dark)
+
+  @doc "The themes a person can choose."
+  def themes, do: @themes
+
+  @doc """
+  A changeset for the language and theme a person chose.
+
+  The interface knows its languages, so it passes them as `:locales`. An empty value
+  clears the choice.
+  """
+  def preferences_changeset(user, attrs, opts \\ []) do
+    locales = Keyword.get(opts, :locales, [])
+
+    user
+    |> cast(attrs, [:locale, :theme], empty_values: [""])
+    |> validate_inclusion(:theme, @themes)
+    |> validate_inclusion(:locale, locales)
   end
 
   def email_changeset(user, attrs, opts \\ []) do

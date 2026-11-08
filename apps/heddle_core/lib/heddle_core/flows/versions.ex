@@ -422,6 +422,7 @@ defmodule HeddleCore.Flows.Versions do
 
     HeddleCore.Flows.Cache.invalidate(flow.id)
     HeddleCore.Webhooks.register_flow(published)
+    HeddleCore.Forms.register_flow(published)
     Flows.broadcast_flow_updated(flow)
 
     {:ok, Repo.preload(version, [:author, :source])}

@@ -66,22 +66,5 @@ defmodule HeddleUI.DashboardLive.IndexTest do
 
       assert html =~ "2"
     end
-
-    test "handles change_locale event", %{conn: conn} do
-      admin = system_admin_fixture()
-
-      {:ok, lv, _html} =
-        conn
-        |> log_in_user(admin)
-        |> live(~p"/")
-
-      {:ok, conn} =
-        lv
-        |> form("#locale-form")
-        |> render_change(%{locale: "pt_BR"})
-        |> follow_redirect(conn, ~p"/?locale=pt_BR")
-
-      assert conn.assigns.locale == "pt_BR"
-    end
   end
 end

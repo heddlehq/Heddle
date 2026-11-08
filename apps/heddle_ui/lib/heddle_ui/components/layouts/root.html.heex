@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html
+  lang={html_lang(assigns[:locale])}
+  data-theme="dark"
+  data-user-theme={user_theme(assigns[:current_scope])}
+  data-theme-lock={assigns[:theme_lock]}
+>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -11,27 +16,42 @@
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>
     <script>
+      // The theme a person chose (data-user-theme, from their preferences) wins over
+      // what this browser remembers. "system" follows the device. A public page
+      // (data-theme-lock) always follows its visitor's device.
       (() => {
-        const setTheme = (t) => {
-          localStorage.setItem("phx:theme", t);
-          document.documentElement.setAttribute("data-theme", t);
-          if (t === "dark") {
-            document.documentElement.classList.add("dark");
-          } else {
-            document.documentElement.classList.remove("dark");
-          }
+        const root = document.documentElement;
+        const dark = window.matchMedia("(prefers-color-scheme: dark)");
+        const resolve = (t) => (t === "system" ? (dark.matches ? "dark" : "light") : t);
+
+        const apply = (t) => {
+          const theme = resolve(t || "dark");
+          root.dataset.themeChoice = t || "dark";
+          root.setAttribute("data-theme", theme);
+          root.classList.toggle("dark", theme === "dark");
         };
 
-        const stored = localStorage.getItem("phx:theme") || "dark";
-        setTheme(stored);
+        const locked = root.dataset.themeLock;
+        const chosen = root.dataset.userTheme;
 
-        window.addEventListener("storage", (e) => {
-          if (e.key === "phx:theme") {
-            setTheme(e.newValue || "dark");
-          }
-        });
-        window.addEventListener("phx:set-theme", (e) => {
-          setTheme(e.target.dataset.phxTheme || "dark");
+        if (locked) {
+          apply(locked);
+        } else {
+          if (chosen) localStorage.setItem("phx:theme", chosen);
+          apply(chosen || localStorage.getItem("phx:theme") || "dark");
+
+          window.addEventListener("storage", (e) => {
+            if (e.key === "phx:theme") apply(e.newValue);
+          });
+          window.addEventListener("phx:set-theme", (e) => {
+            const t = (e.detail && e.detail.theme) || e.target.dataset?.phxTheme || "dark";
+            localStorage.setItem("phx:theme", t);
+            apply(t);
+          });
+        }
+
+        dark.addEventListener("change", () => {
+          if (root.dataset.themeChoice === "system") apply("system");
         });
       })();
     </script>

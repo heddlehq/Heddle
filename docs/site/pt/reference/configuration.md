@@ -34,6 +34,15 @@ Nada aqui é obrigatório: o Heddle inicia com padrões razoáveis. Numa instala
 
 Aumente a concorrência e os pools juntos, dentro do que seu Postgres aguenta. Veja [Escala](/pt/docs/self-hosting/scaling/).
 
+## Spool
+
+| Variável | Padrão | O que faz |
+| --- | --- | --- |
+| `SPOOL_MAX_TABLES` | `50` | Quantas tabelas do [Spool](/pt/docs/guides/spool/) um workspace guarda. |
+| `SPOOL_MAX_ROWS` | `100000` | Quantas linhas uma tabela guarda. |
+| `SPOOL_MAX_ROW_KB` | `64` | O tamanho máximo de uma linha, em KB. |
+| `SPOOL_MAX_FIND` | `1000` | O máximo de linhas que uma busca devolve. |
+
 ## IA
 
 | Variável | O que faz |

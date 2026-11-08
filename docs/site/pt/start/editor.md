@@ -55,3 +55,7 @@ Com uma IA configurada, o chat no canto inferior direito monta e altera fluxos p
 ## O terminal
 
 Em instalações locais, um admin pode ligar o **Terminal** na página **AI**. Ele abre o Claude Code no editor, já conectado a este Heddle por MCP. Veja [MCP](/pt/docs/reference/mcp/).
+
+## Idioma e tema
+
+O menu com o seu nome, no pé da barra lateral, abre **Preferências**: o idioma da interface, ou o do seu navegador, e o tema claro, escuro ou o do sistema. Eles ficam salvos na sua conta, então acompanham você em qualquer navegador.

@@ -242,6 +242,23 @@ defmodule HeddleCore.Accounts do
   end
 
   @doc """
+  A changeset for the language and theme of `user`. See `User.preferences_changeset/3`.
+  """
+  def change_user_preferences(user, attrs \\ %{}, opts \\ []) do
+    User.preferences_changeset(user, attrs, opts)
+  end
+
+  @doc """
+  Saves the language and theme `user` chose. Takes the languages the interface has as
+  `:locales`.
+  """
+  def update_user_preferences(user, attrs, opts \\ []) do
+    user
+    |> User.preferences_changeset(attrs, opts)
+    |> Repo.update()
+  end
+
+  @doc """
   Updates user attributes allowed only for admins (e.g. is_system_admin).
 
   ## Example

@@ -171,10 +171,6 @@ defmodule HeddleUI.WorkspaceLive.Show do
     end
   end
 
-  def handle_event("change_locale", %{"locale" => locale}, socket) do
-    {:noreply, redirect(socket, to: ~p"/workspace?locale=#{locale}")}
-  end
-
   defp error_message(:forbidden), do: gettext("Only the admins of this workspace can do that.")
 
   defp error_message(:last_admin),

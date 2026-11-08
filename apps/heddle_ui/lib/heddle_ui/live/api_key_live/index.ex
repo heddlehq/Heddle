@@ -67,10 +67,6 @@ defmodule HeddleUI.ApiKeyLive.Index do
     end
   end
 
-  def handle_event("change_locale", %{"locale" => locale}, socket) do
-    {:noreply, redirect(socket, to: ~p"/?locale=#{locale}")}
-  end
-
   defp revoke(socket, api_key) do
     case ApiKeys.revoke_api_key(socket.assigns.current_scope, api_key) do
       {:ok, _api_key} ->
