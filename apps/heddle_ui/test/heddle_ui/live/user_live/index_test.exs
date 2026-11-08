@@ -38,10 +38,20 @@ defmodule HeddleUI.UserLive.IndexTest do
         |> log_in_user(admin)
         |> live(~p"/users")
 
-      assert lv |> element("button", "Generate invite link") |> has_element?()
-      lv |> element("button", "Generate invite link") |> render_click()
+      workspace = ensure_workspace(admin)
+
+      lv
+      |> form("#user-invite-form", invite: %{workspace_id: workspace.id, role: "operator"})
+      |> render_submit()
+
       assert has_element?(lv, "input#invite-url")
       assert render(lv) =~ "/users/register/"
+
+      assert [%{role: "operator"}] =
+               HeddleCore.Accounts.list_open_invites(
+                 HeddleCore.Accounts.Scope.for_user(admin),
+                 workspace
+               )
     end
   end
 end

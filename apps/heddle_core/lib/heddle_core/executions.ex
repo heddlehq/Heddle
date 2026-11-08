@@ -5,10 +5,12 @@ defmodule HeddleCore.Executions do
 
   import Ecto.Query, warn: false
 
+  alias HeddleCore.Accounts.Scope
   alias HeddleCore.Executions.Execution
   alias HeddleCore.Flows.Flow
   alias HeddleCore.Pagination
   alias HeddleCore.Repo
+  alias HeddleCore.Workspaces
 
   @flow_execution_worker "HeddleWorker.FlowExecutionWorker"
   @response_channel :webhook_responses
@@ -23,6 +25,48 @@ defmodule HeddleCore.Executions do
 
   def list_executions do
     Repo.all(from e in Execution, order_by: [desc: e.inserted_at], preload: [:flow])
+  end
+
+  @doc "The runs of the flows in the workspace the caller works in, newest first."
+  def list_executions(%Scope{workspace: %{id: workspace_id}} = scope) do
+    if Workspaces.can?(scope, :view, workspace_id) do
+      Repo.all(
+        from e in Execution,
+          join: f in assoc(e, :flow),
+          where: f.workspace_id == ^workspace_id,
+          order_by: [desc: e.inserted_at],
+          preload: [flow: f]
+      )
+    else
+      []
+    end
+  end
+
+  def list_executions(%Scope{}), do: []
+
+  @doc "Gets a run the caller may see, by its public id, or nil."
+  def get_execution_by_public_id(%Scope{} = scope, public_id) when is_binary(public_id) do
+    Execution
+    |> Repo.get_by(public_id: public_id)
+    |> visible(scope)
+  end
+
+  def get_execution_by_public_id(_scope, _public_id), do: nil
+
+  @doc "Gets a run the caller may see, by id, or nil."
+  def get_execution(%Scope{} = scope, id) do
+    case Ecto.UUID.cast(id) do
+      {:ok, id} -> Execution |> Repo.get(id) |> visible(scope)
+      :error -> nil
+    end
+  end
+
+  defp visible(nil, _scope), do: nil
+
+  defp visible(%Execution{} = execution, scope) do
+    execution = Repo.preload(execution, :flow)
+
+    if Workspaces.can?(scope, :view, execution.flow.workspace_id), do: execution
   end
 
   def list_executions_for_flow(%Flow{id: flow_id}), do: list_executions_for_flow(flow_id)
@@ -113,7 +157,24 @@ defmodule HeddleCore.Executions do
   end
 
   @doc """
-  Creates an execution of `flow` with `input` and queues it.
+  Runs `flow` for the caller, who must be allowed to run it: operators and up.
+  """
+  def run(%Scope{} = scope, %Flow{} = flow, input) do
+    with :ok <- Workspaces.authorize(scope, :run, flow.workspace_id) do
+      start_execution(flow, input)
+    end
+  end
+
+  @doc "Like `run/3`, and waits for the run to finish. See `start_and_await/3`."
+  def run_and_await(%Scope{} = scope, %Flow{} = flow, input, timeout \\ @await_timeout) do
+    with :ok <- Workspaces.authorize(scope, :run, flow.workspace_id) do
+      start_and_await(flow, input, timeout)
+    end
+  end
+
+  @doc """
+  Creates an execution of `flow` with `input` and queues it, for what starts runs on
+  its own: schedules and webhooks. A person runs a flow with `run/3`.
   """
   def start_execution(%Flow{id: flow_id}, input) do
     with {:ok, %Execution{} = execution} <- create_execution(%{flow_id: flow_id, input: input}),
@@ -253,10 +314,18 @@ defmodule HeddleCore.Executions do
   reflect them in the UI.
   """
   def save_and_run(scope, %Flow{} = flow, data, input \\ %{"trigger" => "manual"}) do
-    with {:ok, saved_flow} <- save_flow(scope, flow, data),
+    with :ok <- authorize_run(scope, flow),
+         {:ok, saved_flow} <- save_flow(scope, flow, data),
          {:ok, execution} <- create_run(saved_flow, input),
          {:ok, _job} <- enqueue_run(saved_flow, execution) do
       {:ok, %{flow: saved_flow, execution: execution}}
+    end
+  end
+
+  defp authorize_run(scope, flow) do
+    case Workspaces.authorize(scope, :run, flow.workspace_id) do
+      :ok -> :ok
+      {:error, reason} -> {:error, :save, %{reason: reason}}
     end
   end
 

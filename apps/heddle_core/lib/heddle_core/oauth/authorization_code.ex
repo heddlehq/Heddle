@@ -14,6 +14,7 @@ defmodule HeddleCore.OAuth.AuthorizationCode do
     field :used_at, :utc_datetime
 
     belongs_to :user, User
+    belongs_to :workspace, HeddleCore.Workspaces.Workspace
 
     timestamps(type: :utc_datetime)
   end
@@ -22,6 +23,7 @@ defmodule HeddleCore.OAuth.AuthorizationCode do
     code
     |> cast(attrs, [
       :user_id,
+      :workspace_id,
       :code_hash,
       :client_id,
       :redirect_uri,
@@ -31,6 +33,7 @@ defmodule HeddleCore.OAuth.AuthorizationCode do
     ])
     |> validate_required([
       :user_id,
+      :workspace_id,
       :code_hash,
       :client_id,
       :redirect_uri,

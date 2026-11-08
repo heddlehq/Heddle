@@ -36,6 +36,7 @@ export class CustomCommentElement extends LitElement {
       getZoom: { attribute: false },
       onChange: { attribute: false },
       onDelete: { attribute: false },
+      readOnly: { type: Boolean },
     };
   }
 
@@ -61,11 +62,11 @@ export class CustomCommentElement extends LitElement {
         data-kind=${kind}
         data-color=${color}
         style="width: ${width}px; height: ${height}px"
-        @mouseup=${this._editOnDoubleClick}
+        @mouseup=${this.readOnly ? null : this._editOnDoubleClick}
       >
-        ${this.selected || this.editing ? this._renderToolbar() : ""}
-        ${this.editing ? this._renderInput(text) : this._renderText(text)}
-        <div class="comment-resize" @pointerdown=${this._startResize}></div>
+        ${!this.readOnly && (this.selected || this.editing) ? this._renderToolbar() : ""}
+        ${this.editing && !this.readOnly ? this._renderInput(text) : this._renderText(text)}
+        ${this.readOnly ? "" : html`<div class="comment-resize" @pointerdown=${this._startResize}></div>`}
       </div>
     `;
   }

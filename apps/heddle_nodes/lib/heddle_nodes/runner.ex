@@ -3,7 +3,7 @@ defmodule HeddleNodes.Runner do
   alias HeddleNodes.Agent
   alias HeddleNodes.Nodes
 
-  @internal_keys ["flow_id", "logs"]
+  @internal_keys ["flow_id", "workspace_id", "logs"]
 
   @doc """
   Runs `flow` from its Start node, or from its first entry node when it has none, like
@@ -24,10 +24,11 @@ defmodule HeddleNodes.Runner do
         |> Map.delete("node_id")
         |> Map.merge(%{
           "flow_id" => flow.id,
+          "workspace_id" => Map.get(flow, :workspace_id),
           "logs" => []
         })
 
-      execute_node(start_node, initial_context, run_state(graph, opts))
+      execute_node(start_node, initial_context, run_state(graph, flow, opts))
     else
       {:error, "No Start node found", nil, %{}}
     end
@@ -46,8 +47,13 @@ defmodule HeddleNodes.Runner do
     match?(%{inputs: []}, Nodes.get_node(node.type))
   end
 
-  defp run_state(graph, opts) do
-    %{graph: graph, on_respond: Keyword.get(opts, :on_respond, fn _response -> :ok end)}
+  defp run_state(graph, flow, opts) do
+    %{
+      graph: graph,
+      flow_id: flow.id,
+      workspace_id: Map.get(flow, :workspace_id),
+      on_respond: Keyword.get(opts, :on_respond, fn _response -> :ok end)
+    }
   end
 
   defp execute_node(node, context, flow) do
@@ -59,7 +65,12 @@ defmodule HeddleNodes.Runner do
 
       context = if is_map(context), do: context, else: %{"result" => context}
       control_keys = Map.keys(node.controls) -- preserved_control_keys(node_type)
-      node_context = Map.merge(context, node.controls)
+      # What a node or a field sets can't move a run to another flow or workspace,
+      # where it would read their credentials and memory.
+      node_context =
+        context
+        |> Map.merge(node.controls)
+        |> Map.merge(%{"flow_id" => flow.flow_id, "workspace_id" => flow.workspace_id})
 
       step = %{
         node: node,
@@ -177,7 +188,7 @@ defmodule HeddleNodes.Runner do
       execute_node(node, tool_context(step.context, input), step.flow)
     end
 
-    case Agent.run(request, step.context["flow_id"], tools, run_tool) do
+    case Agent.run(request, step.flow.flow_id, tools, run_tool) do
       {:ok, value, calls, logs} ->
         step.context
         |> agent_result(value, calls, logs)
@@ -308,6 +319,7 @@ defmodule HeddleNodes.Runner do
     if webhook_node = List.first(Graph.of_type(graph, "Webhook")) do
       initial_context = %{
         "flow_id" => flow.id,
+        "workspace_id" => Map.get(flow, :workspace_id),
         "logs" => [],
         "body" => webhook_request["body"],
         "headers" => webhook_request["headers"],
@@ -316,7 +328,7 @@ defmodule HeddleNodes.Runner do
         "request_path" => webhook_request["path"]
       }
 
-      execute_node(webhook_node, initial_context, run_state(graph, opts))
+      execute_node(webhook_node, initial_context, run_state(graph, flow, opts))
     else
       {:error, "No Webhook node found in flow", nil, %{}}
     end

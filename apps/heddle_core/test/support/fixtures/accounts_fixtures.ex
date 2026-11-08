@@ -45,22 +45,78 @@ defmodule HeddleCore.AccountsFixtures do
   end
 
   @doc """
-  Creates a user with is_system_admin: true.
+  Creates a user with is_system_admin: true, and a workspace if there is none.
   Use in tests that need a system admin to exist (e.g. to avoid redirect to /setup).
   """
   def system_admin_fixture(attrs \\ %{}) do
     user = user_fixture(attrs)
     {:ok, admin} = Accounts.update_user(user, %{is_system_admin: true})
-    admin
+
+    # An instance always has a workspace for its admins to work in, as after setup.
+    ensure_workspace(admin)
+    Accounts.get_user!(admin.id)
   end
 
+  @doc "A user in a workspace of their own, where they are admin, and their scope there."
   def user_scope_fixture do
     user = user_fixture()
+    workspace_fixture(user)
     user_scope_fixture(user)
   end
 
   def user_scope_fixture(user) do
-    Scope.for_user(user)
+    Scope.for_user(Accounts.get_user!(user.id))
+  end
+
+  @doc """
+  A workspace with `user` in it, as `role` (admin by default), which becomes the one
+  they work in.
+  """
+  def workspace_fixture(user, attrs \\ %{}) do
+    attrs = Enum.into(attrs, %{})
+    role = Map.get(attrs, :role, "admin")
+    name = Map.get(attrs, :name, "Workspace #{System.unique_integer([:positive])}")
+
+    workspace =
+      HeddleCore.Repo.insert!(%HeddleCore.Workspaces.Workspace{
+        name: name,
+        slug: "ws-#{System.unique_integer([:positive])}"
+      })
+
+    member_fixture(workspace, user, role)
+    workspace
+  end
+
+  @doc "Puts `user` in `workspace` as `role`, and makes it the one they work in."
+  def member_fixture(workspace, user, role) do
+    {:ok, member} = HeddleCore.Workspaces.join(user, workspace.id, role)
+
+    HeddleCore.Repo.update_all(
+      from(u in HeddleCore.Accounts.User, where: u.id == ^user.id),
+      set: [current_workspace_id: workspace.id]
+    )
+
+    member
+  end
+
+  @doc "Creates an API key for `user` in the workspace they work in, making one if needed."
+  def create_api_key(user, attrs) do
+    HeddleCore.ApiKeys.create_api_key(user, ensure_workspace(user).id, attrs)
+  end
+
+  @doc "Creates the key of an agent run for `user`, in the workspace they work in."
+  def create_agent_key(user) do
+    HeddleCore.ApiKeys.create_agent_key(user, ensure_workspace(user).id)
+  end
+
+  @doc "The workspace `user` works in, creating one where they are admin if they have none."
+  def ensure_workspace(user) do
+    user = Accounts.get_user!(user.id)
+
+    case HeddleCore.Workspaces.current(user) do
+      {workspace, _role} -> workspace
+      nil -> workspace_fixture(user)
+    end
   end
 
   def set_password(user) do
@@ -128,7 +184,12 @@ defmodule HeddleCore.AccountsFixtures do
 
     base = if used_at, do: Map.put(base, :used_at, used_at), else: base
 
-    %HeddleCore.Accounts.Invite{}
+    workspace = attrs[:workspace]
+
+    %HeddleCore.Accounts.Invite{
+      workspace_id: workspace && workspace.id,
+      role: workspace && Map.get(attrs, :role, "editor")
+    }
     |> HeddleCore.Accounts.Invite.changeset(base)
     |> HeddleCore.Repo.insert!()
   end

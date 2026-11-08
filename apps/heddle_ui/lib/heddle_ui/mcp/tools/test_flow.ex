@@ -30,9 +30,10 @@ defmodule HeddleUI.MCP.Tools.TestFlow do
     Tool.authorize(frame, "executions:write", fn scope ->
       Tool.with_flow(scope, id, frame, fn flow ->
         with :ok <- AgentChat.confirm_run(frame.assigns.api_key, flow),
-             {:ok, execution} <- Executions.start_and_await(flow, input(params)) do
+             {:ok, execution} <- Executions.run_and_await(scope, flow, input(params)) do
           Tool.reply(ExecutionJSON.show(%{execution: execution}).data, frame)
         else
+          {:error, :forbidden} -> Tool.forbidden(frame)
           {:error, :timeout} -> Tool.error("The flow is still running after 2 minutes.", frame)
           {:error, message} when is_binary(message) -> Tool.error(message, frame)
           {:error, _reason} -> Tool.error("The flow could not be started.", frame)

@@ -1,16 +1,18 @@
 defmodule HeddleUI.FlowLive.Index do
   use HeddleUI, :live_view
 
-  on_mount {HeddleUI.UserAuth, :require_system_admin}
+  on_mount {HeddleUI.UserAuth, {:require_workspace, :view}}
 
   alias HeddleCore.Flows
+  alias HeddleCore.Workspaces
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      assign(socket,
        flows: Flows.list_flows(socket.assigns.current_scope),
-       page_title: gettext("My Flows"),
+       can_edit: Workspaces.can?(socket.assigns.current_scope, :edit),
+       page_title: gettext("Flows"),
        ai_configured: HeddleAI.LLM.configured?()
      )}
   end
@@ -24,6 +26,10 @@ defmodule HeddleUI.FlowLive.Index do
          }) do
       {:ok, flow} ->
         {:noreply, push_navigate(socket, to: ~p"/flows/#{flow}")}
+
+      {:error, :forbidden} ->
+        {:noreply,
+         put_flash(socket, :error, gettext("Your role in this workspace can't create flows."))}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, gettext("Failed to create flow."))}
@@ -41,14 +47,14 @@ defmodule HeddleUI.FlowLive.Index do
     <div class="p-6 md:p-8 w-full max-w-7xl mx-auto">
       <div class="flex items-center justify-between mb-8">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{gettext("My Flows")}</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{gettext("Flows")}</h1>
 
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {length(@flows)} {gettext("Flows available")}
           </p>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div :if={@can_edit} class="flex items-center gap-2">
           <.button
             :if={@ai_configured}
             id="create-flow-with-ai"
@@ -94,6 +100,7 @@ defmodule HeddleUI.FlowLive.Index do
             </p>
 
             <.button
+              :if={@can_edit}
               phx-click="create_flow"
               variant="primary"
               class="px-6 py-3"

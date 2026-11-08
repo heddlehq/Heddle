@@ -7,7 +7,8 @@ defmodule HeddleUI.CredentialLive.IndexTest do
   alias HeddleCore.Credentials
 
   setup %{conn: conn} do
-    %{conn: log_in_user(conn, system_admin_fixture())}
+    admin = system_admin_fixture()
+    %{conn: log_in_user(conn, admin), ws: ensure_workspace(admin).id}
   end
 
   defp add(lv, name, token) do
@@ -18,20 +19,62 @@ defmodule HeddleUI.CredentialLive.IndexTest do
     |> render_submit()
   end
 
-  test "is only for admins" do
+  test "is only for people in a workspace" do
     conn = Phoenix.ConnTest.build_conn() |> log_in_user(user_fixture())
 
     assert {:error, {:redirect, %{to: "/"}}} = live(conn, ~p"/credentials")
   end
 
-  test "adds a credential and never shows the secret", %{conn: conn} do
+  test "a viewer sees the names, with nothing to change them", %{ws: ws} do
+    {:ok, _credential} =
+      Credentials.insert_credential(%{name: "main", kind: "slack", values: %{"token" => "t"}}, ws)
+
+    viewer = user_fixture()
+    member_fixture(HeddleCore.Workspaces.get_workspace(ws), viewer, "viewer")
+    conn = Phoenix.ConnTest.build_conn() |> log_in_user(viewer)
+
+    {:ok, lv, html} = live(conn, ~p"/credentials")
+
+    assert html =~ "main"
+    assert has_element?(lv, "#credentials-read-only")
+    refute has_element?(lv, "#credential-form")
+    refute html =~ "hero-trash"
+  end
+
+  test "a shared credential is marked, and only system admins share one", %{conn: conn, ws: ws} do
+    {:ok, lv, _html} = live(conn, ~p"/credentials")
+
+    lv
+    |> form("#credential-form", %{
+      "credential" => %{
+        "name" => "openai",
+        "kind" => "slack",
+        "shared" => "true",
+        "values" => %{"token" => "t"}
+      }
+    })
+    |> render_submit()
+
+    assert render(lv) =~ "Shared"
+    assert Credentials.fetch(nil, "openai", "slack") == {:ok, %{"token" => "t"}}
+
+    editor = user_fixture()
+    member_fixture(HeddleCore.Workspaces.get_workspace(ws), editor, "editor")
+
+    {:ok, editor_lv, _html} =
+      live(Phoenix.ConnTest.build_conn() |> log_in_user(editor), ~p"/credentials")
+
+    refute has_element?(editor_lv, "#credential-shared")
+  end
+
+  test "adds a credential and never shows the secret", %{conn: conn, ws: ws} do
     {:ok, lv, _html} = live(conn, ~p"/credentials")
 
     html = add(lv, "main", "xoxb-secret")
 
     assert has_element?(lv, "#credentials [id^=credentials-]", "main")
     refute html =~ "xoxb-secret"
-    assert Credentials.fetch("main", "slack") == {:ok, %{"token" => "xoxb-secret"}}
+    assert Credentials.fetch(ws, "main", "slack") == {:ok, %{"token" => "xoxb-secret"}}
   end
 
   test "shows the fields of the chosen service", %{conn: conn} do
@@ -46,7 +89,7 @@ defmodule HeddleUI.CredentialLive.IndexTest do
     assert has_element?(lv, ~s(#credential_kind option[value="smtp"][selected]))
   end
 
-  test "saves a credential of the chosen service", %{conn: conn} do
+  test "saves a credential of the chosen service", %{conn: conn, ws: ws} do
     {:ok, lv, _html} = live(conn, ~p"/credentials")
 
     lv |> form("#credential-form", %{"credential" => %{"kind" => "smtp"}}) |> render_change()
@@ -60,7 +103,7 @@ defmodule HeddleUI.CredentialLive.IndexTest do
     })
     |> render_submit()
 
-    assert {:ok, %{"host" => "smtp.x.co"}} = Credentials.fetch("mail", "smtp")
+    assert {:ok, %{"host" => "smtp.x.co"}} = Credentials.fetch(ws, "mail", "smtp")
   end
 
   test "says what's missing", %{conn: conn} do
@@ -69,13 +112,12 @@ defmodule HeddleUI.CredentialLive.IndexTest do
     assert add(lv, "main", "") =~ "Bot token can&#39;t be blank"
   end
 
-  test "edits without showing the secret, and keeps it when left blank", %{conn: conn} do
+  test "edits without showing the secret, and keeps it when left blank", %{conn: conn, ws: ws} do
     {:ok, credential} =
-      Credentials.create_credential(%{
-        name: "main",
-        kind: "slack",
-        values: %{"token" => "xoxb-old"}
-      })
+      Credentials.insert_credential(
+        %{name: "main", kind: "slack", values: %{"token" => "xoxb-old"}},
+        ws
+      )
 
     {:ok, lv, _html} = live(conn, ~p"/credentials")
 
@@ -88,12 +130,12 @@ defmodule HeddleUI.CredentialLive.IndexTest do
     })
     |> render_submit()
 
-    assert Credentials.fetch("renamed", "slack") == {:ok, %{"token" => "xoxb-old"}}
+    assert Credentials.fetch(ws, "renamed", "slack") == {:ok, %{"token" => "xoxb-old"}}
   end
 
-  test "deletes a credential", %{conn: conn} do
+  test "deletes a credential", %{conn: conn, ws: ws} do
     {:ok, credential} =
-      Credentials.create_credential(%{name: "main", kind: "slack", values: %{"token" => "x"}})
+      Credentials.insert_credential(%{name: "main", kind: "slack", values: %{"token" => "x"}}, ws)
 
     {:ok, lv, _html} = live(conn, ~p"/credentials")
 
@@ -104,7 +146,7 @@ defmodule HeddleUI.CredentialLive.IndexTest do
   end
 
   describe "a database credential" do
-    test "picks its engine and never shows the password again", %{conn: conn} do
+    test "picks its engine and never shows the password again", %{conn: conn, ws: ws} do
       {:ok, lv, _html} = live(conn, ~p"/credentials")
 
       lv
@@ -125,7 +167,7 @@ defmodule HeddleUI.CredentialLive.IndexTest do
       |> render_submit()
 
       assert {:ok, %{"engine" => "mysql", "password" => "s3cret"}} =
-               Credentials.fetch("shop", "sql")
+               Credentials.fetch(ws, "shop", "sql")
 
       refute render(lv) =~ "s3cret"
     end

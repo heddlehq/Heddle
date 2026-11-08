@@ -28,7 +28,7 @@ test.describe('Dashboard', () => {
       page.getByRole('link', { name: 'Manage Flows' }),
       /\/flows/,
     );
-    await expect(page.getByRole('heading', { name: 'My Flows' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Flows', exact: true })).toBeVisible();
   });
 
   test('sidebar has navigation links', async ({ page }) => {
@@ -36,6 +36,6 @@ test.describe('Dashboard', () => {
     await waitForLiveView(page);
 
     await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'My Flows' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Flows', exact: true })).toBeVisible();
   });
 });

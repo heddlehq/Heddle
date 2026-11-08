@@ -6,7 +6,6 @@ defmodule HeddleUI.Agent.SessionTest do
   import HeddleCore.FlowsFixtures
 
   alias HeddleCore.Accounts.Scope
-  alias HeddleCore.ApiKeys
   alias HeddleCore.Executions
   alias HeddleCore.Flows
   alias HeddleUI.Agent
@@ -364,14 +363,14 @@ defmodule HeddleUI.Agent.SessionTest do
     :ok = Agent.send_message(scope, flow.id, "go")
     idle()
 
-    assert ApiKeys.list_api_keys(scope.user) == []
+    assert HeddleCore.Repo.all_by(HeddleCore.ApiKeys.ApiKey, user_id: scope.user.id) == []
 
     :ok = Agent.send_message(scope, flow.id, "again")
     assert_eventually(fn -> FakeHarnessModel.remaining() == [] end)
     :ok = Agent.stop(scope, flow.id)
     idle()
 
-    assert ApiKeys.list_api_keys(scope.user) == []
+    assert HeddleCore.Repo.all_by(HeddleCore.ApiKeys.ApiKey, user_id: scope.user.id) == []
   end
 
   test "is a conversation per person and flow", %{scope: scope, flow: flow} do

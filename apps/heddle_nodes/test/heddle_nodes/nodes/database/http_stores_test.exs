@@ -9,6 +9,9 @@ defmodule HeddleNodes.Nodes.Database.HttpStoresTest do
   alias HeddleNodes.Nodes.{DynamoDB, Elasticsearch, HttpRequest, Neo4j}
 
   defmodule Vault do
+    # A run asks within its workspace, which these tests leave out.
+    def fetch(_workspace_id, name, kind), do: fetch(name, kind)
+
     def fetch("es", "elasticsearch"), do: {:ok, %{"url" => "http://es:9200/", "api_key" => "k"}}
 
     def fetch("es-basic", "elasticsearch") do

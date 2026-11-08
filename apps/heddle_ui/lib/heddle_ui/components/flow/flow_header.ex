@@ -4,6 +4,8 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
   attr :has_changes, :boolean, required: true
   attr :flow, :any, required: true
   attr :renaming_flow, :boolean, default: false
+  attr :can_edit, :boolean, default: true
+  attr :can_run, :boolean, default: true
 
   def flow_header(assigns) do
     ~H"""
@@ -53,7 +55,15 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
                 {@flow.name}
               </h1>
 
+              <span
+                :if={not @can_edit}
+                id="flow-read-only"
+                class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-slate-700 dark:text-gray-300"
+              >
+                <.icon name="hero-eye-mini" class="size-3.5" /> {gettext("View only")}
+              </span>
               <.button
+                :if={@can_edit}
                 phx-click="edit_flow_name"
                 variant="ghost"
                 class="p-1 opacity-0 group-hover/title:opacity-100 transition-opacity"
@@ -79,6 +89,7 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
         <div class="h-5 w-px bg-gray-200 dark:bg-slate-700 mx-1"></div>
 
         <.button
+          :if={@can_run}
           phx-click="run_flow"
           variant="success"
           class="h-9 px-4"

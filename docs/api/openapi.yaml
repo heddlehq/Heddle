@@ -10,6 +10,21 @@ info:
     also accepted for integrations that cannot set `Authorization`.
 
     API keys are scoped. Each endpoint documents the required scope.
+
+    A key belongs to a person and to one workspace. It reaches only the
+    workflows, executions and credentials of that workspace: a workflow of
+    another workspace answers `404`, as if it didn't exist. It also does no more
+    than the role its owner has in that workspace at the time of the request:
+
+    | Role       | Can                                                          |
+    |------------|--------------------------------------------------------------|
+    | `viewer`   | read workflows, executions and nodes                         |
+    | `operator` | also run workflows                                           |
+    | `editor`   | also create, change and delete workflows, and use the agent  |
+    | `admin`    | also manage the workspace, its members and every key in it   |
+
+    A request the scopes allow but the role doesn't answers `403`. A key stops
+    working, with `401`, when its owner leaves the workspace.
 servers:
   - url: http://localhost:4000
     description: Local development
@@ -292,6 +307,7 @@ paths:
   /api/v1/workflows/{workflow_id}/agent/messages:
     post:
       summary: Send a message to the agent
+      description: The agent changes the workflow, so the key's owner must be an editor or admin.
       operationId: sendAgentMessage
       security:
         - bearerApiKey: []
@@ -311,6 +327,8 @@ paths:
       responses:
         "202":
           description: The agent started. Follow it through the events.
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "409":
           description: The agent is still working
   /api/v1/workflows/{workflow_id}/agent/decision:
@@ -339,6 +357,8 @@ paths:
       responses:
         "204":
           description: Answered
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "409":
           description: Nothing is waiting for an answer
   /api/v1/workflows/{workflow_id}/agent/new:
@@ -557,7 +577,7 @@ components:
       description: Return executions inserted at or before this UTC timestamp.
   responses:
     Unauthorized:
-      description: Missing or invalid API key.
+      description: Missing or invalid API key, or one whose owner left its workspace.
       content:
         application/json:
           schema:
@@ -569,7 +589,9 @@ components:
                   code: unauthorized
                   message: Unauthorized
     Forbidden:
-      description: API key does not have the required scope.
+      description: |
+        The API key doesn't have the required scope, or its owner's role in the
+        key's workspace doesn't allow the request.
       content:
         application/json:
           schema:

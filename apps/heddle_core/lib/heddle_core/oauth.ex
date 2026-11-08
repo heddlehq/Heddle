@@ -12,8 +12,10 @@ defmodule HeddleCore.OAuth do
 
   alias HeddleCore.Accounts.User
   alias HeddleCore.ApiKeys
+  alias HeddleCore.ApiKeys.ApiKey
   alias HeddleCore.OAuth.AuthorizationCode
   alias HeddleCore.Repo
+  alias HeddleCore.Workspaces
 
   @code_ttl_seconds 60
   @code_bytes 32
@@ -67,7 +69,15 @@ defmodule HeddleCore.OAuth do
   @doc """
   Issues a single-use code for a request the user approved. Only its hash is stored.
   """
-  def create_authorization_code(%User{id: user_id}, client, redirect_uri, code_challenge) do
+  def create_authorization_code(%User{} = user, workspace_id, client, redirect_uri, challenge) do
+    case Workspaces.role_of(user, workspace_id) do
+      nil -> {:error, :forbidden}
+      role -> insert_code(user, workspace_id, role, client, redirect_uri, challenge)
+    end
+  end
+
+  # The token gets no more than the person can do in that workspace.
+  defp insert_code(%User{id: user_id}, workspace_id, role, client, redirect_uri, code_challenge) do
     code = @code_bytes |> :crypto.strong_rand_bytes() |> Base.url_encode64(padding: false)
     now = DateTime.utc_now(:second)
 
@@ -75,11 +85,12 @@ defmodule HeddleCore.OAuth do
 
     attrs = %{
       user_id: user_id,
+      workspace_id: workspace_id,
       code_hash: ApiKeys.hash_token(code),
       client_id: client.id,
       redirect_uri: redirect_uri,
       code_challenge: code_challenge,
-      scopes: client.scopes,
+      scopes: Enum.filter(client.scopes, &(&1 in ApiKey.scopes_for(role))),
       expires_at: DateTime.add(now, @code_ttl_seconds, :second)
     }
 
@@ -141,8 +152,8 @@ defmodule HeddleCore.OAuth do
     end
   end
 
-  defp create_access_token(user, %AuthorizationCode{client_id: client_id, scopes: scopes}) do
-    name = "#{get_client(client_id).name} (browser sign-in)"
-    ApiKeys.create_api_key(user, %{name: name, scopes: scopes})
+  defp create_access_token(user, %AuthorizationCode{} = record) do
+    name = "#{get_client(record.client_id).name} (browser sign-in)"
+    ApiKeys.create_api_key(user, record.workspace_id, %{name: name, scopes: record.scopes})
   end
 end

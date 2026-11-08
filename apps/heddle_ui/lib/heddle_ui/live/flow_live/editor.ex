@@ -3,11 +3,9 @@ defmodule HeddleUI.FlowLive.Editor do
 
   require Logger
 
-  on_mount {HeddleUI.UserAuth, :require_system_admin}
-
   alias Heddle.Graph
   alias Heddle.Graph.Layout
-  alias HeddleCore.{Executions, Flows}
+  alias HeddleCore.{Credentials, Executions, Flows, Workspaces}
   alias HeddleUI.AIChat
   alias HeddleUI.Agent
   alias HeddleUI.FlowLive.AgentManager
@@ -19,18 +17,39 @@ defmodule HeddleUI.FlowLive.Editor do
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     flow = Flows.get_flow!(socket.assigns.current_scope, id)
+    scope = work_in(socket.assigns.current_scope, flow)
 
     if connected?(socket), do: Flows.subscribe_to_flow(flow.id)
 
     {:ok,
      socket
-     |> assign(initial_assigns(flow, socket.assigns.current_scope.user))
+     |> assign(:current_scope, scope)
+     |> assign(initial_assigns(flow, scope))
      |> AgentManager.follow(), layout: false}
   end
 
-  defp initial_assigns(flow, user) do
+  # A flow opened from another of the person's workspaces makes that one theirs, so
+  # going back to the list shows its flows.
+  defp work_in(scope, flow) do
+    if scope.workspace && scope.workspace.id == flow.workspace_id do
+      scope
+    else
+      workspace = Workspaces.get_workspace(flow.workspace_id)
+
+      case Workspaces.switch_workspace(scope, workspace) do
+        {:ok, scope} -> scope
+        {:error, _reason} -> scope
+      end
+    end
+  end
+
+  defp initial_assigns(flow, scope) do
+    can_edit = Flows.can?(scope, :edit, flow)
+
     [
       current_flow: flow,
+      can_edit: can_edit,
+      can_run: Flows.can?(scope, :run, flow),
       has_changes: false,
       renaming_flow: false,
       # Node config drawer
@@ -53,13 +72,13 @@ defmodule HeddleUI.FlowLive.Editor do
       error_modal_open: false,
       current_error_message: nil,
       current_error_node_id: nil,
-      # AI chat
+      # AI chat: the agent changes the flow, so it is for those who can edit it.
       chat_open: false,
       pending_ai_trigger: false,
-      ai_configured: Agent.available?()
+      ai_configured: can_edit and Agent.available?()
     ] ++
       AgentManager.initial_assigns() ++
-      TerminalManager.initial_assigns(user) ++
+      TerminalManager.initial_assigns(scope.user, can_edit) ++
       CodeEditorManager.initial_assigns() ++
       NodePaletteManager.initial_assigns()
   end
@@ -173,7 +192,7 @@ defmodule HeddleUI.FlowLive.Editor do
      assign(socket,
        config_modal_open: true,
        editing_node_data: node_data,
-       credentials: HeddleCore.Credentials.list_credentials(),
+       credentials: Credentials.list_credentials(socket.assigns.current_scope),
        current_node_id: node_data["id"]
      )}
   end
@@ -199,6 +218,10 @@ defmodule HeddleUI.FlowLive.Editor do
   def handle_event("handle_keydown", _params, socket), do: {:noreply, socket}
 
   @impl true
+  def handle_event("save_node_config", _params, %{assigns: %{can_edit: false}} = socket) do
+    {:noreply, read_only(socket)}
+  end
+
   def handle_event("save_node_config", params, socket) do
     node_id = socket.assigns.current_node_id
     config_data = Map.drop(params, ["_csrf_token", "_target", "node_label"])
@@ -229,7 +252,7 @@ defmodule HeddleUI.FlowLive.Editor do
   # Flow Saving & Renaming
   @impl true
   def handle_event("edit_flow_name", _params, socket) do
-    {:noreply, assign(socket, renaming_flow: true)}
+    {:noreply, assign(socket, renaming_flow: socket.assigns.can_edit)}
   end
 
   @impl true
@@ -245,6 +268,9 @@ defmodule HeddleUI.FlowLive.Editor do
            }) do
         {:ok, updated_flow} ->
           {:noreply, assign(socket, current_flow: updated_flow, renaming_flow: false)}
+
+        {:error, :forbidden} ->
+          {:noreply, socket |> assign(renaming_flow: false) |> read_only()}
 
         {:error, _} ->
           {:noreply,
@@ -268,6 +294,9 @@ defmodule HeddleUI.FlowLive.Editor do
          socket
          |> assign(current_flow: updated_flow, has_changes: false)
          |> AgentManager.resume_pending()}
+
+      {:error, :forbidden} ->
+        {:noreply, socket |> AgentManager.abort_pending() |> read_only()}
 
       {:error, _changeset} ->
         {:noreply,
@@ -333,15 +362,10 @@ defmodule HeddleUI.FlowLive.Editor do
 
   @impl true
   def handle_event("open_execution_result", %{"id" => execution_id}, socket) do
-    execution = Executions.get_execution!(execution_id)
-
-    {:noreply,
-     assign(socket,
-       execution_notice: nil,
-       execution_result: execution_modal_result(execution),
-       show_result_modal: true,
-       inspecting_result: false
-     )}
+    case Executions.get_execution(socket.assigns.current_scope, execution_id) do
+      nil -> {:noreply, socket}
+      execution -> {:noreply, show_execution_result(socket, execution)}
+    end
   end
 
   @impl true
@@ -591,6 +615,50 @@ defmodule HeddleUI.FlowLive.Editor do
     else
       socket
     end
+  end
+
+  defp show_execution_result(socket, execution) do
+    assign(socket,
+      execution_notice: nil,
+      execution_result: execution_modal_result(execution),
+      show_result_modal: true,
+      inspecting_result: false
+    )
+  end
+
+  defp read_only(socket) do
+    put_flash(
+      socket,
+      :error,
+      gettext("Your role in this workspace lets you see this flow, not change it.")
+    )
+  end
+
+  # An operator runs the flow as it was saved: they can't change it.
+  defp save_and_run(%{assigns: %{can_edit: false, can_run: true}} = socket, _data) do
+    %{current_scope: scope, current_flow: flow, webhook_test_input: input} = socket.assigns
+    socket = assign(socket, webhook_test_input: nil)
+
+    case Executions.run(scope, flow, input || %{"trigger" => "manual"}) do
+      {:ok, execution} ->
+        socket
+        |> assign(
+          execution_result: nil,
+          execution_notice: execution_notice(:queued, execution),
+          show_result_modal: false,
+          inspecting_result: false
+        )
+        |> subscribe_to_execution(execution)
+        |> schedule_execution_notice_dismiss(execution.id)
+        |> push_event("clear_node_errors", %{})
+
+      {:error, _reason} ->
+        put_flash(socket, :error, gettext("The flow could not be started."))
+    end
+  end
+
+  defp save_and_run(%{assigns: %{can_run: false}} = socket, _data) do
+    put_flash(socket, :error, gettext("Your role in this workspace can't run flows."))
   end
 
   defp save_and_run(socket, data) do

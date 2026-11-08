@@ -26,10 +26,11 @@ defmodule HeddleUI.AgentChat do
   def active?, do: Settings.claude_agent_enabled?() and ClaudeAgent.ready?()
 
   @doc """
-  Creates the key of a run and ties it to the calling process.
+  Creates the key of a run and ties it to the calling process. It reaches only the
+  workspace of the flow the agent works on.
   """
-  def open(%Scope{user: user}) do
-    {:ok, %{api_key: api_key, token: token}} = ApiKeys.create_agent_key(user)
+  def open(%Scope{user: user}, workspace_id) do
+    {:ok, %{api_key: api_key, token: token}} = ApiKeys.create_agent_key(user, workspace_id)
     {:ok, _owner} = Registry.register(@registry, api_key.id, nil)
 
     %{api_key: api_key, token: token}
