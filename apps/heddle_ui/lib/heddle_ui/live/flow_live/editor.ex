@@ -236,19 +236,23 @@ defmodule HeddleUI.FlowLive.Editor do
   def handle_event("handle_keydown", _params, socket), do: {:noreply, socket}
 
   @impl true
-  def handle_event("save_node_config", _params, %{assigns: %{can_edit: false}} = socket) do
+  def handle_event("unpin_node", _params, %{assigns: %{can_edit: false}} = socket) do
     {:noreply, read_only(socket)}
   end
 
-  def handle_event("save_node_config", params, socket) do
-    case NodeSettings.from_params(params["settings"]) do
-      {:ok, settings} ->
-        {:noreply, save_node_config(socket, params, settings)}
+  def handle_event("unpin_node", _params, %{assigns: %{editing_node_data: %{} = node}} = socket) do
+    settings = Map.delete(node["settings"] || %{}, "pin")
 
-      {:error, :invalid_pin} ->
-        {:noreply, put_flash(socket, :error, gettext("The pinned data must be a JSON object."))}
-    end
+    {:noreply,
+     socket
+     |> assign(
+       :editing_node_data,
+       node |> Map.put("settings", settings) |> Map.delete("pin_invalid")
+     )
+     |> push_event("update_node_settings", %{nodeId: node["id"], settings: settings})}
   end
+
+  def handle_event("unpin_node", _params, socket), do: {:noreply, socket}
 
   # Flow Settings
   @impl true
@@ -706,11 +710,11 @@ defmodule HeddleUI.FlowLive.Editor do
 
   # Private Helpers
 
-  # What the drawer shows changes on the canvas as it is typed. Settings go when they
-  # are valid, and pinned data only when the drawer is saved.
+  # What the drawer shows changes on the canvas as it is typed: there is nothing to
+  # save. Settings go once they are valid, pinned data once it is a JSON object.
   defp push_node_changes(socket, params) do
     node_id = socket.assigns.current_node_id
-    config_data = Map.drop(params, ["_csrf_token", "_target", "node_label", "settings", "unpin"])
+    config_data = Map.drop(params, ["_csrf_token", "_target", "node_label", "settings"])
     label = params["node_label"]
 
     socket =
@@ -718,14 +722,15 @@ defmodule HeddleUI.FlowLive.Editor do
         do: push_event(socket, "update_node_label", %{nodeId: node_id, label: label}),
         else: socket
 
-    socket = push_event(socket, "update_node_data", %{nodeId: node_id, data: config_data})
+    socket =
+      socket
+      |> sync_node_sockets(node_id, config_data)
+      |> push_event("update_node_data", %{nodeId: node_id, data: config_data})
 
     settings = params["settings"]
 
-    case is_map(settings) and settings["unpin"] != "true" and NodeSettings.from_params(settings) do
+    case is_map(settings) and NodeSettings.from_params(settings) do
       {:ok, settings} ->
-        pin = get_in(socket.assigns.editing_node_data, ["settings", "pin"])
-        settings = if pin, do: Map.put_new(settings, "pin", pin), else: settings
         push_event(socket, "update_node_settings", %{nodeId: node_id, settings: settings})
 
       _none ->
@@ -781,40 +786,14 @@ defmodule HeddleUI.FlowLive.Editor do
     end)
   end
 
-  defp save_node_config(socket, params, settings) do
-    node_id = socket.assigns.current_node_id
-    config_data = Map.drop(params, ["_csrf_token", "_target", "node_label", "settings"])
-    node_label = params["node_label"]
-
-    socket =
-      if node_label && node_label != socket.assigns.editing_node_data["label"] do
-        push_event(socket, "update_node_label", %{nodeId: node_id, label: node_label})
-      else
-        socket
-      end
-
-    socket
-    |> sync_node_sockets(node_id, config_data)
-    |> push_event("update_node_data", %{nodeId: node_id, data: config_data})
-    |> push_event("update_node_settings", %{nodeId: node_id, settings: settings})
-    |> assign(config_modal_open: false, editing_node_data: nil, current_node_id: nil)
-  end
-
-  # Unpinning shows only once saved, so the pinned data stays in the drawer until then.
+  # Pinned data that isn't a JSON object yet stays as typed, and the drawer says so.
   defp put_settings_values(node_data, params) when is_map(params) do
-    unpin = params["unpin"] == "true"
-    pin = get_in(node_data, ["settings", "pin"])
-
-    case NodeSettings.from_params(Map.delete(params, "unpin")) do
+    case NodeSettings.from_params(params) do
       {:ok, settings} ->
-        settings = if unpin and pin, do: Map.put(settings, "pin", pin), else: settings
-
-        node_data
-        |> Map.put("settings", settings)
-        |> Map.put("unpin", unpin)
+        node_data |> Map.put("settings", settings) |> Map.delete("pin_invalid")
 
       {:error, :invalid_pin} ->
-        node_data
+        Map.put(node_data, "pin_invalid", true)
     end
   end
 
@@ -875,24 +854,24 @@ defmodule HeddleUI.FlowLive.Editor do
   defp forget_model(_controls, params), do: params
 
   defp sync_node_sockets(socket, node_id, config_data) do
-    Enum.reduce(config_data, socket, fn {_key, value}, acc_socket ->
-      if String.starts_with?(value, "ui do") do
-        {:ok, ui_fields} = HeddleUI.CodeParser.parse_ui_definition(value)
-        inputs = Enum.filter(ui_fields, &(&1.type == "input")) |> Enum.map(& &1.name)
-        outputs = Enum.filter(ui_fields, &(&1.type == "output")) |> Enum.map(& &1.name)
-
-        if inputs != [] or outputs != [] do
+    # It runs as the drawer is typed in, so a definition may be half written.
+    Enum.reduce(config_data, socket, fn
+      {_key, "ui do" <> _rest = value}, acc_socket ->
+        with {:ok, ui_fields} <- HeddleUI.CodeParser.parse_ui_definition(value),
+             inputs = for(%{type: "input", name: name} <- ui_fields, do: name),
+             outputs = for(%{type: "output", name: name} <- ui_fields, do: name),
+             true <- inputs != [] or outputs != [] do
           push_event(acc_socket, "update_node_sockets", %{
             nodeId: node_id,
             inputs: inputs,
             outputs: outputs
           })
         else
-          acc_socket
+          _nothing -> acc_socket
         end
-      else
+
+      _other, acc_socket ->
         acc_socket
-      end
     end)
   end
 

@@ -244,7 +244,8 @@ defmodule HeddleCore.Flows do
 
   The caller counts among who changed the draft, and a draft edited for a while is
   kept as a checkpoint, see `HeddleCore.Flows.Versions`, unless `checkpoint: false`:
-  for a save that is kept as a version right after anyway.
+  for a save that is kept as a version right after anyway. `client:` says who it was
+  to those editing it, such as `"agent"`.
   """
   def update_flow(%Scope{} = scope, %Flow{} = flow, attrs, opts \\ []) do
     with {:ok, flow} <- fetch_for(scope, :edit, flow.id) do

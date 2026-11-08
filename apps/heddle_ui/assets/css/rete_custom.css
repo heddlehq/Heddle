@@ -122,8 +122,88 @@
     animation: save-pulse 1s ease-in-out infinite;
 }
 .save-state[data-state="offline"]::before { background: var(--run-error); }
+/* Saved is the usual state, so it shows nothing: only saving and reconnecting do. */
+.save-state[data-state="saved"] {
+    display: none;
+}
 @keyframes save-pulse {
     50% { opacity: 0.3; }
+}
+
+/* Who else is on the canvas, see presence.js. Their colors read on paper and on ink. */
+.presence-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    background: var(--presence-color);
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    border: 2px solid var(--editor-surface);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.presence-avatar:hover { transform: translateY(-1px); z-index: 1; }
+.presence-avatar.is-following {
+    box-shadow: 0 0 0 2px var(--editor-surface), 0 0 0 4px var(--presence-color);
+    z-index: 1;
+}
+.presence-avatar[data-kind="agent"] { cursor: default; }
+
+.remote-cursors {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 15;
+}
+.remote-cursor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: flex-start;
+    transition: transform 80ms linear, opacity 0.3s ease;
+    will-change: transform;
+}
+.remote-cursor.is-idle { opacity: 0.35; }
+.remote-cursor-arrow {
+    width: 14px;
+    height: 18px;
+    background: var(--presence-color);
+    clip-path: polygon(0 0, 0 100%, 30% 72%, 52% 100%, 68% 92%, 47% 66%, 100% 66%);
+    filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.3));
+}
+.remote-cursor-name {
+    margin: 14px 0 0 2px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: var(--presence-color);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* What others have selected or open, and what the agent just changed. */
+custom-node.remote-marked .circular-node {
+    box-shadow: 0 0 0 3px var(--editor-surface), 0 0 0 6px var(--remote-color);
+}
+custom-comment.remote-marked > * {
+    outline: 3px solid var(--remote-color);
+    outline-offset: 3px;
+}
+custom-node.remote-flash .circular-node,
+custom-comment.remote-flash > * {
+    animation: remote-flash 1.4s ease-out;
+}
+@keyframes remote-flash {
+    0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--flash-color) 70%, transparent); }
+    40% { box-shadow: 0 0 0 12px color-mix(in oklab, var(--flash-color) 25%, transparent); }
+    100% { box-shadow: 0 0 0 0 transparent; }
 }
 
 /* The legend of a version preview, see `HeddleUI.Components.Flow.VersionPreview`. */

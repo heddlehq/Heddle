@@ -19,24 +19,20 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
 
   def flow_header(assigns) do
     ~H"""
-    <header class="flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 z-10 h-16 shadow-md dark:shadow-black/50">
+    <header class="relative flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 z-20 h-16 shadow-md dark:shadow-black/50">
       <div class="flex items-center gap-4">
-        <.link
-          navigate={~p"/"}
-          class="flex items-center gap-2 group transition-opacity hover:opacity-80"
-        >
-          <img
-            src={~p"/images/logo.png"}
-            alt="Heddle"
-            class="w-9 h-9 object-contain"
-          />
-          <span class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
-            Heddle
-          </span>
+        <.link navigate={~p"/"} class="shrink-0 transition-opacity hover:opacity-80">
+          <img src={~p"/images/logo.png"} alt="Heddle" class="w-8 h-8 object-contain" />
         </.link>
-        <div class="h-8 w-px bg-gray-200 dark:bg-slate-700 hidden sm:block"></div>
 
-        <div class="hidden sm:block">
+        <nav class="hidden sm:flex items-center gap-2 min-w-0">
+          <.link
+            navigate={~p"/flows"}
+            class="text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+          >
+            {gettext("Flows")}
+          </.link>
+          <span class="text-gray-300 dark:text-slate-600">/</span>
           <%= if @renaming_flow do %>
             <form
               phx-submit="save_flow_name"
@@ -65,9 +61,29 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
                 {@flow.name}
               </h1>
 
-              <.publish_status status={@status} number={@published_number} />
-              <%!-- The canvas says how saving goes, see collab.js. The page leaves what is
-                   inside alone, attributes too. --%>
+              <.button
+                :if={@can_edit}
+                phx-click="edit_flow_name"
+                variant="ghost"
+                class="p-1 opacity-0 group-hover/title:opacity-100 transition-opacity"
+                title={gettext("Rename flow")}
+              >
+                <.icon name="hero-pencil" class="w-3.5 h-3.5" />
+              </.button>
+              <button
+                id="publish-status-versions"
+                type="button"
+                phx-click="versions_toggle"
+                class={[
+                  "rounded-full transition-shadow hover:ring-2 hover:ring-gray-200 dark:hover:ring-slate-600",
+                  @versions_open && "ring-2 ring-gray-300 dark:ring-slate-500"
+                ]}
+                title={status_hint(@status) <> " " <> gettext("Click for the versions.")}
+              >
+                <.publish_status status={@status} number={@published_number} />
+              </button>
+              <%!-- The canvas says how saving goes, see collab.js: it shows only while
+                   saving or reconnecting. The page leaves what is inside alone, attributes too. --%>
               <span :if={@can_edit} id="save-state-holder" phx-update="ignore">
                 <span
                   id="save-state"
@@ -84,74 +100,83 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
               >
                 <.icon name="hero-eye-mini" class="size-3.5" /> {gettext("View only")}
               </span>
-              <.button
-                :if={@can_edit}
-                phx-click="edit_flow_name"
-                variant="ghost"
-                class="p-1 opacity-0 group-hover/title:opacity-100 transition-opacity"
-                title="Rename Flow"
-              >
-                <.icon name="hero-pencil" class="w-4 h-4" />
-              </.button>
             </div>
           <% end %>
-        </div>
+        </nav>
       </div>
 
-      <div class="flex items-center gap-3">
-        <.button
-          href={~p"/flows"}
-          variant="ghost"
-          class="h-9 px-3"
-          title="Go to Flows"
-        >
-          <.icon name="hero-squares-2x2" class="w-4 h-4" />
-          <span class="hidden sm:inline">Flows</span>
-        </.button>
-        <.button
-          id="import-flow"
-          type="button"
-          phx-hook="ImportFlow"
-          variant="ghost"
-          class="h-9 px-3"
-          title={gettext("Import a flow from a JSON file")}
-          data-replace={to_string(@can_replace)}
-          data-confirm-replace={
-            gettext("The imported flow takes the place of the one on the canvas. Import it?")
-          }
-        >
-          <.icon name="hero-arrow-up-tray" class="w-4 h-4" />
-          <span class="hidden sm:inline">{gettext("Import")}</span>
-        </.button>
-        <.button
-          :if={@can_edit}
-          id="open-flow-settings"
-          type="button"
-          phx-click="open_flow_settings"
-          variant="ghost"
-          class="relative h-9 px-3"
-          title={gettext("Flow settings")}
-        >
-          <.icon name="hero-cog-6-tooth" class="w-4 h-4" />
-          <span class="hidden sm:inline">{gettext("Settings")}</span>
-          <span
-            :if={@flow.error_flow_id}
-            class="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary"
-            title={gettext("This flow has an error flow")}
-          />
-        </.button>
-        <.button
-          id="open-versions"
-          type="button"
-          phx-click="versions_toggle"
-          variant="ghost"
-          class={["h-9 px-3", @versions_open && "bg-gray-100 dark:bg-slate-700"]}
-          title={gettext("Versions")}
-        >
-          <.icon name="hero-clock" class="w-4 h-4" />
-          <span class="hidden sm:inline">{gettext("Versions")}</span>
-        </.button>
-        <div class="h-5 w-px bg-gray-200 dark:bg-slate-700 mx-1"></div>
+      <div class="flex items-center gap-2">
+        <%!-- Who else is on the canvas, see presence.js. The page leaves it alone. --%>
+        <div id="presence-holder" phx-update="ignore" class="hidden sm:block mr-1">
+          <div id="presence-avatars" class="flex items-center -space-x-1.5" data-count="0"></div>
+        </div>
+
+        <div class="relative">
+          <.button
+            id="flow-menu-button"
+            type="button"
+            variant="ghost"
+            class={["relative h-9 px-2.5", @versions_open && "bg-gray-100 dark:bg-slate-700"]}
+            phx-click={JS.toggle(to: "#flow-menu")}
+            title={gettext("More")}
+            aria-haspopup="menu"
+          >
+            <.icon name="hero-ellipsis-horizontal-mini" class="size-5" />
+            <span
+              :if={@flow.error_flow_id}
+              class="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary"
+            />
+          </.button>
+          <div
+            id="flow-menu"
+            role="menu"
+            phx-click-away={JS.hide(to: "#flow-menu")}
+            class="hidden absolute right-0 top-full z-30 mt-2 w-56 rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800"
+          >
+            <button
+              id="open-versions"
+              type="button"
+              role="menuitem"
+              phx-click={JS.hide(to: "#flow-menu") |> JS.push("versions_toggle")}
+              class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-700"
+            >
+              <.icon name="hero-clock" class="w-4 h-4" />
+              <span class="flex-1">{gettext("Versions")}</span>
+              <.icon :if={@versions_open} name="hero-check-mini" class="size-4 text-primary" />
+            </button>
+            <button
+              :if={@can_edit}
+              id="open-flow-settings"
+              type="button"
+              role="menuitem"
+              phx-click={JS.hide(to: "#flow-menu") |> JS.push("open_flow_settings")}
+              class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-700"
+            >
+              <.icon name="hero-cog-6-tooth" class="w-4 h-4" />
+              <span class="flex-1">{gettext("Settings")}</span>
+              <span
+                :if={@flow.error_flow_id}
+                class="size-1.5 rounded-full bg-primary"
+                title={gettext("This flow has an error flow")}
+              />
+            </button>
+            <button
+              id="import-flow"
+              type="button"
+              role="menuitem"
+              phx-hook="ImportFlow"
+              phx-click={JS.hide(to: "#flow-menu")}
+              data-replace={to_string(@can_replace)}
+              data-confirm-replace={
+                gettext("The imported flow takes the place of the one on the canvas. Import it?")
+              }
+              class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-700"
+            >
+              <.icon name="hero-arrow-up-tray" class="w-4 h-4" />
+              {gettext("Import from a file")}
+            </button>
+          </div>
+        </div>
 
         <.button
           :if={@can_edit}
@@ -193,7 +218,6 @@ defmodule HeddleUI.Components.Flow.FlowHeader do
         @status == :changed && "bg-amber-50 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300",
         @status == :unpublished && "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-300"
       ]}
-      title={status_hint(@status)}
     >
       <span class={[
         "size-1.5 rounded-full",

@@ -75,11 +75,14 @@ const hooks = {
       const collab = startCollab(editor, {
         flowId: container.dataset.flowId,
         token: container.dataset.socketToken,
+        container,
+        avatars: document.getElementById("presence-avatars"),
         onSaveState: (state) => {
           if (!saveState) return;
           saveState.dataset.state = state;
           const text = { saved: "Saved", saving: "Saving...", offline: "Reconnecting..." }[state];
           saveState.textContent = (window.Translations && window.Translations[text]) || text;
+          saveState.title = saveState.textContent;
         },
         onJoinError: () => this.pushEvent("canvas_join_failed", {}),
       });
@@ -227,12 +230,14 @@ const hooks = {
 
       if (editor.onNodeConfig) {
         editor.onNodeConfig((nodeId, nodeData) => {
+          collab.setEditing(nodeId);
           this.pushEvent("open_node_config", { nodeId, nodeData });
         });
       }
 
       if (editor.onCanvasClick) {
         editor.onCanvasClick(() => {
+          collab.setEditing(null);
           this.pushEvent("close_config_modal", {});
         });
       }
