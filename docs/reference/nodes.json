@@ -1,0 +1,4649 @@
+{
+  "categories": [
+    {
+      "id": "trigger",
+      "label": "Trigger",
+      "nodes": [
+        {
+          "credential": null,
+          "description": "Starts a flow from an incoming webhook request.",
+          "fields": [
+            {
+              "default": "POST",
+              "label": "Method",
+              "name": "method",
+              "options": [
+                {
+                  "label": "GET",
+                  "value": "GET"
+                },
+                {
+                  "label": "POST",
+                  "value": "POST"
+                },
+                {
+                  "label": "PUT",
+                  "value": "PUT"
+                },
+                {
+                  "label": "DELETE",
+                  "value": "DELETE"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "/webhook",
+              "label": "Path",
+              "name": "path",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-bolt-solid",
+          "inputs": [],
+          "name": "Webhook",
+          "notes": {
+            "en": "The flow's address is `/api/flows/<flow id>/webhook/<path>`, and it answers only the **Method** picked. What the request brings is in the run:\n\n| Key | What it holds |\n| --- | --- |\n| `body` | The body, decoded when it is JSON |\n| `headers` | The headers, by name in lowercase |\n| `query_params` | The query string |\n| `method`, `request_path` | How it was called |\n\nThe caller gets `202 Accepted` at once, unless the flow has a **Respond to Webhook**: then it waits for that answer. Production calls run the [published version](/docs/concepts/versions/), and a flow that was never published answers `404`.",
+            "pt": "O endereço do fluxo é `/api/flows/<id do fluxo>/webhook/<caminho>`, e ele só atende o **Method** escolhido. O que a requisição traz fica na execução:\n\n| Chave | O que guarda |\n| --- | --- |\n| `body` | O corpo, já decodificado quando é JSON |\n| `headers` | Os cabeçalhos, pelo nome em minúsculas |\n| `query_params` | A query string |\n| `method`, `request_path` | Como foi chamado |\n\nQuem chama recebe `202 Accepted` na hora, a não ser que o fluxo tenha um **Respond to Webhook**: aí ele espera essa resposta. As chamadas de produção rodam a [versão publicada](/pt/docs/concepts/versions/), e um fluxo que nunca foi publicado responde `404`."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": null,
+          "slug": "webhook"
+        },
+        {
+          "credential": null,
+          "description": "Starts the flow on a schedule, written as a cron expression in UTC.",
+          "fields": [
+            {
+              "default": "0 9 * * *",
+              "label": "Cron (UTC)",
+              "name": "cron",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-clock-solid",
+          "inputs": [],
+          "name": "Schedule",
+          "notes": {
+            "en": "**Cron (UTC)** takes five fields: minute, hour, day of the month, month and day of the week. `0 9 * * 1-5` runs at 09:00 UTC on weekdays, and `*/15 * * * *` every fifteen minutes.\n\nA flow can have several Schedules, and each starts the run from itself. Schedules run the [published version](/docs/concepts/versions/) only: a draft that was never published doesn't run on its own. The editor accepts a half-written expression while you type, and publishing checks it.",
+            "pt": "**Cron (UTC)** leva cinco campos: minuto, hora, dia do mês, mês e dia da semana. `0 9 * * 1-5` roda às 09:00 UTC nos dias úteis, e `*/15 * * * *` a cada quinze minutos.\n\nUm fluxo pode ter vários Schedules, e cada um começa a execução por ele mesmo. Os Schedules só rodam a [versão publicada](/pt/docs/concepts/versions/): um rascunho que nunca foi publicado não roda sozinho. O editor aceita uma expressão pela metade enquanto você digita, e a publicação confere."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": null,
+          "slug": "schedule"
+        },
+        {
+          "credential": null,
+          "description": "Starts this flow when a run of a flow that picked it as its error flow fails, with the error and the run.",
+          "fields": [],
+          "group": null,
+          "icon": "hero-exclamation-triangle-solid",
+          "inputs": [],
+          "name": "Error Trigger",
+          "notes": {
+            "en": "Put it in a flow, then pick that flow as the **error flow** of others, in their **Settings**. When a run of one of them fails and nothing handled the failure, this flow runs with:\n\n```json\n{\n  \"error\": {\"message\": \"Slack refused it: channel_not_found\", \"node_id\": \"n4\", \"node_label\": \"Tell the team\", \"node_type\": \"Slack: Send Message\"},\n  \"execution\": {\"id\": \"8f3k2m\", \"flow_id\": 12, \"flow_name\": \"New leads\", \"url\": \"https://heddle.example.com/flows/12?execution=8f3k2m\"}\n}\n```\n\nThe error flow runs its published version, and a failure in it doesn't start another error flow.",
+            "pt": "Coloque num fluxo e escolha esse fluxo como **fluxo de erro** de outros, nas **Configurações** deles. Quando uma execução de um deles falha e nada tratou a falha, este fluxo roda com:\n\n```json\n{\n  \"error\": {\"message\": \"Slack refused it: channel_not_found\", \"node_id\": \"n4\", \"node_label\": \"Avisar o time\", \"node_type\": \"Slack: Send Message\"},\n  \"execution\": {\"id\": \"8f3k2m\", \"flow_id\": 12, \"flow_name\": \"Novos leads\", \"url\": \"https://heddle.example.com/flows/12?execution=8f3k2m\"}\n}\n```\n\nO fluxo de erro roda a versão publicada dele, e uma falha nele não dispara outro fluxo de erro."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": null,
+          "slug": "error-trigger"
+        }
+      ]
+    },
+    {
+      "id": "flow_control",
+      "label": "Flow Control",
+      "nodes": [
+        {
+          "credential": null,
+          "description": "Starts manual flow execution and passes the initial context forward.",
+          "fields": [],
+          "group": null,
+          "icon": "hero-play-solid",
+          "inputs": [],
+          "name": "Start",
+          "notes": {
+            "en": "Where a run begins when you press **Run** in the editor, or call the flow through the API. What the run was started with is already in the context.",
+            "pt": "Onde a execução começa quando você aperta **Run** no editor, ou chama o fluxo pela API. O que veio junto com o pedido de execução já está no contexto."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": null,
+          "slug": "start"
+        },
+        {
+          "credential": null,
+          "description": "Routes execution through true or false outputs based on a variable comparison.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Variable",
+              "name": "variable",
+              "type": "variable-select"
+            },
+            {
+              "default": "==",
+              "label": "Operator",
+              "name": "operator",
+              "options": [
+                {
+                  "label": "equal",
+                  "value": "=="
+                },
+                {
+                  "label": "not equal",
+                  "value": "!="
+                },
+                {
+                  "label": "greater than",
+                  "value": ">"
+                },
+                {
+                  "label": "less than",
+                  "value": "<"
+                },
+                {
+                  "label": "contains",
+                  "value": "contains"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "",
+              "label": "Value",
+              "name": "value",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-share-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Condition",
+          "notes": {
+            "en": "Goes down `true` or `false`. **Variable** names a [variable](/docs/concepts/context/) or a key of the context, like `status` (not `{{status}}`). **Value** is compared as it is written.\n\n| Operator | True when |\n| --- | --- |\n| `equals`, `not equals` | The two are the same text, or not |\n| `greater than`, `less than` | Compared as numbers; what isn't a number counts as 0 |\n| `contains` | The text holds the value |\n\nFor more than two ways, use a **Switch**.",
+            "pt": "Segue por `true` ou `false`. **Variable** é o nome de uma [variável](/pt/docs/concepts/context/) ou de uma chave do contexto, como `status` (e não `{{status}}`). **Value** é comparado do jeito que está escrito.\n\n| Operador | Verdadeiro quando |\n| --- | --- |\n| `equals`, `not equals` | Os dois são o mesmo texto, ou não |\n| `greater than`, `less than` | Comparados como números; o que não é número conta como 0 |\n| `contains` | O texto contém o valor |\n\nPara mais de dois caminhos, use um **Switch**."
+          },
+          "outputs": [
+            "true",
+            "false"
+          ],
+          "result": null,
+          "slug": "condition"
+        },
+        {
+          "credential": null,
+          "description": "Sends the run down the output of the first case equal to the value, or down otherwise when none is.",
+          "fields": [
+            {
+              "default": "{{result}}",
+              "label": "Value",
+              "name": "switch_value",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Case 1",
+              "name": "case_1",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Case 2",
+              "name": "case_2",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Case 3",
+              "name": "case_3",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Case 4",
+              "name": "case_4",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-arrows-right-left-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Switch",
+          "notes": {
+            "en": "Fills in **Value**, then goes down the first case equal to it, or down `otherwise`. Cases take `{{placeholders}}` too, and an empty case is skipped. For more than four cases, connect another Switch to `otherwise`.",
+            "pt": "Preenche **Value** e segue pelo primeiro caso igual a ele, ou por `otherwise`. Os casos também aceitam `{{placeholders}}`, e um caso vazio é ignorado. Para mais de quatro casos, ligue outro Switch em `otherwise`."
+          },
+          "outputs": [
+            "case 1",
+            "case 2",
+            "case 3",
+            "case 4",
+            "otherwise"
+          ],
+          "result": null,
+          "slug": "switch"
+        },
+        {
+          "credential": null,
+          "description": "Runs the item branch once per item, with the item in result and index in a variable. The done branch gets the results.",
+          "fields": [
+            {
+              "default": "result",
+              "label": "List",
+              "name": "items",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-arrow-path-rounded-square-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "For Each",
+          "notes": {
+            "en": "**List** is the path to a list in the context, like `result` or `body.items` (not a placeholder). The nodes on `item` run once per item, one after the other, with `item`, `index` (from 0) and `result` set to the item.\n\nWhen the list ends, `done` goes on once, and `result` holds what each item's branch left in `result`, in order. A list holds up to 10,000 items.",
+            "pt": "**List** é o caminho até uma lista no contexto, como `result` ou `body.items` (sem placeholder). Os nós em `item` rodam uma vez por item, um depois do outro, com `item`, `index` (a partir de 0) e `result` valendo o item.\n\nQuando a lista acaba, `done` segue uma vez, e `result` guarda o que o ramo de cada item deixou em `result`, na ordem. Uma lista aceita até 10.000 itens."
+          },
+          "outputs": [
+            "item",
+            "done"
+          ],
+          "result": [
+            {
+              "id": 1,
+              "sent": true
+            },
+            {
+              "id": 2,
+              "sent": true
+            }
+          ],
+          "slug": "for-each"
+        },
+        {
+          "credential": null,
+          "description": "Waits for every branch connected to it, then goes on once with their results together.",
+          "fields": [
+            {
+              "default": "list",
+              "label": "Combine",
+              "name": "combine",
+              "options": [
+                {
+                  "label": "List of results",
+                  "value": "list"
+                },
+                {
+                  "label": "Join lists",
+                  "value": "concat"
+                },
+                {
+                  "label": "Merge objects",
+                  "value": "objects"
+                }
+              ],
+              "type": "select"
+            }
+          ],
+          "group": null,
+          "icon": "hero-arrows-pointing-in-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Merge",
+          "notes": {
+            "en": "Waits until every connection to it has arrived, then goes on once. **Combine** says what `result` becomes:\n\n| Combine | `result` |\n| --- | --- |\n| List of results | One item per branch, in the order they arrived |\n| Join lists | The lists of every branch, one after the other |\n| Merge objects | One object with the keys of all of them |\n\nA branch that a Condition never took doesn't hold the run: once nothing else is left, the Merge goes on with what arrived.",
+            "pt": "Espera todas as conexões que chegam nele e segue uma vez só. **Combine** diz o que `result` vira:\n\n| Combine | `result` |\n| --- | --- |\n| List of results | Um item por ramo, na ordem em que chegaram |\n| Join lists | As listas de todos os ramos, uma depois da outra |\n| Merge objects | Um objeto com as chaves de todos |\n\nUm ramo que uma Condition nunca tomou não segura a execução: quando não sobra mais nada para rodar, o Merge segue com o que chegou."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": [
+            {
+              "plan": "pro"
+            },
+            {
+              "seats": 4
+            }
+          ],
+          "slug": "merge"
+        },
+        {
+          "credential": null,
+          "description": "Pauses the run for a while, until a date, or until a call to {{resume_url}}. With a call, How long is the most it waits, and the run goes on through timeout after it.",
+          "fields": [
+            {
+              "default": "time",
+              "label": "Wait",
+              "name": "wait_for",
+              "options": [
+                {
+                  "label": "For a while",
+                  "value": "time"
+                },
+                {
+                  "label": "Until a date",
+                  "value": "date"
+                },
+                {
+                  "label": "Until a call",
+                  "value": "call"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "5",
+              "label": "How long",
+              "name": "amount",
+              "type": "text"
+            },
+            {
+              "default": "minutes",
+              "label": "Unit",
+              "name": "unit",
+              "options": [
+                {
+                  "label": "seconds",
+                  "value": "seconds"
+                },
+                {
+                  "label": "minutes",
+                  "value": "minutes"
+                },
+                {
+                  "label": "hours",
+                  "value": "hours"
+                },
+                {
+                  "label": "days",
+                  "value": "days"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "",
+              "label": "Date (ISO 8601, UTC)",
+              "name": "wait_until",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-pause-circle-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Wait",
+          "notes": {
+            "en": "Pauses the run, and holds no worker while it waits. It survives restarts, and lasts a year at most.\n\n- **For a while**: **How long** and **Unit**.\n- **Until a date**: an ISO 8601 date in UTC, like `2026-12-24T18:00:00Z`. A date already past doesn't stop the run.\n- **Until a call**: the run goes on when something calls `{{resume_url}}`, which is in the context before the Wait, so send it ahead, by email or to an API. The request that called it becomes `result`. With **How long** filled in, the run goes down `timeout` if no call came in time.\n\nA Wait can't be the tool of an AI Agent.",
+            "pt": "Pausa a execução sem ocupar nenhum worker enquanto espera. Sobrevive a reinícios e dura no máximo um ano.\n\n- **For a while**: **How long** e **Unit**.\n- **Until a date**: uma data ISO 8601 em UTC, como `2026-12-24T18:00:00Z`. Uma data que já passou não para a execução.\n- **Until a call**: a execução segue quando alguém chama `{{resume_url}}`, que já está no contexto antes do Wait, então mande ele antes, por email ou para uma API. A requisição que chamou vira `result`. Com **How long** preenchido, a execução sai por `timeout` se a chamada não vier a tempo.\n\nUm Wait não pode ser ferramenta de um AI Agent."
+          },
+          "outputs": [
+            "exec",
+            "timeout"
+          ],
+          "result": null,
+          "slug": "wait"
+        },
+        {
+          "credential": null,
+          "description": "Finishes the flow and returns the final execution context.",
+          "fields": [
+            {
+              "default": "success",
+              "label": "Final Status",
+              "name": "status",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-flag-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Output",
+          "notes": {
+            "en": "Ends this branch, and the run finishes with its context. It has no outputs. A run also ends when it reaches a node with nothing after it, so an Output is there to make the end clear.",
+            "pt": "Encerra este ramo, e a execução termina com o contexto dele. Não tem saídas. Uma execução também termina quando chega num nó sem nada depois, então o Output serve para deixar o fim claro."
+          },
+          "outputs": [],
+          "result": null,
+          "slug": "output"
+        },
+        {
+          "credential": null,
+          "description": "Answers the webhook call with this status and body. The caller waits for it, and the flow goes on after.",
+          "fields": [
+            {
+              "default": "200",
+              "label": "Status",
+              "name": "response_status",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Body",
+              "name": "response_body",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-arrow-uturn-left-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Respond to Webhook",
+          "notes": {
+            "en": "Answers whoever called the [Webhook](/docs/nodes/webhook/), and the flow goes on after it. **Body** is sent as `application/json` when it is a JSON object or list, and as `text/plain` otherwise. **Status** is a number from 100 to 599, and 200 when it isn't one.\n\nThe caller waits for it, so put it early in the flow. A run that fails before answering gets `500`, and one that takes too long gets `504`.",
+            "pt": "Responde quem chamou o [Webhook](/pt/docs/nodes/webhook/), e o fluxo continua depois dele. **Body** vai como `application/json` quando é um objeto ou lista JSON, e como `text/plain` quando não é. **Status** é um número de 100 a 599, e vira 200 quando não é.\n\nQuem chamou fica esperando, então coloque ele cedo no fluxo. Uma execução que falha antes de responder devolve `500`, e uma que demora demais devolve `504`."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": null,
+          "slug": "respond-to-webhook"
+        }
+      ]
+    },
+    {
+      "id": "data_manipulation",
+      "label": "Data Manipulation",
+      "nodes": [
+        {
+          "credential": null,
+          "description": "Stores a typed value in the flow context for later nodes.",
+          "fields": [
+            {
+              "default": "my_var",
+              "label": "Variable Name",
+              "name": "var_name",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Value",
+              "name": "var_value",
+              "type": "text"
+            },
+            {
+              "default": "String",
+              "label": "Type",
+              "name": "var_type",
+              "options": [
+                {
+                  "label": "String",
+                  "value": "String"
+                },
+                {
+                  "label": "Integer",
+                  "value": "Integer"
+                },
+                {
+                  "label": "JSON",
+                  "value": "JSON"
+                }
+              ],
+              "type": "select"
+            }
+          ],
+          "group": null,
+          "icon": "hero-variable-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Variable",
+          "notes": {
+            "en": "Keeps a value under `variables`, which every node after it reads as `{{name}}`: a variable comes before a key of the context with the same name. **Type** converts the value: `Integer` reads a number, and `JSON` reads an object or a list, so `{{customer.email}}` works after it. A value that can't be converted stays as text.\n\n**Value** is kept as it is written, without filling in placeholders. To keep what a step returned, use a [code step](/docs/nodes/evaluate-code/).",
+            "pt": "Guarda um valor em `variables`, que todo nó depois dele lê como `{{nome}}`: uma variável vem antes de uma chave do contexto com o mesmo nome. **Type** converte o valor: `Integer` lê um número, e `JSON` lê um objeto ou lista, então `{{cliente.email}}` funciona depois dele. Um valor que não converte fica como texto.\n\n**Value** é guardado do jeito que está escrito, sem preencher placeholders. Para guardar o que um passo devolveu, use um [passo de código](/pt/docs/nodes/evaluate-code/)."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": null,
+          "slug": "variable"
+        },
+        {
+          "credential": null,
+          "description": "Turns CSV text into a list of rows.",
+          "fields": [
+            {
+              "default": "result",
+              "label": "CSV text",
+              "name": "source",
+              "type": "text"
+            },
+            {
+              "default": "comma",
+              "label": "Separator",
+              "name": "separator",
+              "options": [
+                {
+                  "label": "Comma",
+                  "value": "comma"
+                },
+                {
+                  "label": "Semicolon",
+                  "value": "semicolon"
+                },
+                {
+                  "label": "Tab",
+                  "value": "tab"
+                }
+              ],
+              "type": "select"
+            }
+          ],
+          "group": null,
+          "icon": "hero-table-cells-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Read CSV",
+          "notes": {
+            "en": "**Source** is the path to the text in the context, like `result` after a download, or `body.file`. The first line names the columns, and each other line becomes an object. **Separator** is a comma or a semicolon.",
+            "pt": "**Source** é o caminho até o texto no contexto, como `result` depois de um download, ou `body.file`. A primeira linha dá o nome das colunas, e cada outra linha vira um objeto. **Separator** é vírgula ou ponto e vírgula."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": [
+            {
+              "email": "ana@example.com",
+              "name": "Ana"
+            },
+            {
+              "email": "bruno@example.com",
+              "name": "Bruno"
+            }
+          ],
+          "slug": "read-csv"
+        },
+        {
+          "credential": null,
+          "description": "Turns a list of rows into CSV text.",
+          "fields": [
+            {
+              "default": "result",
+              "label": "Rows",
+              "name": "source",
+              "type": "text"
+            },
+            {
+              "default": "comma",
+              "label": "Separator",
+              "name": "separator",
+              "options": [
+                {
+                  "label": "Comma",
+                  "value": "comma"
+                },
+                {
+                  "label": "Semicolon",
+                  "value": "semicolon"
+                },
+                {
+                  "label": "Tab",
+                  "value": "tab"
+                }
+              ],
+              "type": "select"
+            }
+          ],
+          "group": null,
+          "icon": "hero-document-text-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Write CSV",
+          "notes": {
+            "en": "**Source** is the path to a list of objects, like `result.rows`. The columns are every key that appears, in the order they first do. Lists and objects in a cell are written as JSON. Hand `result` to an upload, an email attachment or a Respond to Webhook.",
+            "pt": "**Source** é o caminho até uma lista de objetos, como `result.rows`. As colunas são todas as chaves que aparecem, na ordem em que aparecem pela primeira vez. Listas e objetos numa célula viram JSON. Passe `result` para um upload, um anexo de email ou um Respond to Webhook."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": "name,email\nAna,ana@example.com\nBruno,bruno@example.com\n",
+          "slug": "write-csv"
+        }
+      ]
+    },
+    {
+      "id": "code",
+      "label": "Code",
+      "nodes": [
+        {
+          "credential": null,
+          "description": "Runs Elixir or Python code with access to the current flow context.",
+          "fields": [
+            {
+              "default": "elixir",
+              "label": "Language",
+              "name": "language",
+              "options": [
+                {
+                  "label": "elixir",
+                  "value": "elixir"
+                },
+                {
+                  "label": "python",
+                  "value": "python"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "",
+              "label": "Code Editor",
+              "name": "code",
+              "type": "code"
+            }
+          ],
+          "group": null,
+          "icon": "hero-code-bracket-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Evaluate Code",
+          "notes": {
+            "en": "Runs Elixir or Python with the run's context.\n\n**Elixir** sees `result` (what the previous step left), `context` (the whole context, as a map) and `input` (what an AI Agent passed, when it is a tool). `variable(\"name\")` reads a variable, and `set_result(value)` sets the result.\n\n**Python** sees each key of the context as a name: `result`, `body`, `items`, and the variables too. `variable(\"name\")` and `set_result(value)` work the same.\n\nWhat the code ends with decides the result. A map (Elixir) or a dict (Python) **replaces the context**, so keep what you need: `Map.put(context, \"total\", 10)`. Anything else becomes `result`.\n\n```elixir\nitems = context[\"body\"][\"items\"]\nset_result(Enum.sum(Enum.map(items, & &1[\"price\"])))\n```\n\n```python\nset_result(sum(item[\"price\"] for item in body[\"items\"]))\n```\n\nAn AI Agent never writes this field.",
+            "pt": "Roda Elixir ou Python com o contexto da execução.\n\n**Elixir** enxerga `result` (o que o passo anterior deixou), `context` (o contexto inteiro, como map) e `input` (o que um AI Agent passou, quando é ferramenta). `variable(\"nome\")` lê uma variável, e `set_result(valor)` define o resultado.\n\n**Python** enxerga cada chave do contexto como um nome: `result`, `body`, `items`, e as variáveis também. `variable(\"nome\")` e `set_result(valor)` funcionam igual.\n\nO valor com que o código termina decide o resultado. Um map (Elixir) ou dict (Python) **substitui o contexto**, então mantenha o que precisa: `Map.put(context, \"total\", 10)`. Qualquer outra coisa vira `result`.\n\n```elixir\nitems = context[\"body\"][\"items\"]\nset_result(Enum.sum(Enum.map(items, & &1[\"price\"])))\n```\n\n```python\nset_result(sum(item[\"price\"] for item in body[\"items\"]))\n```\n\nUm AI Agent nunca escreve este campo."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": 129.9,
+          "slug": "evaluate-code"
+        }
+      ]
+    },
+    {
+      "id": "http",
+      "label": "HTTP",
+      "nodes": [
+        {
+          "credential": null,
+          "description": "Calls an external HTTP endpoint and routes success or error responses.",
+          "fields": [
+            {
+              "default": "GET",
+              "label": "Method",
+              "name": "method",
+              "options": [
+                {
+                  "label": "GET",
+                  "value": "GET"
+                },
+                {
+                  "label": "POST",
+                  "value": "POST"
+                },
+                {
+                  "label": "PUT",
+                  "value": "PUT"
+                },
+                {
+                  "label": "DELETE",
+                  "value": "DELETE"
+                },
+                {
+                  "label": "PATCH",
+                  "value": "PATCH"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "https://api.example.com",
+              "label": "Endpoint URL",
+              "name": "url",
+              "type": "text"
+            },
+            {
+              "default": "{}",
+              "label": "Headers (JSON)",
+              "name": "headers",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Body",
+              "name": "body",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-globe-alt-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "HTTP Request",
+          "notes": {
+            "en": "Calls any HTTP API. **Endpoint URL**, **Headers (JSON)** and **Body** take `{{placeholders}}`. A body that is JSON is sent as JSON, and anything else as text; GET and DELETE send no body.\n\nA `2xx` answer goes down `success` with the decoded body as `result`. Any other status, or no answer, goes down `error` with:\n\n```json\n{\"error\": \"HTTP 404\", \"body\": {\"message\": \"Not found\"}}\n```\n\nWhat you write in **Headers** is saved with the flow, and goes with it when the flow is exported.",
+            "pt": "Chama qualquer API HTTP. **Endpoint URL**, **Headers (JSON)** e **Body** aceitam `{{placeholders}}`. Um corpo em JSON vai como JSON, e qualquer outra coisa vai como texto; GET e DELETE não mandam corpo.\n\nUma resposta `2xx` sai por `success` com o corpo decodificado em `result`. Qualquer outro status, ou nenhuma resposta, sai por `error` com:\n\n```json\n{\"error\": \"HTTP 404\", \"body\": {\"message\": \"Not found\"}}\n```\n\nO que você escreve em **Headers** fica salvo no fluxo, e vai junto quando ele é exportado."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "id": 981,
+            "status": "created"
+          },
+          "slug": "http-request"
+        }
+      ]
+    },
+    {
+      "id": "ai",
+      "label": "AI",
+      "nodes": [
+        {
+          "credential": "ai",
+          "description": "Works on a task with the LLM. Nodes connected to tools are steps it can use: it fills in the fields you left blank.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Prompt",
+              "name": "prompt",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "System prompt",
+              "name": "system",
+              "type": "text"
+            },
+            {
+              "default": "text",
+              "label": "Reply as",
+              "name": "output",
+              "options": [
+                {
+                  "label": "Text",
+                  "value": "text"
+                },
+                {
+                  "label": "JSON",
+                  "value": "json"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "",
+              "label": "Memory key",
+              "name": "memory_key",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Creativity",
+              "name": "temperature",
+              "options": [
+                {
+                  "label": "The model's default",
+                  "value": ""
+                },
+                {
+                  "label": "Precise",
+                  "value": "0.2"
+                },
+                {
+                  "label": "Balanced",
+                  "value": "0.7"
+                },
+                {
+                  "label": "Creative",
+                  "value": "1.0"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "capability": "text",
+              "default": "",
+              "label": "Model",
+              "name": "model",
+              "type": "model"
+            },
+            {
+              "default": "10",
+              "label": "Max steps",
+              "name": "max_steps",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-sparkles-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "AI Agent",
+          "notes": {
+            "en": "Works on **Prompt** with the model, step by step, until it has an answer or reaches **Max steps**.\n\n**Tools.** The nodes connected to its `tools` output are steps it can use. On each one, the fields you leave blank are what the agent fills in; the fields you fill stay as they are, out of its reach. It never picks a credential or writes code. A tool can be a whole branch: the agent calls its first node, and the steps after it run too.\n\n**Reply as** `JSON` asks for a single JSON value, which becomes `result` already decoded. **Memory key** keeps the conversation between runs: runs with the same key, like `{{body.customer_id}}`, continue where the last one stopped.\n\nBesides `result`, the run gets `tool_calls`, the list of tools it used:\n\n```json\n[{\"tool\": \"find_order\", \"args\": {\"where\": \"id = 4411\"}, \"ok\": true}]\n```\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/). See the [AI Agent guide](/docs/guides/ai-agent/).",
+            "pt": "Trabalha no **Prompt** com o modelo, passo a passo, até ter uma resposta ou chegar em **Max steps**.\n\n**Ferramentas.** Os nós ligados à saída `tools` são passos que ele pode usar. Em cada um, os campos que você deixa em branco são o que o agente preenche; os que você preenche ficam como estão, fora do alcance dele. Ele nunca escolhe uma credencial nem escreve código. Uma ferramenta pode ser um ramo inteiro: o agente chama o primeiro nó, e os passos depois dele rodam também.\n\n**Reply as** `JSON` pede um único valor JSON, que vira `result` já decodificado. **Memory key** guarda a conversa entre execuções: execuções com a mesma chave, como `{{body.customer_id}}`, continuam de onde a última parou.\n\nAlém de `result`, a execução ganha `tool_calls`, a lista das ferramentas que ele usou:\n\n```json\n[{\"tool\": \"buscar_pedido\", \"args\": {\"where\": \"id = 4411\"}, \"ok\": true}]\n```\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/). Veja o [guia do AI Agent](/pt/docs/guides/ai-agent/)."
+          },
+          "outputs": [
+            "success",
+            "error",
+            "tools"
+          ],
+          "result": "The order 4411 shipped on May 2 and should arrive by Friday.",
+          "slug": "ai-agent"
+        },
+        {
+          "credential": "ai",
+          "description": "Creates an image from a prompt. Works with Nano Banana on Google, GPT Image on OpenAI and Grok Imagine on xAI.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Prompt",
+              "name": "prompt",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Aspect ratio",
+              "name": "aspect_ratio",
+              "options": [
+                {
+                  "label": "Automatic",
+                  "value": ""
+                },
+                {
+                  "label": "Square (1:1)",
+                  "value": "1:1"
+                },
+                {
+                  "label": "Wide (16:9)",
+                  "value": "16:9"
+                },
+                {
+                  "label": "Tall (9:16)",
+                  "value": "9:16"
+                },
+                {
+                  "label": "Landscape (4:3)",
+                  "value": "4:3"
+                },
+                {
+                  "label": "Portrait (3:4)",
+                  "value": "3:4"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "capability": "image",
+              "default": "",
+              "label": "Model",
+              "name": "model",
+              "type": "model"
+            }
+          ],
+          "group": null,
+          "icon": "hero-photo-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "AI: Generate Image",
+          "notes": {
+            "en": "Draws what **Prompt** describes. **Aspect ratio** is the shape of the image, when the model takes it.\n\n`result` is a file, which **S3: Upload File**, **Slack: Upload File**, **FTP: Upload File** and an email attachment take as `{{result}}`, unchanged.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+            "pt": "Desenha o que **Prompt** descreve. **Aspect ratio** é o formato da imagem, quando o modelo aceita.\n\n`result` é um arquivo, que **S3: Upload File**, **Slack: Upload File**, **FTP: Upload File** e um anexo de email aceitam como `{{result}}`, sem alteração.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "content": "iVBORw0KGgoAAAANSUhEUgAA...",
+            "encoding": "base64",
+            "type": "image/png"
+          },
+          "slug": "ai-generate-image"
+        },
+        {
+          "credential": "ai",
+          "description": "Changes an image following your instructions. Works with Nano Banana on Google, GPT Image on OpenAI and Grok Imagine on xAI.",
+          "fields": [
+            {
+              "default": "{{result}}",
+              "label": "Image, or its URL",
+              "name": "image",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "What to change",
+              "name": "prompt",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Aspect ratio",
+              "name": "aspect_ratio",
+              "options": [
+                {
+                  "label": "Automatic",
+                  "value": ""
+                },
+                {
+                  "label": "Square (1:1)",
+                  "value": "1:1"
+                },
+                {
+                  "label": "Wide (16:9)",
+                  "value": "16:9"
+                },
+                {
+                  "label": "Tall (9:16)",
+                  "value": "9:16"
+                },
+                {
+                  "label": "Landscape (4:3)",
+                  "value": "4:3"
+                },
+                {
+                  "label": "Portrait (3:4)",
+                  "value": "3:4"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "capability": "image",
+              "default": "",
+              "label": "Model",
+              "name": "model",
+              "type": "model"
+            }
+          ],
+          "group": null,
+          "icon": "hero-paint-brush-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "AI: Edit Image",
+          "notes": {
+            "en": "Changes **Image** as **Prompt** says, like `remove the background` or `make it a watercolor`. **Image** is `{{result}}` after a node that returned a file, like a download, or a URL that starts with `http`.\n\n`result` is a file, which **S3: Upload File**, **Slack: Upload File**, **FTP: Upload File** and an email attachment take as `{{result}}`, unchanged.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+            "pt": "Altera **Image** como **Prompt** pede, como `remova o fundo` ou `deixe em aquarela`. **Image** é `{{result}}` depois de um nó que devolveu um arquivo, como um download, ou uma URL que começa com `http`.\n\n`result` é um arquivo, que **S3: Upload File**, **Slack: Upload File**, **FTP: Upload File** e um anexo de email aceitam como `{{result}}`, sem alteração.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "content": "iVBORw0KGgoAAAANSUhEUgAA...",
+            "encoding": "base64",
+            "type": "image/png"
+          },
+          "slug": "ai-edit-image"
+        },
+        {
+          "credential": "ai",
+          "description": "Answers a question about an image, or reads the text in it. The model must see images.",
+          "fields": [
+            {
+              "default": "{{result}}",
+              "label": "Image, or its URL",
+              "name": "image",
+              "type": "text"
+            },
+            {
+              "default": "Describe this image.",
+              "label": "Question",
+              "name": "question",
+              "type": "text"
+            },
+            {
+              "capability": "vision",
+              "default": "",
+              "label": "Model",
+              "name": "model",
+              "type": "model"
+            }
+          ],
+          "group": null,
+          "icon": "hero-eye-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "AI: Describe Image",
+          "notes": {
+            "en": "Answers **Question** about **Image**, with a model that sees images. Ask for what you need, like `What is the total of this receipt?`. **Image** is `{{result}}` after a node that returned a file, like a download, or a URL that starts with `http`.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+            "pt": "Responde **Question** sobre **Image**, com um modelo que enxerga imagens. Pergunte o que precisa, como `Qual é o total deste recibo?`. **Image** é `{{result}}` depois de um nó que devolveu um arquivo, como um download, ou uma URL que começa com `http`.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": "A receipt from Café Central, dated 2026-03-14, with a total of R$ 42,50.",
+          "slug": "ai-describe-image"
+        },
+        {
+          "credential": "ai",
+          "description": "Turns speech into text. Needs an OpenAI credential.",
+          "fields": [
+            {
+              "default": "{{result}}",
+              "label": "Audio, or its URL",
+              "name": "audio",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Language",
+              "name": "language",
+              "options": [
+                {
+                  "label": "Detect it",
+                  "value": ""
+                },
+                {
+                  "label": "Portuguese",
+                  "value": "pt"
+                },
+                {
+                  "label": "English",
+                  "value": "en"
+                },
+                {
+                  "label": "Spanish",
+                  "value": "es"
+                },
+                {
+                  "label": "French",
+                  "value": "fr"
+                },
+                {
+                  "label": "German",
+                  "value": "de"
+                },
+                {
+                  "label": "Italian",
+                  "value": "it"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "capability": "transcription",
+              "default": "",
+              "label": "Model",
+              "name": "model",
+              "type": "model"
+            }
+          ],
+          "group": null,
+          "icon": "hero-microphone-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "AI: Transcribe Audio",
+          "notes": {
+            "en": "Turns speech into text. **Audio** is `{{result}}` after a node that returned a file, like a download, or a URL that starts with `http`. **Language** helps the model when you know it, and blank detects it.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+            "pt": "Transforma fala em texto. **Audio** é `{{result}}` depois de um nó que devolveu um arquivo, como um download, ou uma URL que começa com `http`. **Language** ajuda o modelo quando você sabe o idioma, e em branco ele detecta.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "language": "en",
+            "text": "Hi, I'd like to change the delivery address of my order."
+          },
+          "slug": "ai-transcribe-audio"
+        },
+        {
+          "credential": "ai",
+          "description": "Reads a text out loud into an audio file. Needs an OpenAI credential.",
+          "fields": [
+            {
+              "default": "{{result}}",
+              "label": "Text",
+              "name": "text",
+              "type": "text"
+            },
+            {
+              "default": "alloy",
+              "label": "Voice",
+              "name": "voice",
+              "options": [
+                {
+                  "label": "Alloy",
+                  "value": "alloy"
+                },
+                {
+                  "label": "Ash",
+                  "value": "ash"
+                },
+                {
+                  "label": "Ballad",
+                  "value": "ballad"
+                },
+                {
+                  "label": "Coral",
+                  "value": "coral"
+                },
+                {
+                  "label": "Echo",
+                  "value": "echo"
+                },
+                {
+                  "label": "Fable",
+                  "value": "fable"
+                },
+                {
+                  "label": "Nova",
+                  "value": "nova"
+                },
+                {
+                  "label": "Onyx",
+                  "value": "onyx"
+                },
+                {
+                  "label": "Sage",
+                  "value": "sage"
+                },
+                {
+                  "label": "Shimmer",
+                  "value": "shimmer"
+                },
+                {
+                  "label": "Verse",
+                  "value": "verse"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "capability": "speech",
+              "default": "",
+              "label": "Model",
+              "name": "model",
+              "type": "model"
+            }
+          ],
+          "group": null,
+          "icon": "hero-speaker-wave-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "AI: Text to Speech",
+          "notes": {
+            "en": "Reads **Text** aloud with **Voice**.\n\n`result` is a file, which **S3: Upload File**, **Slack: Upload File**, **FTP: Upload File** and an email attachment take as `{{result}}`, unchanged.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+            "pt": "Lê **Text** em voz alta com **Voice**.\n\n`result` é um arquivo, que **S3: Upload File**, **Slack: Upload File**, **FTP: Upload File** e um anexo de email aceitam como `{{result}}`, sem alteração.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "content": "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYw...",
+            "encoding": "base64",
+            "type": "audio/mpeg"
+          },
+          "slug": "ai-text-to-speech"
+        },
+        {
+          "credential": "ai",
+          "description": "Summarizes a text, in the language it's written in.",
+          "fields": [
+            {
+              "default": "{{result}}",
+              "label": "Text",
+              "name": "text",
+              "type": "text"
+            },
+            {
+              "default": "paragraph",
+              "label": "Format",
+              "name": "format",
+              "options": [
+                {
+                  "label": "Short paragraph",
+                  "value": "paragraph"
+                },
+                {
+                  "label": "Bullet points",
+                  "value": "bullets"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "capability": "text",
+              "default": "",
+              "label": "Model",
+              "name": "model",
+              "type": "model"
+            }
+          ],
+          "group": null,
+          "icon": "hero-document-text-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "AI: Summarize",
+          "notes": {
+            "en": "Summarizes **Text** in its own language, as a paragraph or as bullet points.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+            "pt": "Resume **Text** no próprio idioma dele, em um parágrafo ou em tópicos.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": "The customer can't log in since the password reset, and asks for a call today.",
+          "slug": "ai-summarize"
+        },
+        {
+          "credential": "ai",
+          "description": "Translates a text into another language.",
+          "fields": [
+            {
+              "default": "{{result}}",
+              "label": "Text",
+              "name": "text",
+              "type": "text"
+            },
+            {
+              "default": "Portuguese",
+              "label": "Language",
+              "name": "language",
+              "type": "text"
+            },
+            {
+              "capability": "text",
+              "default": "",
+              "label": "Model",
+              "name": "model",
+              "type": "model"
+            }
+          ],
+          "group": null,
+          "icon": "hero-language-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "AI: Translate",
+          "notes": {
+            "en": "Translates **Text** into **Language**, written as you would say it, like `Portuguese` or `Brazilian Portuguese`.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+            "pt": "Traduz **Text** para **Language**, escrito como você diria, como `Portuguese` ou `Brazilian Portuguese`.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": "Olá! Seu pedido saiu para entrega.",
+          "slug": "ai-translate"
+        },
+        {
+          "credential": "ai",
+          "description": "Picks the category that fits a text. Use a Condition on result.category to branch.",
+          "fields": [
+            {
+              "default": "{{result}}",
+              "label": "Text",
+              "name": "text",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Categories, separated by commas",
+              "name": "categories",
+              "type": "text"
+            },
+            {
+              "capability": "text",
+              "default": "",
+              "label": "Model",
+              "name": "model",
+              "type": "model"
+            }
+          ],
+          "group": null,
+          "icon": "hero-tag-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "AI: Classify",
+          "notes": {
+            "en": "Picks one of **Categories**, written with commas, like `billing, bug, sales, other`. `result.category` is always one of them, as you wrote it, so a **Switch** on `{{result.category}}` routes the run. When the model answers anything else, the node goes down `error`.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+            "pt": "Escolhe uma das **Categories**, escritas com vírgulas, como `cobranca, bug, vendas, outro`. `result.category` é sempre uma delas, do jeito que você escreveu, então um **Switch** em `{{result.category}}` encaminha a execução. Quando o modelo responde outra coisa, o nó sai por `error`.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "category": "billing"
+          },
+          "slug": "ai-classify"
+        },
+        {
+          "credential": "ai",
+          "description": "Reads the fields you name out of a text, like an email or an invoice.",
+          "fields": [
+            {
+              "default": "{{result}}",
+              "label": "Text",
+              "name": "text",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Fields, separated by commas",
+              "name": "fields",
+              "type": "text"
+            },
+            {
+              "capability": "text",
+              "default": "",
+              "label": "Model",
+              "name": "model",
+              "type": "model"
+            }
+          ],
+          "group": null,
+          "icon": "hero-document-magnifying-glass-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "AI: Extract Data",
+          "notes": {
+            "en": "Reads **Fields**, written with commas, like `name, email, company`, out of **Text**. `result` has exactly those keys, and `null` for what the text doesn't say: the model is told not to guess.\n\nLeave **Credential** and **Model** blank to use the defaults of the **AI** page, or pick them for this node. See [AI providers](/docs/guides/ai-providers/).",
+            "pt": "Tira **Fields**, escritos com vírgulas, como `nome, email, empresa`, de **Text**. `result` tem exatamente essas chaves, e `null` para o que o texto não diz: o modelo é instruído a não chutar.\n\nDeixe **Credential** e **Model** em branco para usar os padrões da página **AI**, ou escolha para este nó. Veja [Provedores de IA](/pt/docs/guides/ai-providers/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "company": null,
+            "email": "ana@example.com",
+            "name": "Ana Souza"
+          },
+          "slug": "ai-extract-data"
+        }
+      ]
+    },
+    {
+      "id": "database",
+      "label": "Database",
+      "nodes": [
+        {
+          "credential": "sql",
+          "description": "Runs any statement on PostgreSQL, MySQL, MariaDB, SQL Server, SQLite or Oracle. {{placeholders}} go as parameters, so a value can't change the query.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Query",
+              "name": "sql",
+              "type": "textarea"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Run Query",
+          "notes": {
+            "en": "Runs any statement, on PostgreSQL, MySQL, MariaDB, SQL Server, Oracle or SQLite, depending on the credential.\n\n```sql\nSELECT id, total FROM orders WHERE customer = {{body.email}} AND status = 'open'\n```\n\n`result.rows` is a list of objects and `result.count` how many. Statements that change rows return the changed ones where the engine can (PostgreSQL with `RETURNING`), and MySQL returns `result.last_id` after an insert. Decimal numbers come as text, like `\"129.90\"`, so no cent is lost. A query that returns more than 10,000 rows fails: use `LIMIT`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "Roda qualquer comando, no PostgreSQL, MySQL, MariaDB, SQL Server, Oracle ou SQLite, conforme a credencial.\n\n```sql\nSELECT id, total FROM orders WHERE customer = {{body.email}} AND status = 'open'\n```\n\n`result.rows` é uma lista de objetos e `result.count` quantos são. Comandos que alteram linhas devolvem as alteradas quando o banco permite (PostgreSQL com `RETURNING`), e o MySQL devolve `result.last_id` depois de um insert. Números decimais vêm como texto, como `\"129.90\"`, para nenhum centavo se perder. Uma consulta que devolve mais de 10.000 linhas falha: use `LIMIT`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "rows": [
+              {
+                "customer": "ana@example.com",
+                "id": 4411,
+                "total": "129.90"
+              }
+            ]
+          },
+          "slug": "sql-run-query"
+        },
+        {
+          "credential": "sql",
+          "description": "Reads rows from a table, without writing SQL.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Columns (empty for all)",
+              "name": "columns",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Where",
+              "name": "where",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Order by",
+              "name": "order_by",
+              "type": "text"
+            },
+            {
+              "default": "100",
+              "label": "Limit",
+              "name": "limit",
+              "type": "text"
+            },
+            {
+              "default": "0",
+              "label": "Skip",
+              "name": "offset",
+              "type": "text"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Select Rows",
+          "notes": {
+            "en": "Reads rows without writing SQL. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`. **Columns** is a list with commas, and blank reads them all. **Where** and **Order by** are SQL, with placeholders as parameters: `status = 'open' AND total > {{min}}`, `created_at DESC`. **Limit** is 100 by default, and **Offset** skips rows, for pages.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "Lê linhas sem escrever SQL. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`. **Columns** é uma lista com vírgulas, e em branco lê todas. **Where** e **Order by** são SQL, com placeholders como parâmetros: `status = 'open' AND total > {{minimo}}`, `created_at DESC`. **Limit** é 100 por padrão, e **Offset** pula linhas, para paginar.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "rows": [
+              {
+                "customer": "ana@example.com",
+                "id": 4411,
+                "total": "129.90"
+              }
+            ]
+          },
+          "slug": "sql-select-rows"
+        },
+        {
+          "credential": "sql",
+          "description": "Adds one row or a list of them, from column to value. All of them or none go in.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Rows",
+              "name": "rows",
+              "type": "textarea"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Insert Rows",
+          "notes": {
+            "en": "**Rows** is one object or a list of them, from column to value, like `{\"customer\": \"{{body.email}}\", \"total\": {{body.total}}}`. It is `{{result}}` by default, so it inserts what the previous node returned, a **Select Rows** included. Many rows go in batches, all or none. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "**Rows** é um objeto ou uma lista deles, de coluna para valor, como `{\"customer\": \"{{body.email}}\", \"total\": {{body.total}}}`. O padrão é `{{result}}`, então insere o que o nó anterior devolveu, inclusive um **Select Rows**. Muitas linhas vão em lotes, todas ou nenhuma. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "rows": [
+              {
+                "customer": "bruno@example.com",
+                "id": 4412,
+                "total": "89.00"
+              }
+            ]
+          },
+          "slug": "sql-insert-rows"
+        },
+        {
+          "credential": "sql",
+          "description": "Changes the rows that match. To change every row, write 1 = 1 in Where.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "New values",
+              "name": "changes",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Where",
+              "name": "where",
+              "type": "textarea"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Update Rows",
+          "notes": {
+            "en": "**New values** is an object from column to value, like `{\"status\": \"shipped\"}`. **Where** is SQL, and can't be empty: to change every row on purpose, write `1 = 1`. `result.count` is how many rows changed. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "**New values** é um objeto de coluna para valor, como `{\"status\": \"shipped\"}`. **Where** é SQL e não pode ficar vazio: para alterar todas as linhas de propósito, escreva `1 = 1`. `result.count` é quantas linhas mudaram. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 3,
+            "rows": []
+          },
+          "slug": "sql-update-rows"
+        },
+        {
+          "credential": "sql",
+          "description": "Adds rows, and updates the ones whose key columns already exist.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Rows",
+              "name": "rows",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Key columns",
+              "name": "key_columns",
+              "type": "text"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Upsert Rows",
+          "notes": {
+            "en": "Inserts the rows, or updates the ones that already exist. **Key columns** say which columns identify a row, like `email`, and need a unique index on them. **Rows** works as in **Insert Rows**. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "Insere as linhas, ou atualiza as que já existem. **Key columns** dizem quais colunas identificam uma linha, como `email`, e precisam de um índice único nelas. **Rows** funciona como no **Insert Rows**. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 2,
+            "rows": []
+          },
+          "slug": "sql-upsert-rows"
+        },
+        {
+          "credential": "sql",
+          "description": "Deletes the rows that match. To delete every row, write 1 = 1 in Where.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Where",
+              "name": "where",
+              "type": "textarea"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Delete Rows",
+          "notes": {
+            "en": "**Where** is SQL, and can't be empty: to delete every row on purpose, write `1 = 1`. `result.count` is how many were deleted. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "**Where** é SQL e não pode ficar vazio: para apagar todas as linhas de propósito, escreva `1 = 1`. `result.count` é quantas foram apagadas. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 12,
+            "rows": []
+          },
+          "slug": "sql-delete-rows"
+        },
+        {
+          "credential": "sql",
+          "description": "Runs several statements, separated by semicolons. If one fails, none of them count.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Statements",
+              "name": "statements",
+              "type": "textarea"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Run Transaction",
+          "notes": {
+            "en": "Runs **Statements**, separated by `;`, all or none: if one fails, none of them is applied. `result.results` has what each returned, in order.\n\n```sql\nUPDATE accounts SET balance = balance - {{amount}} WHERE id = {{from}};\nUPDATE accounts SET balance = balance + {{amount}} WHERE id = {{to}}\n```\n\nA transaction can't span several nodes. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "Roda **Statements**, separados por `;`, todos ou nenhum: se um falha, nenhum é aplicado. `result.results` tem o que cada um devolveu, em ordem.\n\n```sql\nUPDATE accounts SET balance = balance - {{valor}} WHERE id = {{origem}};\nUPDATE accounts SET balance = balance + {{valor}} WHERE id = {{destino}}\n```\n\nUma transação não atravessa vários nós. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 2,
+            "results": [
+              {
+                "count": 1,
+                "rows": []
+              },
+              {
+                "count": 1,
+                "rows": []
+              }
+            ]
+          },
+          "slug": "sql-run-transaction"
+        },
+        {
+          "credential": "sql",
+          "description": "Returns the names of the tables of the database.",
+          "fields": [],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: List Tables",
+          "notes": {
+            "en": "Lists the tables the credential's user sees. Useful as a tool of an AI Agent, so it finds out what the database holds before querying it.",
+            "pt": "Lista as tabelas que o usuário da credencial enxerga. Útil como ferramenta de um AI Agent, para ele descobrir o que o banco tem antes de consultar."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "tables": [
+              "public.customers",
+              "public.orders"
+            ]
+          },
+          "slug": "sql-list-tables"
+        },
+        {
+          "credential": "sql",
+          "description": "Returns the columns of a table, with their types.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Describe Table",
+          "notes": {
+            "en": "Lists the columns of **Table**, with type, whether they take null, and default. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.",
+            "pt": "Lista as colunas de **Table**, com tipo, se aceitam nulo e o valor padrão. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "columns": [
+              {
+                "default": "nextval('orders_id_seq'::regclass)",
+                "name": "id",
+                "nullable": false,
+                "type": "integer"
+              },
+              {
+                "default": null,
+                "name": "total",
+                "nullable": true,
+                "type": "numeric"
+              }
+            ]
+          },
+          "slug": "sql-describe-table"
+        },
+        {
+          "credential": "mongodb",
+          "description": "Reads the documents of a collection that match a filter.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Collection",
+              "name": "collection",
+              "type": "text"
+            },
+            {
+              "default": "{}",
+              "label": "Filter",
+              "name": "filter",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Fields (empty for all)",
+              "name": "fields",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Sort",
+              "name": "sort",
+              "type": "textarea"
+            },
+            {
+              "default": "100",
+              "label": "Limit",
+              "name": "limit",
+              "type": "text"
+            },
+            {
+              "default": "0",
+              "label": "Skip",
+              "name": "offset",
+              "type": "text"
+            }
+          ],
+          "group": "MongoDB",
+          "icon": "logo-mongodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "MongoDB: Find Documents",
+          "notes": {
+            "en": "**Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. **Fields** picks what comes back, like `{\"email\": 1}`, and **Sort** orders it, like `{\"created_at\": -1}`. **Limit** is 100 by default. IDs come as text.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "**Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. **Fields** escolhe o que volta, como `{\"email\": 1}`, e **Sort** ordena, como `{\"created_at\": -1}`. **Limit** é 100 por padrão. Os IDs vêm como texto.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "documents": [
+              {
+                "_id": "6650f1c2a1b2c3d4e5f60718",
+                "email": "ana@example.com",
+                "plan": "pro"
+              }
+            ]
+          },
+          "slug": "mongodb-find-documents"
+        },
+        {
+          "credential": "mongodb",
+          "description": "Adds one document or a list of them to a collection.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Collection",
+              "name": "collection",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Documents",
+              "name": "documents",
+              "type": "textarea"
+            }
+          ],
+          "group": "MongoDB",
+          "icon": "logo-mongodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "MongoDB: Insert Documents",
+          "notes": {
+            "en": "**Documents** is one object or a list of them, `{{result}}` by default.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "**Documents** é um objeto ou uma lista deles, `{{result}}` por padrão.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "ids": [
+              "6650f1c2a1b2c3d4e5f60718"
+            ]
+          },
+          "slug": "mongodb-insert-documents"
+        },
+        {
+          "credential": "mongodb",
+          "description": "Changes the documents that match, with an update like {\"$set\": {\"status\": \"done\"}}.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Collection",
+              "name": "collection",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Filter",
+              "name": "filter",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Update",
+              "name": "update",
+              "type": "textarea"
+            },
+            {
+              "default": "all",
+              "label": "Which documents",
+              "name": "which",
+              "options": [
+                {
+                  "label": "All that match",
+                  "value": "all"
+                },
+                {
+                  "label": "Only the first",
+                  "value": "first"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "no",
+              "label": "When nothing matches",
+              "name": "upsert",
+              "options": [
+                {
+                  "label": "Do nothing",
+                  "value": "no"
+                },
+                {
+                  "label": "Add a document",
+                  "value": "yes"
+                }
+              ],
+              "type": "select"
+            }
+          ],
+          "group": "MongoDB",
+          "icon": "logo-mongodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "MongoDB: Update Documents",
+          "notes": {
+            "en": "**Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. It can't be empty. **Update** uses operators, like `{\"$set\": {\"status\": \"done\"}}`. **Which** is the first match or all of them, and **Upsert** `yes` inserts when nothing matches.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "**Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. Não pode ficar vazio. **Update** usa operadores, como `{\"$set\": {\"status\": \"done\"}}`. **Which** é o primeiro que bater ou todos, e **Upsert** `yes` insere quando nada bate.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "matched": 1,
+            "modified": 1,
+            "upserted_ids": []
+          },
+          "slug": "mongodb-update-documents"
+        },
+        {
+          "credential": "mongodb",
+          "description": "Deletes the documents that match a filter.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Collection",
+              "name": "collection",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Filter",
+              "name": "filter",
+              "type": "textarea"
+            }
+          ],
+          "group": "MongoDB",
+          "icon": "logo-mongodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "MongoDB: Delete Documents",
+          "notes": {
+            "en": "Deletes every document that matches. **Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. It can't be empty: to delete everything on purpose, use `{\"_id\": {\"$exists\": true}}`.",
+            "pt": "Apaga todos os documentos que batem. **Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. Não pode ficar vazio: para apagar tudo de propósito, use `{\"_id\": {\"$exists\": true}}`."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 3
+          },
+          "slug": "mongodb-delete-documents"
+        },
+        {
+          "credential": "mongodb",
+          "description": "Runs an aggregation pipeline on a collection.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Collection",
+              "name": "collection",
+              "type": "text"
+            },
+            {
+              "default": "[]",
+              "label": "Pipeline",
+              "name": "pipeline",
+              "type": "textarea"
+            }
+          ],
+          "group": "MongoDB",
+          "icon": "logo-mongodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "MongoDB: Aggregate",
+          "notes": {
+            "en": "Runs **Pipeline**, a list of stages:\n\n```json\n[{\"$match\": {\"status\": \"active\"}}, {\"$group\": {\"_id\": \"$plan\", \"customers\": {\"$sum\": 1}}}]\n```\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "Roda **Pipeline**, uma lista de estágios:\n\n```json\n[{\"$match\": {\"status\": \"active\"}}, {\"$group\": {\"_id\": \"$plan\", \"customers\": {\"$sum\": 1}}}]\n```\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "documents": [
+              {
+                "_id": "pro",
+                "customers": 41
+              }
+            ]
+          },
+          "slug": "mongodb-aggregate"
+        },
+        {
+          "credential": "mongodb",
+          "description": "Returns how many documents match a filter.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Collection",
+              "name": "collection",
+              "type": "text"
+            },
+            {
+              "default": "{}",
+              "label": "Filter",
+              "name": "filter",
+              "type": "textarea"
+            }
+          ],
+          "group": "MongoDB",
+          "icon": "logo-mongodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "MongoDB: Count Documents",
+          "notes": {
+            "en": "Counts what matches. **Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. `{}` counts everything.",
+            "pt": "Conta o que bate. **Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. `{}` conta tudo."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 42
+          },
+          "slug": "mongodb-count-documents"
+        },
+        {
+          "credential": "mongodb",
+          "description": "Returns the names of the collections.",
+          "fields": [],
+          "group": "MongoDB",
+          "icon": "logo-mongodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "MongoDB: List Collections",
+          "notes": {
+            "en": "Lists the collections of the credential's database, in order.",
+            "pt": "Lista as coleções do banco da credencial, em ordem."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "collections": [
+              "customers",
+              "orders"
+            ]
+          },
+          "slug": "mongodb-list-collections"
+        },
+        {
+          "credential": "redis",
+          "description": "Reads the value of a key.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Key",
+              "name": "key",
+              "type": "text"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Get Value",
+          "notes": {
+            "en": "`result.found` is false when the key doesn't exist, and `value` is then `null`. Values come as text. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "`result.found` é falso quando a chave não existe, e `value` vem `null`. Os valores vêm como texto. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "found": true,
+            "key": "session:ana",
+            "value": "{\"cart\":3}"
+          },
+          "slug": "redis-get-value"
+        },
+        {
+          "credential": "redis",
+          "description": "Saves a value in a key, for good or for some seconds.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Key",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Value",
+              "name": "value",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Expires after (seconds)",
+              "name": "seconds",
+              "type": "text"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Set Value",
+          "notes": {
+            "en": "Saves **Value** in **Key**. Objects and lists are saved as JSON. With **Expires after (seconds)**, the key goes away on its own, which suits caches and locks. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "Salva **Value** em **Key**. Objetos e listas são salvos como JSON. Com **Expires after (seconds)**, a chave some sozinha, o que serve para cache e travas. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "key": "session:ana"
+          },
+          "slug": "redis-set-value"
+        },
+        {
+          "credential": "redis",
+          "description": "Deletes one key, or several separated by commas.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Keys",
+              "name": "keys",
+              "type": "text"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Delete Keys",
+          "notes": {
+            "en": "**Keys** is a list with commas. `result.count` is how many existed. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "**Keys** é uma lista com vírgulas. `result.count` é quantas existiam. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 2
+          },
+          "slug": "redis-delete-keys"
+        },
+        {
+          "credential": "redis",
+          "description": "Adds to the number in a key, which starts at 0, and returns the new number.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Key",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": "1",
+              "label": "Amount",
+              "name": "amount",
+              "type": "text"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Increment",
+          "notes": {
+            "en": "Adds **Amount** to the number in **Key**, 1 by default, and returns the new value. A key that doesn't exist starts at 0, so it counts things and limits rates. A negative amount subtracts. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "Soma **Amount** ao número em **Key**, 1 por padrão, e devolve o novo valor. Uma chave que não existe começa em 0, então serve para contar e limitar taxa. Um valor negativo subtrai. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "key": "visits:2026-05-12",
+            "value": 18
+          },
+          "slug": "redis-increment"
+        },
+        {
+          "credential": "redis",
+          "description": "Returns the keys that match a pattern like user:*, without blocking the server.",
+          "fields": [
+            {
+              "default": "*",
+              "label": "Pattern",
+              "name": "pattern",
+              "type": "text"
+            },
+            {
+              "default": "1000",
+              "label": "Limit",
+              "name": "limit",
+              "type": "text"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Find Keys",
+          "notes": {
+            "en": "Finds the keys that match **Pattern**, like `session:*`, without blocking the server, up to **Limit**. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "Encontra as chaves que batem com **Pattern**, como `session:*`, sem travar o servidor, até **Limit**. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 2,
+            "keys": [
+              "session:ana",
+              "session:bruno"
+            ]
+          },
+          "slug": "redis-find-keys"
+        },
+        {
+          "credential": "redis",
+          "description": "Returns the fields of a hash.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Key",
+              "name": "key",
+              "type": "text"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Read Hash",
+          "notes": {
+            "en": "Returns every field of the hash. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "Devolve todos os campos do hash. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "fields": {
+              "name": "Ana",
+              "plan": "pro"
+            },
+            "key": "customer:42"
+          },
+          "slug": "redis-read-hash"
+        },
+        {
+          "credential": "redis",
+          "description": "Saves fields in a hash, and leaves the others as they are.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Key",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Fields",
+              "name": "fields",
+              "type": "textarea"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Write Hash",
+          "notes": {
+            "en": "**Fields** is an object from field to value, `{{result}}` by default. `result.added` counts the fields that are new. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "**Fields** é um objeto de campo para valor, `{{result}}` por padrão. `result.added` conta os campos que são novos. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "added": 1,
+            "key": "customer:42"
+          },
+          "slug": "redis-write-hash"
+        },
+        {
+          "credential": "redis",
+          "description": "Adds a value to the end or the start of a list.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Key",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Value",
+              "name": "value",
+              "type": "textarea"
+            },
+            {
+              "default": "end",
+              "label": "Add to",
+              "name": "side",
+              "options": [
+                {
+                  "label": "End",
+                  "value": "end"
+                },
+                {
+                  "label": "Start",
+                  "value": "start"
+                }
+              ],
+              "type": "select"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Push to List",
+          "notes": {
+            "en": "Adds **Value** at the end or the start of the list, and returns its new length. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "Adiciona **Value** no fim ou no começo da lista, e devolve o novo tamanho. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "key": "queue:emails",
+            "length": 4
+          },
+          "slug": "redis-push-to-list"
+        },
+        {
+          "credential": "redis",
+          "description": "Returns the first items of a list, without taking them out.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Key",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": "100",
+              "label": "Limit",
+              "name": "limit",
+              "type": "text"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Read List",
+          "notes": {
+            "en": "Reads the list from its start, up to **Limit** items, without removing them. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "Lê a lista desde o começo, até **Limit** itens, sem remover. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 2,
+            "items": [
+              "a@example.com",
+              "b@example.com"
+            ],
+            "key": "queue:emails"
+          },
+          "slug": "redis-read-list"
+        },
+        {
+          "credential": "redis",
+          "description": "Sends a message to a channel, and returns how many subscribers got it.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Channel",
+              "name": "channel",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Message",
+              "name": "value",
+              "type": "textarea"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Publish Message",
+          "notes": {
+            "en": "Publishes **Value** on **Channel**. `result.subscribers` is how many got it. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "Publica **Value** em **Channel**. `result.subscribers` é quantos receberam. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "subscribers": 3
+          },
+          "slug": "redis-publish-message"
+        },
+        {
+          "credential": "redis",
+          "description": "Runs any command, as a JSON list like [\"SADD\", \"tags\", \"{{tag}}\"].",
+          "fields": [
+            {
+              "default": "",
+              "label": "Command",
+              "name": "command",
+              "type": "textarea"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Run Command",
+          "notes": {
+            "en": "Runs any command, written as a JSON list: `[\"EXPIRE\", \"session:{{id}}\", 60]`. Each item is one argument, so a value can't add others. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "Roda qualquer comando, escrito como uma lista JSON: `[\"EXPIRE\", \"session:{{id}}\", 60]`. Cada item é um argumento, então um valor não consegue acrescentar outros. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "reply": 1
+          },
+          "slug": "redis-run-command"
+        },
+        {
+          "credential": "elasticsearch",
+          "description": "Searches an index, with a query like {\"match\": {\"title\": \"{{term}}\"}}.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Index",
+              "name": "index_name",
+              "type": "text"
+            },
+            {
+              "default": "{\"match_all\": {}}",
+              "label": "Query",
+              "name": "search",
+              "type": "textarea"
+            },
+            {
+              "default": "100",
+              "label": "Limit",
+              "name": "limit",
+              "type": "text"
+            },
+            {
+              "default": "0",
+              "label": "Skip",
+              "name": "offset",
+              "type": "text"
+            }
+          ],
+          "group": "Elasticsearch",
+          "icon": "logo-elasticsearch",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Elasticsearch: Search",
+          "notes": {
+            "en": "**Search** is the query part of the search, like `{\"match\": {\"name\": \"{{term}}\"}}`. Each document comes with its `_id` and `_score`. **Limit** and **Offset** page through the hits. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "**Search** é a parte `query` da busca, como `{\"match\": {\"name\": \"{{termo}}\"}}`. Cada documento vem com `_id` e `_score`. **Limit** e **Offset** paginam os resultados. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "documents": [
+              {
+                "_id": "p-1",
+                "_score": 3.2,
+                "name": "Blue mug"
+              }
+            ],
+            "total": 1
+          },
+          "slug": "elasticsearch-search"
+        },
+        {
+          "credential": "elasticsearch",
+          "description": "Reads a document by its ID.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Index",
+              "name": "index_name",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Document ID",
+              "name": "document_id",
+              "type": "text"
+            }
+          ],
+          "group": "Elasticsearch",
+          "icon": "logo-elasticsearch",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Elasticsearch: Get Document",
+          "notes": {
+            "en": "Returns the document with its `_id`. It goes down `error` when it doesn't exist. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).",
+            "pt": "Devolve o documento com o `_id` dele. Sai por `error` quando não existe. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "_id": "p-1",
+            "name": "Blue mug",
+            "price": 39.9
+          },
+          "slug": "elasticsearch-get-document"
+        },
+        {
+          "credential": "elasticsearch",
+          "description": "Saves a document in an index, and replaces the one with the same ID.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Index",
+              "name": "index_name",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Document ID (empty to generate one)",
+              "name": "document_id",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Document",
+              "name": "document",
+              "type": "textarea"
+            }
+          ],
+          "group": "Elasticsearch",
+          "icon": "logo-elasticsearch",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Elasticsearch: Index Document",
+          "notes": {
+            "en": "Saves **Document**, an object. With **Document ID**, it creates or replaces that one; blank lets the server pick an ID. `result.outcome` is `created` or `updated`. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "Salva **Document**, um objeto. Com **Document ID**, cria ou substitui aquele; em branco o servidor escolhe um ID. `result.outcome` é `created` ou `updated`. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "id": "p-1",
+            "outcome": "created"
+          },
+          "slug": "elasticsearch-index-document"
+        },
+        {
+          "credential": "elasticsearch",
+          "description": "Changes some fields of a document, and leaves the others as they are.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Index",
+              "name": "index_name",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Document ID",
+              "name": "document_id",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "New values",
+              "name": "changes",
+              "type": "textarea"
+            }
+          ],
+          "group": "Elasticsearch",
+          "icon": "logo-elasticsearch",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Elasticsearch: Update Document",
+          "notes": {
+            "en": "Changes only the fields in **New values**, an object, and keeps the others. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "Altera só os campos de **New values**, um objeto, e mantém os outros. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "id": "p-1",
+            "outcome": "updated"
+          },
+          "slug": "elasticsearch-update-document"
+        },
+        {
+          "credential": "elasticsearch",
+          "description": "Deletes a document by its ID.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Index",
+              "name": "index_name",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Document ID",
+              "name": "document_id",
+              "type": "text"
+            }
+          ],
+          "group": "Elasticsearch",
+          "icon": "logo-elasticsearch",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Elasticsearch: Delete Document",
+          "notes": {
+            "en": "It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).",
+            "pt": "Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "id": "p-1",
+            "outcome": "deleted"
+          },
+          "slug": "elasticsearch-delete-document"
+        },
+        {
+          "credential": "elasticsearch",
+          "description": "Calls any endpoint of the API, like /_cat/indices or /products/_bulk.",
+          "fields": [
+            {
+              "default": "GET",
+              "label": "Method",
+              "name": "method",
+              "options": [
+                {
+                  "label": "GET",
+                  "value": "GET"
+                },
+                {
+                  "label": "POST",
+                  "value": "POST"
+                },
+                {
+                  "label": "PUT",
+                  "value": "PUT"
+                },
+                {
+                  "label": "DELETE",
+                  "value": "DELETE"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "/",
+              "label": "Path",
+              "name": "path",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Payload (JSON)",
+              "name": "payload",
+              "type": "textarea"
+            }
+          ],
+          "group": "Elasticsearch",
+          "icon": "logo-elasticsearch",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Elasticsearch: Run Request",
+          "notes": {
+            "en": "Calls any endpoint, like `GET /_cat/indices?format=json` or `POST /products/_bulk`, and `result` is what it answered. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "Chama qualquer endpoint, como `GET /_cat/indices?format=json` ou `POST /products/_bulk`, e `result` é o que ele respondeu. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "acknowledged": true
+          },
+          "slug": "elasticsearch-run-request"
+        },
+        {
+          "credential": "dynamodb",
+          "description": "Reads an item by its key.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{\"id\": \"{{id}}\"}",
+              "label": "Key",
+              "name": "item_key",
+              "type": "textarea"
+            }
+          ],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: Get Item",
+          "notes": {
+            "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. `result.found` is false, and `item` null, when there is none. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+            "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. `result.found` é falso, e `item` nulo, quando não existe. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "found": true,
+            "item": {
+              "id": "42",
+              "name": "Ana",
+              "plan": "pro"
+            }
+          },
+          "slug": "dynamodb-get-item"
+        },
+        {
+          "credential": "dynamodb",
+          "description": "Saves an item, and replaces the one with the same key.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Item",
+              "name": "item_data",
+              "type": "textarea"
+            }
+          ],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: Put Item",
+          "notes": {
+            "en": "Saves **Item**, an object with the primary key, `{{result}}` by default. An item with the same key is replaced. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+            "pt": "Salva **Item**, um objeto com a chave primária, `{{result}}` por padrão. Um item com a mesma chave é substituído. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "saved": true
+          },
+          "slug": "dynamodb-put-item"
+        },
+        {
+          "credential": "dynamodb",
+          "description": "Changes some attributes of an item, and leaves the others as they are.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{\"id\": \"{{id}}\"}",
+              "label": "Key",
+              "name": "item_key",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "New values",
+              "name": "changes",
+              "type": "textarea"
+            }
+          ],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: Update Item",
+          "notes": {
+            "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. Sets the attributes of **New values**, an object, keeps the others, and returns the whole item. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+            "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. Define os atributos de **New values**, um objeto, mantém os outros e devolve o item inteiro. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "item": {
+              "id": "42",
+              "name": "Ana",
+              "plan": "business"
+            }
+          },
+          "slug": "dynamodb-update-item"
+        },
+        {
+          "credential": "dynamodb",
+          "description": "Deletes an item by its key.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{\"id\": \"{{id}}\"}",
+              "label": "Key",
+              "name": "item_key",
+              "type": "textarea"
+            }
+          ],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: Delete Item",
+          "notes": {
+            "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+            "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "deleted": true
+          },
+          "slug": "dynamodb-delete-item"
+        },
+        {
+          "credential": "dynamodb",
+          "description": "Reads the items of a partition key, with a condition like pk = :pk.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Index (optional)",
+              "name": "index_name",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Key condition",
+              "name": "condition",
+              "type": "text"
+            },
+            {
+              "default": "{\":pk\": \"{{id}}\"}",
+              "label": "Values",
+              "name": "condition_values",
+              "type": "textarea"
+            },
+            {
+              "default": "100",
+              "label": "Limit",
+              "name": "limit",
+              "type": "text"
+            }
+          ],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: Query Items",
+          "notes": {
+            "en": "Reads the items of one partition. **Condition** is a key condition, like `customer = :pk AND begins_with(order, :prefix)`, and **Condition values** gives its values, like `{\":pk\": \"{{id}}\"}`. **Index** queries a secondary index instead of the table. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+            "pt": "Lê os itens de uma partição. **Condition** é uma condição de chave, como `customer = :pk AND begins_with(order, :prefix)`, e **Condition values** dá os valores, como `{\":pk\": \"{{id}}\"}`. **Index** consulta um índice secundário em vez da tabela. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "items": [
+              {
+                "customer": "42",
+                "order": "4411",
+                "total": 129.9
+              }
+            ]
+          },
+          "slug": "dynamodb-query-items"
+        },
+        {
+          "credential": "dynamodb",
+          "description": "Reads the items of a table, one after the other. Query is cheaper when it can be used.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "100",
+              "label": "Limit",
+              "name": "limit",
+              "type": "text"
+            }
+          ],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: Scan Items",
+          "notes": {
+            "en": "Reads items across the whole table, up to **Limit**. It reads every item to find them, so prefer **Query Items** on big tables. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+            "pt": "Lê itens da tabela inteira, até **Limit**. Ele lê todos os itens para achar, então prefira **Query Items** em tabelas grandes. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "items": [
+              {
+                "id": "42",
+                "name": "Ana"
+              }
+            ]
+          },
+          "slug": "dynamodb-scan-items"
+        },
+        {
+          "credential": "dynamodb",
+          "description": "Returns the names of the tables.",
+          "fields": [],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: List Tables",
+          "notes": {
+            "en": "Lists the tables of the credential's region.",
+            "pt": "Lista as tabelas da região da credencial."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "tables": [
+              "customers",
+              "orders"
+            ]
+          },
+          "slug": "dynamodb-list-tables"
+        },
+        {
+          "credential": "cassandra",
+          "description": "Runs a CQL statement on Cassandra or ScyllaDB, a BATCH included. {{placeholders}} go as parameters, so a value can't change the query.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Query",
+              "name": "cql",
+              "type": "textarea"
+            }
+          ],
+          "group": "Cassandra",
+          "icon": "logo-cassandra",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Cassandra: Run Query",
+          "notes": {
+            "en": "Runs a CQL statement on Cassandra or ScyllaDB, in the credential's keyspace: `SELECT * FROM users WHERE id = {{body.id}}`. Statements that return nothing give an empty `rows`. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "Roda um comando CQL no Cassandra ou ScyllaDB, no keyspace da credencial: `SELECT * FROM users WHERE id = {{body.id}}`. Comandos que não devolvem nada dão `rows` vazio. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "rows": [
+              {
+                "id": "6f1c...",
+                "name": "Ana"
+              }
+            ]
+          },
+          "slug": "cassandra-run-query"
+        },
+        {
+          "credential": "neo4j",
+          "description": "Runs a Cypher query on a graph. {{placeholders}} go as parameters, so a value can't change the query.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Query",
+              "name": "cypher",
+              "type": "textarea"
+            }
+          ],
+          "group": "Neo4j",
+          "icon": "logo-neo4j",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Neo4j: Run Query",
+          "notes": {
+            "en": "Runs a Cypher query on Neo4j or Aura: `MATCH (p:Person {email: {{body.email}}})-[:KNOWS]->(f) RETURN p.name AS name, count(f) AS friends`. Each row is an object by the names in `RETURN`. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "Roda uma consulta Cypher no Neo4j ou Aura: `MATCH (p:Person {email: {{body.email}}})-[:KNOWS]->(f) RETURN p.name AS name, count(f) AS friends`. Cada linha é um objeto com os nomes do `RETURN`. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "rows": [
+              {
+                "friends": 12,
+                "name": "Ana"
+              }
+            ]
+          },
+          "slug": "neo4j-run-query"
+        }
+      ]
+    },
+    {
+      "id": "email",
+      "label": "Email",
+      "nodes": [
+        {
+          "credential": "smtp",
+          "description": "Sends an email through SMTP. Separate several addresses with commas.",
+          "fields": [
+            {
+              "default": "",
+              "label": "To",
+              "name": "to",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Cc",
+              "name": "cc",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Bcc",
+              "name": "bcc",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Subject",
+              "name": "subject",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Message",
+              "name": "message",
+              "type": "text"
+            },
+            {
+              "default": "plain",
+              "label": "Format",
+              "name": "format",
+              "options": [
+                {
+                  "label": "Text",
+                  "value": "plain"
+                },
+                {
+                  "label": "HTML",
+                  "value": "html"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "",
+              "label": "Attachment name",
+              "name": "attachment_name",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Attachment content",
+              "name": "attachment",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-envelope-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Email: Send Email",
+          "notes": {
+            "en": "Sends through the SMTP server of the credential, from its address. **To**, **Cc** and **Bcc** take addresses separated by commas, and the Bcc ones stay out of the headers. **Format** `HTML` sends **Message** as HTML.\n\nTo attach a file, fill in **Attachment name**, like `report.csv`, and **Attachment content**: text, or `{{result}}` after a node that returned a file.\n\nSee [Credentials](/docs/guides/credentials/#email).",
+            "pt": "Envia pelo servidor SMTP da credencial, a partir do endereço dela. **To**, **Cc** e **Bcc** aceitam endereços separados por vírgula, e os de Bcc ficam fora dos cabeçalhos. **Format** `HTML` envia **Message** como HTML.\n\nPara anexar um arquivo, preencha **Attachment name**, como `relatorio.csv`, e **Attachment content**: um texto, ou `{{result}}` depois de um nó que devolveu um arquivo.\n\nVeja [Credenciais](/pt/docs/guides/credentials/#email)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "sent_to": [
+              "ana@example.com",
+              "team@example.com"
+            ]
+          },
+          "slug": "email-send-email"
+        },
+        {
+          "credential": "imap",
+          "description": "Returns the latest emails of a folder through IMAP, newest first, without their content.",
+          "fields": [
+            {
+              "default": "INBOX",
+              "label": "Folder",
+              "name": "folder",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "From contains",
+              "name": "from",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Subject contains",
+              "name": "subject",
+              "type": "text"
+            },
+            {
+              "default": "no",
+              "label": "Which emails",
+              "name": "only_unread",
+              "options": [
+                {
+                  "label": "All",
+                  "value": "no"
+                },
+                {
+                  "label": "Only unread",
+                  "value": "yes"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "20",
+              "label": "How many",
+              "name": "limit",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-envelope-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Email: List Emails",
+          "notes": {
+            "en": "Lists the newest emails of **Folder**, up to **Limit**, that match the filters: **From** and **Subject** hold text the email has, and **Only unread** skips the ones read. It doesn't mark them as read. To read the body, follow with **Email: Get Email**.\n\nIt reads mail through IMAP. See [Credentials](/docs/guides/credentials/#email).",
+            "pt": "Lista os emails mais novos de **Folder**, até **Limit**, que batem com os filtros: **From** e **Subject** contêm um texto que o email tem, e **Only unread** pula os já lidos. Não marca como lido. Para ler o corpo, siga com **Email: Get Email**.\n\nLê emails por IMAP. Veja [Credenciais](/pt/docs/guides/credentials/#email)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": [
+            {
+              "cc": null,
+              "date": "Tue, 12 May 2026 09:14:00 +0000",
+              "from": "Ana <ana@example.com>",
+              "id": 4021,
+              "subject": "Order 4411",
+              "to": "orders@example.com",
+              "unread": true
+            }
+          ],
+          "slug": "email-list-emails"
+        },
+        {
+          "credential": "imap",
+          "description": "Returns the text, HTML and attachment names of an email through IMAP, without marking it as read.",
+          "fields": [
+            {
+              "default": "{{result.id}}",
+              "label": "Email ID",
+              "name": "id",
+              "type": "text"
+            },
+            {
+              "default": "INBOX",
+              "label": "Folder",
+              "name": "folder",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-envelope-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Email: Get Email",
+          "notes": {
+            "en": "Reads one email, with its text and HTML bodies. Attachments are only described, with name, type and size. **Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now. Reading it doesn't mark it as read.",
+            "pt": "Lê um email, com os corpos em texto e HTML. Os anexos são só descritos, com nome, tipo e tamanho. **Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora. Ler não marca como lido."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "attachments": [
+              {
+                "name": "receipt.pdf",
+                "size": 48213,
+                "type": "application/pdf"
+              }
+            ],
+            "cc": null,
+            "date": "Tue, 12 May 2026 09:14:00 +0000",
+            "from": "Ana <ana@example.com>",
+            "html": "",
+            "id": 4021,
+            "subject": "Order 4411",
+            "text": "Hi, where is my order?",
+            "to": "orders@example.com",
+            "unread": true
+          },
+          "slug": "email-get-email"
+        },
+        {
+          "credential": "imap",
+          "description": "Marks an email as read through IMAP.",
+          "fields": [
+            {
+              "default": "{{result.id}}",
+              "label": "Email ID",
+              "name": "id",
+              "type": "text"
+            },
+            {
+              "default": "INBOX",
+              "label": "Folder",
+              "name": "folder",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-envelope-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Email: Mark as Read",
+          "notes": {
+            "en": "**Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now.",
+            "pt": "**Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "id": 4021
+          },
+          "slug": "email-mark-as-read"
+        },
+        {
+          "credential": "imap",
+          "description": "Marks an email as unread through IMAP.",
+          "fields": [
+            {
+              "default": "{{result.id}}",
+              "label": "Email ID",
+              "name": "id",
+              "type": "text"
+            },
+            {
+              "default": "INBOX",
+              "label": "Folder",
+              "name": "folder",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-envelope-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Email: Mark as Unread",
+          "notes": {
+            "en": "**Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now.",
+            "pt": "**Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "id": 4021
+          },
+          "slug": "email-mark-as-unread"
+        },
+        {
+          "credential": "imap",
+          "description": "Moves an email to another folder through IMAP. Its ID changes there.",
+          "fields": [
+            {
+              "default": "{{result.id}}",
+              "label": "Email ID",
+              "name": "id",
+              "type": "text"
+            },
+            {
+              "default": "INBOX",
+              "label": "Folder",
+              "name": "folder",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Target folder",
+              "name": "target_folder",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-envelope-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Email: Move Email",
+          "notes": {
+            "en": "Moves the email to **Target folder**, which must exist. **Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now.",
+            "pt": "Move o email para **Target folder**, que precisa existir. **Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "folder": "Archive",
+            "id": 4021
+          },
+          "slug": "email-move-email"
+        },
+        {
+          "credential": "imap",
+          "description": "Deletes an email for good through IMAP. To keep a copy, use Move Email to the trash folder.",
+          "fields": [
+            {
+              "default": "{{result.id}}",
+              "label": "Email ID",
+              "name": "id",
+              "type": "text"
+            },
+            {
+              "default": "INBOX",
+              "label": "Folder",
+              "name": "folder",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-envelope-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Email: Delete Email",
+          "notes": {
+            "en": "Deletes the email for good. To keep it, move it to the trash folder instead. **Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now.",
+            "pt": "Apaga o email de vez. Para guardar, mova para a pasta de lixeira. **Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "id": 4021
+          },
+          "slug": "email-delete-email"
+        }
+      ]
+    },
+    {
+      "id": "slack",
+      "label": "Slack",
+      "nodes": [
+        {
+          "credential": "slack",
+          "description": "Sends a message to a channel. Give a thread timestamp to reply in that thread.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Channel",
+              "name": "channel",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Message",
+              "name": "text",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Thread timestamp, to reply in a thread",
+              "name": "thread_ts",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-slack",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Slack: Send Message",
+          "notes": {
+            "en": "**Channel** is a channel ID, like `C0123456789`: **Slack: List Channels** gives them, and Slack shows it at the bottom of a channel's details. Invite the app to the channel first. **Message** takes Slack's formatting, like `*bold*` and `<https://example.com|links>`. Fill in **Thread timestamp** to reply in a thread.\n\nThe credential is a bot token (`xoxb-...`) of a Slack app. See [Credentials](/docs/guides/credentials/#slack).",
+            "pt": "**Channel** é o ID de um canal, como `C0123456789`: **Slack: List Channels** devolve eles, e o Slack mostra no fim dos detalhes do canal. Convide o app para o canal antes. **Message** aceita a formatação do Slack, como `*negrito*` e `<https://example.com|links>`. Preencha **Thread timestamp** para responder numa thread.\n\nA credencial é um token de bot (`xoxb-...`) de um app do Slack. Veja [Credenciais](/pt/docs/guides/credentials/#slack)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "channel": "C0123456789",
+            "ts": "1715712345.123456"
+          },
+          "slug": "slack-send-message"
+        },
+        {
+          "credential": "slack",
+          "description": "Returns the latest messages of a channel, newest first.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Channel ID",
+              "name": "channel",
+              "type": "text"
+            },
+            {
+              "default": "20",
+              "label": "How many",
+              "name": "limit",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-slack",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Slack: Read Messages",
+          "notes": {
+            "en": "Returns the latest messages of a channel, newest first, up to **Limit**. **Channel** is a channel ID, like `C0123456789`: **Slack: List Channels** gives them, and Slack shows it at the bottom of a channel's details. Invite the app to the channel first.",
+            "pt": "Devolve as mensagens mais recentes de um canal, da mais nova para a mais antiga, até **Limit**. **Channel** é o ID de um canal, como `C0123456789`: **Slack: List Channels** devolve eles, e o Slack mostra no fim dos detalhes do canal. Convide o app para o canal antes."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": [
+            {
+              "text": "Deploy is done",
+              "thread_ts": null,
+              "ts": "1715712345.123456",
+              "user": "U024BE7LH"
+            }
+          ],
+          "slug": "slack-read-messages"
+        },
+        {
+          "credential": "slack",
+          "description": "Changes the text of a message the bot sent.",
+          "fields": [
+            {
+              "default": "{{result.channel}}",
+              "label": "Channel ID",
+              "name": "channel",
+              "type": "text"
+            },
+            {
+              "default": "{{result.ts}}",
+              "label": "Message timestamp",
+              "name": "ts",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "New message",
+              "name": "text",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-slack",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Slack: Update Message",
+          "notes": {
+            "en": "Rewrites a message the app sent. **Message timestamp** (`ts`) names a message: the defaults read it from a **Slack: Send Message** right before, as `{{result.ts}}`. A status message that changes as the flow goes is a Send Message first, then Update Message.",
+            "pt": "Reescreve uma mensagem que o app mandou. **Message timestamp** (`ts`) identifica uma mensagem: os padrões leem de um **Slack: Send Message** logo antes, como `{{result.ts}}`. Uma mensagem de status que muda conforme o fluxo anda é um Send Message primeiro e um Update Message depois."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "channel": "C0123456789",
+            "ts": "1715712345.123456"
+          },
+          "slug": "slack-update-message"
+        },
+        {
+          "credential": "slack",
+          "description": "Deletes a message the bot sent.",
+          "fields": [
+            {
+              "default": "{{result.channel}}",
+              "label": "Channel ID",
+              "name": "channel",
+              "type": "text"
+            },
+            {
+              "default": "{{result.ts}}",
+              "label": "Message timestamp",
+              "name": "ts",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-slack",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Slack: Delete Message",
+          "notes": {
+            "en": "Deletes a message the app sent. **Message timestamp** (`ts`) names a message: the defaults read it from a **Slack: Send Message** right before, as `{{result.ts}}`.",
+            "pt": "Apaga uma mensagem que o app mandou. **Message timestamp** (`ts`) identifica uma mensagem: os padrões leem de um **Slack: Send Message** logo antes, como `{{result.ts}}`."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "channel": "C0123456789",
+            "ts": "1715712345.123456"
+          },
+          "slug": "slack-delete-message"
+        },
+        {
+          "credential": "slack",
+          "description": "Adds an emoji reaction to a message.",
+          "fields": [
+            {
+              "default": "{{result.channel}}",
+              "label": "Channel ID",
+              "name": "channel",
+              "type": "text"
+            },
+            {
+              "default": "{{result.ts}}",
+              "label": "Message timestamp",
+              "name": "ts",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Emoji name, like thumbsup",
+              "name": "emoji",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-slack",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Slack: Add Reaction",
+          "notes": {
+            "en": "**Emoji** is the name, with or without colons: `white_check_mark` or `:eyes:`. **Message timestamp** (`ts`) names a message: the defaults read it from a **Slack: Send Message** right before, as `{{result.ts}}`.",
+            "pt": "**Emoji** é o nome, com ou sem dois pontos: `white_check_mark` ou `:eyes:`. **Message timestamp** (`ts`) identifica uma mensagem: os padrões leem de um **Slack: Send Message** logo antes, como `{{result.ts}}`."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "emoji": "white_check_mark"
+          },
+          "slug": "slack-add-reaction"
+        },
+        {
+          "credential": "slack",
+          "description": "Sends a file to a channel. The content can come from a Download node.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Channel ID",
+              "name": "channel",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "File name",
+              "name": "filename",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Content",
+              "name": "content",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Message",
+              "name": "comment",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-slack",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Slack: Upload File",
+          "notes": {
+            "en": "**Content** is `{{result}}` after a node that returned a file, like **S3: Download File** or **Write CSV**, or text. **File name** shows in Slack, with its extension. **Comment** goes with it as a message. **Channel** is a channel ID, like `C0123456789`: **Slack: List Channels** gives them, and Slack shows it at the bottom of a channel's details. Invite the app to the channel first.",
+            "pt": "**Content** é `{{result}}` depois de um nó que devolveu um arquivo, como **S3: Download File** ou **Write CSV**, ou um texto. **File name** aparece no Slack, com a extensão. **Comment** vai junto como mensagem. **Channel** é o ID de um canal, como `C0123456789`: **Slack: List Channels** devolve eles, e o Slack mostra no fim dos detalhes do canal. Convide o app para o canal antes."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "file_id": "F07ABCDE123"
+          },
+          "slug": "slack-upload-file"
+        },
+        {
+          "credential": "slack",
+          "description": "Returns the channels of the workspace, with the IDs the other Slack nodes take.",
+          "fields": [
+            {
+              "default": "public_channel",
+              "label": "Channels",
+              "name": "types",
+              "options": [
+                {
+                  "label": "Public",
+                  "value": "public_channel"
+                },
+                {
+                  "label": "Private",
+                  "value": "private_channel"
+                },
+                {
+                  "label": "Public and private",
+                  "value": "public_channel,private_channel"
+                }
+              ],
+              "type": "select"
+            }
+          ],
+          "group": null,
+          "icon": "logo-slack",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Slack: List Channels",
+          "notes": {
+            "en": "Lists the channels the token sees, every page of them, without archived ones. **Types** picks public, private or both.",
+            "pt": "Lista os canais que o token enxerga, todas as páginas, sem os arquivados. **Types** escolhe públicos, privados ou os dois."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": [
+            {
+              "id": "C0123456789",
+              "name": "general"
+            },
+            {
+              "id": "C0987654321",
+              "name": "sales"
+            }
+          ],
+          "slug": "slack-list-channels"
+        }
+      ]
+    },
+    {
+      "id": "google_sheets",
+      "label": "Google Sheets",
+      "nodes": [
+        {
+          "credential": "google",
+          "description": "Reads rows from a sheet, using a service account. Share the sheet with its email first.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Spreadsheet ID",
+              "name": "spreadsheet_id",
+              "type": "text"
+            },
+            {
+              "default": "Sheet1!A:Z",
+              "label": "Range",
+              "name": "range",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-google-sheets",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Google Sheets: Read Rows",
+          "notes": {
+            "en": "Returns the cells of **Range** as a list of rows, each a list of values as they show in the sheet. The header row, when the sheet has one, comes first. **Range** is in A1 notation: `Sheet1!A:Z` is every row of those columns, and `Sheet1!A2:C10` a block.\n\n**Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+            "pt": "Devolve as células de **Range** como uma lista de linhas, cada uma uma lista de valores como aparecem na planilha. A linha de cabeçalho, quando a planilha tem, vem primeiro. **Range** é na notação A1: `Sheet1!A:Z` são todas as linhas dessas colunas, e `Sheet1!A2:C10` um bloco.\n\n**Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": [
+            [
+              "name",
+              "email"
+            ],
+            [
+              "Ana",
+              "ana@example.com"
+            ],
+            [
+              "Bruno",
+              "bruno@example.com"
+            ]
+          ],
+          "slug": "google-sheets-read-rows"
+        },
+        {
+          "credential": "google",
+          "description": "Adds rows after the last row of a range.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Spreadsheet ID",
+              "name": "spreadsheet_id",
+              "type": "text"
+            },
+            {
+              "default": "Sheet1!A:Z",
+              "label": "Range",
+              "name": "range",
+              "type": "text"
+            },
+            {
+              "default": "result",
+              "label": "Rows",
+              "name": "rows",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-google-sheets",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Google Sheets: Add Rows",
+          "notes": {
+            "en": "Adds the rows after the last one of **Range**. Values are read as if typed, so `=SUM(B2:B9)` is a formula and `2026-05-12` a date. **Rows** is the path to the rows in the context, `result` by default: a list of objects, whose values go in the order of the first one's keys; a list of lists; one row; or one object.\n\n**Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+            "pt": "Adiciona as linhas depois da última de **Range**. Os valores são lidos como se fossem digitados, então `=SUM(B2:B9)` é uma fórmula e `2026-05-12` uma data. **Rows** é o caminho até as linhas no contexto, `result` por padrão: uma lista de objetos, cujos valores vão na ordem das chaves do primeiro; uma lista de listas; uma linha; ou um objeto.\n\n**Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "updated_rows": 2
+          },
+          "slug": "google-sheets-add-rows"
+        },
+        {
+          "credential": "google",
+          "description": "Writes rows over a range, replacing what's there.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Spreadsheet ID",
+              "name": "spreadsheet_id",
+              "type": "text"
+            },
+            {
+              "default": "Sheet1!A:Z",
+              "label": "Range",
+              "name": "range",
+              "type": "text"
+            },
+            {
+              "default": "result",
+              "label": "Rows",
+              "name": "rows",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-google-sheets",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Google Sheets: Update Rows",
+          "notes": {
+            "en": "Writes the rows over **Range**, from its first cell. **Rows** is the path to the rows in the context, `result` by default: a list of objects, whose values go in the order of the first one's keys; a list of lists; one row; or one object. **Range** is in A1 notation: `Sheet1!A:Z` is every row of those columns, and `Sheet1!A2:C10` a block.\n\n**Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+            "pt": "Escreve as linhas por cima de **Range**, a partir da primeira célula. **Rows** é o caminho até as linhas no contexto, `result` por padrão: uma lista de objetos, cujos valores vão na ordem das chaves do primeiro; uma lista de listas; uma linha; ou um objeto. **Range** é na notação A1: `Sheet1!A:Z` são todas as linhas dessas colunas, e `Sheet1!A2:C10` um bloco.\n\n**Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "updated_rows": 2
+          },
+          "slug": "google-sheets-update-rows"
+        },
+        {
+          "credential": "google",
+          "description": "Empties the cells of a range, keeping the formatting.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Spreadsheet ID",
+              "name": "spreadsheet_id",
+              "type": "text"
+            },
+            {
+              "default": "Sheet1!A:Z",
+              "label": "Range",
+              "name": "range",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-google-sheets",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Google Sheets: Clear Rows",
+          "notes": {
+            "en": "Empties the cells of **Range**, keeping their formatting. **Range** is in A1 notation: `Sheet1!A:Z` is every row of those columns, and `Sheet1!A2:C10` a block.\n\n**Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+            "pt": "Esvazia as células de **Range**, mantendo a formatação. **Range** é na notação A1: `Sheet1!A:Z` são todas as linhas dessas colunas, e `Sheet1!A2:C10` um bloco.\n\n**Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "cleared_range": "Sheet1!A2:Z1000"
+          },
+          "slug": "google-sheets-clear-rows"
+        },
+        {
+          "credential": "google",
+          "description": "Returns the sheets of a spreadsheet.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Spreadsheet ID",
+              "name": "spreadsheet_id",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-google-sheets",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Google Sheets: List Sheets",
+          "notes": {
+            "en": "Lists the tabs of the spreadsheet. **Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+            "pt": "Lista as abas da planilha. **Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": [
+            {
+              "id": 0,
+              "title": "Sheet1"
+            },
+            {
+              "id": 18273645,
+              "title": "May"
+            }
+          ],
+          "slug": "google-sheets-list-sheets"
+        },
+        {
+          "credential": "google",
+          "description": "Adds a new sheet to a spreadsheet.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Spreadsheet ID",
+              "name": "spreadsheet_id",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Sheet name",
+              "name": "title",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-google-sheets",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Google Sheets: Create Sheet",
+          "notes": {
+            "en": "Adds a tab named **Title**. It fails when one with that name exists. **Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+            "pt": "Adiciona uma aba chamada **Title**. Falha quando já existe uma com esse nome. **Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "id": 18273645,
+            "title": "May"
+          },
+          "slug": "google-sheets-create-sheet"
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "label": "S3",
+      "nodes": [
+        {
+          "credential": "s3",
+          "description": "Writes a file to a bucket. The content can come from a Download node.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Bucket",
+              "name": "bucket",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "File path",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Content",
+              "name": "content",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Content type, like text/csv",
+              "name": "content_type",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-s3",
+          "inputs": [
+            "exec"
+          ],
+          "name": "S3: Upload File",
+          "notes": {
+            "en": "**Content** is `{{result}}` after a node that returned a file, like a download, an AI image or **Write CSV**, or text. **Content type**, like `text/csv`, tells browsers what it is. An existing file at **Key** is replaced.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+            "pt": "**Content** é `{{result}}` depois de um nó que devolveu um arquivo, como um download, uma imagem de IA ou **Write CSV**, ou um texto. **Content type**, como `text/csv`, diz aos navegadores o que ele é. Um arquivo que já existe em **Key** é substituído.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "key": "reports/2026-05.csv"
+          },
+          "slug": "s3-upload-file"
+        },
+        {
+          "credential": "s3",
+          "description": "Reads a file from a bucket.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Bucket",
+              "name": "bucket",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "File path",
+              "name": "key",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-s3",
+          "inputs": [
+            "exec"
+          ],
+          "name": "S3: Download File",
+          "notes": {
+            "en": "`result.content` holds the file. Text stays as text, and anything else comes in base64 with `\"encoding\": \"base64\"`, which the upload nodes and attachments take back unchanged as `{{result}}`.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+            "pt": "`result.content` guarda o arquivo. Texto fica como texto, e o resto vem em base64 com `\"encoding\": \"base64\"`, que os nós de upload e os anexos aceitam de volta sem alteração como `{{result}}`.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "content": "name,total\nAna,120\n"
+          },
+          "slug": "s3-download-file"
+        },
+        {
+          "credential": "s3",
+          "description": "Returns the paths of the files in a bucket, up to 1000.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Bucket",
+              "name": "bucket",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Only paths starting with",
+              "name": "prefix",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-s3",
+          "inputs": [
+            "exec"
+          ],
+          "name": "S3: List Files",
+          "notes": {
+            "en": "Lists the keys that start with **Prefix**, up to the first 1,000. Blank lists from the top of the bucket.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+            "pt": "Lista as chaves que começam com **Prefix**, até as primeiras 1.000. Em branco lista a partir do topo do bucket.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "keys": [
+              "reports/2026-04.csv",
+              "reports/2026-05.csv"
+            ]
+          },
+          "slug": "s3-list-files"
+        },
+        {
+          "credential": "s3",
+          "description": "Returns the size, type and date of a file, without reading it.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Bucket",
+              "name": "bucket",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "File path",
+              "name": "key",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-s3",
+          "inputs": [
+            "exec"
+          ],
+          "name": "S3: File Info",
+          "notes": {
+            "en": "Reads a file's size, type and last change without downloading it. It goes down `error` when the file doesn't exist.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+            "pt": "Lê o tamanho, o tipo e a última alteração de um arquivo sem baixar. Sai por `error` quando o arquivo não existe.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "key": "reports/2026-05.csv",
+            "modified": "Tue, 12 May 2026 09:14:00 GMT",
+            "size": 20481,
+            "type": "text/csv"
+          },
+          "slug": "s3-file-info"
+        },
+        {
+          "credential": "s3",
+          "description": "Copies a file inside the service, without downloading it.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Bucket",
+              "name": "bucket",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "File path",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Target bucket",
+              "name": "target_bucket",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Target file path",
+              "name": "target_key",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-s3",
+          "inputs": [
+            "exec"
+          ],
+          "name": "S3: Copy File",
+          "notes": {
+            "en": "Copies **Key** of **Bucket** to **Target key** of **Target bucket**, on the server side. To move a file, follow it with **S3: Delete File**.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+            "pt": "Copia **Key** de **Bucket** para **Target key** de **Target bucket**, no próprio servidor. Para mover, siga com **S3: Delete File**.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "key": "archive/2026-05.csv"
+          },
+          "slug": "s3-copy-file"
+        },
+        {
+          "credential": "s3",
+          "description": "Deletes a file from a bucket.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Bucket",
+              "name": "bucket",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "File path",
+              "name": "key",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-s3",
+          "inputs": [
+            "exec"
+          ],
+          "name": "S3: Delete File",
+          "notes": {
+            "en": "Deletes the file. S3 answers the same when there was nothing there.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+            "pt": "Apaga o arquivo. O S3 responde igual quando não havia nada lá.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "key": "reports/2026-05.csv"
+          },
+          "slug": "s3-delete-file"
+        },
+        {
+          "credential": "s3",
+          "description": "Creates a link that lets anyone download a file until it expires. It doesn't check the file exists.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Bucket",
+              "name": "bucket",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "File path",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": "3600",
+              "label": "Expires in seconds, up to 604800",
+              "name": "expires",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-s3",
+          "inputs": [
+            "exec"
+          ],
+          "name": "S3: Share Link",
+          "notes": {
+            "en": "Signs a link that downloads a private file, which anyone with it can open until it expires. **Expires in** is in seconds, an hour by default and a week at most. Send `{{result.url}}` by email or Slack.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+            "pt": "Assina um link que baixa um arquivo privado, que qualquer um com ele abre até expirar. **Expires in** é em segundos, uma hora por padrão e uma semana no máximo. Mande `{{result.url}}` por email ou Slack.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "expires_in": 3600,
+            "url": "https://my-bucket.s3.amazonaws.com/reports/2026-05.csv?X-Amz-Algorithm=AWS4-HMAC-SHA256&..."
+          },
+          "slug": "s3-share-link"
+        }
+      ]
+    },
+    {
+      "id": "ftp",
+      "label": "FTP",
+      "nodes": [
+        {
+          "credential": "ftp",
+          "description": "Writes a file on the server. The content can come from a Download node.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Path",
+              "name": "path",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Content",
+              "name": "content",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-server-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "FTP: Upload File",
+          "notes": {
+            "en": "**Content** is `{{result}}` after a node that returned a file, or text. A file already at **Path** is replaced. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+            "pt": "**Content** é `{{result}}` depois de um nó que devolveu um arquivo, ou um texto. Um arquivo que já está em **Path** é substituído. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "path": "exports/orders.csv"
+          },
+          "slug": "ftp-upload-file"
+        },
+        {
+          "credential": "ftp",
+          "description": "Reads a file from the server.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Path",
+              "name": "path",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-server-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "FTP: Download File",
+          "notes": {
+            "en": "`result.content` holds the file. Text stays as text, and anything else comes in base64 with `\"encoding\": \"base64\"`, which the upload nodes and attachments take back unchanged as `{{result}}`. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+            "pt": "`result.content` guarda o arquivo. Texto fica como texto, e o resto vem em base64 com `\"encoding\": \"base64\"`, que os nós de upload e os anexos aceitam de volta sem alteração como `{{result}}`. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "content": "id,total\n4411,129.90\n"
+          },
+          "slug": "ftp-download-file"
+        },
+        {
+          "credential": "ftp",
+          "description": "Returns the names of the files in a folder.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Folder",
+              "name": "path",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-server-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "FTP: List Files",
+          "notes": {
+            "en": "Lists the names in the folder at **Path**. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+            "pt": "Lista os nomes na pasta em **Path**. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "files": [
+              "orders.csv",
+              "returns.csv"
+            ]
+          },
+          "slug": "ftp-list-files"
+        },
+        {
+          "credential": "ftp",
+          "description": "Renames a file or folder, or moves it to another path.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Current path",
+              "name": "path",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "New path",
+              "name": "new_path",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-server-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "FTP: Rename or Move",
+          "notes": {
+            "en": "Renames **Path** to **New path**, which also moves it between folders. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+            "pt": "Renomeia **Path** para **New path**, o que também move entre pastas. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "path": "archive/orders.csv"
+          },
+          "slug": "ftp-rename-or-move"
+        },
+        {
+          "credential": "ftp",
+          "description": "Deletes a file from the server.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Path",
+              "name": "path",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-server-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "FTP: Delete File",
+          "notes": {
+            "en": "**Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+            "pt": "**Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "path": "exports/orders.csv"
+          },
+          "slug": "ftp-delete-file"
+        },
+        {
+          "credential": "ftp",
+          "description": "Creates a folder on the server.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Path",
+              "name": "path",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-server-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "FTP: Create Folder",
+          "notes": {
+            "en": "Creates one folder, inside one that exists. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+            "pt": "Cria uma pasta, dentro de uma que já existe. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "path": "exports/2026"
+          },
+          "slug": "ftp-create-folder"
+        },
+        {
+          "credential": "ftp",
+          "description": "Deletes an empty folder from the server.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Path",
+              "name": "path",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-server-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "FTP: Delete Folder",
+          "notes": {
+            "en": "Deletes an empty folder. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+            "pt": "Apaga uma pasta vazia. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "path": "exports/2025"
+          },
+          "slug": "ftp-delete-folder"
+        }
+      ]
+    },
+    {
+      "id": "utility",
+      "label": "Utility",
+      "nodes": [
+        {
+          "credential": null,
+          "description": "Writes a message to the application logs without changing the flow context.",
+          "fields": [
+            {
+              "default": "info",
+              "label": "Level",
+              "name": "level",
+              "options": [
+                {
+                  "label": "Debug",
+                  "value": "debug"
+                },
+                {
+                  "label": "Info",
+                  "value": "info"
+                },
+                {
+                  "label": "Warning",
+                  "value": "warning"
+                },
+                {
+                  "label": "Error",
+                  "value": "error"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "Log message",
+              "label": "Message",
+              "name": "message",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-document-text-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Logger",
+          "notes": {
+            "en": "Writes **Message** to the server's log at the **Level** picked, as it is written, and leaves the run as it was. To see what a step had while it ran, open the run in the [run inspector](/docs/guides/debugging/) instead.",
+            "pt": "Escreve **Message** no log do servidor no **Level** escolhido, do jeito que está escrita, e deixa a execução como estava. Para ver o que um passo tinha enquanto rodava, abra a execução no [inspetor de execuções](/pt/docs/guides/debugging/)."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": null,
+          "slug": "logger"
+        }
+      ]
+    }
+  ]
+}

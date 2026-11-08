@@ -1,4 +1,9 @@
-# Scaling Guide
+---
+title: Scaling
+description: Run the UI and the workers apart, and size them for the load.
+sidebar:
+  order: 1
+---
 
 This guide shows how to scale **Heddle** after the umbrella split between UI and worker.
 

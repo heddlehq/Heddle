@@ -1,8 +1,13 @@
-# Installation Guide
+---
+title: Installation
+description: Install Heddle on your computer with one command, on a server with Docker, or from source.
+sidebar:
+  order: 2
+---
 
 This guide will help you get **Heddle** up and running.
 
-## ⚡ One-line install
+## One-line install
 
 This is the easiest way to try Heddle on your own computer. It needs nothing else: Postgres and everything Heddle runs on come in the download.
 
@@ -25,7 +30,7 @@ Heddle then starts and opens in your browser, where you create the admin account
 - **Network access:** this install answers on your computer only. Flows can run code with your account's permissions, so run only the ones you trust.
 - **Python:** the first start downloads Python, which needs an internet connection.
 
-This install is for one person on one computer. For a server, or to share Heddle with a team, choose Docker in the installer, or see [Docker](#-installation-docker) below. As root or on Linux with musl, like Alpine, Docker is the option the installer offers.
+This install is for one person on one computer. For a server, or to share Heddle with a team, choose Docker in the installer, or see [Docker](#installation-docker) below. As root or on Linux with musl, like Alpine, Docker is the option the installer offers.
 
 ### Installing only Treadle
 
@@ -74,11 +79,11 @@ Prefer the `HEDDLE_LLM_API_KEY` variable to `--llm-key`, which shows in the proc
 
 - **Updating:** `heddle update`, or run the install command again. Your data stays, and a copy goes to the `backups` folder first, keeping the latest three. If a new version needs a Postgres your data can't use, it stops without changing anything.
 - **Backing up:** `heddle backup` stops Heddle for the copy and starts it again after. `heddle backup restore` moves your current data aside instead of deleting it.
-- **Settings:** `heddle config set` takes anything in [`.env.example`](../.env.example). Restart for a change to apply.
+- **Settings:** `heddle config set` takes anything in [`.env.example`](https://github.com/heddlehq/Heddle/blob/main/.env.example). Restart for a change to apply.
 
 ---
 
-## 🛠 Prerequisites for running from source
+## Prerequisites for running from source
 
 Before you begin, ensure you have the following installed:
 
@@ -89,7 +94,7 @@ Before you begin, ensure you have the following installed:
 
 ---
 
-## 🏗 Installation (Source)
+## Installation (Source)
 
 Follow these steps to run Heddle directly from the source code.
 
@@ -143,7 +148,7 @@ mix run --no-halt
 
 ---
 
-## 🐳 Installation (Docker)
+## Installation (Docker)
 
 Running with Docker is the fastest way to get started without worrying about local dependencies.
 
@@ -157,7 +162,7 @@ docker compose up -d --build
 This starts the UI, a worker and Postgres. The first build takes a few minutes.
 
 ### 2. Create your admin account
-Visit [`localhost:4000`](http://localhost:4000). The first visit asks you to create the admin account, which starts in a workspace called Default. To bring your team in, see [Workspaces and roles](workspaces.md).
+Visit [`localhost:4000`](http://localhost:4000). The first visit asks you to create the admin account, which starts in a workspace called Default. To bring your team in, see [Workspaces and roles](/docs/concepts/workspaces/).
 
 From another machine, use this computer's address, like `http://192.168.1.50:4000`.
 
@@ -212,7 +217,7 @@ Increase worker replicas carefully and tune these values together with your Post
 
 The **Credentials** page stores what nodes like Slack, S3 and FTP need to reach other services. Values are encrypted with a key derived from `SECRET_KEY_BASE`, and flows only keep the credential's name.
 
-The nodes of the **Database** category take a credential of their database, and [Database nodes](databases.md) explains them.
+The nodes of the **Database** category take a credential of their database, and [Database nodes](/docs/guides/databases/) explains them.
 
 Sending email takes an **Email (SMTP)** credential, and reading a mailbox takes an **Email (IMAP)** one. IMAP only connects over TLS, usually on port 993.
 
@@ -248,11 +253,11 @@ docker run --rm -p 4000:4000 \
 
 ---
 
-## 🧪 Verification
+## Verification
 
 To ensure everything is working correctly, you can run the test suite:
 ```bash
 mix test
 ```
 
-For multi-instance deployment and worker scaling, see [guides/scaling.md](./scaling.md).
+For multi-instance deployment and worker scaling, see [Scaling](/docs/self-hosting/scaling/).

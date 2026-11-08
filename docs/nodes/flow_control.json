@@ -1,0 +1,74 @@
+{
+  "Start": {
+    "result": null,
+    "notes": {
+      "en": "Where a run begins when you press **Run** in the editor, or call the flow through the API. What the run was started with is already in the context.",
+      "pt": "Onde a execução começa quando você aperta **Run** no editor, ou chama o fluxo pela API. O que veio junto com o pedido de execução já está no contexto."
+    }
+  },
+  "Condition": {
+    "result": null,
+    "notes": {
+      "en": "Goes down `true` or `false`. **Variable** names a [variable](/docs/concepts/context/) or a key of the context, like `status` (not `{{status}}`). **Value** is compared as it is written.\n\n| Operator | True when |\n| --- | --- |\n| `equals`, `not equals` | The two are the same text, or not |\n| `greater than`, `less than` | Compared as numbers; what isn't a number counts as 0 |\n| `contains` | The text holds the value |\n\nFor more than two ways, use a **Switch**.",
+      "pt": "Segue por `true` ou `false`. **Variable** é o nome de uma [variável](/pt/docs/concepts/context/) ou de uma chave do contexto, como `status` (e não `{{status}}`). **Value** é comparado do jeito que está escrito.\n\n| Operador | Verdadeiro quando |\n| --- | --- |\n| `equals`, `not equals` | Os dois são o mesmo texto, ou não |\n| `greater than`, `less than` | Comparados como números; o que não é número conta como 0 |\n| `contains` | O texto contém o valor |\n\nPara mais de dois caminhos, use um **Switch**."
+    }
+  },
+  "Switch": {
+    "result": null,
+    "notes": {
+      "en": "Fills in **Value**, then goes down the first case equal to it, or down `otherwise`. Cases take `{{placeholders}}` too, and an empty case is skipped. For more than four cases, connect another Switch to `otherwise`.",
+      "pt": "Preenche **Value** e segue pelo primeiro caso igual a ele, ou por `otherwise`. Os casos também aceitam `{{placeholders}}`, e um caso vazio é ignorado. Para mais de quatro casos, ligue outro Switch em `otherwise`."
+    }
+  },
+  "For Each": {
+    "result": [
+      {
+        "id": 1,
+        "sent": true
+      },
+      {
+        "id": 2,
+        "sent": true
+      }
+    ],
+    "notes": {
+      "en": "**List** is the path to a list in the context, like `result` or `body.items` (not a placeholder). The nodes on `item` run once per item, one after the other, with `item`, `index` (from 0) and `result` set to the item.\n\nWhen the list ends, `done` goes on once, and `result` holds what each item's branch left in `result`, in order. A list holds up to 10,000 items.",
+      "pt": "**List** é o caminho até uma lista no contexto, como `result` ou `body.items` (sem placeholder). Os nós em `item` rodam uma vez por item, um depois do outro, com `item`, `index` (a partir de 0) e `result` valendo o item.\n\nQuando a lista acaba, `done` segue uma vez, e `result` guarda o que o ramo de cada item deixou em `result`, na ordem. Uma lista aceita até 10.000 itens."
+    }
+  },
+  "Merge": {
+    "result": [
+      {
+        "plan": "pro"
+      },
+      {
+        "seats": 4
+      }
+    ],
+    "notes": {
+      "en": "Waits until every connection to it has arrived, then goes on once. **Combine** says what `result` becomes:\n\n| Combine | `result` |\n| --- | --- |\n| List of results | One item per branch, in the order they arrived |\n| Join lists | The lists of every branch, one after the other |\n| Merge objects | One object with the keys of all of them |\n\nA branch that a Condition never took doesn't hold the run: once nothing else is left, the Merge goes on with what arrived.",
+      "pt": "Espera todas as conexões que chegam nele e segue uma vez só. **Combine** diz o que `result` vira:\n\n| Combine | `result` |\n| --- | --- |\n| List of results | Um item por ramo, na ordem em que chegaram |\n| Join lists | As listas de todos os ramos, uma depois da outra |\n| Merge objects | Um objeto com as chaves de todos |\n\nUm ramo que uma Condition nunca tomou não segura a execução: quando não sobra mais nada para rodar, o Merge segue com o que chegou."
+    }
+  },
+  "Wait": {
+    "result": null,
+    "notes": {
+      "en": "Pauses the run, and holds no worker while it waits. It survives restarts, and lasts a year at most.\n\n- **For a while**: **How long** and **Unit**.\n- **Until a date**: an ISO 8601 date in UTC, like `2026-12-24T18:00:00Z`. A date already past doesn't stop the run.\n- **Until a call**: the run goes on when something calls `{{resume_url}}`, which is in the context before the Wait, so send it ahead, by email or to an API. The request that called it becomes `result`. With **How long** filled in, the run goes down `timeout` if no call came in time.\n\nA Wait can't be the tool of an AI Agent.",
+      "pt": "Pausa a execução sem ocupar nenhum worker enquanto espera. Sobrevive a reinícios e dura no máximo um ano.\n\n- **For a while**: **How long** e **Unit**.\n- **Until a date**: uma data ISO 8601 em UTC, como `2026-12-24T18:00:00Z`. Uma data que já passou não para a execução.\n- **Until a call**: a execução segue quando alguém chama `{{resume_url}}`, que já está no contexto antes do Wait, então mande ele antes, por email ou para uma API. A requisição que chamou vira `result`. Com **How long** preenchido, a execução sai por `timeout` se a chamada não vier a tempo.\n\nUm Wait não pode ser ferramenta de um AI Agent."
+    }
+  },
+  "Output": {
+    "result": null,
+    "notes": {
+      "en": "Ends this branch, and the run finishes with its context. It has no outputs. A run also ends when it reaches a node with nothing after it, so an Output is there to make the end clear.",
+      "pt": "Encerra este ramo, e a execução termina com o contexto dele. Não tem saídas. Uma execução também termina quando chega num nó sem nada depois, então o Output serve para deixar o fim claro."
+    }
+  },
+  "Respond to Webhook": {
+    "result": null,
+    "notes": {
+      "en": "Answers whoever called the [Webhook](/docs/nodes/webhook/), and the flow goes on after it. **Body** is sent as `application/json` when it is a JSON object or list, and as `text/plain` otherwise. **Status** is a number from 100 to 599, and 200 when it isn't one.\n\nThe caller waits for it, so put it early in the flow. A run that fails before answering gets `500`, and one that takes too long gets `504`.",
+      "pt": "Responde quem chamou o [Webhook](/pt/docs/nodes/webhook/), e o fluxo continua depois dele. **Body** vai como `application/json` quando é um objeto ou lista JSON, e como `text/plain` quando não é. **Status** é um número de 100 a 599, e vira 200 quando não é.\n\nQuem chamou fica esperando, então coloque ele cedo no fluxo. Uma execução que falha antes de responder devolve `500`, e uma que demora demais devolve `504`."
+    }
+  }
+}

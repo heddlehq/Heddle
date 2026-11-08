@@ -36,6 +36,13 @@ The graph of a flow is its **draft**. What production runs (webhooks, schedules,
 - **A draft may be unfinished** (half a cron expression): publishing checks it in full.
 - **Running or publishing reads the database**, so it saves the session first: `Flows.saved_draft/1`.
 
+## Documentation lives next to the code
+The documentation site (`/docs` on the website) is built from `docs/`, so a change and its documentation go in the same PR.
+- **Pages**: `docs/site/en` and `docs/site/pt`, in Markdown, one file per page in both languages. A behavior a person sees changes the page that describes it, in both.
+- **Nodes**: each page comes from the node's definition and its entry in `docs/nodes/<category>.json`: an example of what it leaves in `result`, and notes in English and Portuguese. After adding or changing a node, update its entry and run `mix heddle.docs`. A test fails while a node has no entry or `docs/reference/nodes.json` is out of date.
+- **Examples**: `docs/examples/*.json` are flows the tutorials offer to import. A test imports and validates each one.
+- Links between pages are absolute, like `/docs/concepts/versions/` and `/pt/docs/concepts/versions/`.
+
 ## The agent is one harness on the server
 The agent lives on the server, and every client only sends messages and shows events. **Never** put agent logic in a client.
 - `HeddleAI.Harness`: the loop. It knows nothing about flows: it takes tools, reports events, stops repeated calls and keeps the conversation within what a model takes.

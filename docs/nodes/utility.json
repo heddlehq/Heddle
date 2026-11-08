@@ -1,0 +1,9 @@
+{
+  "Logger": {
+    "result": null,
+    "notes": {
+      "en": "Writes **Message** to the server's log at the **Level** picked, as it is written, and leaves the run as it was. To see what a step had while it ran, open the run in the [run inspector](/docs/guides/debugging/) instead.",
+      "pt": "Escreve **Message** no log do servidor no **Level** escolhido, do jeito que está escrita, e deixa a execução como estava. Para ver o que um passo tinha enquanto rodava, abra a execução no [inspetor de execuções](/pt/docs/guides/debugging/)."
+    }
+  }
+}

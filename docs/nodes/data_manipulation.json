@@ -1,0 +1,32 @@
+{
+  "Variable": {
+    "result": null,
+    "notes": {
+      "en": "Keeps a value under `variables`, which every node after it reads as `{{name}}`: a variable comes before a key of the context with the same name. **Type** converts the value: `Integer` reads a number, and `JSON` reads an object or a list, so `{{customer.email}}` works after it. A value that can't be converted stays as text.\n\n**Value** is kept as it is written, without filling in placeholders. To keep what a step returned, use a [code step](/docs/nodes/evaluate-code/).",
+      "pt": "Guarda um valor em `variables`, que todo nó depois dele lê como `{{nome}}`: uma variável vem antes de uma chave do contexto com o mesmo nome. **Type** converte o valor: `Integer` lê um número, e `JSON` lê um objeto ou lista, então `{{cliente.email}}` funciona depois dele. Um valor que não converte fica como texto.\n\n**Value** é guardado do jeito que está escrito, sem preencher placeholders. Para guardar o que um passo devolveu, use um [passo de código](/pt/docs/nodes/evaluate-code/)."
+    }
+  },
+  "Read CSV": {
+    "result": [
+      {
+        "name": "Ana",
+        "email": "ana@example.com"
+      },
+      {
+        "name": "Bruno",
+        "email": "bruno@example.com"
+      }
+    ],
+    "notes": {
+      "en": "**Source** is the path to the text in the context, like `result` after a download, or `body.file`. The first line names the columns, and each other line becomes an object. **Separator** is a comma or a semicolon.",
+      "pt": "**Source** é o caminho até o texto no contexto, como `result` depois de um download, ou `body.file`. A primeira linha dá o nome das colunas, e cada outra linha vira um objeto. **Separator** é vírgula ou ponto e vírgula."
+    }
+  },
+  "Write CSV": {
+    "result": "name,email\nAna,ana@example.com\nBruno,bruno@example.com\n",
+    "notes": {
+      "en": "**Source** is the path to a list of objects, like `result.rows`. The columns are every key that appears, in the order they first do. Lists and objects in a cell are written as JSON. Hand `result` to an upload, an email attachment or a Respond to Webhook.",
+      "pt": "**Source** é o caminho até uma lista de objetos, como `result.rows`. As colunas são todas as chaves que aparecem, na ordem em que aparecem pela primeira vez. Listas e objetos numa célula viram JSON. Passe `result` para um upload, um anexo de email ou um Respond to Webhook."
+    }
+  }
+}

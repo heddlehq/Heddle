@@ -1,0 +1,80 @@
+{
+  "name": "New leads to Slack",
+  "nodes": [
+    {
+      "id": "hook",
+      "type": "Webhook",
+      "label": "New lead",
+      "controls": {
+        "method": "POST",
+        "path": "/leads"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "slack",
+      "type": "Slack: Send Message",
+      "label": "Tell #sales",
+      "controls": {
+        "credential": "Slack",
+        "channel": "C0123456789",
+        "text": "New lead: *{{body.name}}* <{{body.email}}> from {{body.company}}",
+        "thread_ts": ""
+      },
+      "position": {
+        "x": 280,
+        "y": 0
+      }
+    },
+    {
+      "id": "ok",
+      "type": "Respond to Webhook",
+      "label": "Answer OK",
+      "controls": {
+        "response_status": "200",
+        "response_body": "{\"ok\": true}"
+      },
+      "position": {
+        "x": 580,
+        "y": -80
+      }
+    },
+    {
+      "id": "failed",
+      "type": "Respond to Webhook",
+      "label": "Answer failure",
+      "controls": {
+        "response_status": "502",
+        "response_body": "{\"ok\": false, \"error\": \"{{result.error}}\"}"
+      },
+      "position": {
+        "x": 580,
+        "y": 100
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "hook",
+      "sourceOutput": "exec",
+      "target": "slack",
+      "targetInput": "exec"
+    },
+    {
+      "source": "slack",
+      "sourceOutput": "success",
+      "target": "ok",
+      "targetInput": "exec"
+    },
+    {
+      "source": "slack",
+      "sourceOutput": "error",
+      "target": "failed",
+      "targetInput": "exec"
+    }
+  ],
+  "comments": []
+}
