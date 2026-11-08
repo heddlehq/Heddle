@@ -52,10 +52,6 @@ defmodule HeddleUI.WorkspaceLive.Index do
     end
   end
 
-  def handle_event("change_locale", %{"locale" => locale}, socket) do
-    {:noreply, redirect(socket, to: ~p"/workspaces?locale=#{locale}")}
-  end
-
   @impl true
   def render(assigns) do
     ~H"""

@@ -1,11 +1,11 @@
 ---
 title: Starting flows
-description: Run a flow from a webhook, on a schedule, from the API, or when another flow fails.
+description: Run a flow from a webhook, a form, on a schedule, from the API, or when another flow fails.
 sidebar:
   order: 2
 ---
 
-**Run Flow** in the editor is for trying. In production, flows start on their own: from a webhook, on a schedule, from the API, or when another flow fails. All of these run the [published version](/docs/concepts/versions/), so publish first.
+**Run Flow** in the editor is for trying. In production, flows start on their own: from a webhook, when someone sends a form, on a schedule, from the API, or when another flow fails. All of these run the [published version](/docs/concepts/versions/), so publish first.
 
 ## Webhooks
 
@@ -47,6 +47,26 @@ A webhook's address is public. To accept only calls you expect, have the caller 
 | Case 1 | the secret |
 
 Connect the rest of the flow to `case 1`, and a **Respond to Webhook** with status `401` to `otherwise`.
+
+## Forms
+
+A [Form Trigger](/docs/nodes/form-trigger/) gives the flow a form anyone with its link can fill in: a customer, a lead, a colleague without an account. Its drawer builds the form. Each field has a **question**, a **type** (short text, long text, email, number, date, choice or checkbox), a **key** and whether it is **required**. The key follows the question until you write one of your own.
+
+The link is at the top of the drawer, with **Copy**, **Open** and **Test the draft**. Like a webhook, it shows what is published, so publish before sharing it. It stays the same when you publish again, and **New link** replaces it when the old one got out.
+
+What a person sends is in the run under `form`, by key, and in `result` right after the trigger:
+
+```text
+{{form.email}}    ana@example.com
+{{form.plan}}     Pro
+{{form.terms}}    true
+```
+
+Heddle checks every answer before the run starts: a required field must be filled in, an email must look like one, a number is a number and a choice is one of its options. A checkbox is `true` or `false`, a number comes as a number, and a date as `2026-11-08`.
+
+After sending, the person sees the **Message after sending**, or goes to the address in **Then go to**. **Accepting answers** set to `No` closes the form once published. The page follows the visitor's language and theme, and a person can send the same form ten times a minute.
+
+To keep the answers, connect a [Spool: Insert Rows](/docs/nodes/spool-insert-rows/) with **Rows** set to `{{form}}`. **Create Spool table** in the drawer makes a table with a column for each field. See [Spool](/docs/guides/spool/).
 
 ## Schedules
 

@@ -9,6 +9,7 @@ defmodule HeddleUI.FlowLive.Editor do
   alias HeddleUI.FlowLive.AgentManager
   alias HeddleUI.FlowLive.TerminalManager
   alias HeddleUI.FlowLive.{CodeEditorManager, InspectorManager, NodePaletteManager, NodeSettings}
+  alias HeddleUI.FlowLive.FormManager
   alias HeddleUI.FlowLive.VersionsManager
 
   @impl true
@@ -88,15 +89,11 @@ defmodule HeddleUI.FlowLive.Editor do
       CodeEditorManager.initial_assigns() ++
       NodePaletteManager.initial_assigns() ++
       VersionsManager.initial_assigns(flow) ++
+      FormManager.initial_assigns() ++
       [publish_note: nil]
   end
 
-  # Locale & Client Lifecycle
-  @impl true
-  def handle_event("change_locale", %{"locale" => locale}, socket) do
-    {:noreply, redirect(socket, to: ~p"/?locale=#{locale}")}
-  end
-
+  # Client Lifecycle
   @impl true
   # The canvas gets the flow from its own channel, see `HeddleUI.FlowChannel`.
   def handle_event("client_ready", _params, socket) do
@@ -200,24 +197,54 @@ defmodule HeddleUI.FlowLive.Editor do
   @impl true
   def handle_event("open_node_config", %{"nodeData" => node_data}, socket) do
     {:noreply,
-     assign(socket,
+     socket
+     |> assign(
        config_modal_open: true,
        editing_node_data: node_data,
        credentials: Credentials.list_credentials(socket.assigns.current_scope),
        current_node_id: node_data["id"]
-     )}
+     )
+     |> FormManager.opened(node_data)}
   end
 
   @impl true
   # Each field reaches the canvas as it changes, and from there everyone editing the
   # flow: there is nothing to save.
   def handle_event("node_config_changed", params, socket) do
+    params = FormManager.encode_fields(socket.assigns.editing_node_data, params)
+
     socket =
       update(socket, :editing_node_data, fn node_data ->
         node_data |> put_control_values(params) |> put_settings_values(params["settings"])
       end)
 
     {:noreply, if(socket.assigns.can_edit, do: push_node_changes(socket, params), else: socket)}
+  end
+
+  # A Form Trigger's fields and link, see `HeddleUI.FlowLive.FormManager`.
+  @impl true
+  def handle_event("form_field_add", _params, socket) do
+    {:noreply, FormManager.add_field(socket)}
+  end
+
+  @impl true
+  def handle_event("form_field_remove", %{"index" => index}, socket) do
+    {:noreply, FormManager.remove_field(socket, String.to_integer(index))}
+  end
+
+  @impl true
+  def handle_event("form_field_move", %{"index" => index, "direction" => direction}, socket) do
+    {:noreply, FormManager.move_field(socket, String.to_integer(index), direction)}
+  end
+
+  @impl true
+  def handle_event("form_regenerate_link", _params, socket) do
+    {:noreply, FormManager.regenerate(socket)}
+  end
+
+  @impl true
+  def handle_event("form_create_table", _params, socket) do
+    {:noreply, FormManager.create_table(socket)}
   end
 
   @impl true

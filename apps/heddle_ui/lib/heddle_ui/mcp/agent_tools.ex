@@ -21,7 +21,8 @@ defmodule HeddleUI.MCP.AgentTools do
     {"list_nodes", Tools.ListNodes},
     {"list_executions", Tools.ListExecutions},
     {"get_execution", Tools.GetExecution},
-    {"list_versions", Tools.ListVersions}
+    {"list_versions", Tools.ListVersions},
+    {"list_spool_tables", Tools.ListSpoolTables}
   ]
 
   # What changes production, which only the agent of the editor does: it asks the

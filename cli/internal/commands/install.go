@@ -76,6 +76,8 @@ func installCommand() *cobra.Command {
 	options.StringVar(&plan.ClaudeKey, "claude-key", "", text.T("API key for the Claude Agent", "chave de API do Claude Agent"))
 	options.StringVar(&plan.ClaudeBudget, "claude-budget", "", text.T("spending limit per chat, in USD", "limite de gasto por chat, em USD"))
 	options.IntVar(&plan.ExecutionConcurrency, "concurrency", 0, text.T("flows running at the same time", "flows rodando ao mesmo tempo"))
+	options.IntVar(&plan.SpoolMaxTables, "spool-max-tables", 0, text.T("Spool tables per workspace (default: 50)", "tabelas do Spool por workspace (padrão: 50)"))
+	options.IntVar(&plan.SpoolMaxRows, "spool-max-rows", 0, text.T("rows per Spool table (default: 100000)", "linhas por tabela do Spool (padrão: 100000)"))
 	options.StringVar(&plan.TreadleHome, "treadle-home", plan.TreadleHome, text.T("where to install Treadle", "onde instalar o Treadle"))
 	options.StringVar(&plan.TreadleVersion, "treadle-version", "", text.T("version of Treadle", "versão do Treadle"))
 	options.StringVar(&plan.TreadleServer, "server", "", text.T("Heddle server for Treadle", "servidor Heddle do Treadle"))

@@ -6,6 +6,18 @@
       "pt": "O endereço do fluxo é `/api/flows/<id do fluxo>/webhook/<caminho>`, e ele só atende o **Method** escolhido. O que a requisição traz fica na execução:\n\n| Chave | O que guarda |\n| --- | --- |\n| `body` | O corpo, já decodificado quando é JSON |\n| `headers` | Os cabeçalhos, pelo nome em minúsculas |\n| `query_params` | A query string |\n| `method`, `request_path` | Como foi chamado |\n\nQuem chama recebe `202 Accepted` na hora, a não ser que o fluxo tenha um **Respond to Webhook**: aí ele espera essa resposta. As chamadas de produção rodam a [versão publicada](/pt/docs/concepts/versions/), e um fluxo que nunca foi publicado responde `404`."
     }
   },
+  "Form Trigger": {
+    "result": {
+      "name": "Ana Souza",
+      "email": "ana@example.com",
+      "plan": "Pro",
+      "terms": true
+    },
+    "notes": {
+      "en": "Builds a form anyone with its link can fill in, and starts the flow from this node each time someone sends it. The drawer shows the link, with **Copy**, **Open** and **Test the draft**, and the fields, each with a question, a type, a key and whether it is required.\n\nWhat was sent is in the run as `form`, by key, and in `result` right after the node: `{{form.email}}`. A checkbox is `true` or `false`, a number a number and a date `2026-11-08`. Heddle checks every answer before the run starts, so the flow never sees a required field empty or a choice that isn't one of its options.\n\n| Field | What it does |\n| --- | --- |\n| **Title**, **Description** | The top of the page |\n| **Button** | The text of the button that sends it |\n| **Message after sending** | What the person sees after sending |\n| **Then go to** | An address to send the person to instead, `https://` only |\n| **Accepting answers** | `No` closes the form |\n\nThe link shows the [published version](/docs/concepts/versions/), and stays the same across publishes until **New link** replaces it. To keep the answers, connect a [Spool: Insert Rows](/docs/nodes/spool-insert-rows/) with **Rows** set to `{{form}}`. See [Starting flows](/docs/guides/starting-flows/#forms).",
+      "pt": "Monta um formulário que qualquer pessoa com o link pode preencher, e começa o fluxo por este nó a cada envio. O painel mostra o link, com **Copiar**, **Abrir** e **Testar o rascunho**, e os campos, cada um com pergunta, tipo, chave e se é obrigatório.\n\nO que foi enviado fica na execução em `form`, pela chave, e em `result` logo depois do nó: `{{form.email}}`. A caixa de seleção vem como `true` ou `false`, o número como número e a data como `2026-11-08`. O Heddle confere cada resposta antes de a execução começar, então o fluxo nunca recebe um campo obrigatório vazio ou uma escolha fora das opções.\n\n| Campo | O que faz |\n| --- | --- |\n| **Title**, **Description** | O topo da página |\n| **Button** | O texto do botão que envia |\n| **Message after sending** | O que a pessoa vê depois de enviar |\n| **Then go to** | Um endereço para onde mandar a pessoa no lugar disso, só `https://` |\n| **Accepting answers** | `No` fecha o formulário |\n\nO link mostra a [versão publicada](/pt/docs/concepts/versions/), e continua o mesmo entre publicações até **Novo link** trocá-lo. Para guardar as respostas, ligue um [Spool: Insert Rows](/pt/docs/nodes/spool-insert-rows/) com **Rows** igual a `{{form}}`. Veja [Disparando fluxos](/pt/docs/guides/starting-flows/#formulários)."
+    }
+  },
   "Schedule": {
     "result": null,
     "notes": {

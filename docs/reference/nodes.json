@@ -55,6 +55,82 @@
         },
         {
           "credential": null,
+          "description": "Starts a flow when someone fills in its form, at a link you can share.",
+          "fields": [
+            {
+              "default": "Contact us",
+              "label": "Title",
+              "name": "title",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Description",
+              "name": "description",
+              "type": "textarea"
+            },
+            {
+              "default": "[{\"key\":\"name\",\"label\":\"Name\",\"required\":true,\"type\":\"text\"},{\"key\":\"email\",\"label\":\"Email\",\"required\":true,\"type\":\"email\"},{\"key\":\"message\",\"label\":\"Message\",\"required\":false,\"type\":\"textarea\"}]",
+              "label": "Fields",
+              "name": "fields",
+              "type": "form_fields"
+            },
+            {
+              "default": "Send",
+              "label": "Button",
+              "name": "submit_label",
+              "type": "text"
+            },
+            {
+              "default": "Thank you! We got your answers.",
+              "label": "Message after sending",
+              "name": "success_message",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Then go to (URL, optional)",
+              "name": "redirect_url",
+              "type": "text"
+            },
+            {
+              "default": "yes",
+              "label": "Accepting answers",
+              "name": "accepting",
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes"
+                },
+                {
+                  "label": "No",
+                  "value": "no"
+                }
+              ],
+              "type": "select"
+            }
+          ],
+          "group": null,
+          "icon": "hero-clipboard-document-list-solid",
+          "inputs": [],
+          "name": "Form Trigger",
+          "notes": {
+            "en": "Builds a form anyone with its link can fill in, and starts the flow from this node each time someone sends it. The drawer shows the link, with **Copy**, **Open** and **Test the draft**, and the fields, each with a question, a type, a key and whether it is required.\n\nWhat was sent is in the run as `form`, by key, and in `result` right after the node: `{{form.email}}`. A checkbox is `true` or `false`, a number a number and a date `2026-11-08`. Heddle checks every answer before the run starts, so the flow never sees a required field empty or a choice that isn't one of its options.\n\n| Field | What it does |\n| --- | --- |\n| **Title**, **Description** | The top of the page |\n| **Button** | The text of the button that sends it |\n| **Message after sending** | What the person sees after sending |\n| **Then go to** | An address to send the person to instead, `https://` only |\n| **Accepting answers** | `No` closes the form |\n\nThe link shows the [published version](/docs/concepts/versions/), and stays the same across publishes until **New link** replaces it. To keep the answers, connect a [Spool: Insert Rows](/docs/nodes/spool-insert-rows/) with **Rows** set to `{{form}}`. See [Starting flows](/docs/guides/starting-flows/#forms).",
+            "pt": "Monta um formulário que qualquer pessoa com o link pode preencher, e começa o fluxo por este nó a cada envio. O painel mostra o link, com **Copiar**, **Abrir** e **Testar o rascunho**, e os campos, cada um com pergunta, tipo, chave e se é obrigatório.\n\nO que foi enviado fica na execução em `form`, pela chave, e em `result` logo depois do nó: `{{form.email}}`. A caixa de seleção vem como `true` ou `false`, o número como número e a data como `2026-11-08`. O Heddle confere cada resposta antes de a execução começar, então o fluxo nunca recebe um campo obrigatório vazio ou uma escolha fora das opções.\n\n| Campo | O que faz |\n| --- | --- |\n| **Title**, **Description** | O topo da página |\n| **Button** | O texto do botão que envia |\n| **Message after sending** | O que a pessoa vê depois de enviar |\n| **Then go to** | Um endereço para onde mandar a pessoa no lugar disso, só `https://` |\n| **Accepting answers** | `No` fecha o formulário |\n\nO link mostra a [versão publicada](/pt/docs/concepts/versions/), e continua o mesmo entre publicações até **Novo link** trocá-lo. Para guardar as respostas, ligue um [Spool: Insert Rows](/pt/docs/nodes/spool-insert-rows/) com **Rows** igual a `{{form}}`. Veja [Disparando fluxos](/pt/docs/guides/starting-flows/#formulários)."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": {
+            "email": "ana@example.com",
+            "name": "Ana Souza",
+            "plan": "Pro",
+            "terms": true
+          },
+          "slug": "form-trigger"
+        },
+        {
+          "credential": null,
           "description": "Starts the flow on a schedule, written as a cron expression in UTC.",
           "fields": [
             {
@@ -1388,6 +1464,253 @@
       "id": "database",
       "label": "Database",
       "nodes": [
+        {
+          "credential": null,
+          "description": "Reads the rows of a Spool table that match a filter, in order.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Filter (JSON)",
+              "name": "filter",
+              "type": "textarea"
+            },
+            {
+              "default": "created_at desc",
+              "label": "Order by",
+              "name": "order_by",
+              "type": "text"
+            },
+            {
+              "default": "100",
+              "label": "Limit",
+              "name": "limit",
+              "type": "text"
+            },
+            {
+              "default": "0",
+              "label": "Skip",
+              "name": "offset",
+              "type": "text"
+            }
+          ],
+          "group": "Spool",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Spool: Find Rows",
+          "notes": {
+            "en": "Reads the rows of a [Spool](/docs/guides/spool/) table that match **Filter**. An empty filter reads them all, up to **Limit** (1,000 at most).\n\n```json\n{\"plan\": \"Pro\", \"score\": {\">=\": 5}, \"email\": {\"contains\": \"@example.com\"}}\n```\n\nThe operators are `=`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `empty` and `in`, and every condition must hold. **Order by** takes columns with `asc` or `desc`, like `score desc, email`. `result.rows` is a list of rows, by column name, with `id`, `created_at` and `updated_at`, and `result.count` how many.\n\nA `{{placeholder}}` in the filter is always a value, sent to the database as a parameter.",
+            "pt": "Lê as linhas de uma tabela do [Spool](/pt/docs/guides/spool/) que batem com **Filter**. Um filtro vazio lê todas, até **Limit** (1.000 no máximo).\n\n```json\n{\"plan\": \"Pro\", \"score\": {\">=\": 5}, \"email\": {\"contains\": \"@example.com\"}}\n```\n\nOs operadores são `=`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `empty` e `in`, e todas as condições precisam valer. **Order by** recebe colunas com `asc` ou `desc`, como `score desc, email`. `result.rows` é uma lista de linhas, pelo nome da coluna, com `id`, `created_at` e `updated_at`, e `result.count` quantas são.\n\nUm `{{placeholder}}` no filtro é sempre um valor, enviado ao banco como parâmetro."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "rows": [
+              {
+                "created_at": "2026-11-08T14:03:12.481Z",
+                "email": "ana@example.com",
+                "id": 12,
+                "plan": "Pro",
+                "score": 10,
+                "updated_at": "2026-11-08T14:03:12.481Z"
+              }
+            ]
+          },
+          "slug": "spool-find-rows"
+        },
+        {
+          "credential": null,
+          "description": "Adds one row or a list of them to a Spool table, from column to value. All of them or none go in.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{{form}}",
+              "label": "Rows",
+              "name": "rows",
+              "type": "textarea"
+            }
+          ],
+          "group": "Spool",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Spool: Insert Rows",
+          "notes": {
+            "en": "Adds rows to a [Spool](/docs/guides/spool/) table. **Rows** is one object or a list of them, from column name to value, or a single placeholder like `{{form}}`, which saves what a [Form Trigger](/docs/nodes/form-trigger/) received.\n\nEach value is converted to its column's type: `\"7\"` becomes `7` in a number column, and `\"yes\"` becomes `true` in a yes / no column. An unknown column or a value that can't be converted goes out the `error` output, and none of the rows go in. `result.rows` has the rows as saved, with their `id`.",
+            "pt": "Adiciona linhas a uma tabela do [Spool](/pt/docs/guides/spool/). **Rows** é um objeto ou uma lista deles, do nome da coluna para o valor, ou um único placeholder como `{{form}}`, que guarda o que um [Form Trigger](/pt/docs/nodes/form-trigger/) recebeu.\n\nCada valor é convertido para o tipo da coluna: `\"7\"` vira `7` numa coluna de número, e `\"yes\"` vira `true` numa coluna sim / não. Uma coluna desconhecida ou um valor que não pode ser convertido sai pela saída `error`, e nenhuma linha entra. `result.rows` traz as linhas como foram guardadas, com o `id`."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "rows": [
+              {
+                "created_at": "2026-11-08T14:03:12.481Z",
+                "email": "ana@example.com",
+                "id": 12,
+                "plan": "Pro",
+                "score": 10,
+                "updated_at": "2026-11-08T14:03:12.481Z"
+              }
+            ]
+          },
+          "slug": "spool-insert-rows"
+        },
+        {
+          "credential": null,
+          "description": "Changes the rows of a Spool table that match a filter. A null clears a column.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{\"id\": \"{{result.id}}\"}",
+              "label": "Filter (JSON)",
+              "name": "filter",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Values (JSON)",
+              "name": "values",
+              "type": "textarea"
+            }
+          ],
+          "group": "Spool",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Spool: Update Rows",
+          "notes": {
+            "en": "Changes the rows of a [Spool](/docs/guides/spool/) table that match **Filter**, which can't be empty. **Values** is an object from column to its new value, and `null` clears a column: `{\"plan\": \"Free\", \"score\": null}`. Columns left out keep their values.\n\n`result.count` is how many rows changed, and `result.ids` which.",
+            "pt": "Altera as linhas de uma tabela do [Spool](/pt/docs/guides/spool/) que batem com **Filter**, que não pode ser vazio. **Values** é um objeto da coluna para o novo valor, e `null` limpa uma coluna: `{\"plan\": \"Free\", \"score\": null}`. As colunas que não aparecem mantêm os valores.\n\n`result.count` é quantas linhas mudaram, e `result.ids` quais."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "ids": [
+              12
+            ]
+          },
+          "slug": "spool-update-rows"
+        },
+        {
+          "credential": null,
+          "description": "Adds rows to a Spool table, or changes the row that has the same value in the key column.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Key column",
+              "name": "key_column",
+              "type": "text"
+            },
+            {
+              "default": "{{form}}",
+              "label": "Rows",
+              "name": "rows",
+              "type": "textarea"
+            }
+          ],
+          "group": "Spool",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Spool: Upsert Rows",
+          "notes": {
+            "en": "Adds rows to a [Spool](/docs/guides/spool/) table, or changes the row that already has the same value in **Key column**, like `email`. Each row needs a value for the key. A row that exists keeps the columns the new one leaves out.\n\nRuns that upsert into the same table take turns, so two of them can't add the same key twice. `result.inserted` and `result.updated` say how many of each.",
+            "pt": "Adiciona linhas a uma tabela do [Spool](/pt/docs/guides/spool/), ou altera a linha que já tem o mesmo valor em **Key column**, como `email`. Cada linha precisa de um valor para a chave. Uma linha que já existe mantém as colunas que a nova não traz.\n\nExecuções que fazem upsert na mesma tabela esperam a vez, então duas delas não adicionam a mesma chave duas vezes. `result.inserted` e `result.updated` dizem quantas de cada."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "inserted": 0,
+            "rows": [
+              {
+                "created_at": "2026-11-08T14:03:12.481Z",
+                "email": "ana@example.com",
+                "id": 12,
+                "plan": "Pro",
+                "score": 10,
+                "updated_at": "2026-11-08T14:03:12.481Z"
+              }
+            ],
+            "updated": 1
+          },
+          "slug": "spool-upsert-rows"
+        },
+        {
+          "credential": null,
+          "description": "Deletes the rows of a Spool table that match a filter.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{\"id\": \"{{result.id}}\"}",
+              "label": "Filter (JSON)",
+              "name": "filter",
+              "type": "textarea"
+            }
+          ],
+          "group": "Spool",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Spool: Delete Rows",
+          "notes": {
+            "en": "Deletes the rows of a [Spool](/docs/guides/spool/) table that match **Filter**, which can't be empty, so a mistake doesn't empty the table: `{\"id\": 12}` or `{\"created_at\": {\"<\": \"2026-01-01\"}}`.\n\n`result.count` is how many rows went, and `result.ids` which.",
+            "pt": "Apaga as linhas de uma tabela do [Spool](/pt/docs/guides/spool/) que batem com **Filter**, que não pode ser vazio, para um engano não esvaziar a tabela: `{\"id\": 12}` ou `{\"created_at\": {\"<\": \"2026-01-01\"}}`.\n\n`result.count` é quantas linhas saíram, e `result.ids` quais."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "ids": [
+              12
+            ]
+          },
+          "slug": "spool-delete-rows"
+        },
         {
           "credential": "sql",
           "description": "Runs any statement on PostgreSQL, MySQL, MariaDB, SQL Server, SQLite or Oracle. {{placeholders}} go as parameters, so a value can't change the query.",
