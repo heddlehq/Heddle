@@ -156,7 +156,8 @@ defmodule HeddleUI.PublicAPI.V1.LiveFlow do
 
   @doc """
   Points the stream `client` of the caller at nodes: the ones `selected` and the one
-  `editing`, as a canvas does. Returns `:ok`, or `{:error, :not_found}` when the caller
+  `editing`, as a canvas does, and puts its `cursor` (`x` and `y` on the flow, or nil)
+  on the canvases of the others. Returns `:ok`, or `{:error, :not_found}` when the caller
   has no such stream on the flow.
   """
   def focus(%Scope{} = scope, id, client, params) when is_binary(client) do
@@ -170,12 +171,35 @@ defmodule HeddleUI.PublicAPI.V1.LiveFlow do
         focus_topic(flow.id, client),
         {:live_focus, selected(params), editing(params)}
       )
+
+      cursor(flow.id, client, params)
     else
       _none -> {:error, :not_found}
     end
   end
 
   def focus(_scope, _id, _client, _params), do: {:error, :not_found}
+
+  # A client without a pointer, like a terminal, says where it is on the flow, and the
+  # canvases draw it as any other cursor. Nil takes it away.
+  defp cursor(flow_id, client, %{"cursor" => %{"x" => x, "y" => y}})
+       when is_number(x) and is_number(y) do
+    HeddleUI.Endpoint.broadcast(FlowPresence.topic(flow_id), "cursor", %{
+      client: client,
+      x: x,
+      y: y
+    })
+  end
+
+  defp cursor(flow_id, client, %{"cursor" => nil}) do
+    HeddleUI.Endpoint.broadcast(FlowPresence.topic(flow_id), "cursor", %{
+      client: client,
+      x: nil,
+      y: nil
+    })
+  end
+
+  defp cursor(_flow_id, _client, _params), do: :ok
 
   @doc "Writes an event of the stream."
   def event(name, data), do: "event: #{name}\ndata: #{Jason.encode!(data)}\n\n"

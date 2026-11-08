@@ -206,6 +206,41 @@ defmodule HeddleUI.PublicAPI.V1.LiveControllerTest do
                FlowPresence.get_by_key(FlowPresence.topic(flow.id), state.client)
     end
 
+    test "puts the cursor of a terminal on the canvases of the others", %{
+      conn: conn,
+      user: user,
+      flow: flow,
+      scope: scope
+    } do
+      {:ok, state, _events} = LiveFlow.start(scope, flow.id)
+      :ok = HeddleUI.Endpoint.subscribe(FlowPresence.topic(flow.id))
+      client = state.client
+
+      conn
+      |> authorize(user, ["workflows:read"])
+      |> post(~p"/api/v1/workflows/#{flow.id}/focus", %{
+        client: client,
+        selected: [],
+        cursor: %{x: 120, y: 40.5}
+      })
+      |> response(204)
+
+      assert_receive %Phoenix.Socket.Broadcast{
+        event: "cursor",
+        payload: %{client: ^client, x: 120, y: 40.5}
+      }
+
+      build_conn()
+      |> authorize(user, ["workflows:read"])
+      |> post(~p"/api/v1/workflows/#{flow.id}/focus", %{client: client, selected: [], cursor: nil})
+      |> response(204)
+
+      assert_receive %Phoenix.Socket.Broadcast{
+        event: "cursor",
+        payload: %{client: ^client, x: nil}
+      }
+    end
+
     test "only reaches a stream of the same person", %{conn: conn, flow: flow, scope: scope} do
       {:ok, state, _events} = LiveFlow.start(scope, flow.id)
       other = viewer(flow)
