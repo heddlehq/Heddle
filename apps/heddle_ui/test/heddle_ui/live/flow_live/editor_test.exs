@@ -555,6 +555,21 @@ defmodule HeddleUI.FlowLive.EditorTest do
 
       refute lv |> element("#node-code-preview-code") |> render() =~ "1 + 1"
     end
+
+    # The drawer has no save button: code kept only there was gone the next time the
+    # node opened, since that reads the canvas.
+    test "sends the code saved from the drawer to the canvas", %{conn: conn} do
+      lv = open_drawer(conn, %{"code_elixir" => ""})
+
+      lv |> element("#edit-code-code") |> render_click()
+      render_submit(lv, "save_code", %{"code_elixir" => "3 + 3", "code_python" => ""})
+
+      assert_push_event(lv, "update_node_code", %{
+        nodeId: "n1",
+        code_elixir: "3 + 3",
+        code_python: ""
+      })
+    end
   end
 
   describe "open_code_editor event" do
