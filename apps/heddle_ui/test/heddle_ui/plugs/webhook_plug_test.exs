@@ -156,11 +156,53 @@ defmodule HeddleUI.Plugs.WebhookPlugTest do
     })
   end
 
+  describe "versions" do
+    test "a flow that isn't published has no webhook", %{conn: conn} do
+      path = unique_webhook_path()
+      flow = webhook_flow_fixture(path: path, method: "POST", published: false)
+
+      :ok = Webhooks.register_flow(flow)
+      conn = post(conn, "/api/flows/#{flow.id}/webhook/#{Webhooks.normalize_path(path)}", %{})
+
+      assert %{"error" => "Flow not found"} = json_response(conn, 404)
+      assert [] = Executions.list_executions_for_flow(flow)
+    end
+
+    test "a webhook runs what the flow publishes, not its draft", %{conn: conn} do
+      path = unique_webhook_path()
+      slug = Webhooks.normalize_path(path)
+      flow = webhook_flow_fixture(path: path, method: "POST")
+      published_id = flow.published_version_id
+
+      # A change to the draft doesn't reach production, not even the webhook's path.
+      {:ok, _flow} =
+        HeddleCore.Flows.update_flow(flow, %{
+          nodes: [
+            %{
+              "id" => "1",
+              "type" => "Webhook",
+              "label" => "Webhook",
+              "controls" => %{"path" => "/webhook/elsewhere", "method" => "POST"}
+            }
+          ],
+          connections: []
+        })
+
+      conn = post(conn, "/api/flows/#{flow.id}/webhook/#{slug}", %{"value" => 1})
+
+      assert json_response(conn, 202)
+      assert [execution] = Executions.list_executions_for_flow(flow)
+      assert execution.flow_version_id == published_id
+    end
+  end
+
   defp webhook_flow_fixture(opts) do
     path = Keyword.fetch!(opts, :path)
     method = Keyword.fetch!(opts, :method)
 
     flow_fixture(%{
+      published: Keyword.get(opts, :published, true),
+      published: Keyword.get(opts, :published, true),
       nodes: [
         %{
           "id" => "1",

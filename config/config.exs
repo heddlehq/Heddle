@@ -24,7 +24,13 @@ config :heddle_worker, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
   queues: [default: 2, executions: 50],
-  plugins: [{Oban.Plugins.Cron, crontab: [{"* * * * *", HeddleWorker.ScheduleWorker}]}],
+  plugins: [
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"* * * * *", HeddleWorker.ScheduleWorker},
+       {"17 3 * * *", HeddleWorker.VersionPruneWorker}
+     ]}
+  ],
   repo: HeddleCore.Repo
 
 config :heddle_core, Oban,

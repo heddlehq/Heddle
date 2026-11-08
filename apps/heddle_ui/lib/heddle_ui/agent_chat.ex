@@ -59,19 +59,45 @@ defmodule HeddleUI.AgentChat do
   the person in the chat, and any way this can fail means no.
   """
   def confirm_run(%ApiKey{} = api_key, %Flow{} = flow) do
-    if ApiKeys.agent_key?(api_key), do: ask(api_key, flow), else: :ok
+    confirm(api_key, flow, %{action: "run"})
   end
 
-  defp ask(api_key, flow) do
+  @doc """
+  Decides whether `api_key` may change what production runs: publish the draft of
+  `flow`, or put the version numbered `number` back in production. It asks like
+  `confirm_run/2`, and a person always answers it: allowing every run doesn't allow
+  this.
+  """
+  def confirm_publish(%ApiKey{} = api_key, %Flow{} = flow, number \\ nil) do
+    confirm(api_key, flow, %{action: "publish", version: number})
+  end
+
+  @doc """
+  Decides whether `api_key` may replace the draft of `flow` with the version numbered
+  `number`. It asks like `confirm_publish/3`.
+  """
+  def confirm_restore(%ApiKey{} = api_key, %Flow{} = flow, number) do
+    confirm(api_key, flow, %{action: "restore", version: number})
+  end
+
+  defp confirm(api_key, flow, what) do
+    if ApiKeys.agent_key?(api_key), do: ask(api_key, flow, what), else: :ok
+  end
+
+  defp ask(api_key, flow, what) do
     case Registry.lookup(@registry, api_key.id) do
-      [{owner, _value}] -> wait_for_decision(owner, flow)
-      [] -> {:error, "Nobody is available to confirm this run."}
+      [{owner, _value}] -> wait_for_decision(owner, flow, what)
+      [] -> {:error, "Nobody is available to confirm this."}
     end
   end
 
-  defp wait_for_decision(owner, flow) do
+  defp wait_for_decision(owner, flow, what) do
     ref = Process.monitor(owner)
-    send(owner, {:agent_run_confirmation, %{ref: ref, reply_to: self(), flow_name: flow.name}})
+
+    question =
+      Map.merge(what, %{ref: ref, reply_to: self(), flow_name: flow.name})
+
+    send(owner, {:agent_run_confirmation, question})
 
     receive do
       {:agent_run_decision, ^ref, true} ->
@@ -80,7 +106,7 @@ defmodule HeddleUI.AgentChat do
 
       {:agent_run_decision, ^ref, false} ->
         Process.demonitor(ref, [:flush])
-        {:error, "The user refused to run this flow."}
+        {:error, refusal(what.action)}
 
       {:DOWN, ^ref, :process, ^owner, _reason} ->
         {:error, "The user left before confirming."}
@@ -90,6 +116,10 @@ defmodule HeddleUI.AgentChat do
         {:error, "The user didn't confirm in time."}
     end
   end
+
+  defp refusal("run"), do: "The user refused to run this flow."
+  defp refusal("publish"), do: "The user refused to publish this flow."
+  defp refusal("restore"), do: "The user refused to restore this version."
 
   defp mcp_url do
     port = HeddleUI.Mode.endpoint().config(:http)[:port]

@@ -145,6 +145,14 @@ const hooks = {
         });
       }
 
+      // Publishing takes what the canvas has, saved or not.
+      this.handleEvent("request_publish_data", async () => {
+        if (editor.exportData) {
+          const data = await editor.exportData();
+          this.pushEvent("publish_graph_data", { data });
+        }
+      });
+
       this.handleEvent("request_save_and_run", async () => {
         if (editor.exportData) {
           const data = await editor.exportData();
@@ -236,6 +244,25 @@ const hooks = {
       };
 
       this.pushEvent("client_ready", {});
+    },
+  },
+  // A version of the flow, on a canvas of its own that nothing can change, with what
+  // it changed marked on its nodes. The draft stays under it as it was.
+  VersionPreview: {
+    async mounted() {
+      const { createEditor } = await import("./rete_editor.js");
+      this.editor = await createEditor(this.el, { readOnly: true });
+      if (this.gone) return this.editor.destroy();
+
+      this.pushEvent("version_preview_ready", {}, async (graph) => {
+        if (this.gone || !graph.nodes) return;
+        await this.editor.importData(graph);
+        await this.editor.setDiff(graph.diff || {});
+      });
+    },
+    destroyed() {
+      this.gone = true;
+      if (this.editor) this.editor.destroy();
     },
   },
   ScrollToBottom: {

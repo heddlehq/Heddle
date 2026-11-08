@@ -14,6 +14,7 @@ defmodule HeddleWorker.FlowExecutionWorker do
 
   alias HeddleCore.Executions
   alias HeddleCore.Flows
+  alias HeddleCore.Flows.Versions
   alias HeddleNodes.Runner
 
   @internal_result_keys ["flow_id", "workspace_id", "logs"]
@@ -22,7 +23,7 @@ defmodule HeddleWorker.FlowExecutionWorker do
   def perform(%Oban.Job{args: %{"execution_id" => id, "wait_id" => wait_id} = args, id: job_id}) do
     case Executions.claim_resume(id, wait_id, job_id) do
       {:ok, execution} ->
-        flow = Flows.get_flow!(execution.flow_id)
+        flow = execution.flow_id |> Flows.get_flow!() |> Versions.for_execution(execution)
         resumption = Map.take(args, ["by", "request"])
 
         flow
@@ -37,7 +38,8 @@ defmodule HeddleWorker.FlowExecutionWorker do
 
   def perform(%Oban.Job{args: %{"execution_id" => execution_id}}) do
     execution = Executions.get_execution!(execution_id)
-    flow = Flows.get_flow!(execution.flow_id)
+    # It runs the version it was started with, whatever the flow has become since.
+    flow = execution.flow_id |> Flows.get_flow!() |> Versions.for_execution(execution)
 
     with {:ok, running_execution} <- Executions.mark_running(execution) do
       flow

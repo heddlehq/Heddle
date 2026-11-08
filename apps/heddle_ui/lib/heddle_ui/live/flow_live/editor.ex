@@ -11,6 +11,7 @@ defmodule HeddleUI.FlowLive.Editor do
   alias HeddleUI.FlowLive.AgentManager
   alias HeddleUI.FlowLive.TerminalManager
   alias HeddleUI.FlowLive.{CodeEditorManager, InspectorManager, NodePaletteManager, NodeSettings}
+  alias HeddleUI.FlowLive.VersionsManager
 
   @impl true
   def mount(%{"id" => id} = params, _session, socket) do
@@ -25,6 +26,7 @@ defmodule HeddleUI.FlowLive.Editor do
      |> assign(initial_assigns(flow, scope))
      # `?execution=` opens the inspector on that run once the canvas is there.
      |> assign(inspect_on_load: params["execution"])
+     |> VersionsManager.mount()
      |> AgentManager.follow(), layout: false}
   end
 
@@ -82,7 +84,9 @@ defmodule HeddleUI.FlowLive.Editor do
       InspectorManager.initial_assigns() ++
       TerminalManager.initial_assigns(scope.user, can_edit) ++
       CodeEditorManager.initial_assigns() ++
-      NodePaletteManager.initial_assigns()
+      NodePaletteManager.initial_assigns() ++
+      VersionsManager.initial_assigns(flow) ++
+      [publish_note: nil]
   end
 
   # Locale & Client Lifecycle
@@ -428,6 +432,72 @@ defmodule HeddleUI.FlowLive.Editor do
     end
   end
 
+  # Versions & publishing (delegated to VersionsManager)
+  @impl true
+  def handle_event("versions_toggle", _params, socket) do
+    {:noreply, VersionsManager.toggle(socket)}
+  end
+
+  @impl true
+  def handle_event("version_preview", %{"id" => id}, socket) do
+    {:noreply, VersionsManager.preview(socket, id)}
+  end
+
+  @impl true
+  def handle_event("version_preview_ready", _params, socket) do
+    {:reply, VersionsManager.preview_graph(socket.assigns) || %{}, socket}
+  end
+
+  @impl true
+  def handle_event("version_preview_close", _params, socket) do
+    {:noreply, VersionsManager.close_preview(socket)}
+  end
+
+  @impl true
+  def handle_event(event, _params, %{assigns: %{can_edit: false}} = socket)
+      when event in ~w(version_restore version_publish open_publish publish publish_graph_data) do
+    {:noreply, read_only(socket)}
+  end
+
+  @impl true
+  def handle_event("version_restore", %{"id" => id}, socket) do
+    {:noreply, VersionsManager.restore(socket, id)}
+  end
+
+  @impl true
+  def handle_event("version_publish", %{"id" => id}, socket) do
+    {:noreply, VersionsManager.publish_version(socket, id)}
+  end
+
+  @impl true
+  def handle_event("open_publish", _params, socket) do
+    {:noreply, VersionsManager.open_publish(socket)}
+  end
+
+  @impl true
+  def handle_event("close_publish", _params, socket) do
+    {:noreply, VersionsManager.close_publish(socket)}
+  end
+
+  # What is published is what the canvas has, saved or not, so it asks for it first.
+  @impl true
+  def handle_event("publish", %{"publish" => params}, socket) do
+    {:noreply,
+     socket
+     |> assign(publish_note: params["note"])
+     |> push_event("request_publish_data", %{})}
+  end
+
+  @impl true
+  def handle_event("publish_graph_data", %{"data" => data}, socket) do
+    note = socket.assigns.publish_note
+
+    {:noreply,
+     socket
+     |> assign(publish_note: nil)
+     |> VersionsManager.publish(data, %{"note" => note})}
+  end
+
   # Importing: the flow goes on the canvas unsaved, so it can be looked at, undone
   # or saved like any change.
   @impl true
@@ -619,14 +689,21 @@ defmodule HeddleUI.FlowLive.Editor do
 
   @impl true
   def handle_info({:flow_updated, flow}, socket) do
-    if same_graph?(flow, socket.assigns.current_flow) do
-      {:noreply, assign(socket, current_flow: flow)}
-    else
-      {:noreply,
-       socket
-       |> assign(current_flow: flow, has_changes: false)
-       |> load_graph(flow)}
-    end
+    socket =
+      if same_graph?(flow, socket.assigns.current_flow) do
+        assign(socket, current_flow: flow)
+      else
+        socket
+        |> assign(current_flow: flow, has_changes: false)
+        |> load_graph(flow)
+      end
+
+    {:noreply, VersionsManager.refresh(socket)}
+  end
+
+  @impl true
+  def handle_info({:flow_versions_changed, _flow_id}, socket) do
+    {:noreply, VersionsManager.refresh(socket)}
   end
 
   attr :kind, :string, required: true
@@ -807,13 +884,13 @@ defmodule HeddleUI.FlowLive.Editor do
     )
   end
 
-  # An operator runs the flow as it was saved: they can't change it.
+  # An operator runs the draft as it was saved: they can't change it.
   defp save_and_run(%{assigns: %{can_edit: false, can_run: true}} = socket, _data) do
     %{current_scope: scope, current_flow: flow, next_run_input: input} = socket.assigns
     input = run_input(input, socket.assigns.run_section_id)
     socket = assign(socket, next_run_input: nil, run_section_id: nil)
 
-    case Executions.run(scope, flow, input) do
+    case Executions.run(scope, flow, input, version: :draft) do
       {:ok, execution} ->
         socket
         |> assign(execution_notice: nil)

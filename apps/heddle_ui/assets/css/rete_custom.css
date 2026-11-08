@@ -40,6 +40,11 @@
     --run-warning: #b7791f;
     --run-skipped: var(--color-gray-400);
 
+    /* How a version differs from the one before, in its preview. */
+    --diff-added: #2f7a55;
+    --diff-changed: #b7791f;
+    --diff-removed: var(--color-error);
+
     --json-key: #2a6374;
     --json-string: #2f6b4c;
     --json-number: #a8701a;
@@ -86,6 +91,10 @@
     --run-warning: #e6c976;
     --run-skipped: var(--color-slate-500);
 
+    --diff-added: #7fb796;
+    --diff-changed: #e6c976;
+    --diff-removed: #e8907d;
+
     --json-key: #9fcbd9;
     --json-string: #9fd0b3;
     --json-number: #e6c976;
@@ -93,6 +102,23 @@
     --json-hover: color-mix(in oklab, var(--color-white) 6%, transparent);
     --json-match: #6b5d31;
 }
+
+/* The legend of a version preview, see `HeddleUI.Components.Flow.VersionPreview`. */
+.diff-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.diff-legend::before {
+    content: "";
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 9999px;
+    border: 2px solid currentColor;
+}
+.diff-legend-added::before { color: var(--diff-added); }
+.diff-legend-changed::before { color: var(--diff-changed); }
+.diff-legend-removed::before { color: var(--diff-removed); border-style: dashed; }
 
 /* styles for the grid in the rete background */
 /* .rete-bg-grid sits inside content.holder (the element that receives the Rete transform).
