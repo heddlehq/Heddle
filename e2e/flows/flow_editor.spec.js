@@ -640,6 +640,32 @@ test.describe('Flow Editor', () => {
       await expect(page.locator('#node-code-preview-code')).toContainText('3 + 3');
     });
 
+    // The drawer has no save button, and the code saved from it once stayed in the
+    // drawer alone: after a run, the node opened again without it.
+    test('keeps the saved code after a run and when the node opens again', async ({ page }) => {
+      await addNodeViaContextMenu(page, 'Evaluate Code');
+      await openCodeEditor(page);
+      await typeCode(page, '3 + 3');
+      await page.locator('#code-editor-form').getByRole('button', { name: 'Save Changes' }).click();
+      await expect(page.locator('#node-code-preview-code')).toContainText('3 + 3');
+
+      await page.locator('#close-node-config').click();
+      await waitSaved(page);
+      await page.getByRole('button', { name: 'Run Flow' }).click();
+      await expect(page.locator('#run-inspector-status')).toBeVisible({ timeout: 5000 });
+
+      const node = page.locator('custom-node').first();
+      await node.hover();
+      await node.locator('.node-action-btn.config').click();
+      await expect(page.locator('#node-code-preview-code')).toContainText('3 + 3');
+
+      await page.reload();
+      await waitForLiveView(page);
+      await node.hover();
+      await node.locator('.node-action-btn.config').click();
+      await expect(page.locator('#node-code-preview-code')).toContainText('3 + 3');
+    });
+
     test('still shows the code when the editor cannot load', async ({ page }) => {
       await page.route('**/vendor/monaco/**', (route) => route.abort());
       await page.reload();

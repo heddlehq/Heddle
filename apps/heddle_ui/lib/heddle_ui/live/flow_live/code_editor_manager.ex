@@ -113,7 +113,9 @@ defmodule HeddleUI.FlowLive.CodeEditorManager do
         assign(socket, code_conflict: theirs)
 
       socket.assigns.config_modal_open ->
-        save_in_drawer(socket, code_elixir, code_python)
+        socket
+        |> save_in_drawer(code_elixir, code_python)
+        |> push_code(node_id, field_name, code_elixir, code_python)
 
       true ->
         save_on_canvas(socket, node_id, field_name, code_elixir, code_python)
@@ -170,14 +172,21 @@ defmodule HeddleUI.FlowLive.CodeEditorManager do
     )
   end
 
-  defp save_on_canvas(socket, node_id, field_name, code_elixir, code_python) do
-    socket
-    |> push_event("update_node_code", %{
+  # The canvas holds the flow and sends each change to everyone editing it. Code kept
+  # only in the drawer was gone the next time the node opened, since that reads the
+  # canvas.
+  defp push_code(socket, node_id, field_name, code_elixir, code_python) do
+    push_event(socket, "update_node_code", %{
       nodeId: node_id,
       code_elixir: code_elixir,
       code_python: code_python,
       fieldName: field_name
     })
+  end
+
+  defp save_on_canvas(socket, node_id, field_name, code_elixir, code_python) do
+    socket
+    |> push_code(node_id, field_name, code_elixir, code_python)
     |> assign(
       modal_open: false,
       current_node_id: nil,
