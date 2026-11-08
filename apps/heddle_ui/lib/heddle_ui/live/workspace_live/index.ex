@@ -77,9 +77,9 @@ defmodule HeddleUI.WorkspaceLive.Index do
           for={@form}
           id="workspace-form"
           phx-submit="create"
-          class="mt-4 flex flex-wrap items-end gap-3"
+          class="mt-4 flex max-w-xl items-end gap-3"
         >
-          <div class="w-72">
+          <div class="min-w-0 flex-1">
             <.input
               field={@form[:name]}
               type="text"
@@ -88,11 +88,15 @@ defmodule HeddleUI.WorkspaceLive.Index do
               required
             />
           </div>
-          <div class="pb-2">
-            <.button id="create-workspace" type="submit" variant="primary">
-              <.icon name="hero-plus" class="h-4 w-4 mr-1" /> {gettext("Create")}
-            </.button>
-          </div>
+          <.button
+            id="create-workspace"
+            type="submit"
+            variant="primary"
+            size="field"
+            class="mb-3"
+          >
+            <.icon name="hero-plus" class="size-4" /> {gettext("Create")}
+          </.button>
         </.form>
       </section>
 

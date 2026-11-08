@@ -100,12 +100,16 @@ defmodule HeddleUI.UserLive.Index do
                   options={Invites.role_options()}
                 />
               </div>
-              <div class="pb-2">
-                <.button id="generate-invite" type="submit" variant="primary">
-                  <.icon name="hero-envelope" class="h-4 w-4 mr-1" />
-                  {gettext("Generate invite link")}
-                </.button>
-              </div>
+              <.button
+                id="generate-invite"
+                type="submit"
+                variant="primary"
+                size="field"
+                class="mb-3"
+              >
+                <.icon name="hero-envelope" class="size-4" />
+                {gettext("Generate invite link")}
+              </.button>
             </.form>
             <Invites.invite_link :if={@current_invite} invite={@current_invite} />
           </div>

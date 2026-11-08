@@ -197,11 +197,11 @@ defmodule HeddleUI.WorkspaceLive.Show do
     ~H"""
     <div class="p-6 md:p-8 w-full max-w-5xl mx-auto space-y-8">
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div class="flex items-center gap-4">
-          <div class="size-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-lg font-bold">
+        <div class="flex min-w-0 items-center gap-4">
+          <div class="size-12 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-lg font-bold">
             {String.first(@workspace.name) |> String.upcase()}
           </div>
-          <div>
+          <div class="min-w-0">
             <h1 id="workspace-name" class="text-2xl font-bold text-gray-900 dark:text-white">
               {@workspace.name}
             </h1>
@@ -216,14 +216,14 @@ defmodule HeddleUI.WorkspaceLive.Show do
           for={@name_form}
           id="workspace-rename-form"
           phx-submit="rename"
-          class="flex items-end gap-2"
+          class="flex w-full items-end gap-3 md:w-auto"
         >
-          <div class="w-56">
+          <div class="min-w-0 flex-1 md:w-64 md:flex-none">
             <.input field={@name_form[:name]} type="text" label={gettext("Name")} required />
           </div>
-          <div class="pb-2">
-            <.button type="submit" variant="outline">{gettext("Rename")}</.button>
-          </div>
+          <.button id="rename-workspace" type="submit" variant="outline" size="field" class="mb-3">
+            {gettext("Rename")}
+          </.button>
         </.form>
       </div>
 
@@ -334,7 +334,7 @@ defmodule HeddleUI.WorkspaceLive.Show do
               options={Invites.role_options()}
             />
             <.button id="add-member" type="submit" variant="primary">
-              <.icon name="hero-user-plus" class="h-4 w-4 mr-1" /> {gettext("Add")}
+              <.icon name="hero-user-plus" class="h-4 w-4" /> {gettext("Add")}
             </.button>
           </.form>
         </section>
@@ -356,7 +356,7 @@ defmodule HeddleUI.WorkspaceLive.Show do
               options={Invites.role_options()}
             />
             <.button id="create-invite" type="submit" variant="primary">
-              <.icon name="hero-link" class="h-4 w-4 mr-1" /> {gettext("Get invite link")}
+              <.icon name="hero-link" class="h-4 w-4" /> {gettext("Get invite link")}
             </.button>
           </.form>
           <Invites.invite_link :if={@new_invite} invite={@new_invite} />
@@ -432,9 +432,9 @@ defmodule HeddleUI.WorkspaceLive.Show do
           for={@delete_form}
           id="delete-workspace-form"
           phx-submit="delete_workspace"
-          class="flex flex-wrap items-end gap-3"
+          class="flex max-w-xl items-end gap-3"
         >
-          <div class="w-72">
+          <div class="min-w-0 flex-1">
             <.input
               field={@delete_form[:name]}
               type="text"
@@ -442,11 +442,15 @@ defmodule HeddleUI.WorkspaceLive.Show do
               autocomplete="off"
             />
           </div>
-          <div class="pb-2">
-            <.button id="delete-workspace" type="submit" variant="danger">
-              {gettext("Delete")}
-            </.button>
-          </div>
+          <.button
+            id="delete-workspace"
+            type="submit"
+            variant="danger"
+            size="field"
+            class="mb-3"
+          >
+            {gettext("Delete")}
+          </.button>
         </.form>
       </section>
     </div>
