@@ -171,6 +171,27 @@
           ],
           "result": null,
           "slug": "error-trigger"
+        },
+        {
+          "credential": null,
+          "description": "Starts this flow when a Subflow node of another flow runs it, with what it sent in result.",
+          "fields": [],
+          "group": null,
+          "icon": "hero-arrow-down-on-square-solid",
+          "inputs": [],
+          "name": "Subflow Trigger",
+          "notes": {
+            "en": "Starts this flow when a **Subflow** node of another flow runs it. `result` is the **Data** that Subflow sent, and `caller` says who called:\n\n```json\n{\n  \"result\": {\"order_id\": 981, \"total\": 120.5},\n  \"caller\": {\"flow_id\": 12, \"flow_name\": \"New orders\", \"execution_id\": \"8f3k2m\"}\n}\n```\n\nWhat the flow ends with in `result` goes back to a Subflow that waits for it. A flow called runs its published version, as a run of its own, so it shows in its runs. A flow without a Subflow Trigger is run from its Start node.",
+            "pt": "Inicia este fluxo quando um nó **Subflow** de outro fluxo o executa. `result` é o **Data** que o Subflow mandou, e `caller` diz quem chamou:\n\n```json\n{\n  \"result\": {\"order_id\": 981, \"total\": 120.5},\n  \"caller\": {\"flow_id\": 12, \"flow_name\": \"Novos pedidos\", \"execution_id\": \"8f3k2m\"}\n}\n```\n\nO que o fluxo tiver em `result` no fim volta para o Subflow que espera por ele. O fluxo chamado roda a versão publicada dele, numa execução própria, que aparece nas execuções dele. Um fluxo sem Subflow Trigger roda a partir do nó Start."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": {
+            "order_id": 981,
+            "total": 120.5
+          },
+          "slug": "subflow-trigger"
         }
       ]
     },
@@ -475,6 +496,59 @@
           ],
           "result": null,
           "slug": "wait"
+        },
+        {
+          "credential": null,
+          "description": "Runs another flow of this workspace, from its Subflow Trigger, with Data as its result. Waiting for it, result is what it ended with.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Flow",
+              "name": "subflow_id",
+              "type": "flow"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Data",
+              "name": "subflow_data",
+              "type": "textarea"
+            },
+            {
+              "default": "wait",
+              "label": "Wait",
+              "name": "subflow_mode",
+              "options": [
+                {
+                  "label": "Wait for it to finish",
+                  "value": "wait"
+                },
+                {
+                  "label": "Start it and go on",
+                  "value": "start"
+                }
+              ],
+              "type": "select"
+            }
+          ],
+          "group": null,
+          "icon": "hero-arrow-top-right-on-square-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Subflow",
+          "notes": {
+            "en": "Runs another flow of this workspace, picked in **Flow**, from its **Subflow Trigger**. **Data** is JSON, or a placeholder like `{{result}}`, and becomes the `result` of that flow.\n\n- **Wait for it to finish**: goes on through `success` with the `result` the other flow ended with, or through `error` when it failed, with why.\n- **Start it and go on**: goes on at once, with the run it started: `{\"execution_id\": \"8f3k2m\", \"flow_id\": 12, \"flow_name\": \"Score lead\"}`.\n\nThe other flow runs its published version, so publish it first. A flow that pauses at a **Wait** can only be started, not waited for. A flow can't call itself, directly or through others, and flows call each other 8 levels deep at most.",
+            "pt": "Executa outro fluxo deste workspace, escolhido em **Flow**, a partir do **Subflow Trigger** dele. **Data** é um JSON, ou um placeholder como `{{result}}`, e vira o `result` daquele fluxo.\n\n- **Wait for it to finish**: segue por `success` com o `result` com que o outro fluxo terminou, ou por `error` quando ele falhou, com o motivo.\n- **Start it and go on**: segue na hora, com a execução que iniciou: `{\"execution_id\": \"8f3k2m\", \"flow_id\": 12, \"flow_name\": \"Pontuar lead\"}`.\n\nO outro fluxo roda a versão publicada dele, então publique antes. Um fluxo que pausa num **Wait** só pode ser iniciado, não esperado. Um fluxo não pode chamar a si mesmo, direto ou por outros, e os fluxos se chamam no máximo 8 níveis abaixo."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "approved": true,
+            "score": 0.92
+          },
+          "slug": "subflow"
         },
         {
           "credential": null,

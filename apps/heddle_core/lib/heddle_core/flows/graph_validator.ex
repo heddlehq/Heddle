@@ -147,6 +147,9 @@ defmodule HeddleCore.Flows.GraphValidator do
         message = not draft? && invalid_schema(node) ->
           {:halt, {:error, :nodes, "contains a Validate node whose #{message}"}}
 
+        not draft? and subflow_without_flow?(node) ->
+          {:halt, {:error, :nodes, "contains a Subflow with no flow picked"}}
+
         true ->
           {:cont, :ok}
       end
@@ -186,6 +189,12 @@ defmodule HeddleCore.Flows.GraphValidator do
   end
 
   defp invalid_schema(_node), do: nil
+
+  defp subflow_without_flow?(%{"type" => "Subflow", "controls" => controls}) do
+    not present_id?(controls["subflow_id"])
+  end
+
+  defp subflow_without_flow?(_node), do: false
 
   defp validate_connections(connections, nodes, definitions) do
     nodes_by_id = Map.new(nodes, &{&1["id"], &1})

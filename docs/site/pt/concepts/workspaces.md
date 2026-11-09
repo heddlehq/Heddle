@@ -22,6 +22,12 @@ Um workspace sempre tem pelo menos um admin.
 
 **Admins do sistema** cuidam da instância. Eles são admins em todo workspace, e só eles criam e apagam workspaces, gerenciam usuários, configuram a página AI e o Terminal, e compartilham credenciais com todos os workspaces.
 
+## Grupos de fluxos
+
+Na página **Flows**, **New group** separa os fluxos, como *Vendas* ou *Cobrança*. Mova um fluxo pelo botão de pasta da linha dele, ou arraste ele para outro grupo. Um grupo recolhe pela seta ao lado do nome, e o lápis renomeia. Apagar um grupo mantém os fluxos dele: eles voltam para **No group**.
+
+Os grupos só organizam a página: um fluxo roda igual em qualquer um deles. Todos no workspace veem os grupos, e editores para cima mudam eles.
+
 ## Trazendo pessoas
 
 Abra **Members** na barra lateral:

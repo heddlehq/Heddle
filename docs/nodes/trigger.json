@@ -31,5 +31,15 @@
       "en": "Put it in a flow, then pick that flow as the **error flow** of others, in their **Settings**. When a run of one of them fails and nothing handled the failure, this flow runs with:\n\n```json\n{\n  \"error\": {\"message\": \"Slack refused it: channel_not_found\", \"node_id\": \"n4\", \"node_label\": \"Tell the team\", \"node_type\": \"Slack: Send Message\"},\n  \"execution\": {\"id\": \"8f3k2m\", \"flow_id\": 12, \"flow_name\": \"New leads\", \"url\": \"https://heddle.example.com/flows/12?execution=8f3k2m\"}\n}\n```\n\nThe error flow runs its published version, and a failure in it doesn't start another error flow.",
       "pt": "Coloque num fluxo e escolha esse fluxo como **fluxo de erro** de outros, nas **Configurações** deles. Quando uma execução de um deles falha e nada tratou a falha, este fluxo roda com:\n\n```json\n{\n  \"error\": {\"message\": \"Slack refused it: channel_not_found\", \"node_id\": \"n4\", \"node_label\": \"Avisar o time\", \"node_type\": \"Slack: Send Message\"},\n  \"execution\": {\"id\": \"8f3k2m\", \"flow_id\": 12, \"flow_name\": \"Novos leads\", \"url\": \"https://heddle.example.com/flows/12?execution=8f3k2m\"}\n}\n```\n\nO fluxo de erro roda a versão publicada dele, e uma falha nele não dispara outro fluxo de erro."
     }
+  },
+  "Subflow Trigger": {
+    "result": {
+      "order_id": 981,
+      "total": 120.5
+    },
+    "notes": {
+      "en": "Starts this flow when a **Subflow** node of another flow runs it. `result` is the **Data** that Subflow sent, and `caller` says who called:\n\n```json\n{\n  \"result\": {\"order_id\": 981, \"total\": 120.5},\n  \"caller\": {\"flow_id\": 12, \"flow_name\": \"New orders\", \"execution_id\": \"8f3k2m\"}\n}\n```\n\nWhat the flow ends with in `result` goes back to a Subflow that waits for it. A flow called runs its published version, as a run of its own, so it shows in its runs. A flow without a Subflow Trigger is run from its Start node.",
+      "pt": "Inicia este fluxo quando um nó **Subflow** de outro fluxo o executa. `result` é o **Data** que o Subflow mandou, e `caller` diz quem chamou:\n\n```json\n{\n  \"result\": {\"order_id\": 981, \"total\": 120.5},\n  \"caller\": {\"flow_id\": 12, \"flow_name\": \"Novos pedidos\", \"execution_id\": \"8f3k2m\"}\n}\n```\n\nO que o fluxo tiver em `result` no fim volta para o Subflow que espera por ele. O fluxo chamado roda a versão publicada dele, numa execução própria, que aparece nas execuções dele. Um fluxo sem Subflow Trigger roda a partir do nó Start."
+    }
   }
 }
