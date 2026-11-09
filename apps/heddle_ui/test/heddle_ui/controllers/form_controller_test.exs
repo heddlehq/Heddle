@@ -88,6 +88,62 @@ defmodule HeddleUI.FormControllerTest do
       assert Executions.list_executions_for_flow(flow.id) == []
     end
 
+    test "shows by each field what a Validate of the flow refused, in the visitor's language",
+         %{conn: conn, scope: scope, flow: flow} do
+      {:ok, flow} =
+        Flows.update_flow(flow, %{
+          nodes: [
+            form_node(),
+            %{
+              "id" => "check",
+              "type" => "Validate",
+              "label" => "Check",
+              "position" => %{"x" => 200, "y" => 0},
+              "controls" => %{
+                "validation_data" => "{{form}}",
+                "validation_schema" => ~s({"name": {"type": "string", "min": 3}})
+              }
+            }
+          ],
+          connections: [%{"source" => "form", "sourceOutput" => "exec", "target" => "check"}]
+        })
+
+      {:ok, _version} = Versions.publish(scope, flow)
+      {:ok, form} = Forms.link(scope, flow, "form")
+
+      # What the worker's run of the Validate answers.
+      answering =
+        Task.async(fn ->
+          execution = await_execution(flow.id)
+
+          Executions.put_response(execution, %{
+            "form" => "invalid",
+            "errors" => [
+              %{
+                "path" => "name",
+                "code" => "too_small",
+                "message" => "Must have at least 3 characters",
+                "params" => %{"bound" => "min", "limit" => 3, "unit" => "characters"}
+              },
+              %{"path" => "", "code" => "custom", "message" => "Try again tomorrow"}
+            ]
+          })
+        end)
+
+      html =
+        conn
+        |> put_req_header("accept-language", "pt-BR")
+        |> post(~p"/f/#{form.token}", %{"form" => %{"name" => "Al", "plan" => "Pro"}})
+        |> html_response(422)
+
+      Task.await(answering)
+
+      document = LazyHTML.from_document(html)
+      assert LazyHTML.text(LazyHTML.query(document, "#form-alert")) =~ "Try again tomorrow"
+      assert html =~ "Use pelo menos 3 caracteres."
+      assert LazyHTML.attribute(LazyHTML.query(document, "#form_name"), "value") == ["Al"]
+    end
+
     test "a bot that fills the hidden field is told it worked, and runs nothing", %{
       conn: conn,
       token: token,
@@ -184,5 +240,18 @@ defmodule HeddleUI.FormControllerTest do
   defp publish(scope, flow, node) do
     {:ok, _flow} = Flows.update_flow(scope, flow, %{"nodes" => [node]})
     {:ok, _version} = Versions.publish(scope, flow)
+  end
+
+  defp await_execution(flow_id, tries \\ 200) do
+    case Executions.list_executions_for_flow(flow_id) do
+      [execution | _] ->
+        execution
+
+      [] when tries > 0 ->
+        receive do
+        after
+          10 -> await_execution(flow_id, tries - 1)
+        end
+    end
   end
 end

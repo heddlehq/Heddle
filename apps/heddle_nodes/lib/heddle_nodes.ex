@@ -37,6 +37,7 @@ defmodule HeddleNodes do
     Subflow,
     SubflowTrigger,
     Switch,
+    Validate,
     Variable,
     Wait,
     Webhook
@@ -51,6 +52,7 @@ defmodule HeddleNodes do
       ErrorTrigger,
       SubflowTrigger,
       Variable,
+      Validate,
       Eval,
       Csv.Read,
       Csv.Write,

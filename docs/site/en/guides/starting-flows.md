@@ -64,6 +64,20 @@ What a person sends is in the run under `form`, by key, and in `result` right af
 
 Heddle checks every answer before the run starts: a required field must be filled in, an email must look like one, a number is a number and a choice is one of its options. A checkbox is `true` or `false`, a number comes as a number, and a date as `2026-11-08`.
 
+### Your own rules
+
+For more than that, like a name of at least 3 letters, an email of your company or an age of 18 and up, put a [Validate](/docs/nodes/validate/) right after the trigger, with **Data** set to `{{form}}`:
+
+```json
+{
+  "name": {"type": "string", "min": 3},
+  "email": {"type": "email", "ends_with": "@acme.com"},
+  "age": {"type": "integer", "min": 18}
+}
+```
+
+Sending then waits for it, up to 15 seconds. When it refuses an answer, the form comes back with what was typed and each message under its field, in the visitor's language, and the run goes on through `invalid`. A `message` in the schema is shown as you wrote it, so write it in the language of your form. When it takes them, the person sees that it was sent while the run goes on through `valid`.
+
 After sending, the person sees the **Message after sending**, or goes to the address in **Then go to**. **Accepting answers** set to `No` closes the form once published. The page follows the visitor's language and theme, and a person can send the same form ten times a minute.
 
 To keep the answers, connect a [Spool: Insert Rows](/docs/nodes/spool-insert-rows/) with **Rows** set to `{{form}}`. **Create Spool table** in the drawer makes a table with a column for each field. See [Spool](/docs/guides/spool/).

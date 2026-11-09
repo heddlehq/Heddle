@@ -52,6 +52,16 @@ An error flow starts with an [Error Trigger](/docs/nodes/error-trigger/), and ge
 
 A common one sends that to Slack or email. The error flow runs its published version, so publish it, and a failure inside it doesn't start another one.
 
+## Check the data first
+
+A [Validate](/docs/nodes/validate/) node checks what comes in against a schema, like Zod, before the flow uses it. Connect `invalid` to what should happen then, like a [Respond to Webhook](/docs/nodes/respond-to-webhook/) with status `422` and `{{result.message}}`:
+
+```json
+{"email": "email", "amount": {"type": "number", "gt": 0, "coerce": true}}
+```
+
+Through `valid`, the next nodes get the data cleaned up as the schema says.
+
 ## Fail on purpose
 
 To stop a run when the data is wrong, put a [Condition](/docs/nodes/condition/) in front, and on the bad side an **Evaluate Code** that raises:
