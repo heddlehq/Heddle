@@ -7,7 +7,8 @@ defmodule HeddleWorker.FlowExecutionWorker do
 
   A run started from the editor has `"debug"` in its input: it takes the data pinned to
   nodes, and tells the editor about each step as it ends. A run that fails starts the
-  error flow of its flow, see `Executions.start_error_flow/2`.
+  error flow of its flow, see `Executions.start_error_flow/2`. A Subflow node runs
+  another flow through `HeddleWorker.Subflow`.
   """
 
   use Oban.Worker, queue: :executions, max_attempts: 3
@@ -16,6 +17,7 @@ defmodule HeddleWorker.FlowExecutionWorker do
   alias HeddleCore.Flows
   alias HeddleCore.Flows.Versions
   alias HeddleNodes.Runner
+  alias HeddleWorker.Subflow
 
   @internal_result_keys ["flow_id", "workspace_id", "logs"]
 
@@ -23,6 +25,7 @@ defmodule HeddleWorker.FlowExecutionWorker do
   def perform(%Oban.Job{args: %{"execution_id" => id, "wait_id" => wait_id} = args, id: job_id}) do
     case Executions.claim_resume(id, wait_id, job_id) do
       {:ok, execution} ->
+        Subflow.enter(execution)
         flow = execution.flow_id |> Flows.get_flow!() |> Versions.for_execution(execution)
         resumption = Map.take(args, ["by", "request"])
 
@@ -38,6 +41,7 @@ defmodule HeddleWorker.FlowExecutionWorker do
 
   def perform(%Oban.Job{args: %{"execution_id" => execution_id}}) do
     execution = Executions.get_execution!(execution_id)
+    Subflow.enter(execution)
     # It runs the version it was started with, whatever the flow has become since.
     flow = execution.flow_id |> Flows.get_flow!() |> Versions.for_execution(execution)
 

@@ -98,6 +98,10 @@ Ela responde na hora com o id da execução, e `GET /api/v1/workflows/12/executi
 
 Um fluxo que começa com um [Error Trigger](/pt/docs/nodes/error-trigger/) roda quando falha um fluxo que escolheu ele como fluxo de erro. Veja [Fluxos de erro](/pt/docs/guides/error-handling/#fluxos-de-erro).
 
+## A partir de outro fluxo
+
+Um fluxo que começa com um [Subflow Trigger](/pt/docs/nodes/subflow-trigger/) roda quando um nó [Subflow](/pt/docs/nodes/subflow/) de outro fluxo chama ele, com o que esse nó mandou. Veja [Subfluxos](/pt/docs/guides/subflows/).
+
 ## Esperando uma chamada no meio da execução
 
 Um [Wait](/pt/docs/nodes/wait/) em **Until a call** pausa a execução até alguém chamar `{{resume_url}}`. Mande esse endereço num email, numa mensagem do Slack ou para uma API, e a execução continua quando ele for chamado, com a requisição em `result`. O [tutorial de reembolso com aprovação](/pt/docs/tutorials/refund-approval/) faz isso.

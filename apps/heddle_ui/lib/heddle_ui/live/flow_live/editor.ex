@@ -61,6 +61,8 @@ defmodule HeddleUI.FlowLive.Editor do
       config_modal_open: false,
       editing_node_data: nil,
       credentials: [],
+      # The flows a Subflow node can run: the others of the workspace.
+      subflow_options: [],
       current_node_id: nil,
       # Execution notice
       execution_notice: nil,
@@ -202,6 +204,7 @@ defmodule HeddleUI.FlowLive.Editor do
        config_modal_open: true,
        editing_node_data: node_data,
        credentials: Credentials.list_credentials(socket.assigns.current_scope),
+       subflow_options: subflow_options(socket, node_data),
        current_node_id: node_data["id"]
      )
      |> FormManager.opened(node_data)}
@@ -1035,4 +1038,11 @@ defmodule HeddleUI.FlowLive.Editor do
       public_id: execution.public_id
     }
   end
+
+  defp subflow_options(socket, %{"type" => "Subflow"}) do
+    %{current_scope: scope, current_flow: flow} = socket.assigns
+    for other <- Flows.list_flows(scope), other.id != flow.id, do: {other.name, other.id}
+  end
+
+  defp subflow_options(_socket, _node_data), do: []
 end
