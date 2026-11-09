@@ -1,190 +1,231 @@
 defmodule HeddleUI.DashboardLive.Index do
   use HeddleUI, :live_view
 
-  alias HeddleCore.Flows
+  import HeddleUI.Components.Dashboard
+
+  alias HeddleCore.Accounts.Scope
+  alias HeddleCore.Executions
+  alias HeddleCore.Workspaces
+
+  @days 14
+  # The runs go on while someone looks, so the figures follow them.
+  @refresh to_timeout(second: 15)
 
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
     in_workspace? = not is_nil(scope.workspace)
-    flows = if in_workspace?, do: Flows.list_flows(scope), else: []
+
+    if connected?(socket) and in_workspace?, do: schedule_refresh()
 
     {:ok,
-     assign(socket,
-       flows: flows,
-       active_count: length(flows),
-       admin?: in_workspace?,
-       system_admin?: HeddleCore.Accounts.Scope.system_admin?(scope),
-       page_title: gettext("Dashboard")
-     )}
+     socket
+     |> assign(
+       page_title: gettext("Dashboard"),
+       days: @days,
+       in_workspace?: in_workspace?,
+       can_edit?: Workspaces.can?(scope, :edit),
+       system_admin?: Scope.system_admin?(scope)
+     )
+     |> load()}
+  end
+
+  @impl true
+  def handle_info(:refresh, socket) do
+    schedule_refresh()
+    {:noreply, load(socket)}
+  end
+
+  defp schedule_refresh, do: Process.send_after(self(), :refresh, @refresh)
+
+  defp load(socket) do
+    now = DateTime.utc_now(:second)
+    overview = Executions.overview(socket.assigns.current_scope, days: @days, now: now)
+    assign(socket, overview: overview, now: now)
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="p-6 md:p-8 w-full max-w-7xl mx-auto">
-      <div class="flex items-center justify-between mb-8">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{gettext("Dashboard")}</h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            <%= if @admin? do %>
-              {gettext("Welcome back to Heddle! Here's an overview of your automated logic.")}
-            <% else %>
-              {gettext("You aren't in a workspace yet. Ask an admin to add you to one.")}
-            <% end %>
-          </p>
-        </div>
-        <%= cond do %>
-          <% @admin? -> %>
-            <.button navigate={~p"/flows"} variant="primary">
-              {gettext("Manage Flows")}
+    <div class="w-full bg-gray-50 dark:bg-slate-950">
+      <div class="mx-auto w-full max-w-7xl p-6 md:p-8">
+        <header class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div class="min-w-0">
+            <p
+              :if={@in_workspace?}
+              class="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400"
+            >
+              <.icon name="hero-building-office-2-micro" class="size-3.5" />
+              {@current_scope.workspace.name}
+            </p>
+            <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {gettext("Dashboard")}
+            </h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <%= if @in_workspace? do %>
+                {gettext("How your flows ran in the last %{count} days.", count: @days)}
+              <% else %>
+                {gettext("You aren't in a workspace yet. Ask an admin to add you to one.")}
+              <% end %>
+            </p>
+          </div>
+
+          <div :if={@in_workspace?} class="flex flex-wrap items-center gap-2">
+            <.live_now active={@overview.active} />
+            <.button id="dashboard-executions" navigate={~p"/executions"} variant="ghost">
+              <.icon name="hero-queue-list" class="size-4" /> {gettext("Executions")}
             </.button>
-          <% @system_admin? -> %>
-            <.button id="dashboard-create-workspace" navigate={~p"/workspaces"} variant="primary">
-              {gettext("Create a workspace")}
+            <.button id="dashboard-flows-link" navigate={~p"/flows"} variant="primary">
+              <.icon name="hero-squares-2x2" class="size-4" /> {gettext("Manage Flows")}
             </.button>
-          <% true -> %>
+          </div>
+          <.button
+            :if={not @in_workspace? and @system_admin?}
+            id="dashboard-create-workspace"
+            navigate={~p"/workspaces"}
+            variant="primary"
+          >
+            {gettext("Create a workspace")}
+          </.button>
+        </header>
+
+        <%= if @in_workspace? do %>
+          <div id="dashboard-stats" class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <.stat
+              id="stat-runs"
+              label={gettext("Runs")}
+              value={format_count(@overview.totals.runs)}
+              icon="hero-play-circle"
+              delta={change(@overview.totals.runs, @overview.previous.runs)}
+              days={@days}
+            />
+            <.stat
+              id="stat-success-rate"
+              label={gettext("Success rate")}
+              value={format_percent(@overview.totals.success_rate)}
+              icon="hero-check-circle"
+              delta={points(@overview.totals.success_rate, @overview.previous.success_rate)}
+              good={:up}
+              days={@days}
+            >
+              <.meter value={@overview.totals.success_rate} />
+            </.stat>
+            <.stat
+              id="stat-failures"
+              label={gettext("Failures")}
+              value={format_count(@overview.totals.failed)}
+              icon="hero-exclamation-triangle"
+              delta={change(@overview.totals.failed, @overview.previous.failed)}
+              good={:down}
+              days={@days}
+            />
+            <.stat
+              id="stat-duration"
+              label={gettext("Average duration")}
+              value={format_duration(@overview.totals.avg_duration)}
+              icon="hero-clock"
+              delta={change(@overview.totals.avg_duration, @overview.previous.avg_duration)}
+              good={:down}
+              days={@days}
+            />
+          </div>
+
+          <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div class="flex min-w-0 flex-col gap-6 lg:col-span-2">
+              <.activity_chart days={@overview.days} />
+              <.recent_runs runs={@overview.recent} now={@now} />
+            </div>
+            <div class="flex min-w-0 flex-col gap-6">
+              <.attention flows={@overview.attention} now={@now} days={@days} />
+              <.latest_flows
+                flows={@overview.latest_flows}
+                counts={@overview.flows}
+                now={@now}
+                can_edit={@can_edit?}
+              />
+            </div>
+          </div>
+        <% else %>
+          <div
+            id="dashboard-no-workspace"
+            class={[card_classes(), "mx-auto max-w-md p-10 text-center"]}
+          >
+            <div class="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10">
+              <.icon name="hero-user-group" class="size-6 text-primary" />
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              {gettext("Flows, runs and credentials live in a workspace.")}
+            </p>
+          </div>
         <% end %>
       </div>
-
-      <%= if @admin? do %>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                {gettext("Total Workflows")}
-              </h3>
-              <div class="p-2 bg-primary/10 text-primary rounded-lg">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                  />
-                </svg>
-              </div>
-            </div>
-            <span class="text-3xl font-bold text-gray-900 dark:text-white">{@active_count}</span>
-          </div>
-          <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                {gettext("Total Processed Nodes")}
-              </h3>
-              <div class="p-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-            </div>
-            <span class="text-3xl font-bold text-gray-900 dark:text-white">--</span>
-            <p class="text-xs text-gray-400 mt-1 placeholder-text">Coming soon</p>
-          </div>
-          <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                {gettext("Active Integrations")}
-              </h3>
-              <div class="p-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-lg">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                  />
-                </svg>
-              </div>
-            </div>
-            <span class="text-3xl font-bold text-gray-900 dark:text-white">--</span>
-            <p class="text-xs text-gray-400 mt-1 placeholder-text">Coming soon</p>
-          </div>
-        </div>
-
-        <div>
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            {gettext("Recent Workflows")}
-          </h2>
-          <%= if Enum.empty?(@flows) do %>
-            <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-8 text-center shadow-sm">
-              <div class="mx-auto w-12 h-12 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-3">
-                <svg
-                  class="w-6 h-6 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-              </div>
-              <h3 class="text-sm font-medium text-gray-900 dark:text-white">{gettext("No flows")}</h3>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {gettext("Get started by creating a new workflow automation.")}
-              </p>
-              <div class="mt-6">
-                <.button navigate={~p"/flows"} variant="outline">
-                  {gettext("Create Flow")} &rarr;
-                </.button>
-              </div>
-            </div>
-          <% else %>
-            <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
-              <ul role="list" class="divide-y divide-gray-200 dark:divide-slate-700">
-                <%= for flow <- Enum.take(@flows, 5) do %>
-                  <li class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                    <.link
-                      navigate={~p"/flows/#{flow.id}"}
-                      class="flex items-center justify-between px-6 py-4"
-                    >
-                      <div class="flex items-center gap-4">
-                        <div class="p-2 bg-primary/10 text-primary rounded-lg">
-                          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M13 10V3L4 14h7v7l9-11h-7z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {flow.name}
-                          </p>
-                          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            {length(flow.nodes || [])} nodes • {length(flow.connections || [])} connections
-                          </p>
-                        </div>
-                      </div>
-                      <div>
-                        <svg class="w-5 h-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path
-                            fill-rule="evenodd"
-                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                            clip-rule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                    </.link>
-                  </li>
-                <% end %>
-              </ul>
-            </div>
-          <% end %>
-        </div>
-      <% end %>
     </div>
     """
   end
+
+  attr :active, :map, required: true
+
+  # What is going on now, shown only while something is.
+  defp live_now(assigns) do
+    ~H"""
+    <.link
+      :if={@active.running + @active.queued + @active.waiting > 0}
+      id="dashboard-live"
+      navigate={~p"/executions"}
+      class="inline-flex min-h-9 flex-wrap items-center gap-x-3 gap-y-1 rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition hover:border-gray-300 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200 dark:hover:border-slate-600"
+    >
+      <span :if={@active.running > 0} class="flex items-center gap-1.5 whitespace-nowrap">
+        <HeddleUI.Components.ExecutionStatus.status_dot status="running" />
+        {gettext("%{count} running", count: @active.running)}
+      </span>
+      <span :if={@active.queued > 0} class="flex items-center gap-1.5 whitespace-nowrap">
+        <HeddleUI.Components.ExecutionStatus.status_dot status="queued" />
+        {gettext("%{count} queued", count: @active.queued)}
+      </span>
+      <span :if={@active.waiting > 0} class="flex items-center gap-1.5 whitespace-nowrap">
+        <HeddleUI.Components.ExecutionStatus.status_dot status="waiting" />
+        {gettext("%{count} waiting", count: @active.waiting)}
+      </span>
+    </.link>
+    """
+  end
+
+  # The change from the period before, in percent. Nil when there is nothing to compare.
+  defp change(nil, _before), do: nil
+  defp change(_now, nil), do: nil
+  defp change(now, before) when before == 0 and now == 0, do: %{direction: :flat, text: "0%"}
+  defp change(_now, before) when before == 0, do: nil
+
+  defp change(now, before) do
+    percent = round((now - before) * 100 / before)
+    %{direction: direction(percent), text: "#{abs(percent)}%"}
+  end
+
+  # The change of a rate, in points.
+  defp points(nil, _before), do: nil
+  defp points(_now, nil), do: nil
+
+  defp points(now, before) do
+    diff = Float.round((now - before) * 1.0, 1)
+    text = gettext("%{count} pts", count: format_number(abs(diff)))
+    %{direction: direction(diff), text: text}
+  end
+
+  defp direction(value) when value > 0, do: :up
+  defp direction(value) when value < 0, do: :down
+  defp direction(_zero), do: :flat
+
+  defp format_percent(nil), do: "—"
+  defp format_percent(value), do: format_number(Float.round(value * 1.0, 1)) <> "%"
+
+  defp format_number(value) when is_float(value) do
+    if value == Float.round(value),
+      do: Integer.to_string(trunc(value)),
+      else: Float.to_string(value)
+  end
+
+  defp format_count(count) when count >= 10_000,
+    do: "#{Float.round(count / 1000, 1)}K"
+
+  defp format_count(count), do: Integer.to_string(count)
 end
