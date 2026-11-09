@@ -10,6 +10,9 @@ defmodule HeddleNodes.Nodes.Validate do
 
   The schema is plain JSON, with no placeholders, so it is checked when the flow is
   published. A schema that can't be read fails the node.
+
+  In a run a Form Trigger started, the first Validate also answers the form, so the
+  person who filled it in sees each error by its field, see `HeddleCore.Forms`.
   """
 
   use Bobbin.Node
@@ -50,14 +53,27 @@ defmodule HeddleNodes.Nodes.Validate do
          {:ok, data} <- data(context) do
       case Heddle.Schema.validate(schema, data) do
         {:ok, valid} ->
-          {:ok, Map.put(context, "result", valid), "valid"}
+          context |> Map.put("result", valid) |> answer("valid", %{"form" => "valid"})
 
         {:error, errors} ->
           result = %{"errors" => errors, "message" => summary(errors), "data" => data}
-          {:ok, Map.put(context, "result", result), "invalid"}
+
+          context
+          |> Map.put("result", result)
+          |> answer("invalid", %{"form" => "invalid", "errors" => errors})
       end
     end
   end
+
+  # In a run a Form Trigger started, the first Validate answers the form, which waits
+  # for it: with the errors, the form shows them by its fields, and otherwise it says
+  # it was sent while the run goes on. See `HeddleCore.Forms`.
+  defp answer(%{"trigger" => "form"} = context, output, response)
+       when not is_map_key(context, "_form_answered") do
+    {:respond, response, Map.put(context, "_form_answered", true), output}
+  end
+
+  defp answer(context, output, _response), do: {:ok, context, output}
 
   defp schema(context) do
     case Heddle.Schema.parse(context["validation_schema"]) do

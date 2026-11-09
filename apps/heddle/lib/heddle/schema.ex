@@ -343,7 +343,7 @@ defmodule Heddle.Schema do
 
   defp check(%{optional: true}, :missing, _path), do: {:ok, :missing}
   defp check(%{type: "any"}, :missing, _path), do: {:ok, :missing}
-  defp check(schema, :missing, path), do: issue(schema, path, "required", "Required")
+  defp check(_schema, :missing, path), do: error(path, "required", "Required")
 
   defp check(%{nullable: true}, {:present, nil}, _path), do: {:ok, {:present, nil}}
   defp check(%{type: "any"}, {:present, value}, _path), do: {:ok, {:present, value}}
@@ -362,7 +362,9 @@ defmodule Heddle.Schema do
     here = format_path(path)
 
     Enum.map(issues, fn issue ->
-      if issue["path"] == here, do: %{issue | "message" => message}, else: issue
+      if issue["path"] == here,
+        do: issue |> Map.put("message", message) |> Map.delete("params"),
+        else: issue
     end)
   end
 
@@ -374,9 +376,9 @@ defmodule Heddle.Schema do
         length_check(schema, String.length(text), "characters"),
         fn -> pattern_check(schema, text) end,
         fn -> format_check(schema.format, text) end,
-        fn -> affix(schema.starts_with, &String.starts_with?(text, &1), "Must start with") end,
-        fn -> affix(schema.ends_with, &String.ends_with?(text, &1), "Must end with") end,
-        fn -> affix(schema.includes, &String.contains?(text, &1), "Must include") end
+        fn -> affix(schema.starts_with, &String.starts_with?(text, &1), "starts_with") end,
+        fn -> affix(schema.ends_with, &String.ends_with?(text, &1), "ends_with") end,
+        fn -> affix(schema.includes, &String.contains?(text, &1), "includes") end
       ])
     end
   end
@@ -384,10 +386,10 @@ defmodule Heddle.Schema do
   defp check_value(%{type: "number"} = schema, value, path) do
     with {:ok, number} <- number_value(schema, value, path) do
       checks(number, path, [
-        fn -> bound(schema.min, number >= (schema.min || 0), "too_small", "Must be at least") end,
-        fn -> bound(schema.max, number <= (schema.max || 0), "too_big", "Must be at most") end,
-        fn -> bound(schema.gt, number > (schema.gt || 0), "too_small", "Must be more than") end,
-        fn -> bound(schema.lt, number < (schema.lt || 0), "too_big", "Must be less than") end,
+        fn -> bound("min", schema.min, number >= (schema.min || 0)) end,
+        fn -> bound("max", schema.max, number <= (schema.max || 0)) end,
+        fn -> bound("gt", schema.gt, number > (schema.gt || 0)) end,
+        fn -> bound("lt", schema.lt, number < (schema.lt || 0)) end,
         fn -> multiple_check(schema.multiple_of, number) end
       ])
     end
@@ -417,13 +419,16 @@ defmodule Heddle.Schema do
   defp check_value(%{type: "enum", values: values}, value, path) do
     if value in values,
       do: {:ok, value},
-      else: error(path, "invalid_enum", "Must be one of: #{Enum.map_join(values, ", ", &show/1)}")
+      else:
+        error(path, "invalid_enum", "Must be one of: #{Enum.map_join(values, ", ", &show/1)}", %{
+          "values" => values
+        })
   end
 
   defp check_value(%{type: "literal", value: expected}, value, path) do
     if value == expected,
       do: {:ok, value},
-      else: error(path, "invalid_literal", "Must be #{show(expected)}")
+      else: error(path, "invalid_literal", "Must be #{show(expected)}", %{"value" => expected})
   end
 
   defp check_value(%{type: "array"} = schema, value, path) when is_list(value) do
@@ -440,7 +445,7 @@ defmodule Heddle.Schema do
           length_check(schema, length(items), "items"),
           fn ->
             if schema.unique and length(Enum.uniq(items)) != length(items),
-              do: {"not_unique", "Must not repeat items"}
+              do: {"not_unique", "Must not repeat items", %{}}
           end
         ])
 
@@ -460,7 +465,7 @@ defmodule Heddle.Schema do
 
     unknown_issues =
       if schema.unknown == "error",
-        do: Enum.map(unknown, &issue_map(path ++ [&1], "unknown_key", "Isn't allowed here")),
+        do: Enum.map(unknown, &issue_map(path ++ [&1], "unknown_key", "Isn't allowed here", %{})),
         else: []
 
     case {collect(Enum.map(fields, &elem(&1, 1))), unknown_issues} do
@@ -557,7 +562,14 @@ defmodule Heddle.Schema do
         {:ok, at}
 
       :error ->
-        error(path, "invalid_format", "Must be a date, like 2026-12-24 or 2026-12-24T18:00:00Z")
+        error(
+          path,
+          "invalid_format",
+          "Must be a date, like 2026-12-24 or 2026-12-24T18:00:00Z",
+          %{
+            "format" => "date"
+          }
+        )
     end
   end
 
@@ -590,6 +602,7 @@ defmodule Heddle.Schema do
     Enum.find_value(checks, fn check ->
       case check.() do
         {code, message} -> error(path, code, message)
+        {code, message, params} -> error(path, code, message, params)
         nil -> nil
       end
     end) || {:ok, value}
@@ -600,13 +613,16 @@ defmodule Heddle.Schema do
       cond do
         schema.length && size != schema.length ->
           {if(size < schema.length, do: "too_small", else: "too_big"),
-           "Must have exactly #{plural(schema.length, unit)}"}
+           "Must have exactly #{plural(schema.length, unit)}",
+           %{"bound" => "length", "limit" => schema.length, "unit" => unit}}
 
         schema.min && size < schema.min ->
-          {"too_small", "Must have at least #{plural(schema.min, unit)}"}
+          {"too_small", "Must have at least #{plural(schema.min, unit)}",
+           %{"bound" => "min", "limit" => schema.min, "unit" => unit}}
 
         schema.max && size > schema.max ->
-          {"too_big", "Must have at most #{plural(schema.max, unit)}"}
+          {"too_big", "Must have at most #{plural(schema.max, unit)}",
+           %{"bound" => "max", "limit" => schema.max, "unit" => unit}}
 
         true ->
           nil
@@ -617,17 +633,20 @@ defmodule Heddle.Schema do
   defp pattern_check(%{pattern: nil}, _text), do: nil
 
   defp pattern_check(%{pattern: {source, regex}}, text) do
-    unless Regex.match?(regex, text), do: {"invalid_format", "Must match #{source}"}
+    unless Regex.match?(regex, text),
+      do: {"invalid_format", "Must match #{source}", %{"format" => "pattern"}}
   end
 
   defp format_check(nil, _text), do: nil
 
   defp format_check("email", text) do
-    unless Regex.match?(@email, text), do: {"invalid_format", "Must be an email address"}
+    unless Regex.match?(@email, text),
+      do: {"invalid_format", "Must be an email address", %{"format" => "email"}}
   end
 
   defp format_check("uuid", text) do
-    unless Regex.match?(@uuid, text), do: {"invalid_format", "Must be a UUID"}
+    unless Regex.match?(@uuid, text),
+      do: {"invalid_format", "Must be a UUID", %{"format" => "uuid"}}
   end
 
   defp format_check("url", text) do
@@ -637,18 +656,38 @@ defmodule Heddle.Schema do
         nil
 
       _other ->
-        {"invalid_format", "Must be a URL, like https://example.com"}
+        {"invalid_format", "Must be a URL, like https://example.com", %{"format" => "url"}}
     end
   end
 
-  defp affix(nil, _matches?, _message), do: nil
+  @affixes %{
+    "starts_with" => "Must start with",
+    "ends_with" => "Must end with",
+    "includes" => "Must include"
+  }
 
-  defp affix(part, matches?, message) do
-    unless matches?.(part), do: {"invalid_format", "#{message} #{inspect(part)}"}
+  defp affix(nil, _matches?, _format), do: nil
+
+  defp affix(part, matches?, format) do
+    unless matches?.(part),
+      do:
+        {"invalid_format", "#{@affixes[format]} #{inspect(part)}",
+         %{"format" => format, "value" => part}}
   end
 
-  defp bound(nil, _ok?, _code, _message), do: nil
-  defp bound(limit, ok?, code, message), do: unless(ok?, do: {code, "#{message} #{show(limit)}"})
+  @bounds %{
+    "min" => {"too_small", "Must be at least"},
+    "max" => {"too_big", "Must be at most"},
+    "gt" => {"too_small", "Must be more than"},
+    "lt" => {"too_big", "Must be less than"}
+  }
+
+  defp bound(_key, nil, _ok?), do: nil
+
+  defp bound(key, limit, ok?) do
+    {code, message} = @bounds[key]
+    unless ok?, do: {code, "#{message} #{show(limit)}", %{"bound" => key, "limit" => limit}}
+  end
 
   defp multiple_check(nil, _number), do: nil
 
@@ -656,13 +695,23 @@ defmodule Heddle.Schema do
     quotient = number / step
 
     unless abs(quotient - Float.round(quotient)) < 1.0e-9,
-      do: {"not_multiple", "Must be a multiple of #{show(step)}"}
+      do:
+        {"not_multiple", "Must be a multiple of #{show(step)}",
+         %{"bound" => "multiple_of", "limit" => step}}
   end
 
   defp date_bound(nil, _ok?, _code, _word), do: nil
 
-  defp date_bound({source, at}, ok?, code, word),
-    do: unless(ok?.(at), do: {code, "Must be #{word} #{source}"})
+  defp date_bound({source, at}, ok?, code, word) do
+    unless ok?.(at),
+      do:
+        {code, "Must be #{word} #{source}",
+         %{
+           "bound" => if(code == "too_small", do: "min", else: "max"),
+           "limit" => source,
+           "unit" => "date"
+         }}
+  end
 
   defp collect(results) do
     {values, issues} =
@@ -674,16 +723,20 @@ defmodule Heddle.Schema do
     if issues == [], do: {:ok, Enum.reverse(values)}, else: {:error, issues}
   end
 
-  defp type_issue(%{name: name} = schema, value, path) do
-    issue(schema, path, "invalid_type", "Expected #{article(name)}, got #{describe(value)}")
+  defp type_issue(%{name: name}, value, path) do
+    error(path, "invalid_type", "Expected #{article(name)}, got #{describe(value)}", %{
+      "expected" => name
+    })
   end
 
-  defp issue(_schema, path, code, message), do: error(path, code, message)
+  # `params` holds what the message says in numbers and names, so an interface can
+  # say it in another language. A message the schema gives has none.
+  defp error(path, code, message, params \\ %{}),
+    do: {:error, [issue_map(path, code, message, params)]}
 
-  defp error(path, code, message), do: {:error, [issue_map(path, code, message)]}
-
-  defp issue_map(path, code, message),
-    do: %{"path" => format_path(path), "code" => code, "message" => message}
+  defp issue_map(path, code, message, params) do
+    %{"path" => format_path(path), "code" => code, "message" => message, "params" => params}
+  end
 
   defp describe(nil), do: "null"
   defp describe(value) when is_binary(value), do: "text"
