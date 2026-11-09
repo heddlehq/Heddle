@@ -154,7 +154,7 @@ defmodule HeddleUI.Components.Flow.FormFieldsEditor do
             name={"#{@key}[#{index}][required]"}
             value="true"
             checked={field["required"]}
-            class="size-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-900"
+            class="size-4 rounded border-gray-300 accent-primary focus:ring-primary dark:border-slate-600"
           />
           {gettext("Required")}
         </label>

@@ -3,6 +3,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
 
   alias HeddleUI.AIChoices
   alias HeddleUI.Components.Flow.FormFieldsEditor
+  alias HeddleUI.Components.Flow.ValidationRulesEditor
   alias HeddleUI.FlowLive.NodeCode
   alias HeddleUI.FlowLive.NodeSettings
 
@@ -10,6 +11,8 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
   attr :editing_node_data, :map, default: nil
   attr :credentials, :list, default: []
   attr :subflows, :list, default: []
+  attr :validate_json, :boolean, default: false
+  attr :validate_form, :boolean, default: false
   attr :read_only, :boolean, default: false
   attr :form_link, :map, default: nil
   attr :can_run, :boolean, default: false
@@ -151,6 +154,14 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
                             code={
                               NodeCode.current(NodeCode.from_controls(@editing_node_data["controls"]))
                             }
+                          />
+                        <% "schema" -> %>
+                          <ValidationRulesEditor.rules
+                            key={key}
+                            value={control["value"]}
+                            read_only={@read_only}
+                            json={@validate_json}
+                            form={@validate_form}
                           />
                         <% "form_fields" -> %>
                           <FormFieldsEditor.form_fields

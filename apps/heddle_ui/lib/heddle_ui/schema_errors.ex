@@ -4,8 +4,9 @@ defmodule HeddleUI.SchemaErrors do
   filled in a form: each one by the field it is about, in their language.
 
   An error with `params` is one the schema wrote, and is said again here from its
-  `code` and `params`. One without them carries the `message` the flow's author
-  wrote in the schema, which is shown as it is.
+  `code` and `params`. The author can write their own in each language, in
+  `messages`, and a language they left out gets the one said from `params`. An error
+  with only a `message` carries text the author wrote for every language.
   """
 
   use Gettext, backend: HeddleUI.Gettext
@@ -42,10 +43,28 @@ defmodule HeddleUI.SchemaErrors do
 
   defp field_key(_path), do: ""
 
-  @doc "What an error says, in the language of the request."
+  @doc """
+  What an error says, in the language of the request: the author's message in that
+  language, or the error said again from its `params`.
+  """
+  def message(%{"messages" => %{} = messages} = issue) do
+    in_language(messages) || message(Map.delete(issue, "messages"))
+  end
+
   def message(%{"params" => %{} = params, "code" => code}), do: say(code, params)
   def message(%{"message" => message}) when is_binary(message), do: message
   def message(_issue), do: gettext("Check this field.")
+
+  # pt_BR, then pt, then another pt_* the author wrote.
+  defp in_language(messages) do
+    locale = Gettext.get_locale(HeddleUI.Gettext)
+    language = locale |> String.split("_") |> hd()
+
+    messages[locale] || messages[language] ||
+      Enum.find_value(messages, fn {key, text} ->
+        String.split(key, "_") |> hd() == language && text
+      end)
+  end
 
   defp say("required", _params), do: gettext("Fill in this field.")
   defp say("invalid_type", %{"expected" => expected}), do: expected(expected)
