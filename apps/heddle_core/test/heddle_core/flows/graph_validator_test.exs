@@ -20,6 +20,11 @@ defmodule HeddleCore.Flows.GraphValidatorTest do
           name: "Schedule",
           inputs: [],
           outputs: ["exec"]
+        },
+        %{
+          name: "Validate",
+          inputs: ["exec"],
+          outputs: ["valid", "invalid"]
         }
       ]
     end
@@ -109,6 +114,25 @@ defmodule HeddleCore.Flows.GraphValidatorTest do
 
         assert message =~ "cron"
       end
+    end
+
+    test "rejects a Validate node whose schema can't be read, but not in a draft" do
+      validate = fn schema ->
+        [%{"id" => "v", "type" => "Validate", "controls" => %{"validation_schema" => schema}}]
+      end
+
+      assert GraphValidator.validate(validate.(~s({"email": "email"})), [], manifest: Manifest) ==
+               :ok
+
+      assert {:error, :nodes, message} =
+               GraphValidator.validate(validate.(~s({"email": "mail"})), [], manifest: Manifest)
+
+      assert message =~ "contains a Validate node whose schema is wrong: email:"
+
+      assert GraphValidator.validate(validate.(~s({"email": ")), [],
+               manifest: Manifest,
+               draft: true
+             ) == :ok
     end
 
     test "rejects node types missing from manifest" do

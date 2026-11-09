@@ -144,6 +144,9 @@ defmodule HeddleCore.Flows.GraphValidator do
         message = not draft? && invalid_form(node) ->
           {:halt, {:error, :nodes, "contains a Form Trigger that #{message}"}}
 
+        message = not draft? && invalid_schema(node) ->
+          {:halt, {:error, :nodes, "contains a Validate node whose #{message}"}}
+
         true ->
           {:cont, :ok}
       end
@@ -172,6 +175,17 @@ defmodule HeddleCore.Flows.GraphValidator do
   end
 
   defp invalid_form(_node), do: nil
+
+  # The schema of a Validate node is plain JSON, so it is checked here, see
+  # `Heddle.Schema`.
+  defp invalid_schema(%{"type" => "Validate", "controls" => controls}) do
+    case Heddle.Schema.parse(controls["validation_schema"]) do
+      {:ok, _schema} -> nil
+      {:error, message} -> "schema is wrong: #{message}"
+    end
+  end
+
+  defp invalid_schema(_node), do: nil
 
   defp validate_connections(connections, nodes, definitions) do
     nodes_by_id = Map.new(nodes, &{&1["id"], &1})
