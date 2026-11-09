@@ -22,6 +22,12 @@ A workspace always keeps at least one admin.
 
 **System admins** run the instance. They are admins in every workspace, and they alone create and delete workspaces, manage users, set up the AI page and the Terminal, and share credentials with every workspace.
 
+## Groups of flows
+
+On the **Flows** page, **New group** keeps flows apart, like *Sales* or *Billing*. Move a flow with the folder button of its row, or drag it onto another group. A group folds away from the arrow beside its name, and its pencil renames it. Deleting a group keeps its flows: they go back to **No group**.
+
+Groups only arrange the page: a flow runs the same in any of them. Everyone in the workspace sees them, and editors and up change them.
+
 ## Bringing people in
 
 Open **Members** in the sidebar:
