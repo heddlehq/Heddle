@@ -7,16 +7,20 @@ test.describe('Dashboard', () => {
     await waitForLiveView(page);
 
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
-    await expect(page.getByText('Total Workflows')).toBeVisible();
-    await expect(page.getByText('Total Processed Nodes')).toBeVisible();
-    await expect(page.getByText('Active Integrations')).toBeVisible();
+    await expect(page.locator('#stat-runs')).toBeVisible();
+    await expect(page.locator('#stat-success-rate')).toBeVisible();
+    await expect(page.locator('#stat-failures')).toBeVisible();
+    await expect(page.locator('#stat-duration')).toBeVisible();
+    await expect(page.locator('#dashboard-activity')).toBeVisible();
   });
 
-  test('shows recent workflows section', async ({ page }) => {
+  test('shows recent runs, failing flows and flows', async ({ page }) => {
     await page.goto('/');
     await waitForLiveView(page);
 
-    await expect(page.getByText('Recent Workflows')).toBeVisible();
+    await expect(page.locator('#dashboard-recent-runs')).toBeVisible();
+    await expect(page.locator('#dashboard-attention')).toBeVisible();
+    await expect(page.locator('#dashboard-flows')).toBeVisible();
   });
 
   test('navigates to flows page via Manage Flows button', async ({ page }) => {
