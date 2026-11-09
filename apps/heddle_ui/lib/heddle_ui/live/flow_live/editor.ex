@@ -10,6 +10,7 @@ defmodule HeddleUI.FlowLive.Editor do
   alias HeddleUI.FlowLive.TerminalManager
   alias HeddleUI.FlowLive.{CodeEditorManager, InspectorManager, NodePaletteManager, NodeSettings}
   alias HeddleUI.FlowLive.FormManager
+  alias HeddleUI.FlowLive.ValidateManager
   alias HeddleUI.FlowLive.VersionsManager
 
   @impl true
@@ -92,6 +93,7 @@ defmodule HeddleUI.FlowLive.Editor do
       NodePaletteManager.initial_assigns() ++
       VersionsManager.initial_assigns(flow) ++
       FormManager.initial_assigns() ++
+      ValidateManager.initial_assigns() ++
       [publish_note: nil]
   end
 
@@ -207,14 +209,17 @@ defmodule HeddleUI.FlowLive.Editor do
        subflow_options: subflow_options(socket, node_data),
        current_node_id: node_data["id"]
      )
-     |> FormManager.opened(node_data)}
+     |> FormManager.opened(node_data)
+     |> ValidateManager.opened(node_data)}
   end
 
   @impl true
   # Each field reaches the canvas as it changes, and from there everyone editing the
   # flow: there is nothing to save.
   def handle_event("node_config_changed", params, socket) do
-    params = FormManager.encode_fields(socket.assigns.editing_node_data, params)
+    node_data = socket.assigns.editing_node_data
+    params = FormManager.encode_fields(node_data, params)
+    params = ValidateManager.encode(node_data, params)
 
     socket =
       update(socket, :editing_node_data, fn node_data ->
@@ -222,6 +227,27 @@ defmodule HeddleUI.FlowLive.Editor do
       end)
 
     {:noreply, if(socket.assigns.can_edit, do: push_node_changes(socket, params), else: socket)}
+  end
+
+  # The rules of a Validate, see `HeddleUI.FlowLive.ValidateManager`.
+  @impl true
+  def handle_event("validate_rule_add", _params, socket) do
+    {:noreply, ValidateManager.add_rule(socket)}
+  end
+
+  @impl true
+  def handle_event("validate_rule_remove", %{"index" => index}, socket) do
+    {:noreply, ValidateManager.remove_rule(socket, String.to_integer(index))}
+  end
+
+  @impl true
+  def handle_event("validate_use_form", _params, socket) do
+    {:noreply, ValidateManager.use_form(socket)}
+  end
+
+  @impl true
+  def handle_event("validate_toggle_json", _params, socket) do
+    {:noreply, ValidateManager.toggle_json(socket)}
   end
 
   # A Form Trigger's fields and link, see `HeddleUI.FlowLive.FormManager`.

@@ -35,6 +35,21 @@ defmodule HeddleUI.SchemaErrorsTest do
     end)
   end
 
+  test "the author's message in the visitor's language, or the usual one in it" do
+    issue =
+      issue("name", "too_small", %{"bound" => "min", "limit" => 3, "unit" => "characters"})
+      |> Map.put("messages", %{"en" => "Your name, please"})
+
+    assert SchemaErrors.message(issue) == "Your name, please"
+
+    Gettext.with_locale(HeddleUI.Gettext, "pt_BR", fn ->
+      assert SchemaErrors.message(issue) == "Use pelo menos 3 caracteres."
+
+      issue = Map.put(issue, "messages", %{"en" => "Your name, please", "pt_BR" => "Seu nome"})
+      assert SchemaErrors.message(issue) == "Seu nome"
+    end)
+  end
+
   test "a message the schema's author wrote is shown as it is" do
     assert SchemaErrors.message(%{
              "path" => "cpf",

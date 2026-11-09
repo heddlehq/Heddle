@@ -66,17 +66,9 @@ O Heddle confere cada resposta antes de a execução começar: um campo obrigat�
 
 ### Regras suas
 
-Para mais que isso, como um nome com pelo menos 3 letras, um e-mail da sua empresa ou idade a partir de 18, coloque um [Validate](/pt/docs/nodes/validate/) logo depois do gatilho, com **Data** igual a `{{form}}`:
+Para mais que isso, como um nome com pelo menos 3 letras, um e-mail da sua empresa ou idade a partir de 18, coloque um [Validate](/pt/docs/nodes/validate/) depois do gatilho e aperte **Usar os campos do formulário** no painel dele. Ele cria um cartão por campo, com o tipo que recebe a resposta, e coloca `{{form}}` em **Data**. Depois defina as regras de cada campo, como **Mín. de caracteres**, **Mínimo** ou um **Formato**, e, se quiser, a **Mensagem de erro** em inglês e em português.
 
-```json
-{
-  "name": {"type": "string", "min": 3},
-  "email": {"type": "email", "ends_with": "@acme.com"},
-  "age": {"type": "integer", "min": 18}
-}
-```
-
-O envio então espera por ele, até 15 segundos. Quando ele recusa uma resposta, o formulário volta com o que foi digitado e cada mensagem embaixo do seu campo, no idioma de quem preenche, e a execução segue por `invalid`. Uma `message` no schema aparece do jeito que você escreveu, então escreva no idioma do seu formulário. Quando ele aceita, a pessoa vê que foi enviado enquanto a execução segue por `valid`.
+O envio então espera o Validate, até 15 segundos. Quando ele recusa uma resposta, o formulário volta com o que foi digitado e cada mensagem embaixo do seu campo: a sua no idioma de quem preenche, ou a padrão nesse idioma quando você deixou esse idioma vazio. A execução segue por `invalid`. Quando ele aceita, a pessoa vê que foi enviado enquanto a execução segue por `valid`.
 
 Depois de enviar, a pessoa vê a **Message after sending**, ou vai para o endereço em **Then go to**. **Accepting answers** em `No` fecha o formulário assim que publicado. A página segue o idioma e o tema de quem a abre, e uma pessoa pode enviar o mesmo formulário dez vezes por minuto.
 
