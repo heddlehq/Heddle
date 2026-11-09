@@ -64,6 +64,20 @@ O que a pessoa envia fica na execução em `form`, pela chave, e em `result` log
 
 O Heddle confere cada resposta antes de a execução começar: um campo obrigatório precisa estar preenchido, um e-mail precisa parecer um, um número é um número e uma escolha é uma das opções. A caixa de seleção vem como `true` ou `false`, o número como número, e a data como `2026-11-08`.
 
+### Regras suas
+
+Para mais que isso, como um nome com pelo menos 3 letras, um e-mail da sua empresa ou idade a partir de 18, coloque um [Validate](/pt/docs/nodes/validate/) logo depois do gatilho, com **Data** igual a `{{form}}`:
+
+```json
+{
+  "name": {"type": "string", "min": 3},
+  "email": {"type": "email", "ends_with": "@acme.com"},
+  "age": {"type": "integer", "min": 18}
+}
+```
+
+O envio então espera por ele, até 15 segundos. Quando ele recusa uma resposta, o formulário volta com o que foi digitado e cada mensagem embaixo do seu campo, no idioma de quem preenche, e a execução segue por `invalid`. Uma `message` no schema aparece do jeito que você escreveu, então escreva no idioma do seu formulário. Quando ele aceita, a pessoa vê que foi enviado enquanto a execução segue por `valid`.
+
 Depois de enviar, a pessoa vê a **Message after sending**, ou vai para o endereço em **Then go to**. **Accepting answers** em `No` fecha o formulário assim que publicado. A página segue o idioma e o tema de quem a abre, e uma pessoa pode enviar o mesmo formulário dez vezes por minuto.
 
 Para guardar as respostas, ligue um [Spool: Insert Rows](/pt/docs/nodes/spool-insert-rows/) com **Rows** igual a `{{form}}`. **Criar tabela no Spool**, no painel, cria uma tabela com uma coluna para cada campo. Veja [Spool](/pt/docs/guides/spool/).

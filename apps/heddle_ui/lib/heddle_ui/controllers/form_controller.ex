@@ -55,7 +55,7 @@ defmodule HeddleUI.FormController do
         end
 
       true ->
-        case Forms.submit(token, values) do
+        case Forms.submit(token, values, answer_options()) do
           {:ok, page} ->
             sent(conn, page)
 
@@ -63,6 +63,9 @@ defmodule HeddleUI.FormController do
             conn
             |> put_status(:unprocessable_entity)
             |> render_form(page, action: ~p"/f/#{token}", values: values, errors: errors)
+
+          {:error, :rejected, page, issues, values} ->
+            rejected(conn, page, issues, values, action: ~p"/f/#{token}")
 
           {:error, :closed, page} ->
             render(conn, :closed, page: page)
@@ -101,7 +104,13 @@ defmodule HeddleUI.FormController do
     with_flow(conn, id, fn flow ->
       action = ~p"/flows/#{flow.id}/forms/#{node_id}/test"
 
-      case Forms.submit_draft(conn.assigns.current_scope, flow, node_id, params["form"] || %{}) do
+      case Forms.submit_draft(
+             conn.assigns.current_scope,
+             flow,
+             node_id,
+             params["form"] || %{},
+             answer_options()
+           ) do
         {:ok, execution, page} ->
           render(conn, :sent, page: page, test: flow, execution: execution)
 
@@ -109,6 +118,9 @@ defmodule HeddleUI.FormController do
           conn
           |> put_status(:unprocessable_entity)
           |> render_form(page, action: action, values: values, errors: errors, test: flow)
+
+        {:error, :rejected, page, issues, values} ->
+          rejected(conn, page, issues, values, action: action, test: flow)
 
         {:error, :forbidden} ->
           forbidden(conn)
@@ -142,6 +154,20 @@ defmodule HeddleUI.FormController do
       honeypot: @honeypot
     )
   end
+
+  # A Validate of the flow refused what was sent: each error goes by its field, and
+  # the rest above the form. See `HeddleUI.SchemaErrors`.
+  defp rejected(conn, page, issues, values, opts) do
+    {errors, others} = HeddleUI.SchemaErrors.by_field(issues, page.fields)
+    alert = if others == [], do: nil, else: Enum.join(others, " ")
+
+    conn
+    |> put_status(:unprocessable_entity)
+    |> render_form(page, [values: values, errors: errors, alert: alert] ++ opts)
+  end
+
+  # How long sending waits for a Validate of the flow to answer.
+  defp answer_options, do: Application.get_env(:heddle_ui, :form_answer, [])
 
   defp sent(conn, %{redirect_url: url}) when is_binary(url), do: redirect(conn, external: url)
   defp sent(conn, page), do: render(conn, :sent, page: page, test: nil, execution: nil)

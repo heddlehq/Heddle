@@ -57,6 +57,21 @@ defmodule HeddleNodes.Nodes.ValidateTest do
     assert {:ok, %{"result" => "ana@example.com"}, "valid"} = Validate.handler(context, nil)
   end
 
+  test "in a run a form started, the first Validate answers the form" do
+    context = Map.put(context(%{"body" => %{"email" => "nope", "age" => 30}}), "trigger", "form")
+
+    assert {:respond, %{"form" => "invalid", "errors" => [%{"path" => "email"}]}, answered,
+            "invalid"} = Validate.handler(context, nil)
+
+    assert answered["_form_answered"]
+
+    # A later one has nothing left to answer.
+    assert {:ok, _context, "invalid"} = Validate.handler(answered, nil)
+
+    valid = Map.put(context(%{"body" => %{"email" => "a@b.co", "age" => 30}}), "trigger", "form")
+    assert {:respond, %{"form" => "valid"}, _context, "valid"} = Validate.handler(valid, nil)
+  end
+
   test "fails when the schema can't be read" do
     assert {:error, "Schema: email: \"mail\" isn't a type. Use one of: " <> _} =
              Validate.handler(context(%{"body" => %{}}, ~s({"email": "mail"})), nil)

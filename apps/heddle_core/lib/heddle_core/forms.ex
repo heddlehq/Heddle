@@ -102,17 +102,27 @@ defmodule HeddleCore.Forms do
   of the published version from its node.
 
   Returns `{:ok, page}`, `{:error, :invalid, page, errors, values}` (see
-  `Heddle.Form.cast/2`), `{:error, :closed, page}`, `{:error, :not_found}`, or
-  `{:error, :not_started, page}` when the run could not be queued.
+  `Heddle.Form.cast/2`), `{:error, :rejected, page, issues, values}` when a Validate
+  of the flow refused what was sent (see `Heddle.Schema.validate/2`),
+  `{:error, :closed, page}`, `{:error, :not_found}`, or `{:error, :not_started, page}`
+  when the run could not be queued, or failed before a Validate answered.
+
+  A flow with a Validate node answers the form from it, so the person sees what is
+  wrong by each field: sending waits for that answer, up to `:timeout` in `opts`
+  (see `Executions.await_response/2`). Any other flow is only queued.
   """
-  def submit(token, params) do
+  def submit(token, params, opts \\ []) do
     with {:ok, _form, flow, node} <- published(token) do
       page = page(node)
 
       with true <- page.accepting || {:error, :closed, page},
            {:ok, values} <- cast(page, params),
-           {:ok, _execution} <- Executions.start_execution(flow, input(node, values)) do
-        {:ok, page}
+           {:ok, execution} <- Executions.start_execution(flow, input(node, values)) do
+        case answer(flow, execution, opts) do
+          {:rejected, issues} -> {:error, :rejected, page, issues, values}
+          :failed -> {:error, :not_started, page}
+          :sent -> {:ok, page}
+        end
       else
         {:error, :invalid, errors, values} -> {:error, :invalid, page, errors, values}
         {:error, :closed, page} -> {:error, :closed, page}
@@ -120,6 +130,25 @@ defmodule HeddleCore.Forms do
       end
     end
   end
+
+  @answer_timeout to_timeout(second: 15)
+
+  # What the run said of the form: a Validate refused it, the run failed before
+  # saying anything, or the form is sent, which is also what a run that takes too
+  # long gets, as it still runs.
+  defp answer(flow, execution, opts) do
+    if validates?(flow) do
+      case Executions.await_response(execution, Keyword.put_new(opts, :timeout, @answer_timeout)) do
+        {:ok, %{"form" => "invalid", "errors" => issues}} -> {:rejected, issues}
+        {:error, :failed} -> :failed
+        _answered_or_still_running -> :sent
+      end
+    else
+      :sent
+    end
+  end
+
+  defp validates?(flow), do: flow |> Graph.new() |> Graph.of_type("Validate") != []
 
   defp published(token) when is_binary(token) do
     with %Form{} = form <- Repo.get_by(Form, token: token),
@@ -164,10 +193,11 @@ defmodule HeddleCore.Forms do
   Sends the form of a Form Trigger in the draft, and runs the draft from it, as the
   editor runs a flow. It runs whether or not the form takes answers.
 
-  Returns `{:ok, execution, page}`, `{:error, :invalid, page, errors, values}` or
-  `{:error, reason}`.
+  Returns `{:ok, execution, page}`, `{:error, :invalid, page, errors, values}`,
+  `{:error, :rejected, page, issues, values}` when a Validate refused it, as
+  `submit/3` does, or `{:error, reason}`.
   """
-  def submit_draft(%Scope{} = scope, %Flow{} = flow, node_id, params) do
+  def submit_draft(%Scope{} = scope, %Flow{} = flow, node_id, params, opts \\ []) do
     with :ok <- Workspaces.authorize(scope, :run, flow.workspace_id),
          {:ok, node} <- draft_node(flow, node_id) do
       page = page(node)
@@ -175,8 +205,14 @@ defmodule HeddleCore.Forms do
       case cast(page, params) do
         {:ok, values} ->
           case Executions.run(scope, flow, input(node, values), version: :draft) do
-            {:ok, execution} -> {:ok, execution, page}
-            {:error, reason} -> {:error, reason}
+            {:ok, execution} ->
+              case answer(flow, execution, opts) do
+                {:rejected, issues} -> {:error, :rejected, page, issues, values}
+                _sent_or_failed -> {:ok, execution, page}
+              end
+
+            {:error, reason} ->
+              {:error, reason}
           end
 
         {:error, :invalid, errors, values} ->

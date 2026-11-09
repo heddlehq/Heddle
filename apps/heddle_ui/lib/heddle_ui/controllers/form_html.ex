@@ -6,7 +6,12 @@ defmodule HeddleUI.FormHTML do
 
   use HeddleUI, :html
 
-  @field "w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-[15px] text-gray-900 placeholder-gray-400 shadow-sm transition-all duration-150 hover:border-gray-300 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15 dark:border-slate-700 dark:bg-slate-950 dark:text-gray-100 dark:placeholder-gray-500 dark:hover:border-slate-600"
+  @field "w-full rounded-xl border bg-white px-4 py-3 text-[15px] text-gray-900 placeholder-gray-400 shadow-sm transition-all duration-150 focus:outline-none focus:ring-4 dark:bg-slate-950 dark:text-gray-100 dark:placeholder-gray-500"
+
+  # Only one set of border colors goes on a field: with both, the order of the CSS
+  # picks one, and dark mode lost the red of an error.
+  @field_ok "border-gray-200 hover:border-gray-300 focus:border-primary focus:ring-primary/15 dark:border-slate-700 dark:hover:border-slate-600"
+  @field_error "border-rose-400 hover:border-rose-500 focus:border-rose-500 focus:ring-rose-500/15 dark:border-rose-500/70 dark:hover:border-rose-400"
 
   attr :page, :map, required: true
   attr :action, :string, required: true
@@ -105,7 +110,8 @@ defmodule HeddleUI.FormHTML do
   end
 
   defp field(assigns) do
-    assigns = assign(assigns, :class, @field)
+    assigns =
+      assign(assigns, :class, [@field, if(assigns.error, do: @field_error, else: @field_ok)])
 
     ~H"""
     <label
@@ -124,7 +130,7 @@ defmodule HeddleUI.FormHTML do
           required={@field["required"]}
           maxlength={Heddle.Form.max_length()}
           aria-invalid={@error && "true"}
-          class={[@class, @error && error_ring()]}
+          class={@class}
         >{@value}</textarea>
       <% "select" -> %>
         <div class="relative">
@@ -133,7 +139,7 @@ defmodule HeddleUI.FormHTML do
             name={"form[#{@field["key"]}]"}
             required={@field["required"]}
             aria-invalid={@error && "true"}
-            class={[@class, "appearance-none pr-10", @error && error_ring()]}
+            class={[@class, "appearance-none pr-10"]}
           >
             <option value="">
               {if(@field["placeholder"] == "", do: gettext("Choose…"), else: @field["placeholder"])}
@@ -159,7 +165,7 @@ defmodule HeddleUI.FormHTML do
           inputmode={type == "number" && "decimal"}
           autocomplete={autocomplete(@field)}
           aria-invalid={@error && "true"}
-          class={[@class, @error && error_ring()]}
+          class={@class}
         />
     <% end %>
     <.field_error error={@error} />
@@ -172,7 +178,7 @@ defmodule HeddleUI.FormHTML do
     """
   end
 
-  attr :error, :atom, default: nil
+  attr :error, :any, default: nil, doc: "an error of `Heddle.Form`, or a message to show"
 
   defp field_error(assigns) do
     ~H"""
@@ -181,9 +187,6 @@ defmodule HeddleUI.FormHTML do
     </p>
     """
   end
-
-  defp error_ring,
-    do: "border-rose-400 focus:border-rose-500 focus:ring-rose-500/15 dark:border-rose-500/60"
 
   defp input_type("email"), do: "email"
   defp input_type("number"), do: "number"
@@ -201,6 +204,8 @@ defmodule HeddleUI.FormHTML do
   def error_message(:invalid_date), do: gettext("Enter a valid date.")
   def error_message(:invalid_option), do: gettext("Pick one of the options.")
   def error_message(:too_long), do: gettext("This is too long.")
+  # What a Validate of the flow said, already in the person's language.
+  def error_message(message) when is_binary(message), do: message
   def error_message(_error), do: gettext("Check this field.")
 
   attr :page, :map, required: true

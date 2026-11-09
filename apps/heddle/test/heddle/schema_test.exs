@@ -137,6 +137,17 @@ defmodule Heddle.SchemaTest do
       assert run(%{"type" => "string", "coerce" => true}, 42) == {:ok, "42"}
     end
 
+    test "each error says its numbers and names in params, for another language" do
+      assert {:error, [%{"params" => %{"bound" => "min", "limit" => 2, "unit" => "characters"}}]} =
+               run(%{"type" => "string", "min" => 2}, "a")
+
+      assert {:error, [%{"params" => %{"format" => "email"}}]} = run("email", "x")
+      assert {:error, [%{"params" => %{"expected" => "integer"}}]} = run("integer", "x")
+
+      assert {:error, [%{"params" => %{"bound" => "gt", "limit" => 0}}]} =
+               run(%{"type" => "number", "gt" => 0}, 0)
+    end
+
     test "a message replaces the errors of its value" do
       schema = %{
         "cpf" => %{
@@ -149,6 +160,10 @@ defmodule Heddle.SchemaTest do
       assert issues(schema, %{"cpf" => "123"}) == [
                {"cpf", "too_small", "Enter the 11 digits of the CPF"}
              ]
+
+      # They are the author's own words, so nothing says them in another language.
+      assert {:error, [issue]} = run(schema, %{"cpf" => "123"})
+      refute Map.has_key?(issue, "params")
     end
   end
 
