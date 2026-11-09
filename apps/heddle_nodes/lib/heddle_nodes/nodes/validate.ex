@@ -19,14 +19,8 @@ defmodule HeddleNodes.Nodes.Validate do
 
   alias HeddleNodes.Integration
 
-  # Short enough to fit the drawer. The docs of the node show the options.
-  @default_schema """
-  {
-    "name": "string",
-    "email": "email",
-    "age": "integer?"
-  }
-  """
+  # The drawer shows it as a card per field, see `HeddleUI.FlowLive.ValidateRules`.
+  @default_schema ~s({"name": "string", "email": "email"})
 
   definition do
     %{
@@ -42,7 +36,7 @@ defmodule HeddleNodes.Nodes.Validate do
       show: true,
       ui_fields: [
         %{type: :textarea, name: :validation_data, label: "Data", default: "{{result}}"},
-        %{type: :textarea, name: :validation_schema, label: "Schema", default: @default_schema}
+        %{type: :schema, name: :validation_schema, label: "Rules", default: @default_schema}
       ]
     }
   end

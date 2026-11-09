@@ -15,7 +15,9 @@ defmodule Heddle.Schema do
       A field called `type` needs the full form, `{"type": "object", "fields": {...}}`.
 
   Every type takes `optional`, `nullable`, `default` (used when the value is missing,
-  and makes it optional) and `message`, which replaces the errors of that value.
+  and makes it optional) and `message`, which replaces the errors of that value: text,
+  or an object from language to text, like `{"en": "Too short", "pt_BR": "Muito
+  curto"}`, whose errors keep `params` for the languages it leaves out.
 
     * string: `min`, `max`, `length`, `pattern`, `format` (`email`, `url`, `uuid`),
       `starts_with`, `ends_with`, `includes`, and `trim`, `lowercase`, `uppercase`,
@@ -166,7 +168,7 @@ defmodule Heddle.Schema do
       optional: flag(schema, "optional", path) or default != :none,
       nullable: flag(schema, "nullable", path),
       default: default,
-      message: text(schema, "message", path),
+      message: message_option(schema, path),
       integer: Map.get(schema, "integer", false)
     }
   end
@@ -244,6 +246,7 @@ defmodule Heddle.Schema do
     fields =
       case Map.get(schema, "fields", %{}) do
         %{} = fields ->
+          if Map.has_key?(fields, ""), do: fail(path, "every field needs a name")
           Map.new(fields, fn {key, field} -> {key, compile(field, path ++ [key])} end)
 
         _other ->
@@ -275,6 +278,29 @@ defmodule Heddle.Schema do
     case Map.get(schema, key, false) do
       value when is_boolean(value) -> value
       _other -> fail(path, "#{key} is true or false")
+    end
+  end
+
+  # A message is text, or an object from language to text, like
+  # `{"en": "Too short", "pt_BR": "Muito curto"}`. Empty ones are left out.
+  defp message_option(schema, path) do
+    case Map.get(schema, "message") do
+      nil ->
+        nil
+
+      text when is_binary(text) ->
+        if String.trim(text) == "", do: nil, else: text
+
+      %{} = messages ->
+        unless Enum.all?(messages, fn {_language, text} -> is_binary(text) end) do
+          fail(path, "message is text, or an object from language to text")
+        end
+
+        messages = Map.reject(messages, fn {_language, text} -> String.trim(text) == "" end)
+        if messages == %{}, do: nil, else: messages
+
+      _other ->
+        fail(path, "message is text, or an object from language to text")
     end
   end
 
@@ -361,11 +387,21 @@ defmodule Heddle.Schema do
   defp own_message(%{message: message}, path, issues) do
     here = format_path(path)
 
-    Enum.map(issues, fn issue ->
-      if issue["path"] == here,
-        do: issue |> Map.put("message", message) |> Map.delete("params"),
-        else: issue
+    Enum.map(issues, fn
+      %{"path" => ^here} = issue -> with_message(issue, message)
+      issue -> issue
     end)
+  end
+
+  # Text in one language stands for every one, so nothing says it again. Messages by
+  # language keep `params`, for a language they leave out.
+  defp with_message(issue, message) when is_binary(message),
+    do: issue |> Map.put("message", message) |> Map.delete("params")
+
+  defp with_message(issue, messages) do
+    issue
+    |> Map.put("messages", messages)
+    |> Map.put("message", messages["en"] || messages |> Map.values() |> hd())
   end
 
   defp check_value(%{type: "string"} = schema, value, path) do
