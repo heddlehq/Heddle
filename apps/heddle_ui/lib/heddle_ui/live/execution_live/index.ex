@@ -4,6 +4,8 @@ defmodule HeddleUI.ExecutionLive.Index do
   alias Heddle.Graph
   alias HeddleUI.Components.ResultFile
 
+  import HeddleUI.Components.ExecutionStatus, only: [status_badge: 1]
+
   on_mount {HeddleUI.UserAuth, {:require_workspace, :view}}
 
   alias HeddleCore.Executions
@@ -240,32 +242,6 @@ defmodule HeddleUI.ExecutionLive.Index do
     </div>
     """
   end
-
-  defp status_badge(assigns) do
-    ~H"""
-    <span class={[
-      "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide",
-      status_badge_classes(@status)
-    ]}>
-      {@status}
-    </span>
-    """
-  end
-
-  defp status_badge_classes("succeeded"),
-    do: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-
-  defp status_badge_classes("failed"),
-    do: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300"
-
-  defp status_badge_classes("waiting"),
-    do: "bg-violet-100 text-violet-800 dark:bg-violet-950/60 dark:text-violet-300"
-
-  defp status_badge_classes("running"),
-    do: "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300"
-
-  defp status_badge_classes(_queued),
-    do: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
 
   defp get_trigger(%{input: %{"section_id" => id}, flow: flow}) do
     name =
