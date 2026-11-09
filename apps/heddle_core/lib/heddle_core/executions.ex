@@ -48,6 +48,9 @@ defmodule HeddleCore.Executions do
 
   def list_executions(%Scope{}), do: []
 
+  @doc "How the runs of the caller's workspace went, see `HeddleCore.Executions.Overview`."
+  defdelegate overview(scope, opts \\ []), to: HeddleCore.Executions.Overview
+
   @doc "Gets a run the caller may see, by its public id, or nil."
   def get_execution_by_public_id(%Scope{} = scope, public_id) when is_binary(public_id) do
     Execution
