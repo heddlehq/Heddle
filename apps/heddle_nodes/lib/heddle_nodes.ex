@@ -35,6 +35,7 @@ defmodule HeddleNodes do
     Sql,
     Start,
     Switch,
+    Validate,
     Variable,
     Wait,
     Webhook
@@ -48,6 +49,7 @@ defmodule HeddleNodes do
       Schedule,
       ErrorTrigger,
       Variable,
+      Validate,
       Eval,
       Csv.Read,
       Csv.Write,

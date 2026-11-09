@@ -52,6 +52,16 @@ Um fluxo de erro começa com um [Error Trigger](/pt/docs/nodes/error-trigger/) e
 
 Um comum manda isso para o Slack ou por email. O fluxo de erro roda a versão publicada dele, então publique, e uma falha dentro dele não dispara outro.
 
+## Conferir os dados antes
+
+Um nó [Validate](/pt/docs/nodes/validate/) confere o que chega com um schema, como o Zod, antes de o fluxo usar. Ligue `invalid` ao que deve acontecer nesse caso, como um [Respond to Webhook](/pt/docs/nodes/respond-to-webhook/) com status `422` e `{{result.message}}`:
+
+```json
+{"email": "email", "amount": {"type": "number", "gt": 0, "coerce": true}}
+```
+
+Por `valid`, os próximos nós recebem os dados já tratados como o schema diz.
+
 ## Falhar de propósito
 
 Para parar uma execução quando os dados estão errados, coloque uma [Condition](/pt/docs/nodes/condition/) na frente e, no lado ruim, um **Evaluate Code** que lança um erro:
