@@ -43,7 +43,7 @@ msgstr "Configurar Nó"
 msgid "Create Flow"
 msgstr "Criar Fluxo"
 
-#: lib/heddle_ui/live/flow_live/index.ex:200
+#: lib/heddle_ui/live/flow_live/index.ex:203
 #, elixir-autogen, elixir-format
 msgid "Create your first flow"
 msgstr "Crie seu primeiro fluxo"
@@ -61,7 +61,7 @@ msgid "Drag to canvas"
 msgstr "Arraste para a tela"
 
 #: lib/heddle_ui/components/modals/code_editor_modal.ex:22
-#: lib/heddle_ui/components/modals/node_config_modal.ex:642
+#: lib/heddle_ui/components/modals/node_config_modal.ex:643
 #: lib/heddle_ui/live/flow_live/editor.html.heex:32
 #, elixir-autogen, elixir-format
 msgid "Edit Code"
@@ -82,7 +82,7 @@ msgstr "Fluxos disponíveis"
 msgid "Get started by creating a new workflow automation."
 msgstr "Comece criando uma nova automação de processo."
 
-#: lib/heddle_ui/live/flow_live/index.ex:191
+#: lib/heddle_ui/live/flow_live/index.ex:194
 #, elixir-autogen, elixir-format
 msgid "Get started by creating your first workflow automation. It's easy!"
 msgstr "Comece criando sua primeira automação. É fácil!"
@@ -102,7 +102,7 @@ msgstr "Novo Fluxo"
 msgid "No flows"
 msgstr "Nenhum fluxo"
 
-#: lib/heddle_ui/live/flow_live/index.ex:187
+#: lib/heddle_ui/live/flow_live/index.ex:190
 #, elixir-autogen, elixir-format
 msgid "No flows created yet"
 msgstr "Nenhum fluxo criado ainda"
@@ -150,7 +150,7 @@ msgstr "Nós Processados"
 msgid "Total Workflows"
 msgstr "Total de Fluxos"
 
-#: lib/heddle_ui/components/flow/flow_groups.ex:240
+#: lib/heddle_ui/components/flow/flow_groups.ex:212
 #, elixir-autogen, elixir-format
 msgid "Updated"
 msgstr "Atualizado"
@@ -180,12 +180,12 @@ msgstr "Bem-vindo de volta ao Heddle! Aqui está um resumo da sua lógica automa
 msgid "close"
 msgstr "fechar"
 
-#: lib/heddle_ui/components/flow/flow_groups.ex:238
+#: lib/heddle_ui/components/flow/flow_groups.ex:210
 #, elixir-autogen, elixir-format
 msgid "connections"
 msgstr "conexões"
 
-#: lib/heddle_ui/components/flow/flow_groups.ex:238
+#: lib/heddle_ui/components/flow/flow_groups.ex:210
 #, elixir-autogen, elixir-format
 msgid "nodes"
 msgstr "nós"
@@ -240,7 +240,7 @@ msgstr "Configurações de Conta"
 #: lib/heddle_ui/controllers/oauth_html.ex:67
 #: lib/heddle_ui/live/credential_live/index.ex:246
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:142
-#: lib/heddle_ui/live/flow_live/index.ex:176
+#: lib/heddle_ui/live/flow_live/index.ex:178
 #: lib/heddle_ui/live/spool_live/components.ex:283
 #: lib/heddle_ui/live/workspace_live/show.ex:394
 #, elixir-autogen, elixir-format
@@ -872,7 +872,7 @@ msgstr "Revogar"
 msgid "Revoked"
 msgstr "Revogada"
 
-#: lib/heddle_ui/components/flow/flow_groups.ex:161
+#: lib/heddle_ui/components/flow/flow_groups.ex:132
 #: lib/heddle_ui/components/modals/flow_settings_modal.ex:70
 #: lib/heddle_ui/live/ai_live/defaults.ex:87
 #: lib/heddle_ui/live/ai_live/index.ex:236
@@ -1151,7 +1151,7 @@ msgstr "O agente quer rodar este flow, o que pode ter efeitos reais."
 msgid "Use in the editor chat"
 msgstr "Usar no chat do editor"
 
-#: lib/heddle_ui/components/modals/node_config_modal.ex:633
+#: lib/heddle_ui/components/modals/node_config_modal.ex:634
 #, elixir-autogen, elixir-format
 msgid "No code yet"
 msgstr "Sem código ainda"
@@ -1213,7 +1213,7 @@ msgstr "Gerenciar credenciais"
 msgid "No credentials yet."
 msgstr "Nenhuma credencial ainda."
 
-#: lib/heddle_ui/components/modals/node_config_modal.ex:661
+#: lib/heddle_ui/components/modals/node_config_modal.ex:662
 #, elixir-autogen, elixir-format
 msgid "Pick a credential"
 msgstr "Escolha uma credencial"
@@ -2506,7 +2506,7 @@ msgstr "Algo deu errado. Tente de novo."
 msgid "Switch workspace"
 msgstr "Trocar de workspace"
 
-#: lib/heddle_ui/controllers/form_controller.ex:121
+#: lib/heddle_ui/controllers/form_controller.ex:133
 #: lib/heddle_ui/live/flow_live/editor.ex:955
 #, elixir-autogen, elixir-format
 msgid "The flow could not be started."
@@ -2603,7 +2603,7 @@ msgstr "Seu papel neste workspace não permite criar fluxos."
 msgid "Your role in this workspace can't open that page."
 msgstr "Seu papel neste workspace não permite abrir essa página."
 
-#: lib/heddle_ui/controllers/form_html.ex:285
+#: lib/heddle_ui/controllers/form_html.ex:287
 #: lib/heddle_ui/live/flow_live/editor.ex:938
 #, elixir-autogen, elixir-format
 msgid "Your role in this workspace can't run flows."
@@ -3075,12 +3075,15 @@ msgstr "Adicionar linha"
 msgid "Anyone with the link can send the form, which runs what is published. What was sent is in %{placeholder}."
 msgstr "Qualquer pessoa com o link pode enviar o formulário, que roda o que está publicado. O que foi enviado fica em %{placeholder}."
 
-#: lib/heddle_ui/controllers/form_html.ex:270
+#: lib/heddle_ui/controllers/form_html.ex:272
 #, elixir-autogen, elixir-format
 msgid "Check the link, or ask whoever sent it for a new one."
 msgstr "Confira o link, ou peça um novo para quem o enviou."
 
-#: lib/heddle_ui/controllers/form_html.ex:204
+#: lib/heddle_ui/controllers/form_html.ex:206
+#: lib/heddle_ui/schema_errors.ex:43
+#: lib/heddle_ui/schema_errors.ex:52
+#: lib/heddle_ui/schema_errors.ex:61
 #, elixir-autogen, elixir-format
 msgid "Check this field."
 msgstr "Confira este campo."
@@ -3154,16 +3157,19 @@ msgid "Discard"
 msgstr "Descartar"
 
 #: lib/heddle_ui/controllers/form_html.ex:200
+#: lib/heddle_ui/schema_errors.ex:55
 #, elixir-autogen, elixir-format
 msgid "Enter a number."
 msgstr "Digite um número."
 
 #: lib/heddle_ui/controllers/form_html.ex:201
+#: lib/heddle_ui/schema_errors.ex:57
 #, elixir-autogen, elixir-format
 msgid "Enter a valid date."
 msgstr "Digite uma data válida."
 
 #: lib/heddle_ui/controllers/form_html.ex:199
+#: lib/heddle_ui/schema_errors.ex:54
 #, elixir-autogen, elixir-format
 msgid "Enter a valid email address."
 msgstr "Digite um e-mail válido."
@@ -3174,12 +3180,14 @@ msgid "Export CSV"
 msgstr "Exportar CSV"
 
 #: lib/heddle_ui/controllers/form_html.ex:198
+#: lib/heddle_ui/schema_errors.ex:45
+#: lib/heddle_ui/schema_errors.ex:60
 #, elixir-autogen, elixir-format
 msgid "Fill in this field."
 msgstr "Preencha este campo."
 
 #: lib/heddle_ui/controllers/form_html.ex:28
-#: lib/heddle_ui/controllers/form_html.ex:249
+#: lib/heddle_ui/controllers/form_html.ex:251
 #, elixir-autogen, elixir-format
 msgid "Form"
 msgstr "Formulário"
@@ -3189,7 +3197,7 @@ msgstr "Formulário"
 msgid "Form link"
 msgstr "Link do formulário"
 
-#: lib/heddle_ui/controllers/form_html.ex:267
+#: lib/heddle_ui/controllers/form_html.ex:269
 #, elixir-autogen, elixir-format
 msgid "Form not found"
 msgstr "Formulário não encontrado"
@@ -3235,7 +3243,7 @@ msgstr "Claro, escuro, ou o que o seu dispositivo usar."
 msgid "Long text"
 msgstr "Texto longo"
 
-#: lib/heddle_ui/controllers/form_html.ex:315
+#: lib/heddle_ui/controllers/form_html.ex:317
 #, elixir-autogen, elixir-format
 msgid "Made with Heddle"
 msgstr "Feito com Heddle"
@@ -3317,6 +3325,7 @@ msgid "Page %{page} of %{pages}"
 msgstr "Página %{page} de %{pages}"
 
 #: lib/heddle_ui/controllers/form_html.ex:202
+#: lib/heddle_ui/schema_errors.ex:47
 #, elixir-autogen, elixir-format
 msgid "Pick one of the options."
 msgstr "Escolha uma das opções."
@@ -3393,12 +3402,12 @@ msgstr "O mesmo do navegador"
 msgid "Search rows"
 msgstr "Buscar linhas"
 
-#: lib/heddle_ui/controllers/form_html.ex:232
+#: lib/heddle_ui/controllers/form_html.ex:234
 #, elixir-autogen, elixir-format
 msgid "See the run"
 msgstr "Ver a execução"
 
-#: lib/heddle_ui/controllers/form_html.ex:218
+#: lib/heddle_ui/controllers/form_html.ex:220
 #, elixir-autogen, elixir-format
 msgid "Sent"
 msgstr "Enviado"
@@ -3443,12 +3452,12 @@ msgstr "Tabelas que este workspace guarda dentro do Heddle, sem nada para config
 msgid "Test the draft"
 msgstr "Testar o rascunho"
 
-#: lib/heddle_ui/controllers/form_html.ex:304
+#: lib/heddle_ui/controllers/form_html.ex:306
 #, elixir-autogen, elixir-format
 msgid "Testing the draft of %{flow}. Sending runs the draft, not what is published."
 msgstr "Testando o rascunho de %{flow}. Enviar roda o rascunho, não o que está publicado."
 
-#: lib/heddle_ui/controllers/form_html.ex:222
+#: lib/heddle_ui/controllers/form_html.ex:224
 #, elixir-autogen, elixir-format
 msgid "Thank you! We got your answers."
 msgstr "Obrigado! Recebemos suas respostas."
@@ -3478,7 +3487,7 @@ msgstr "Já existe uma tabela no Spool chamada %{name}."
 msgid "This form has no fields yet."
 msgstr "Este formulário ainda não tem campos."
 
-#: lib/heddle_ui/controllers/form_html.ex:252
+#: lib/heddle_ui/controllers/form_html.ex:254
 #, elixir-autogen, elixir-format
 msgid "This form isn't taking answers anymore."
 msgstr "Este formulário não está mais aceitando respostas."
@@ -3528,7 +3537,7 @@ msgstr "Onde a resposta fica na execução"
 msgid "Yes / no"
 msgstr "Sim / não"
 
-#: lib/heddle_ui/controllers/form_html.ex:282
+#: lib/heddle_ui/controllers/form_html.ex:284
 #, elixir-autogen, elixir-format
 msgid "You can't try this form"
 msgstr "Você não pode testar este formulário"
@@ -3538,7 +3547,7 @@ msgstr "Você não pode testar este formulário"
 msgid "You sent this form many times in a row. Wait a minute and try again."
 msgstr "Você enviou este formulário muitas vezes seguidas. Espere um minuto e tente de novo."
 
-#: lib/heddle_ui/controllers/form_controller.ex:76
+#: lib/heddle_ui/controllers/form_controller.ex:79
 #, elixir-autogen, elixir-format
 msgid "Your answers couldn't be sent now. Please try again."
 msgstr "Não foi possível enviar suas respostas agora. Tente de novo."
@@ -3578,22 +3587,22 @@ msgstr "converte"
 msgid "new"
 msgstr "nova"
 
-#: lib/heddle_ui/live/flow_live/index.ex:174
+#: lib/heddle_ui/live/flow_live/index.ex:176
 #, elixir-autogen, elixir-format
 msgid "Create group"
 msgstr "Criar grupo"
 
-#: lib/heddle_ui/components/flow/flow_groups.ex:188
+#: lib/heddle_ui/components/flow/flow_groups.ex:160
 #, elixir-autogen, elixir-format
 msgid "Delete group"
 msgstr "Excluir grupo"
 
-#: lib/heddle_ui/components/flow/flow_groups.ex:184
+#: lib/heddle_ui/components/flow/flow_groups.ex:156
 #, elixir-autogen, elixir-format
 msgid "Delete the group %{name}? Its flows stay, without a group."
 msgstr "Excluir o grupo %{name}? Os fluxos dele ficam, sem grupo."
 
-#: lib/heddle_ui/components/flow/flow_groups.ex:204
+#: lib/heddle_ui/components/flow/flow_groups.ex:176
 #, elixir-autogen, elixir-format
 msgid "Every flow is in a group."
 msgstr "Todo fluxo está em um grupo."
@@ -3608,8 +3617,8 @@ msgstr "Nome do grupo, como Vendas ou Cobrança"
 msgid "Make another flow first, starting with a Subflow Trigger."
 msgstr "Crie outro fluxo antes, começando com um Subflow Trigger."
 
-#: lib/heddle_ui/components/flow/flow_groups.ex:250
-#: lib/heddle_ui/components/flow/flow_groups.ex:263
+#: lib/heddle_ui/components/flow/flow_groups.ex:222
+#: lib/heddle_ui/components/flow/flow_groups.ex:235
 #, elixir-autogen, elixir-format
 msgid "Move to group"
 msgstr "Mover para o grupo"
@@ -3619,18 +3628,18 @@ msgstr "Mover para o grupo"
 msgid "New group"
 msgstr "Novo grupo"
 
-#: lib/heddle_ui/components/flow/flow_groups.ex:202
+#: lib/heddle_ui/components/flow/flow_groups.ex:174
 #, elixir-autogen, elixir-format
 msgid "No flows here yet. Drag one in, or move it from its menu."
 msgstr "Nenhum fluxo aqui ainda. Arraste um para cá, ou mova pelo menu dele."
 
-#: lib/heddle_ui/components/flow/flow_groups.ex:200
+#: lib/heddle_ui/components/flow/flow_groups.ex:172
 #, elixir-autogen, elixir-format
 msgid "No flows in this group."
 msgstr "Nenhum fluxo neste grupo."
 
-#: lib/heddle_ui/components/flow/flow_groups.ex:138
-#: lib/heddle_ui/components/flow/flow_groups.ex:266
+#: lib/heddle_ui/components/flow/flow_groups.ex:103
+#: lib/heddle_ui/components/flow/flow_groups.ex:238
 #, elixir-autogen, elixir-format
 msgid "No group"
 msgstr "Sem grupo"
@@ -3645,7 +3654,7 @@ msgstr "Abrir este fluxo"
 msgid "Pick a flow"
 msgstr "Escolha um fluxo"
 
-#: lib/heddle_ui/components/flow/flow_groups.ex:173
+#: lib/heddle_ui/components/flow/flow_groups.ex:145
 #, elixir-autogen, elixir-format
 msgid "Rename group"
 msgstr "Renomear grupo"
@@ -3654,3 +3663,120 @@ msgstr "Renomear grupo"
 #, elixir-autogen, elixir-format
 msgid "Your role in this workspace can't change groups."
 msgstr "Seu papel neste workspace não permite alterar grupos."
+
+#: lib/heddle_ui/schema_errors.ex:58
+#, elixir-autogen, elixir-format
+msgid "Answer yes or no."
+msgstr "Responda sim ou não."
+
+#: lib/heddle_ui/schema_errors.ex:69
+#, elixir-autogen, elixir-format
+msgid "Check the format of this field."
+msgstr "Confira o formato deste campo."
+
+#: lib/heddle_ui/schema_errors.ex:48
+#, elixir-autogen, elixir-format
+msgid "Don't pick the same option twice."
+msgstr "Não escolha a mesma opção duas vezes."
+
+#: lib/heddle_ui/schema_errors.ex:67
+#, elixir-autogen, elixir-format
+msgid "End with %{value}."
+msgstr "Termine com %{value}."
+
+#: lib/heddle_ui/schema_errors.ex:98
+#, elixir-autogen, elixir-format
+msgid "Enter %{limit} or less."
+msgstr "Digite %{limit} ou menos."
+
+#: lib/heddle_ui/schema_errors.ex:97
+#, elixir-autogen, elixir-format
+msgid "Enter %{limit} or more."
+msgstr "Digite %{limit} ou mais."
+
+#: lib/heddle_ui/schema_errors.ex:101
+#, elixir-autogen, elixir-format
+msgid "Enter a multiple of %{limit}."
+msgstr "Digite um múltiplo de %{limit}."
+
+#: lib/heddle_ui/schema_errors.ex:59
+#, elixir-autogen, elixir-format
+msgid "Enter a valid address, like https://example.com."
+msgstr "Digite um endereço válido, como https://example.com."
+
+#: lib/heddle_ui/schema_errors.ex:56
+#, elixir-autogen, elixir-format
+msgid "Enter a whole number."
+msgstr "Digite um número inteiro."
+
+#: lib/heddle_ui/schema_errors.ex:100
+#, elixir-autogen, elixir-format
+msgid "Enter less than %{limit}."
+msgstr "Digite menos que %{limit}."
+
+#: lib/heddle_ui/schema_errors.ex:99
+#, elixir-autogen, elixir-format
+msgid "Enter more than %{limit}."
+msgstr "Digite mais que %{limit}."
+
+#: lib/heddle_ui/schema_errors.ex:68
+#, elixir-autogen, elixir-format
+msgid "Include %{value}."
+msgstr "Inclua %{value}."
+
+#: lib/heddle_ui/schema_errors.ex:91
+#, elixir-autogen, elixir-format
+msgid "Pick %{date} or earlier."
+msgstr "Escolha %{date} ou antes."
+
+#: lib/heddle_ui/schema_errors.ex:88
+#, elixir-autogen, elixir-format
+msgid "Pick %{date} or later."
+msgstr "Escolha %{date} ou depois."
+
+#: lib/heddle_ui/schema_errors.ex:81
+#, elixir-autogen, elixir-format
+msgid "Pick at least 1 option."
+msgid_plural "Pick at least %{count} options."
+msgstr[0] "Escolha pelo menos 1 opção."
+msgstr[1] "Escolha pelo menos %{count} opções."
+
+#: lib/heddle_ui/schema_errors.ex:82
+#, elixir-autogen, elixir-format
+msgid "Pick at most 1 option."
+msgid_plural "Pick at most %{count} options."
+msgstr[0] "Escolha no máximo 1 opção."
+msgstr[1] "Escolha no máximo %{count} opções."
+
+#: lib/heddle_ui/schema_errors.ex:83
+#, elixir-autogen, elixir-format
+msgid "Pick exactly 1 option."
+msgid_plural "Pick exactly %{count} options."
+msgstr[0] "Escolha exatamente 1 opção."
+msgstr[1] "Escolha exatamente %{count} opções."
+
+#: lib/heddle_ui/schema_errors.ex:66
+#, elixir-autogen, elixir-format
+msgid "Start with %{value}."
+msgstr "Comece com %{value}."
+
+#: lib/heddle_ui/schema_errors.ex:73
+#, elixir-autogen, elixir-format
+msgid "Use at least 1 character."
+msgid_plural "Use at least %{count} characters."
+msgstr[0] "Use pelo menos 1 caractere."
+msgstr[1] "Use pelo menos %{count} caracteres."
+
+#: lib/heddle_ui/schema_errors.ex:74
+#, elixir-autogen, elixir-format
+msgid "Use at most 1 character."
+msgid_plural "Use at most %{count} characters."
+msgstr[0] "Use no máximo 1 caractere."
+msgstr[1] "Use no máximo %{count} caracteres."
+
+#: lib/heddle_ui/schema_errors.ex:75
+#, elixir-autogen, elixir-format
+msgid "Use exactly 1 character."
+msgid_plural "Use exactly %{count} characters."
+msgstr[0] "Use exatamente 1 caractere."
+msgstr[1] "Use exatamente %{count} caracteres."

@@ -32,7 +32,7 @@ defmodule HeddleNodes.Runner do
   # Branches waiting at a Merge: `[%{"node_id" => id, "results" => [...]}]`, in the
   # order they began to wait. It travels in the context so it is saved with a pause.
   @merging "_merging"
-  @run_only [@merging, "resume_url"]
+  @run_only [@merging, "resume_url", "_form_answered"]
   @internal_keys ["flow_id", "workspace_id", "logs" | @run_only]
   @run_keys ["node_id", "section_id", "replay_from", "debug"]
   @drain %{"kind" => "drain"}
@@ -52,7 +52,8 @@ defmodule HeddleNodes.Runner do
 
   Options:
 
-    * `:on_respond` is called with what a Respond to Webhook node answers.
+    * `:on_respond` is called with what a Respond to Webhook node answers, or a
+      Validate answers the form that started the run.
     * `:on_step` is called with the log entry of each step as it ends.
     * `:resume_url` is the address that resumes a `Wait` on a call. A flow with a
       `Wait` reads it as `{{resume_url}}`, to send it before it waits.
@@ -463,6 +464,11 @@ defmodule HeddleNodes.Runner do
       {:respond, response, result} ->
         step.flow.on_respond.(response)
         follow(result, first_output(definition), step)
+
+      # A Validate answers the form that started the run, and goes on its own way.
+      {:respond, response, result, output_name} ->
+        step.flow.on_respond.(response)
+        follow(result, to_string(output_name), step)
 
       {:each, items} ->
         run_each(items, step)

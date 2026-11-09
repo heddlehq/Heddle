@@ -45,18 +45,21 @@ defmodule HeddleUI.Plugs.SetLocale do
   defp signed_in?(%{user: %{}}), do: true
   defp signed_in?(_scope), do: false
 
+  # Browsers send tags like `pt-BR,pt;q=0.9,en;q=0.8`, in the order the person prefers.
   defp extract_from_header([header | _]) when is_binary(header) do
     header
     |> String.split(",")
-    |> Enum.map(&String.split(&1, ";"))
-    |> Enum.map(&List.first/1)
-    |> Enum.map(&String.split(&1, "-"))
-    |> Enum.map(&List.first/1)
-    |> Enum.map(&String.trim/1)
-    |> Enum.find(&(&1 in @supported_locales))
+    |> Enum.map(&(&1 |> String.split(";") |> hd() |> String.trim() |> String.replace("-", "_")))
+    |> Enum.find_value(&(supported(&1) || same_language(&1)))
   end
 
   defp extract_from_header(_), do: nil
+
+  # pt, or pt-PT, still reads better in pt_BR than in English.
+  defp same_language(tag) do
+    language = tag |> String.split("_") |> hd() |> String.downcase()
+    Enum.find(@supported_locales, &(&1 |> String.split("_") |> hd() == language))
+  end
 
   # LiveView Hook
   def on_mount(:default, params, session, socket) do
