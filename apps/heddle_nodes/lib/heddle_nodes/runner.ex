@@ -41,7 +41,8 @@ defmodule HeddleNodes.Runner do
   Runs `flow` from its Start node, or from its first entry node when it has none, like
   a Schedule or a Webhook. The Schedule that fired comes in `input` as `"node_id"`. A
   run with `"trigger" => "error"`, which a failed flow starts, begins at the Error
-  Trigger.
+  Trigger, and one with `"trigger" => "subflow"`, which a Subflow node starts, at the
+  Subflow Trigger, or the Start node when it has none.
 
   With `"section_id"` in `input`, it runs only that section, from each node nothing in
   it leads to, one after the other. See `Heddle.Graph.Section`.
@@ -198,6 +199,10 @@ defmodule HeddleNodes.Runner do
 
   defp start_node(graph, %{"trigger" => "error"}) do
     List.first(Graph.of_type(graph, "Error Trigger")) || start_node(graph, %{})
+  end
+
+  defp start_node(graph, %{"trigger" => "subflow"}) do
+    List.first(Graph.of_type(graph, "Subflow Trigger")) || start_node(graph, %{})
   end
 
   defp start_node(graph, _input) do

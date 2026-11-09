@@ -20,6 +20,8 @@ defmodule HeddleCore.Flows.Flow do
     # The flow that runs when a run of this one fails, see `HeddleCore.Executions`.
     belongs_to :error_flow, __MODULE__
     belongs_to :workspace, Workspace
+    # Where it shows on the flows page, see `HeddleCore.Flows.Groups`.
+    belongs_to :group, HeddleCore.Flows.Group
     # The graph above is the draft. What runs in production is this version, and a flow
     # without one isn't in production yet.
     belongs_to :published_version, Version
@@ -74,6 +76,16 @@ defmodule HeddleCore.Flows.Flow do
       if id == flow.id, do: [error_flow_id: "can't be the flow itself"], else: []
     end)
     |> assoc_constraint(:error_flow)
+  end
+
+  @doc """
+  Moves the flow to a group, or to none with nil. The caller checks the group is of
+  the flow's workspace.
+  """
+  def group_changeset(flow, group_id) do
+    flow
+    |> change(group_id: group_id)
+    |> assoc_constraint(:group)
   end
 
   defp validate_graph(changeset, opts) do
