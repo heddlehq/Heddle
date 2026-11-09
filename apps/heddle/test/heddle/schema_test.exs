@@ -137,6 +137,24 @@ defmodule Heddle.SchemaTest do
       assert run(%{"type" => "string", "coerce" => true}, 42) == {:ok, "42"}
     end
 
+    test "a message by language keeps params, for the languages it leaves out" do
+      schema = %{
+        "name" => %{
+          "type" => "string",
+          "min" => 3,
+          "message" => %{"pt_BR" => "Nome curto", "en" => ""}
+        }
+      }
+
+      assert {:error, [issue]} = run(schema, %{"name" => "Al"})
+      assert issue["messages"] == %{"pt_BR" => "Nome curto"}
+      assert issue["message"] == "Nome curto"
+      assert issue["params"] == %{"bound" => "min", "limit" => 3, "unit" => "characters"}
+
+      assert Schema.parse(%{"a" => %{"type" => "string", "message" => %{"en" => 1}}}) ==
+               {:error, "a: message is text, or an object from language to text"}
+    end
+
     test "each error says its numbers and names in params, for another language" do
       assert {:error, [%{"params" => %{"bound" => "min", "limit" => 2, "unit" => "characters"}}]} =
                run(%{"type" => "string", "min" => 2}, "a")

@@ -66,17 +66,9 @@ Heddle checks every answer before the run starts: a required field must be fille
 
 ### Your own rules
 
-For more than that, like a name of at least 3 letters, an email of your company or an age of 18 and up, put a [Validate](/docs/nodes/validate/) right after the trigger, with **Data** set to `{{form}}`:
+For more than that, like a name of at least 3 letters, an email of your company or an age of 18 and up, put a [Validate](/docs/nodes/validate/) after the trigger and press **Use the fields of the form** in its drawer. It makes a card per field, with the type that takes its answer, and sets **Data** to `{{form}}`. Then set the rules of each field, like **Min. characters**, **Minimum** or a **Format**, and, if you want, its **Error message** in English and in Portuguese.
 
-```json
-{
-  "name": {"type": "string", "min": 3},
-  "email": {"type": "email", "ends_with": "@acme.com"},
-  "age": {"type": "integer", "min": 18}
-}
-```
-
-Sending then waits for it, up to 15 seconds. When it refuses an answer, the form comes back with what was typed and each message under its field, in the visitor's language, and the run goes on through `invalid`. A `message` in the schema is shown as you wrote it, so write it in the language of your form. When it takes them, the person sees that it was sent while the run goes on through `valid`.
+Sending then waits for the Validate, up to 15 seconds. When it refuses an answer, the form comes back with what was typed and each message under its field: yours in the visitor's language, or the usual one in it when you left that language empty. The run goes on through `invalid`. When it takes them, the person sees that it was sent while the run goes on through `valid`.
 
 After sending, the person sees the **Message after sending**, or goes to the address in **Then go to**. **Accepting answers** set to `No` closes the form once published. The page follows the visitor's language and theme, and a person can send the same form ten times a minute.
 
