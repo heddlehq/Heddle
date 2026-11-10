@@ -117,9 +117,13 @@ defmodule HeddleNodes.Nodes.Email.Send do
   # A line break here would let a value from a webhook add its own headers.
   defp header(value), do: String.replace(value, ~r/[\r\n]+/, " ")
 
-  defp options(smtp) do
+  @doc false
+  # The options of :gen_smtp_client. On 465 TLS starts with the connection and reads
+  # `sockopts`, so they get the same checks as `tls_options`, which STARTTLS reads.
+  def options(smtp) do
     host = smtp["host"]
     port = String.to_integer(smtp["port"] || "587")
+    tls = Integration.tls_options(host)
 
     [
       relay: host,
@@ -130,8 +134,8 @@ defmodule HeddleNodes.Nodes.Email.Send do
       username: smtp["username"],
       password: smtp["password"],
       retries: 0,
-      tls_options: Integration.tls_options(host)
-    ]
+      tls_options: tls
+    ] ++ if(port == 465, do: [sockopts: tls], else: [])
   end
 
   defp present?(value), do: is_binary(value) and value != ""
