@@ -184,6 +184,9 @@ defmodule HeddleNodes.Integration do
   def tls_options(host) do
     [
       verify: :verify_peer,
+      # OTP's own default, said out loud: gen_smtp lowers it, and a chain with two
+      # intermediates, like Resend's, then fails with max_path_length_reached.
+      depth: 10,
       cacerts: Application.get_env(:heddle_nodes, :cacerts) || :public_key.cacerts_get(),
       server_name_indication: String.to_charlist(host),
       customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]
