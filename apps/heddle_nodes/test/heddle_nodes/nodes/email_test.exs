@@ -432,6 +432,19 @@ defmodule HeddleNodes.Nodes.EmailTest do
       "format" => "html"
     }
 
+    test "checks the server's certificate on both ports, with room for intermediates" do
+      for port <- ["465", "587"] do
+        options = Email.Send.options(%{"host" => "smtp.example.com", "port" => port})
+        tls = options[:tls_options]
+
+        assert tls[:verify] == :verify_peer
+        assert tls[:depth] == 10
+        assert tls[:server_name_indication] == ~c"smtp.example.com"
+        assert options[:ssl] == (port == "465")
+        if port == "465", do: assert(options[:sockopts] == tls), else: refute(options[:sockopts])
+      end
+    end
+
     test "reaches everyone, and keeps the Bcc out of the message" do
       start_smtp()
 
