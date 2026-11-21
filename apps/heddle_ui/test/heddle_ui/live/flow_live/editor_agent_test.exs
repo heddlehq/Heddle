@@ -60,6 +60,76 @@ defmodule HeddleUI.FlowLive.EditorAgentTest do
     render(view)
   end
 
+  describe "turning an AI Agent into steps" do
+    test "sends the chat what the agent did, and opens it", %{conn: conn, admin: admin} do
+      flow =
+        flow_fixture(%{
+          nodes: [
+            %{
+              "id" => "agent",
+              "type" => "AI Agent",
+              "label" => "Check",
+              "controls" => %{"prompt" => "Is it late?"}
+            },
+            %{"id" => "look", "type" => "Logger", "label" => "Look", "controls" => %{}}
+          ],
+          connections: [
+            %{
+              "source" => "agent",
+              "sourceOutput" => "tools",
+              "target" => "look",
+              "targetInput" => "exec"
+            }
+          ]
+        })
+
+      {:ok, execution} =
+        HeddleCore.Executions.create_execution(%{
+          flow_id: flow.id,
+          logs: [
+            %{
+              "node_id" => "look",
+              "node_type" => "Logger",
+              "status" => "success",
+              "output" => "exec",
+              "data" => %{"input" => %{}, "output" => %{"result" => "seen"}}
+            },
+            %{
+              "node_id" => "agent",
+              "node_type" => "AI Agent",
+              "status" => "success",
+              "output" => "success",
+              "data" => %{
+                "input" => %{"order" => "ORD-7"},
+                "output" => %{
+                  "result" => "It is late.",
+                  "tool_calls" => [
+                    %{"tool" => "look", "args" => %{"message" => "ORD-7"}, "ok" => true}
+                  ]
+                }
+              }
+            }
+          ]
+        })
+
+      {:ok, view, _html} =
+        conn |> log_in_user(admin) |> live(~p"/flows/#{flow.id}?execution=#{execution.public_id}")
+
+      render_hook(view, "client_ready", %{})
+      render_hook(view, "inspector_select_node", %{"node_id" => "look"})
+      refute has_element?(view, "#run-step-agent-steps")
+
+      render_hook(view, "inspector_select_node", %{"node_id" => "agent"})
+      view |> element("#run-step-agent-steps") |> render_click()
+
+      assert_receive {:agent_called, content, _opts}, 2000
+      assert content =~ ~s|Turn the AI Agent "Check" (node `agent`)|
+      assert content =~ "1. `look` with"
+      assert content =~ "It returned: `seen`"
+      refute has_element?(view, "#chat-open-button")
+    end
+  end
+
   describe "chat button" do
     test "shows when the agent is on", %{view: view} do
       assert has_element?(view, "#chat-open-button")

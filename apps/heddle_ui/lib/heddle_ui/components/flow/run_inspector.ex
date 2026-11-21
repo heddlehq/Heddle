@@ -12,11 +12,13 @@ defmodule HeddleUI.Components.Flow.RunInspector do
 
   alias HeddleNodes.Usage
   alias HeddleUI.Components.UsageLabel
+  alias HeddleUI.FlowLive.AgentSteps
   alias HeddleUI.FlowLive.InspectorManager
 
   attr :inspector, :map, default: nil
   attr :can_edit, :boolean, default: true, doc: "whether the person may pin data to a node"
   attr :can_run, :boolean, default: true, doc: "whether the person may run the flow again"
+  attr :can_ask_agent, :boolean, default: false, doc: "whether the editor's agent can help"
 
   def run_inspector(assigns) do
     ~H"""
@@ -31,7 +33,12 @@ defmodule HeddleUI.Components.Flow.RunInspector do
       <.inspector_header inspector={@inspector} can_run={@can_run} />
       <div :if={!@inspector.collapsed} class="flex min-h-0 flex-1">
         <.timeline inspector={@inspector} />
-        <.step_detail inspector={@inspector} can_edit={@can_edit} can_run={@can_run} />
+        <.step_detail
+          inspector={@inspector}
+          can_edit={@can_edit}
+          can_run={@can_run}
+          can_ask_agent={@can_ask_agent}
+        />
       </div>
     </section>
     """
@@ -240,6 +247,7 @@ defmodule HeddleUI.Components.Flow.RunInspector do
   attr :inspector, :map, required: true
   attr :can_edit, :boolean, required: true
   attr :can_run, :boolean, required: true
+  attr :can_ask_agent, :boolean, default: false
 
   defp step_detail(%{inspector: %{selected: :result}} = assigns) do
     ~H"""
@@ -276,6 +284,7 @@ defmodule HeddleUI.Components.Flow.RunInspector do
           index={@inspector.selected}
           can_edit={@can_edit}
           can_run={@can_run}
+          can_ask_agent={@can_ask_agent}
         />
         <.step_tabs step={@step} tab={@inspector.tab} />
         <%= case @inspector.tab do %>
@@ -316,6 +325,7 @@ defmodule HeddleUI.Components.Flow.RunInspector do
   attr :index, :integer, required: true
   attr :can_edit, :boolean, required: true
   attr :can_run, :boolean, required: true
+  attr :can_ask_agent, :boolean, default: false
 
   defp step_heading(assigns) do
     assigns = assign(assigns, :whole?, whole?(assigns.step))
@@ -364,6 +374,20 @@ defmodule HeddleUI.Components.Flow.RunInspector do
           title={gettext("Show on the canvas")}
         >
           <.icon name="hero-viewfinder-circle" class="size-4" />
+        </button>
+        <button
+          :if={@can_ask_agent and AgentSteps.eligible?(@step)}
+          id="run-step-agent-steps"
+          type="button"
+          phx-click="inspector_agent_steps"
+          class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-semibold text-primary transition hover:bg-primary/10 dark:hover:bg-primary/15"
+          title={
+            gettext(
+              "Ask the AI chat to replace this agent with the steps it took, so the next runs don't need a model to decide"
+            )
+          }
+        >
+          <.icon name="hero-squares-plus" class="size-3.5" /> {gettext("Turn into steps")}
         </button>
         <button
           :if={@can_edit and @step["pinned"]}
