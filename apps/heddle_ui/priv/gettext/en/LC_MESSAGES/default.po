@@ -213,7 +213,7 @@ msgstr ""
 #: lib/heddle_ui/components/modals/publish_modal.ex:69
 #: lib/heddle_ui/components/modals/webhook_test_modal.ex:42
 #: lib/heddle_ui/controllers/oauth_html.ex:67
-#: lib/heddle_ui/live/credential_live/index.ex:246
+#: lib/heddle_ui/live/credential_live/index.ex:250
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:142
 #: lib/heddle_ui/live/flow_live/index.ex:178
 #: lib/heddle_ui/live/spool_live/components.ex:283
@@ -1135,7 +1135,7 @@ msgstr ""
 msgid "No code yet"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:237
+#: lib/heddle_ui/live/credential_live/index.ex:241
 #, elixir-autogen, elixir-format
 msgid "Add credential"
 msgstr ""
@@ -1157,7 +1157,7 @@ msgstr ""
 msgid "Credentials"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:302
+#: lib/heddle_ui/live/credential_live/index.ex:306
 #: lib/heddle_ui/live/flow_live/editor.html.heex:55
 #: lib/heddle_ui/live/spool_live/components.ex:279
 #: lib/heddle_ui/live/spool_live/table.ex:344
@@ -1166,12 +1166,12 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:290
+#: lib/heddle_ui/live/credential_live/index.ex:294
 #, elixir-autogen, elixir-format
 msgid "Edit"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:300
+#: lib/heddle_ui/live/credential_live/index.ex:304
 #, elixir-autogen, elixir-format
 msgid "Flows that use this credential will stop working. Delete it?"
 msgstr ""
@@ -1187,7 +1187,7 @@ msgstr ""
 msgid "Manage credentials"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:258
+#: lib/heddle_ui/live/credential_live/index.ex:262
 #, elixir-autogen, elixir-format
 msgid "No credentials yet."
 msgstr ""
@@ -1197,7 +1197,7 @@ msgstr ""
 msgid "Pick a credential"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:237
+#: lib/heddle_ui/live/credential_live/index.ex:241
 #: lib/heddle_ui/live/spool_live/components.ex:521
 #, elixir-autogen, elixir-format
 msgid "Save changes"
@@ -1233,12 +1233,12 @@ msgstr ""
 msgid "%{model} (not available)"
 msgstr ""
 
-#: lib/heddle_ui/ai_choices.ex:109
+#: lib/heddle_ui/ai_choices.ex:115
 #, elixir-autogen, elixir-format
 msgid "%{model} isn't available on %{provider}. Pick one from the list."
 msgstr ""
 
-#: lib/heddle_ui/ai_choices.ex:104
+#: lib/heddle_ui/ai_choices.ex:110
 #, elixir-autogen, elixir-format
 msgid "%{provider} can't do this here. Use a credential from another provider."
 msgstr ""
@@ -2295,7 +2295,7 @@ msgstr ""
 msgid "Email or username"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:228
+#: lib/heddle_ui/live/credential_live/index.ex:232
 #, elixir-autogen, elixir-format
 msgid "Every workspace can use it, and only system admins can change it. The AI defaults use shared credentials."
 msgstr ""
@@ -2482,12 +2482,12 @@ msgstr ""
 msgid "Sees flows, runs and members."
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:225
+#: lib/heddle_ui/live/credential_live/index.ex:229
 #, elixir-autogen, elixir-format
 msgid "Share with every workspace"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:277
+#: lib/heddle_ui/live/credential_live/index.ex:281
 #, elixir-autogen, elixir-format
 msgid "Shared"
 msgstr ""
@@ -4110,4 +4110,14 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "flow"
 msgid "Published"
+msgstr ""
+
+#: lib/heddle_ui/ai_choices.ex:107
+#, elixir-autogen, elixir-format
+msgid "Pick a model, or set one in the credential."
+msgstr ""
+
+#: lib/heddle_ui/ai_choices.ex:106
+#, elixir-autogen, elixir-format
+msgid "The server listed no models. Set one in the credential."
 msgstr ""

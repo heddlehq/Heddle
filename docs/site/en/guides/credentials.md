@@ -61,7 +61,7 @@ Each database has its own credential: **SQL database** (PostgreSQL, MySQL, Maria
 
 ## AI provider
 
-**Provider** (Google, OpenAI, Anthropic or xAI) and **API key**. See [AI providers](/docs/guides/ai-providers/).
+**Provider** (Google, OpenAI, Anthropic, xAI or an OpenAI-compatible server) and **API key**. An OpenAI-compatible server also takes its **Server address**, and optionally a **Model**. See [AI providers](/docs/guides/ai-providers/).
 
 ## If the server's secret changes
 

@@ -200,8 +200,12 @@ defmodule HeddleUI.CredentialLive.Index do
                 label={field.label}
                 value={if(field[:secret], do: "", else: @values[field.name] || field[:default])}
                 placeholder={if(field[:secret], do: secret_placeholder(@credential))}
+                list={field[:suggestions] && "credential-suggestions-#{field.name}"}
                 autocomplete="off"
               />
+              <datalist :if={field[:suggestions]} id={"credential-suggestions-#{field.name}"}>
+                <option :for={suggestion <- field.suggestions} value={suggestion} />
+              </datalist>
             <% end %>
           <% end %>
 

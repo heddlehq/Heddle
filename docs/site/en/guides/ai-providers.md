@@ -1,6 +1,6 @@
 ---
 title: AI providers
-description: Connect Google, OpenAI, Anthropic or xAI, and pick the model each kind of AI task uses.
+description: Connect Google, OpenAI, Anthropic, xAI or any server that speaks the OpenAI API, and pick the model each kind of AI task uses.
 sidebar:
   order: 6
 ---
@@ -15,8 +15,19 @@ The AI nodes, the AI Agent and the chat in the editor all use a model from a pro
 | **OpenAI** (GPT, GPT Image, Whisper) | Yes | Yes | Yes | Yes | Yes |
 | **Anthropic** (Claude) | Yes | Yes | | | |
 | **xAI** (Grok) | Yes | Yes | Yes | | |
+| **OpenAI-compatible server** (Ollama, OpenRouter, Groq, LM Studio, vLLM…) | Yes | If the model does | | | |
 
 Get a key from the provider: [Google AI Studio](https://aistudio.google.com/apikey), [OpenAI](https://platform.openai.com/api-keys), [Anthropic Console](https://console.anthropic.com/settings/keys) or [xAI Console](https://console.x.ai/).
+
+## Any model, local or not
+
+Any server that speaks the OpenAI API works: a model running on your machine through [Ollama](https://ollama.com) or [LM Studio](https://lmstudio.ai), your own [vLLM](https://docs.vllm.ai), or a service like [OpenRouter](https://openrouter.ai), [Groq](https://groq.com) or [DeepSeek](https://platform.deepseek.com). Create an **AI provider** credential with **OpenAI-compatible server** as the provider, and:
+
+- **Server address**: where its API is, ending in `/v1`, like `http://localhost:11434/v1` for Ollama. The field suggests the usual ones.
+- **API key**: the key of the service. A local server usually needs none.
+- **Model**: the one to use by default. Heddle lists the models the server has, so this only matters when it doesn't list them.
+
+It does text and chat, and reads images when the model does. The AI Agent and the chats need a model that calls tools: Heddle says so when one doesn't, and you can pick another for them.
 
 ## Connect one
 

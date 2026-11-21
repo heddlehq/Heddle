@@ -40,10 +40,37 @@ defmodule HeddleCore.Credentials do
             %{label: "Google (Gemini, Nano Banana)", value: "google"},
             %{label: "OpenAI (GPT, GPT Image, Whisper)", value: "openai"},
             %{label: "Anthropic (Claude)", value: "anthropic"},
-            %{label: "xAI (Grok)", value: "xai"}
+            %{label: "xAI (Grok)", value: "xai"},
+            %{
+              label: "OpenAI-compatible server (Ollama, OpenRouter, Groq, LM Studio, vLLM…)",
+              value: "openai_compatible"
+            }
           ]
         },
-        %{name: "api_key", label: "API key", secret: true, required: true}
+        %{
+          name: "api_key",
+          label: "API key, which a local server may not need",
+          secret: true,
+          required: {:unless, "provider", "openai_compatible"}
+        },
+        %{
+          name: "base_url",
+          label: "Server address, for an OpenAI-compatible server",
+          required: {:if, "provider", "openai_compatible"},
+          suggestions: [
+            "http://localhost:11434/v1",
+            "http://localhost:1234/v1",
+            "http://localhost:8000/v1",
+            "https://openrouter.ai/api/v1",
+            "https://api.groq.com/openai/v1",
+            "https://api.deepseek.com/v1",
+            "https://api.together.xyz/v1"
+          ]
+        },
+        %{
+          name: "model",
+          label: "Model, for an OpenAI-compatible server, if it doesn't list its own"
+        }
       ]
     },
     %{
@@ -358,11 +385,15 @@ defmodule HeddleCore.Credentials do
   end
 
   defp require_values(kind, values) do
-    case Enum.find(kind.fields, &(&1[:required] && values[&1.name] == "")) do
+    case Enum.find(kind.fields, &(required?(&1[:required], values) && values[&1.name] == "")) do
       nil -> :ok
       field -> {:error, "#{field.label} can't be blank"}
     end
   end
+
+  defp required?({:if, field, value}, values), do: values[field] == value
+  defp required?({:unless, field, value}, values), do: values[field] != value
+  defp required?(required, _values), do: required == true
 
   defp stored_values(%Credential{id: id, kind: kind, name: name}) do
     data = Repo.one!(from c in Credential, where: c.id == ^id, select: c.data)

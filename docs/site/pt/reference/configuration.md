@@ -47,9 +47,10 @@ Aumente a concorrência e os pools juntos, dentro do que seu Postgres aguenta. V
 
 | Variável | O que faz |
 | --- | --- |
-| `HEDDLE_LLM_PROVIDER` | O provedor das tarefas de texto quando a página AI não define nenhum: `anthropic`, `openai`, `google` ou `xai`. |
+| `HEDDLE_LLM_PROVIDER` | O provedor das tarefas de texto quando a página AI não define nenhum: `anthropic`, `openai`, `google`, `xai`, ou `openai_compatible` para qualquer servidor que fale a API da OpenAI. |
 | `HEDDLE_LLM_MODEL` | O modelo dele, como `claude-sonnet-5-5`. |
-| `HEDDLE_LLM_API_KEY` | A chave dele. Prefira isso a passar na linha de comando. |
+| `HEDDLE_LLM_API_KEY` | A chave dele. Prefira isso a passar na linha de comando. Um servidor `openai_compatible` pode não precisar. |
+| `HEDDLE_LLM_BASE_URL` | O endereço de um servidor `openai_compatible`, como `http://localhost:11434/v1` para o Ollama. |
 | `HEDDLE_CLAUDE_API_KEY` | A chave do Claude Agent no chat do editor. Pode ficar vazia quando o provedor é `anthropic`. |
 | `HEDDLE_CLAUDE_BIN` | Onde está o programa `claude`, quando ele não é encontrado sozinho. |
 | `HEDDLE_CLAUDE_MAX_BUDGET_USD` | O máximo que uma rodada do Claude Agent no chat pode gastar, `1` por padrão. |

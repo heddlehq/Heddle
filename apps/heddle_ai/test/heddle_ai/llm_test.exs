@@ -79,4 +79,50 @@ defmodule HeddleAI.LLMTest do
       assert {:error, :not_configured} = LLM.credentials(%{})
     end
   end
+
+  describe "an OpenAI-compatible server" do
+    @compatible %{
+      "HEDDLE_LLM_PROVIDER" => "openai_compatible",
+      "HEDDLE_LLM_BASE_URL" => "http://localhost:11434/v1/",
+      "HEDDLE_LLM_MODEL" => "qwen3:14b"
+    }
+
+    test "is ready from the environment without a key" do
+      assert %{state: :ready, provider: "openai_compatible", missing: []} =
+               LLM.status(@compatible)
+
+      assert {:ok, {:openai_compatible, "qwen3:14b", [base_url: "http://localhost:11434/v1"]},
+              "none"} = LLM.credentials(@compatible)
+    end
+
+    test "names the address when it's missing" do
+      env = Map.delete(@compatible, "HEDDLE_LLM_BASE_URL")
+
+      assert %{state: :invalid, missing: ["HEDDLE_LLM_BASE_URL"]} = LLM.status(env)
+    end
+
+    test "comes from a credential, with its key when it has one" do
+      credential = %{
+        "provider" => "openai_compatible",
+        "base_url" => "https://openrouter.ai/api/v1",
+        "api_key" => "sk-or-test",
+        "model" => ""
+      }
+
+      assert {:ok, {:openai_compatible, nil, [base_url: "https://openrouter.ai/api/v1"]},
+              "sk-or-test"} = LLM.connection(credential)
+    end
+
+    test "needs an address in its credential" do
+      assert {:error, "The credential needs the address of the server."} =
+               LLM.connection(%{"provider" => "openai_compatible", "base_url" => ""})
+    end
+  end
+
+  describe "connection/1" do
+    test "needs a key for every other provider" do
+      assert {:error, "The credential needs an API key."} =
+               LLM.connection(%{"provider" => "anthropic", "api_key" => ""})
+    end
+  end
 end
