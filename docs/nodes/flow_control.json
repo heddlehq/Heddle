@@ -57,6 +57,17 @@
       "pt": "Pausa a execução sem ocupar nenhum worker enquanto espera. Sobrevive a reinícios e dura no máximo um ano.\n\n- **For a while**: **How long** e **Unit**.\n- **Until a date**: uma data ISO 8601 em UTC, como `2026-12-24T18:00:00Z`. Uma data que já passou não para a execução.\n- **Until a call**: a execução segue quando alguém chama `{{resume_url}}`, que já está no contexto antes do Wait, então mande ele antes, por email ou para uma API. A requisição que chamou vira `result`. Com **How long** preenchido, a execução sai por `timeout` se a chamada não vier a tempo.\n\nUm Wait não pode ser ferramenta de um AI Agent."
     }
   },
+  "Approval": {
+    "result": {
+      "decision": "approved",
+      "by": "ana@example.com",
+      "comment": "Refund is within policy."
+    },
+    "notes": {
+      "en": "Pauses the run until a person approves or rejects it, and holds no worker while it waits. It survives restarts, and lasts a year at most.\n\n- **What to approve** and **Details** are what people see, and take `{{placeholders}}`, like `Refund {{amount}} to {{customer}}`.\n- People decide on the **Approvals** page, where everyone in the workspace sees what waits, and those who can run flows approve or reject it, with a comment if they want.\n- Anything can decide by calling `{{resume_url}}` with `decision` set to `approved` (or `approve`, `yes`, `true`) in the body or the query string, like a link in an email or a button in Slack. Anything else counts as rejected, so a malformed call never approves.\n- With **How long** filled in, the run goes down `timeout` if nobody decided in time.\n\n`result` keeps the `decision`, who decided (`by`) and their `comment`. An Approval can't be the tool of an AI Agent.",
+      "pt": "Pausa a execução até uma pessoa aprovar ou rejeitar, sem ocupar nenhum worker enquanto espera. Sobrevive a reinícios e dura no máximo um ano.\n\n- **What to approve** e **Details** são o que as pessoas veem, e aceitam `{{placeholders}}`, como `Reembolso de {{amount}} para {{customer}}`.\n- As pessoas decidem na página **Approvals**, onde todos do workspace veem o que espera, e quem pode rodar fluxos aprova ou rejeita, com um comentário se quiser.\n- Qualquer coisa decide chamando `{{resume_url}}` com `decision` igual a `approved` (ou `approve`, `yes`, `true`) no corpo ou na query string, como um link num email ou um botão no Slack. Qualquer outro valor conta como rejeitado, então uma chamada malformada nunca aprova.\n- Com **How long** preenchido, a execução sai por `timeout` se ninguém decidir a tempo.\n\n`result` guarda a `decision`, quem decidiu (`by`) e o `comment`. Um Approval não pode ser ferramenta de um AI Agent."
+    }
+  },
   "Subflow": {
     "result": {
       "approved": true,

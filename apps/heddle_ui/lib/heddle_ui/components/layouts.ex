@@ -88,6 +88,13 @@ defmodule HeddleUI.Layouts do
                   active={@section == :executions}
                 />
                 <.nav_link
+                  id="nav-approvals"
+                  navigate={~p"/approvals"}
+                  icon="hero-hand-raised"
+                  label={gettext("Approvals")}
+                  active={@section == :approvals}
+                />
+                <.nav_link
                   id="nav-spool"
                   navigate={~p"/spool"}
                   icon="hero-circle-stack"
@@ -498,6 +505,7 @@ defmodule HeddleUI.Layouts do
   defp nav_section("/ai"), do: :ai
   defp nav_section("/flows" <> _), do: :flows
   defp nav_section("/executions" <> _), do: :executions
+  defp nav_section("/approvals"), do: :approvals
   defp nav_section("/spool" <> _), do: :spool
   defp nav_section("/api-keys"), do: :api_keys
   defp nav_section("/credentials"), do: :credentials

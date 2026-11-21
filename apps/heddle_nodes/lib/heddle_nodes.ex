@@ -8,6 +8,7 @@ defmodule HeddleNodes do
   alias HeddleNodes.Nodes.{
     AI,
     AIAgent,
+    Approval,
     Cassandra,
     Condition,
     Csv,
@@ -153,6 +154,7 @@ defmodule HeddleNodes do
       ForEach,
       Merge,
       Wait,
+      Approval,
       Subflow,
       Logger,
       Output,

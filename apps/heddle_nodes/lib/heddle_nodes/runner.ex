@@ -27,6 +27,7 @@ defmodule HeddleNodes.Runner do
   alias Heddle.Graph.Settings
   alias HeddleNodes.Agent
   alias HeddleNodes.Nodes
+  alias HeddleNodes.Nodes.Approval
   alias HeddleNodes.Trace
 
   # Branches waiting at a Merge: `[%{"node_id" => id, "results" => [...]}]`, in the
@@ -138,6 +139,14 @@ defmodule HeddleNodes.Runner do
     |> finish(state)
   end
 
+  defp wake(%{type: "Approval"} = node, context, %{"by" => "call"} = resumption, state) do
+    result = Approval.result(resumption["request"])
+
+    context
+    |> Map.put("result", result)
+    |> follow(result["decision"], step(node, context, state))
+  end
+
   defp wake(node, context, %{"by" => "call"} = resumption, state) do
     context
     |> Map.put("result", resumption["request"])
@@ -236,7 +245,9 @@ defmodule HeddleNodes.Runner do
         "logs" => []
       })
 
-    case {opts[:resume_url], Graph.of_type(state.graph, "Wait")} do
+    waits = Graph.of_type(state.graph, "Wait") ++ Graph.of_type(state.graph, "Approval")
+
+    case {opts[:resume_url], waits} do
       {url, [_wait | _more]} when is_binary(url) -> Map.put(context, "resume_url", url)
       _no_wait -> context
     end
