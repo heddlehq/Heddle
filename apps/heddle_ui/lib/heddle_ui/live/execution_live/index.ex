@@ -171,6 +171,17 @@ defmodule HeddleUI.ExecutionLive.Index do
                     </span>
                     <span>{format_datetime(@selected_execution.finished_at)}</span>
                   </div>
+                  <div
+                    :if={usage = HeddleNodes.Usage.total(@selected_execution.logs)}
+                    id="execution-usage"
+                  >
+                    <span class="block font-medium text-gray-400 dark:text-gray-400">
+                      {gettext("AI")}
+                    </span>
+                    <span title={HeddleUI.Components.UsageLabel.detail(usage)}>
+                      {HeddleUI.Components.UsageLabel.detail(usage)}
+                    </span>
+                  </div>
                 </div>
               </div>
 

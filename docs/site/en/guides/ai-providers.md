@@ -53,3 +53,5 @@ Without any of this, text tasks use the `HEDDLE_LLM_PROVIDER`, `HEDDLE_LLM_MODEL
 ## What it costs
 
 Each call goes to the provider with your key, and the provider bills you. The run inspector shows every call an AI Agent made through its tools, and **Max steps** keeps an agent from going on forever.
+
+Every step that called a model keeps how many calls it made, their tokens and their price in US dollars. The run inspector shows it on the step and the total on the run, and the Executions page shows the total too. An AI Agent's step counts only its own calls: a tool it runs counts on its own step, so the total never counts a call twice. A model whose price Heddle doesn't know, like one on your own server, shows its tokens alone.
