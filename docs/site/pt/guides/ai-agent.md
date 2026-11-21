@@ -61,6 +61,12 @@ Ele lê o fluxo e os nós disponíveis, planeja a mudança e edita o canvas na s
 
 **Flows → Create with AI** começa um fluxo novo a partir de uma descrição do mesmo jeito.
 
+## Transformar um agente em passos
+
+Um AI Agent descobre como fazer a tarefa a cada execução, e paga por isso toda vez. Quando ele já resolveu bem uma vez, o inspetor pode transformá-lo em passos: escolha o passo do agente numa execução e aperte **Turn into steps**. O chat recebe o que o agente fez ali, o prompt, o que ele recebeu, cada ferramenta que chamou com os argumentos e o que voltou, e o que ele respondeu, e é pedido para trocar o agente por esses nós, ligados nessa ordem, com os valores da execução como `{{placeholders}}`. Um nó de IA só fica onde um passo precisa de julgamento.
+
+O chat mostra o plano antes e muda o rascunho, então você confere, roda e publica quando ele fizer o mesmo que o agente fez. O botão aparece quando o agente usou pelo menos uma ferramenta e a IA está configurada.
+
 ## De outras ferramentas
 
 O mesmo agente responde pela API, que é como o [Treadle](https://github.com/heddlehq/Treadle) conversa com ele no terminal, e o Claude Code ou qualquer cliente MCP pode montar fluxos com as mesmas ferramentas. Veja [MCP](/pt/docs/reference/mcp/).
