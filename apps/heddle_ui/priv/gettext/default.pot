@@ -675,12 +675,12 @@ msgstr ""
 msgid "Execution"
 msgstr ""
 
-#: lib/heddle_ui/live/execution_live/index.ex:180
+#: lib/heddle_ui/live/execution_live/index.ex:191
 #, elixir-autogen, elixir-format
 msgid "Execution Error"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:99
+#: lib/heddle_ui/components/flow/run_inspector.ex:110
 #: lib/heddle_ui/components/layouts.ex:87
 #: lib/heddle_ui/live/dashboard_live/index.ex:76
 #: lib/heddle_ui/live/execution_live/index.ex:15
@@ -747,7 +747,7 @@ msgstr ""
 msgid "How can I help you automate today?"
 msgstr ""
 
-#: lib/heddle_ui/live/execution_live/index.ex:191
+#: lib/heddle_ui/live/execution_live/index.ex:202
 #, elixir-autogen, elixir-format
 msgid "Input Payload"
 msgstr ""
@@ -804,7 +804,7 @@ msgstr ""
 msgid "No nodes found"
 msgstr ""
 
-#: lib/heddle_ui/live/execution_live/index.ex:213
+#: lib/heddle_ui/live/execution_live/index.ex:224
 #, elixir-autogen, elixir-format
 msgid "Node Logs"
 msgstr ""
@@ -835,7 +835,7 @@ msgstr ""
 msgid "Recent"
 msgstr ""
 
-#: lib/heddle_ui/live/execution_live/index.ex:198
+#: lib/heddle_ui/live/execution_live/index.ex:209
 #, elixir-autogen, elixir-format
 msgid "Result / Output"
 msgstr ""
@@ -871,7 +871,7 @@ msgstr ""
 msgid "Search nodes"
 msgstr ""
 
-#: lib/heddle_ui/live/execution_live/index.ex:237
+#: lib/heddle_ui/live/execution_live/index.ex:248
 #, elixir-autogen, elixir-format
 msgid "Select an execution from the list to view its payload, result, and logs."
 msgstr ""
@@ -1246,6 +1246,7 @@ msgstr ""
 #: lib/heddle_ui/components/layouts.ex:144
 #: lib/heddle_ui/live/ai_live/index.ex:17
 #: lib/heddle_ui/live/ai_live/index.ex:117
+#: lib/heddle_ui/live/execution_live/index.ex:179
 #, elixir-autogen, elixir-format
 msgid "AI"
 msgstr ""
@@ -1711,12 +1712,12 @@ msgstr ""
 msgid "Section settings"
 msgstr ""
 
-#: lib/heddle_ui/live/execution_live/index.ex:253
+#: lib/heddle_ui/live/execution_live/index.ex:264
 #, elixir-autogen, elixir-format
 msgid "Section: %{name}"
 msgstr ""
 
-#: lib/heddle_ui/live/execution_live/index.ex:250
+#: lib/heddle_ui/live/execution_live/index.ex:261
 #, elixir-autogen, elixir-format
 msgid "Untitled"
 msgstr ""
@@ -1731,17 +1732,17 @@ msgstr ""
 msgid "Execution waiting"
 msgstr ""
 
-#: lib/heddle_ui/live/execution_live/index.ex:297
+#: lib/heddle_ui/live/execution_live/index.ex:308
 #, elixir-autogen, elixir-format
 msgid "It goes on at %{time}."
 msgstr ""
 
-#: lib/heddle_ui/live/execution_live/index.ex:290
+#: lib/heddle_ui/live/execution_live/index.ex:301
 #, elixir-autogen, elixir-format
 msgid "It goes on when its address is called, or through timeout at %{time}."
 msgstr ""
 
-#: lib/heddle_ui/live/execution_live/index.ex:295
+#: lib/heddle_ui/live/execution_live/index.ex:306
 #, elixir-autogen, elixir-format
 msgid "It goes on when its address is called."
 msgstr ""
@@ -1751,13 +1752,13 @@ msgstr ""
 msgid "The flow is paused at a Wait, and goes on by itself when the wait ends."
 msgstr ""
 
-#: lib/heddle_ui/live/execution_live/index.ex:284
+#: lib/heddle_ui/live/execution_live/index.ex:295
 #, elixir-autogen, elixir-format
 msgid "Waiting at %{node}"
 msgstr ""
 
-#: lib/heddle_ui/live/execution_live/index.ex:317
-#: lib/heddle_ui/live/execution_live/index.ex:321
+#: lib/heddle_ui/live/execution_live/index.ex:328
+#: lib/heddle_ui/live/execution_live/index.ex:332
 #, elixir-autogen, elixir-format
 msgid "a Wait"
 msgstr ""
@@ -1787,31 +1788,31 @@ msgstr ""
 msgid "The imported flow takes the place of the one on the canvas. Import it?"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:331
+#: lib/heddle_ui/components/flow/run_inspector.ex:351
 #, elixir-autogen, elixir-format
 msgid "%{count} tries"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:203
+#: lib/heddle_ui/components/flow/run_inspector.ex:214
 #, elixir-autogen, elixir-format
 msgid "1 more step isn't shown."
 msgid_plural "%{count} more steps aren't shown."
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:79
+#: lib/heddle_ui/components/flow/run_inspector.ex:90
 #, elixir-autogen, elixir-format
 msgid "1 step"
 msgid_plural "%{count} steps"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:106
+#: lib/heddle_ui/components/flow/run_inspector.ex:117
 #, elixir-autogen, elixir-format
 msgid "Close the inspector"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:524
+#: lib/heddle_ui/components/flow/run_inspector.ex:544
 #, elixir-autogen, elixir-format
 msgid "Collapse all"
 msgstr ""
@@ -1821,28 +1822,28 @@ msgstr ""
 msgid "Continue"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:521
+#: lib/heddle_ui/components/flow/run_inspector.ex:541
 #: lib/heddle_ui/components/modals/node_config_modal.ex:266
 #, elixir-autogen, elixir-format
 msgid "Copied"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:520
+#: lib/heddle_ui/components/flow/run_inspector.ex:540
 #, elixir-autogen, elixir-format
 msgid "Copy JSON"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:522
+#: lib/heddle_ui/components/flow/run_inspector.ex:542
 #, elixir-autogen, elixir-format
 msgid "Copy as {{placeholder}}"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:276
+#: lib/heddle_ui/components/flow/run_inspector.ex:287
 #, elixir-autogen, elixir-format
 msgid "Earlier tries"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:414
+#: lib/heddle_ui/components/flow/run_inspector.ex:434
 #, elixir-autogen, elixir-format
 msgid "Error"
 msgstr ""
@@ -1853,7 +1854,7 @@ msgstr ""
 msgid "Error flow"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:523
+#: lib/heddle_ui/components/flow/run_inspector.ex:543
 #, elixir-autogen, elixir-format
 msgid "Expand all"
 msgstr ""
@@ -1862,17 +1863,17 @@ msgstr ""
 #: lib/heddle_ui/components/dashboard.ex:215
 #: lib/heddle_ui/components/dashboard.ex:253
 #: lib/heddle_ui/components/execution_status.ex:46
-#: lib/heddle_ui/components/flow/run_inspector.ex:614
+#: lib/heddle_ui/components/flow/run_inspector.ex:634
 #, elixir-autogen, elixir-format
 msgid "Failed"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:333
+#: lib/heddle_ui/components/flow/run_inspector.ex:353
 #, elixir-autogen, elixir-format
 msgid "Failed, and went on"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:519
+#: lib/heddle_ui/components/flow/run_inspector.ex:539
 #, elixir-autogen, elixir-format
 msgid "Filter keys and values"
 msgstr ""
@@ -1887,12 +1888,12 @@ msgstr ""
 msgid "Flow settings saved."
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:606
+#: lib/heddle_ui/components/flow/run_inspector.ex:626
 #, elixir-autogen, elixir-format
 msgid "How the run ended"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:408
+#: lib/heddle_ui/components/flow/run_inspector.ex:428
 #, elixir-autogen, elixir-format
 msgid "Input"
 msgstr ""
@@ -1907,7 +1908,7 @@ msgstr ""
 msgid "Inspect this step"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:481
+#: lib/heddle_ui/components/flow/run_inspector.ex:501
 #, elixir-autogen, elixir-format
 msgid "Long values were cut to keep the run small."
 msgstr ""
@@ -1922,17 +1923,17 @@ msgstr ""
 msgid "None"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:525
+#: lib/heddle_ui/components/flow/run_inspector.ex:545
 #, elixir-autogen, elixir-format
 msgid "Nothing matches."
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:369
+#: lib/heddle_ui/components/flow/run_inspector.ex:389
 #, elixir-autogen, elixir-format
 msgid "Only part of this output was kept, so it can't be pinned"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:387
+#: lib/heddle_ui/components/flow/run_inspector.ex:407
 #, elixir-autogen, elixir-format
 msgid "Only part of what this step got was kept, so it can't run again from here"
 msgstr ""
@@ -1942,7 +1943,7 @@ msgstr ""
 msgid "Only part of what this step got was kept, so it can't run again from here."
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:407
+#: lib/heddle_ui/components/flow/run_inspector.ex:427
 #, elixir-autogen, elixir-format
 msgid "Output"
 msgstr ""
@@ -1952,17 +1953,17 @@ msgstr ""
 msgid "Output pinned. Runs from the editor take it instead of running the node."
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:296
+#: lib/heddle_ui/components/flow/run_inspector.ex:307
 #, elixir-autogen, elixir-format
 msgid "Pick a step to see what it got and what it did."
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:373
+#: lib/heddle_ui/components/flow/run_inspector.ex:393
 #, elixir-autogen, elixir-format
 msgid "Pin output"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:335
+#: lib/heddle_ui/components/flow/run_inspector.ex:355
 #: lib/heddle_ui/components/modals/node_config_modal.ex:432
 #: lib/heddle_ui/live/flow_live/editor.html.heex:63
 #, elixir-autogen, elixir-format
@@ -1970,38 +1971,38 @@ msgid "Pinned data"
 msgstr ""
 
 #: lib/heddle_ui/components/execution_status.ex:42
-#: lib/heddle_ui/components/flow/run_inspector.ex:610
+#: lib/heddle_ui/components/flow/run_inspector.ex:630
 #, elixir-autogen, elixir-format
 msgid "Queued"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:487
+#: lib/heddle_ui/components/flow/run_inspector.ex:507
 #, elixir-autogen, elixir-format
 msgid "Removed: %{keys}"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:608
+#: lib/heddle_ui/components/flow/run_inspector.ex:628
 #, elixir-autogen, elixir-format
 msgid "Result of the run"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:92
+#: lib/heddle_ui/components/flow/run_inspector.ex:103
 #, elixir-autogen, elixir-format
 msgid "Run again"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:391
+#: lib/heddle_ui/components/flow/run_inspector.ex:411
 #, elixir-autogen, elixir-format
 msgid "Run from here"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:64
+#: lib/heddle_ui/components/flow/run_inspector.ex:67
 #, elixir-autogen, elixir-format
 msgid "Run inspector"
 msgstr ""
 
 #: lib/heddle_ui/components/execution_status.ex:43
-#: lib/heddle_ui/components/flow/run_inspector.ex:611
+#: lib/heddle_ui/components/flow/run_inspector.ex:631
 #, elixir-autogen, elixir-format
 msgid "Running"
 msgstr ""
@@ -2011,17 +2012,17 @@ msgstr ""
 msgid "Runs from the editor take this instead of running the node, and leave through %{output}. Other runs ignore it."
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:368
+#: lib/heddle_ui/components/flow/run_inspector.ex:388
 #, elixir-autogen, elixir-format
 msgid "Runs from the editor take this output instead of running the node"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:89
+#: lib/heddle_ui/components/flow/run_inspector.ex:100
 #, elixir-autogen, elixir-format
 msgid "Save the flow and run it again with the same input"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:385
+#: lib/heddle_ui/components/flow/run_inspector.ex:405
 #, elixir-autogen, elixir-format
 msgid "Save the flow and run it from this step, with the context it got"
 msgstr ""
@@ -2031,17 +2032,17 @@ msgstr ""
 msgid "Seconds between tries"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:344
+#: lib/heddle_ui/components/flow/run_inspector.ex:364
 #, elixir-autogen, elixir-format
 msgid "Show on the canvas"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:54
+#: lib/heddle_ui/components/flow/run_inspector.ex:57
 #, elixir-autogen, elixir-format
 msgid "Show or hide the inspector"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:127
+#: lib/heddle_ui/components/flow/run_inspector.ex:138
 #, elixir-autogen, elixir-format
 msgid "Steps of the run"
 msgstr ""
@@ -2055,7 +2056,7 @@ msgstr ""
 #: lib/heddle_ui/components/dashboard.ex:211
 #: lib/heddle_ui/components/dashboard.ex:252
 #: lib/heddle_ui/components/execution_status.ex:45
-#: lib/heddle_ui/components/flow/run_inspector.ex:613
+#: lib/heddle_ui/components/flow/run_inspector.ex:633
 #, elixir-autogen, elixir-format
 msgid "Succeeded"
 msgstr ""
@@ -2070,7 +2071,7 @@ msgstr ""
 msgid "The node gets an error output, to handle the failure there."
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:251
+#: lib/heddle_ui/components/flow/run_inspector.ex:262
 #, elixir-autogen, elixir-format
 msgid "The run ended without a context."
 msgstr ""
@@ -2095,22 +2096,22 @@ msgstr ""
 msgid "This flow has an error flow"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:141
+#: lib/heddle_ui/components/flow/run_inspector.ex:152
 #, elixir-autogen, elixir-format
 msgid "This run kept no steps."
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:473
+#: lib/heddle_ui/components/flow/run_inspector.ex:493
 #, elixir-autogen, elixir-format
 msgid "This run took too many steps to keep the data of this one."
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:494
+#: lib/heddle_ui/components/flow/run_inspector.ex:514
 #, elixir-autogen, elixir-format
 msgid "This step changed nothing in the context."
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:495
+#: lib/heddle_ui/components/flow/run_inspector.ex:515
 #, elixir-autogen, elixir-format
 msgid "This step got an empty context."
 msgstr ""
@@ -2120,7 +2121,7 @@ msgstr ""
 msgid "Those settings couldn't be saved."
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:192
+#: lib/heddle_ui/components/flow/run_inspector.ex:203
 #, elixir-autogen, elixir-format
 msgid "Tries"
 msgstr ""
@@ -2130,7 +2131,7 @@ msgstr ""
 msgid "Tries again"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:283
+#: lib/heddle_ui/components/flow/run_inspector.ex:294
 #, elixir-autogen, elixir-format
 msgid "Try %{number}"
 msgstr ""
@@ -2145,7 +2146,7 @@ msgstr ""
 msgid "Unless something is connected to its error output."
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:356
+#: lib/heddle_ui/components/flow/run_inspector.ex:376
 #: lib/heddle_ui/components/modals/node_config_modal.ex:441
 #, elixir-autogen, elixir-format
 msgid "Unpin"
@@ -2162,12 +2163,12 @@ msgid "Wait twice as long after each try"
 msgstr ""
 
 #: lib/heddle_ui/components/execution_status.ex:44
-#: lib/heddle_ui/components/flow/run_inspector.ex:612
+#: lib/heddle_ui/components/flow/run_inspector.ex:632
 #, elixir-autogen, elixir-format
 msgid "Waiting"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:135
+#: lib/heddle_ui/components/flow/run_inspector.ex:146
 #, elixir-autogen, elixir-format
 msgid "Waiting for the first step..."
 msgstr ""
@@ -2182,17 +2183,17 @@ msgstr ""
 msgid "When it fails"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:607
+#: lib/heddle_ui/components/flow/run_inspector.ex:627
 #, elixir-autogen, elixir-format
 msgid "Where the run waits"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:526
+#: lib/heddle_ui/components/flow/run_inspector.ex:546
 #, elixir-autogen, elixir-format
 msgid "items"
 msgstr ""
 
-#: lib/heddle_ui/components/flow/run_inspector.ex:527
+#: lib/heddle_ui/components/flow/run_inspector.ex:547
 #, elixir-autogen, elixir-format
 msgid "keys"
 msgstr ""
@@ -4193,3 +4194,25 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "waiting since %{time}"
 msgstr ""
+
+#: lib/heddle_ui/components/usage_label.ex:11
+#, elixir-autogen, elixir-format
+msgid "%{tokens} tokens"
+msgstr ""
+
+#: lib/heddle_ui/components/usage_label.ex:17
+#, elixir-autogen, elixir-format
+msgid "%{tokens} tokens in"
+msgstr ""
+
+#: lib/heddle_ui/components/usage_label.ex:18
+#, elixir-autogen, elixir-format
+msgid "%{tokens} tokens out"
+msgstr ""
+
+#: lib/heddle_ui/components/usage_label.ex:16
+#, elixir-autogen, elixir-format
+msgid "1 model call"
+msgid_plural "%{count} model calls"
+msgstr[0] ""
+msgstr[1] ""

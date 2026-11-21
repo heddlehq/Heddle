@@ -131,5 +131,28 @@ defmodule HeddleUI.ExecutionLive.IndexTest do
                "#inspect-execution[href=\"/flows/#{flow.id}?execution=#{execution.public_id}\"]"
              )
     end
+
+    test "says what the model calls of a run cost, and nothing when there were none", %{
+      conn: conn
+    } do
+      usage = %{"calls" => 3, "input_tokens" => 1200, "output_tokens" => 300, "cost" => 0.0042}
+
+      execution = execution_fixture()
+      {:ok, execution} = Executions.mark_running(execution)
+
+      {:ok, execution} =
+        Executions.mark_succeeded(execution, %{}, %{
+          logs: [%{"node_id" => "a", "usage" => usage}, %{"node_id" => "b"}]
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/executions/#{execution.public_id}")
+
+      assert lv |> element("#execution-usage") |> render() =~
+               "3 model calls · 1.2k tokens in · 300 tokens out · $0.0042"
+
+      plain = execution_fixture()
+      {:ok, lv, _html} = live(conn, ~p"/executions/#{plain.public_id}")
+      refute has_element?(lv, "#execution-usage")
+    end
   end
 end
