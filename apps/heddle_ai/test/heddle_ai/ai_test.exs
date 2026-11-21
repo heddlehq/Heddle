@@ -5,6 +5,11 @@ defmodule HeddleAI.AITest do
   alias HeddleAI.AI
 
   defmodule FakeClient do
+    def generate_text(%{id: "no-tools"}, _context, _opts) do
+      {:error,
+       RuntimeError.exception("registry.ollama.ai/library/no-tools does not support tools")}
+    end
+
     def generate_text(model, context, opts) do
       send(self(), {:generate_text, model, opts})
 
@@ -109,6 +114,67 @@ defmodule HeddleAI.AITest do
     test "stops at the step limit" do
       assert {:error, message} = AI.run("hello", tools: [], max_steps: 0)
       assert message =~ "too many steps"
+    end
+  end
+
+  describe "an OpenAI-compatible server" do
+    @server %{
+      "provider" => "openai_compatible",
+      "base_url" => "http://compatible.test/v1",
+      "api_key" => "",
+      "model" => "qwen3:14b"
+    }
+
+    test "is called through Chat Completions at its address" do
+      assert {:ok, "Hi"} = AI.run("hello", tools: [], credential: @server)
+
+      assert_received {:generate_text, model, opts}
+
+      assert model == %{
+               provider: :openai,
+               id: "qwen3:14b",
+               base_url: "http://compatible.test/v1",
+               extra: %{wire: %{protocol: "openai_chat"}}
+             }
+
+      assert opts[:api_key] == "none"
+    end
+
+    test "says plainly when the model doesn't use tools" do
+      credential = Map.put(@server, "model", "no-tools")
+
+      assert {:error, message} = AI.run("hello", tools: [], credential: credential)
+      assert message =~ "doesn't use tools"
+    end
+
+    test "lists the models the server has, only for text and images in" do
+      Application.put_env(:heddle_ai, :compatible_req_options, plug: {Req.Test, __MODULE__})
+      on_exit(fn -> Application.delete_env(:heddle_ai, :compatible_req_options) end)
+
+      Req.Test.stub(__MODULE__, fn conn ->
+        assert conn.request_path == "/v1/models"
+        Req.Test.json(conn, %{"data" => [%{"id" => "llama3"}, %{"id" => "gemma4:27b"}]})
+      end)
+
+      server = Map.put(@server, "base_url", "http://listing.test/v1")
+
+      assert AI.models([credential: server], :text) == [
+               %{id: "gemma4:27b", label: "gemma4:27b"},
+               %{id: "llama3", label: "llama3"}
+             ]
+
+      assert AI.models([credential: server], :image) == []
+    end
+
+    test "lists nothing when the server doesn't answer" do
+      Application.put_env(:heddle_ai, :compatible_req_options, plug: {Req.Test, __MODULE__})
+      on_exit(fn -> Application.delete_env(:heddle_ai, :compatible_req_options) end)
+
+      Req.Test.stub(__MODULE__, &Req.Test.transport_error(&1, :econnrefused))
+
+      server = Map.put(@server, "base_url", "http://down.test/v1")
+
+      assert AI.models([credential: server], :text) == []
     end
   end
 end

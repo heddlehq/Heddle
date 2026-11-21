@@ -78,4 +78,17 @@ defmodule HeddleAI.ModelsTest do
       assert Models.label(:google, "nope") == "nope"
     end
   end
+
+  describe "an OpenAI-compatible server" do
+    test "takes any model for text and images in, and nothing else" do
+      assert Models.check(:openai_compatible, :text, "qwen3:14b") == :ok
+      assert Models.check(:openai_compatible, :vision, nil, "llava") == :ok
+      assert {:error, _message} = Models.check(:openai_compatible, :text, nil)
+      assert {:error, _message} = Models.check(:openai_compatible, :image, "flux")
+    end
+
+    test "names its models by their ID" do
+      assert Models.label(:openai_compatible, "qwen3:14b") == "qwen3:14b"
+    end
+  end
 end

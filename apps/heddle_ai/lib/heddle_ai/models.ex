@@ -13,8 +13,13 @@ defmodule HeddleAI.Models do
     google: "Google",
     openai: "OpenAI",
     anthropic: "Anthropic",
-    xai: "xAI"
+    xai: "xAI",
+    openai_compatible: "OpenAI-compatible server"
   ]
+
+  # Servers like Ollama or OpenRouter. They list their own models, through
+  # `HeddleAI.Compatible`, and only chat: images, audio and speech differ on each one.
+  @compatible_capabilities [:text, :vision]
 
   # What runs when nobody picks a model. A provider that isn't here for a task can't
   # do it through req_llm.
@@ -65,6 +70,8 @@ defmodule HeddleAI.Models do
   @doc """
   Returns the models of a provider that can do a task: its default, then the newest.
   """
+  def options(:openai_compatible, _capability), do: []
+
   def options(provider, capability) do
     default = default(provider, capability)
 
@@ -80,6 +87,8 @@ defmodule HeddleAI.Models do
   @doc """
   Returns the name of a model, or its ID when the registry doesn't have one.
   """
+  def label(:openai_compatible, id), do: id
+
   def label(provider, id) do
     case Enum.find(LLMDB.models(provider), &(&1.id == id)) do
       %{name: name} when is_binary(name) -> name
@@ -94,6 +103,19 @@ defmodule HeddleAI.Models do
   instance's environment set, which a text task can use.
   """
   def check(provider, capability, model, configured \\ nil)
+
+  def check(:openai_compatible, capability, model, configured) do
+    cond do
+      capability not in @compatible_capabilities ->
+        {:error, cannot(:openai_compatible, capability)}
+
+      model || configured ->
+        :ok
+
+      true ->
+        {:error, "Pick a model, or set one in the credential."}
+    end
+  end
 
   def check(provider, capability, nil, configured) do
     text? = capability in [:text, :vision]

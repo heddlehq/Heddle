@@ -8,9 +8,21 @@ defmodule HeddleAI.LLM do
       HEDDLE_LLM_MODEL=claude-sonnet-5-5
       HEDDLE_LLM_API_KEY=sk-ant-...
 
+  Any server that speaks the OpenAI API, like Ollama, OpenRouter, Groq, LM Studio or
+  vLLM, works as `openai_compatible`, with its address and an optional key:
+
+      HEDDLE_LLM_PROVIDER=openai_compatible
+      HEDDLE_LLM_BASE_URL=http://localhost:11434/v1
+      HEDDLE_LLM_MODEL=qwen3:14b
+
   Installs from before these variables keep working through `OPENAI_API_KEY` and
   `OPENAI_MODEL`, which only apply while `HEDDLE_LLM_PROVIDER` is unset.
   """
+
+  @compatible "openai_compatible"
+
+  # A server that checks no key still needs one sent, so this goes when none is set.
+  @no_key "none"
 
   @legacy_model "gpt-4o-mini"
 
@@ -49,6 +61,9 @@ defmodule HeddleAI.LLM do
       %{state: :ready, source: :openai_legacy, model: model} ->
         {:ok, {:openai, model, []}, read(env, "OPENAI_API_KEY")}
 
+      %{state: :ready, provider: @compatible, model: model} ->
+        compatible(read(env, "HEDDLE_LLM_BASE_URL"), model, read(env, "HEDDLE_LLM_API_KEY"))
+
       %{state: :ready, provider: provider, model: model} ->
         {:ok, {known_provider(provider), model, []}, read(env, "HEDDLE_LLM_API_KEY")}
 
@@ -62,7 +77,8 @@ defmodule HeddleAI.LLM do
   set in the AI page, or else the environment.
 
   A credential holds `"provider"`, `"api_key"` and optionally `"model"`. Its model
-  can be `nil`, because a node can ask for one of its own.
+  can be `nil`, because a node can ask for one of its own. An `openai_compatible` one
+  also holds `"base_url"`, and its key may be blank.
   """
   @spec connection(map() | nil) ::
           {:ok, {atom(), String.t() | nil, []}, String.t()}
@@ -74,11 +90,26 @@ defmodule HeddleAI.LLM do
     end
   end
 
-  def connection(%{"provider" => provider, "api_key" => api_key} = credential) do
-    case known_provider(String.trim(provider)) do
-      nil -> {:error, "The provider #{provider} isn't known."}
-      known -> {:ok, {known, read(credential, "model"), []}, api_key}
+  def connection(%{"provider" => provider} = credential) do
+    case String.trim(provider) do
+      @compatible ->
+        case read(credential, "base_url") do
+          nil -> {:error, "The credential needs the address of the server."}
+          url -> compatible(url, read(credential, "model"), read(credential, "api_key"))
+        end
+
+      name ->
+        case {known_provider(name), read(credential, "api_key")} do
+          {nil, _key} -> {:error, "The provider #{provider} isn't known."}
+          {_known, nil} -> {:error, "The credential needs an API key."}
+          {known, api_key} -> {:ok, {known, read(credential, "model"), []}, api_key}
+        end
     end
+  end
+
+  defp compatible(url, model, api_key) do
+    {:ok, {:openai_compatible, model, [base_url: String.trim_trailing(url, "/")]},
+     api_key || @no_key}
   end
 
   # The AI page is in heddle_core, which isn't a dependency of this app. Tests that
@@ -92,12 +123,14 @@ defmodule HeddleAI.LLM do
 
   defp heddle_status(env, provider) do
     model = read(env, "HEDDLE_LLM_MODEL")
+    compatible? = provider == @compatible
 
     missing =
       [
-        known_provider(provider) == nil && "HEDDLE_LLM_PROVIDER",
+        !compatible? && known_provider(provider) == nil && "HEDDLE_LLM_PROVIDER",
+        compatible? && read(env, "HEDDLE_LLM_BASE_URL") == nil && "HEDDLE_LLM_BASE_URL",
         model == nil && "HEDDLE_LLM_MODEL",
-        read(env, "HEDDLE_LLM_API_KEY") == nil && "HEDDLE_LLM_API_KEY"
+        !compatible? && read(env, "HEDDLE_LLM_API_KEY") == nil && "HEDDLE_LLM_API_KEY"
       ]
       |> Enum.filter(& &1)
 

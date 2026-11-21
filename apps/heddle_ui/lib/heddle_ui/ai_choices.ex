@@ -51,7 +51,7 @@ defmodule HeddleUI.AIChoices do
   defp choice({:ok, resolved}, value, capability) do
     case AI.target(resolved) do
       {:ok, provider, configured} ->
-        models = Models.options(provider, capability)
+        models = AI.models(resolved, capability)
         default = default_model(resolved[:model], provider, configured, capability)
 
         %{
@@ -100,6 +100,12 @@ defmodule HeddleUI.AIChoices do
     label = Models.provider_label(provider)
 
     cond do
+      provider == :openai_compatible and is_nil(default) and value == "" and
+          capability in [:text, :vision] ->
+        if models == [],
+          do: gettext("The server listed no models. Set one in the credential."),
+          else: gettext("Pick a model, or set one in the credential.")
+
       is_nil(default) or (models == [] and capability not in [:text, :vision]) ->
         gettext("%{provider} can't do this here. Use a credential from another provider.",
           provider: label

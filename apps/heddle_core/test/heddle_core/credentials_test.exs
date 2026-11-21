@@ -38,6 +38,34 @@ defmodule HeddleCore.CredentialsTest do
       assert %{kind: ["Bot token can't be blank"]} = errors_on(changeset)
     end
 
+    test "asks an AI provider for a key, and a compatible server for its address", %{
+      scope: scope
+    } do
+      ai = fn name, values -> %{name: name, kind: "ai", values: values} end
+
+      assert {:error, changeset} =
+               Credentials.create_credential(scope, ai.("cloud", %{"provider" => "openai"}))
+
+      assert %{kind: ["API key" <> _rest]} = errors_on(changeset)
+
+      assert {:error, changeset} =
+               Credentials.create_credential(
+                 scope,
+                 ai.("local", %{"provider" => "openai_compatible"})
+               )
+
+      assert %{kind: ["Server address" <> _rest]} = errors_on(changeset)
+
+      assert {:ok, _credential} =
+               Credentials.create_credential(
+                 scope,
+                 ai.("ollama", %{
+                   "provider" => "openai_compatible",
+                   "base_url" => "http://localhost:11434/v1"
+                 })
+               )
+    end
+
     test "fills in defaults", %{scope: scope, ws: ws} do
       {:ok, _credential} =
         Credentials.create_credential(scope, %{
