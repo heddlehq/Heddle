@@ -61,7 +61,7 @@ Cada banco tem a sua credencial: **SQL database** (PostgreSQL, MySQL, MariaDB, S
 
 ## Provedor de IA
 
-**Provider** (Google, OpenAI, Anthropic ou xAI) e **API key**. Veja [Provedores de IA](/pt/docs/guides/ai-providers/).
+**Provider** (Google, OpenAI, Anthropic, xAI ou um servidor compatível com OpenAI) e **API key**. Um servidor compatível também pede o **Server address**, e opcionalmente um **Model**. Veja [Provedores de IA](/pt/docs/guides/ai-providers/).
 
 ## Se o segredo do servidor mudar
 

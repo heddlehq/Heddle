@@ -1,6 +1,6 @@
 ---
 title: Provedores de IA
-description: Conecte Google, OpenAI, Anthropic ou xAI, e escolha o modelo que cada tipo de tarefa de IA usa.
+description: Conecte Google, OpenAI, Anthropic, xAI ou qualquer servidor que fale a API da OpenAI, e escolha o modelo que cada tipo de tarefa de IA usa.
 sidebar:
   order: 6
 ---
@@ -15,8 +15,19 @@ Os nós de IA, o AI Agent e o chat do editor usam um modelo de um provedor que v
 | **OpenAI** (GPT, GPT Image, Whisper) | Sim | Sim | Sim | Sim | Sim |
 | **Anthropic** (Claude) | Sim | Sim | | | |
 | **xAI** (Grok) | Sim | Sim | Sim | | |
+| **Servidor compatível com OpenAI** (Ollama, OpenRouter, Groq, LM Studio, vLLM…) | Sim | Se o modelo ler | | | |
 
 Pegue uma chave no provedor: [Google AI Studio](https://aistudio.google.com/apikey), [OpenAI](https://platform.openai.com/api-keys), [Anthropic Console](https://console.anthropic.com/settings/keys) ou [xAI Console](https://console.x.ai/).
+
+## Qualquer modelo, local ou não
+
+Funciona qualquer servidor que fale a API da OpenAI: um modelo rodando na sua máquina pelo [Ollama](https://ollama.com) ou [LM Studio](https://lmstudio.ai), o seu próprio [vLLM](https://docs.vllm.ai), ou um serviço como [OpenRouter](https://openrouter.ai), [Groq](https://groq.com) ou [DeepSeek](https://platform.deepseek.com). Crie uma credencial de **AI provider** com **OpenAI-compatible server** como provedor, e:
+
+- **Server address**: onde está a API dele, terminando em `/v1`, como `http://localhost:11434/v1` para o Ollama. O campo sugere os mais comuns.
+- **API key**: a chave do serviço. Um servidor local em geral não precisa.
+- **Model**: o modelo padrão. O Heddle lista os modelos que o servidor tem, então isso só importa quando ele não lista.
+
+Ele faz texto e chat, e lê imagens quando o modelo lê. O AI Agent e os chats precisam de um modelo que chame ferramentas: o Heddle avisa quando um não chama, e você pode escolher outro para eles.
 
 ## Conectar
 

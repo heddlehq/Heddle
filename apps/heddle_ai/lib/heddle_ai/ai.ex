@@ -7,6 +7,7 @@ defmodule HeddleAI.AI do
   see a provider.
   """
 
+  alias HeddleAI.Compatible
   alias HeddleAI.LLM
   alias HeddleAI.Models
   alias ReqLLM.Context
@@ -54,6 +55,26 @@ defmodule HeddleAI.AI do
   def check(capability, opts) do
     with {:ok, provider, configured} <- target(opts) do
       Models.check(provider, capability, opts[:model], configured)
+    end
+  end
+
+  @doc """
+  Returns the models that can do a task with these options, as `%{id, label}`.
+
+  Takes `:credential`. An OpenAI-compatible server is asked for its list.
+  """
+  def models(opts, capability) do
+    case LLM.connection(opts[:credential]) do
+      {:ok, {:openai_compatible, _configured, options}, api_key} ->
+        if Models.check(:openai_compatible, capability, "any") == :ok,
+          do: Compatible.models(options[:base_url], api_key),
+          else: []
+
+      {:ok, {provider, _configured, _options}, _api_key} ->
+        Models.options(provider, capability)
+
+      {:error, _reason} ->
+        []
     end
   end
 
@@ -222,7 +243,7 @@ defmodule HeddleAI.AI do
   end
 
   defp text_model({provider, _configured, options}, name, _capability) when is_binary(name) do
-    {:ok, {provider, name, options}}
+    pick_text_model(provider, name, options)
   end
 
   # The model set for text may not see images, so the default for images comes first.
@@ -236,6 +257,10 @@ defmodule HeddleAI.AI do
 
   defp pick_text_model(provider, nil, _options) do
     {:error, "#{Models.provider_label(provider)} has no default model. Pick one in the AI page."}
+  end
+
+  defp pick_text_model(:openai_compatible, name, options) do
+    {:ok, Compatible.spec(name, options[:base_url])}
   end
 
   defp pick_text_model(provider, name, options), do: {:ok, {provider, name, options}}
@@ -274,7 +299,17 @@ defmodule HeddleAI.AI do
     "No AI provider is set up. Add a credential and pick it in the AI page."
   end
 
-  defp error_message(%{__exception__: true} = error), do: Exception.message(error)
+  defp error_message(%{__exception__: true} = error) do
+    message = Exception.message(error)
+
+    # Many local models don't call tools, and each server words it its own way.
+    if message =~ ~r/(does not|doesn't|not) support (tools|tool[ _]?(calls|calling|use))/i do
+      "This model doesn't use tools, which the agent needs. Pick another model. (#{message})"
+    else
+      message
+    end
+  end
+
   defp error_message(reason), do: inspect(reason)
 
   defp client, do: Application.get_env(:heddle_ai, :llm_client, ReqLLM)
