@@ -558,6 +558,70 @@ defmodule HeddleCore.Executions do
   end
 
   @doc """
+  The runs of the caller's workspace that wait at an Approval, oldest first.
+  """
+  def list_approvals(%Scope{workspace: %{id: workspace_id}} = scope) do
+    if Workspaces.can?(scope, :view, workspace_id) do
+      Repo.all(
+        from e in Execution,
+          join: f in assoc(e, :flow),
+          where: f.workspace_id == ^workspace_id,
+          where: e.status == "waiting",
+          where: fragment("? -> 'wait' \\? 'approval'", e.paused),
+          order_by: [asc: e.updated_at],
+          preload: [flow: f]
+      )
+    else
+      []
+    end
+  end
+
+  def list_approvals(%Scope{}), do: []
+
+  @doc """
+  Approves or rejects a run that waits at an Approval, for a person who may run its
+  flow. `decision` is `"approved"` or `"rejected"`, and `comment` may be blank.
+
+  Returns `{:ok, execution}`, or `{:error, reason}` with `:not_found`, `:forbidden`,
+  `:already_resumed` or `:not_waiting`.
+  """
+  def decide(%Scope{} = scope, execution_id, decision, comment \\ nil)
+      when decision in ["approved", "rejected"] do
+    with %Execution{} = execution <- get_execution(scope, execution_id) || {:error, :not_found},
+         :ok <- Workspaces.authorize(scope, :run, execution.flow.workspace_id) do
+      case execution do
+        %Execution{status: "waiting", paused: %{"wait_id" => id, "wait" => %{"approval" => _}}} ->
+          request = %{
+            "decision" => decision,
+            "by" => scope.user.email,
+            "comment" => blank_to_nil(comment)
+          }
+
+          case Oban.insert(
+                 running_oban() || oban_name(),
+                 resume_job(execution, id, "call", %{request: request})
+               ) do
+            {:ok, %Oban.Job{conflict?: true}} -> {:error, :already_resumed}
+            {:ok, _job} -> {:ok, execution}
+            {:error, reason} -> {:error, reason}
+          end
+
+        _other ->
+          {:error, :not_waiting}
+      end
+    end
+  end
+
+  defp blank_to_nil(text) when is_binary(text) do
+    case String.trim(text) do
+      "" -> nil
+      text -> text
+    end
+  end
+
+  defp blank_to_nil(_text), do: nil
+
+  @doc """
   Takes a paused run for the job `job_id`, which ends the wait `wait_id`.
 
   Only one job takes it: the others, like a time limit that came after the call, find
