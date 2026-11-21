@@ -7,6 +7,7 @@ defmodule HeddleUI.FlowLive.Editor do
   alias HeddleCore.{Credentials, Executions, Flows, Workspaces}
   alias HeddleUI.Agent
   alias HeddleUI.FlowLive.AgentManager
+  alias HeddleUI.FlowLive.AgentSteps
   alias HeddleUI.FlowLive.TerminalManager
   alias HeddleUI.FlowLive.{CodeEditorManager, InspectorManager, NodePaletteManager, NodeSettings}
   alias HeddleUI.FlowLive.FormManager
@@ -381,6 +382,24 @@ defmodule HeddleUI.FlowLive.Editor do
   @impl true
   def handle_event("inspector_focus", _params, socket) do
     {:noreply, InspectorManager.focus_node(socket)}
+  end
+
+  @impl true
+  def handle_event("inspector_agent_steps", _params, socket) do
+    %{inspector: inspector, current_flow: flow} = socket.assigns
+
+    case AgentSteps.request(
+           flow,
+           inspector.steps,
+           inspector.selected,
+           inspector.execution.public_id
+         ) do
+      {:ok, request} when socket.assigns.ai_configured ->
+        {:noreply, socket |> AgentManager.send_message(request) |> assign(chat_open: true)}
+
+      _other ->
+        {:noreply, socket}
+    end
   end
 
   @impl true

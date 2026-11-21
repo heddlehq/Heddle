@@ -117,6 +117,7 @@
         inspector={@inspector}
         can_edit={@can_edit}
         can_run={@can_run}
+        can_ask_agent={@ai_configured}
       />
       <HeddleUI.Components.Flow.TerminalPanel.terminal_panel
         :if={@terminal_available}

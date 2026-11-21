@@ -61,6 +61,12 @@ It reads the flow and the nodes it has, plans the change, and edits the canvas i
 
 **Flows → Create with AI** starts a new flow from a description in the same way.
 
+## Turn an agent into steps
+
+An AI Agent works a task out on every run, and pays for it each time. Once it has solved one well, the run inspector can turn it into steps: pick the agent's step in a run and press **Turn into steps**. The chat gets what the agent did there, its prompt, what it got, each tool it called with the arguments and what came back, and what it answered, and is asked to replace the agent with those nodes, wired in that order, with the run's values as `{{placeholders}}`. An AI node stays only where a step needs judgment.
+
+The chat tells you its plan first and changes the draft, so you can look at it, run it, and publish it when it does the same as the agent did. It shows when the agent used at least one tool and AI is set up.
+
 ## From other tools
 
 The same agent answers through the API, which is how [Treadle](https://github.com/heddlehq/Treadle) talks to it in the terminal, and Claude Code or any MCP client can build flows with the same tools. See [MCP](/docs/reference/mcp/).
