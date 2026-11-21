@@ -53,3 +53,5 @@ Sem nada disso, as tarefas de texto usam as variáveis `HEDDLE_LLM_PROVIDER`, `H
 ## Quanto custa
 
 Cada chamada vai para o provedor com a sua chave, e o provedor cobra você. O inspetor mostra cada chamada que um AI Agent fez pelas ferramentas, e **Max steps** impede um agente de continuar para sempre.
+
+Cada passo que chamou um modelo guarda quantas chamadas fez, os tokens e o preço em dólares. O inspetor mostra isso no passo e o total na execução, e a página Executions também mostra o total. O passo de um AI Agent conta só as chamadas dele: uma ferramenta que ele roda conta no próprio passo, então o total nunca conta uma chamada duas vezes. Um modelo de preço desconhecido pelo Heddle, como um no seu próprio servidor, mostra só os tokens.

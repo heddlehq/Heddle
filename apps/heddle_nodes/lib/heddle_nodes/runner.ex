@@ -29,6 +29,7 @@ defmodule HeddleNodes.Runner do
   alias HeddleNodes.Nodes
   alias HeddleNodes.Nodes.Approval
   alias HeddleNodes.Trace
+  alias HeddleNodes.Usage
 
   # Branches waiting at a Merge: `[%{"node_id" => id, "results" => [...]}]`, in the
   # order they began to wait. It travels in the context so it is saved with a pause.
@@ -382,7 +383,8 @@ defmodule HeddleNodes.Runner do
       started: System.monotonic_time(:microsecond),
       attempts: 1,
       retry_errors: [],
-      pinned: false
+      pinned: false,
+      usage: Usage.enter()
     }
   end
 
@@ -488,6 +490,7 @@ defmodule HeddleNodes.Runner do
         run_agent(request, step)
 
       {:wait, wait} ->
+        Usage.leave(step.usage)
         {:wait, Map.put(wait, "node_id", node.id), context, []}
 
       {:error, reason} ->
@@ -665,6 +668,15 @@ defmodule HeddleNodes.Runner do
     end
   end
 
+  defp put_usage(entry, %{usage: ref}) do
+    case Usage.leave(ref) do
+      nil -> entry
+      usage -> Map.put(entry, "usage", usage)
+    end
+  end
+
+  defp put_usage(entry, _step), do: entry
+
   defp finish_node(result, step, output_name, status, extra \\ %{}) do
     result
     |> normalize_context()
@@ -702,6 +714,7 @@ defmodule HeddleNodes.Runner do
       |> put_if("attempts", step.attempts, step.attempts > 1)
       |> put_if("retry_errors", step.retry_errors, step.retry_errors != [])
       |> put_if("pinned", true, step.pinned)
+      |> put_usage(step)
       |> Map.put("data", Trace.step(Map.drop(step.context, @internal_keys), visible))
       |> Map.merge(extra)
 

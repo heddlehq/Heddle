@@ -10,6 +10,7 @@ defmodule HeddleAI.AI do
   alias HeddleAI.Compatible
   alias HeddleAI.LLM
   alias HeddleAI.Models
+  alias HeddleNodes.Usage
   alias ReqLLM.Context
   alias ReqLLM.Message.ContentPart
   alias ReqLLM.Response
@@ -154,6 +155,7 @@ defmodule HeddleAI.AI do
          {input, image_opts} = image_input(provider, prompt, opts[:image]),
          request = image_opts ++ aspect_ratio(opts[:aspect_ratio]) ++ request_base(api_key),
          {:ok, response} <- client().generate_image(model, input, request) do
+      Usage.record(Response.usage(response))
       image_from(response)
     else
       {:error, reason} -> {:error, error_message(reason)}
@@ -173,6 +175,7 @@ defmodule HeddleAI.AI do
     with {:ok, model, api_key} <- media_model(:transcription, opts),
          request = language ++ request_base(api_key),
          {:ok, result} <- client().transcribe(model, {:binary, data, media_type}, request) do
+      Usage.record(Map.get(result, :usage))
       {:ok, %{text: result.text, language: result.language}}
     else
       {:error, reason} -> {:error, error_message(reason)}
@@ -191,6 +194,7 @@ defmodule HeddleAI.AI do
 
     with {:ok, model, api_key} <- media_model(:speech, opts),
          {:ok, result} <- client().speak(model, text, voice ++ request_base(api_key)) do
+      Usage.record(Map.get(result, :usage))
       {:ok, {result.audio, result.media_type}}
     else
       {:error, reason} -> {:error, error_message(reason)}
@@ -270,6 +274,8 @@ defmodule HeddleAI.AI do
   defp step(context, model, request, rounds) do
     case client().generate_text(model, context, request) do
       {:ok, response} ->
+        Usage.record(Response.usage(response))
+
         case Response.tool_calls(response) do
           [] ->
             {:ok, Response.text(response) || ""}

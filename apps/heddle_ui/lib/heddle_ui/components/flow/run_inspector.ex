@@ -10,6 +10,8 @@ defmodule HeddleUI.Components.Flow.RunInspector do
 
   use HeddleUI, :html
 
+  alias HeddleNodes.Usage
+  alias HeddleUI.Components.UsageLabel
   alias HeddleUI.FlowLive.InspectorManager
 
   attr :inspector, :map, default: nil
@@ -43,6 +45,7 @@ defmodule HeddleUI.Components.Flow.RunInspector do
       assigns
       |> assign(:execution, assigns.inspector.execution)
       |> assign(:total_ms, InspectorManager.total_ms(assigns.inspector))
+      |> assign(:usage, Usage.total(assigns.inspector.steps))
 
     ~H"""
     <header class="flex h-12 shrink-0 items-center gap-3 border-b border-gray-200 px-4 dark:border-slate-800">
@@ -74,6 +77,14 @@ defmodule HeddleUI.Components.Flow.RunInspector do
         class="hidden items-center gap-1 text-xs text-gray-500 sm:inline-flex dark:text-gray-400"
       >
         <.icon name="hero-clock" class="size-3.5" /> {format_ms(@total_ms)}
+      </span>
+      <span
+        :if={@usage}
+        id="run-inspector-usage"
+        class="hidden items-center gap-1 text-xs text-gray-500 sm:inline-flex dark:text-gray-400"
+        title={UsageLabel.detail(@usage)}
+      >
+        <.icon name="hero-sparkles" class="size-3.5" /> {UsageLabel.short(@usage)}
       </span>
       <span class="hidden text-xs text-gray-500 sm:inline dark:text-gray-400">
         {ngettext("1 step", "%{count} steps", length(@inspector.steps))}
@@ -326,6 +337,15 @@ defmodule HeddleUI.Components.Flow.RunInspector do
         </.chip>
         <.chip>
           <.icon name="hero-clock" class="size-3" /> {format_ms(@step["duration_ms"])}
+        </.chip>
+        <.chip :if={@step["usage"]}>
+          <span
+            id="run-step-usage"
+            class="inline-flex items-center gap-1"
+            title={UsageLabel.detail(@step["usage"])}
+          >
+            <.icon name="hero-sparkles" class="size-3" /> {UsageLabel.short(@step["usage"])}
+          </span>
         </.chip>
         <.chip :if={@step["attempts"]} tone="warning">
           {gettext("%{count} tries", count: @step["attempts"])}

@@ -223,6 +223,31 @@ defmodule HeddleNodes.AgentTest do
       assert Enum.map(context["logs"], & &1["node_id"]) == ["start", "c", "agent"]
     end
 
+    test "keeps what the model cost on the agent's step, and not on its tools'" do
+      code = graph_node("c", "Evaluate Code", %{"language" => "elixir", "code_elixir" => "1"})
+
+      script(fn _messages, opts ->
+        HeddleNodes.Usage.record(%{input_tokens: 100, output_tokens: 10, total_cost: 0.002})
+        {:ok, _seen} = tool(opts, "evaluate_code").fun.(%{})
+        HeddleNodes.Usage.record(%{input_tokens: 150, output_tokens: 20, total_cost: 0.003})
+        {:ok, "done"}
+      end)
+
+      assert {:ok, context} = Runner.run(with_tool(code), %{})
+
+      by_node = Map.new(context["logs"], &{&1["node_id"], &1["usage"]})
+
+      assert by_node["agent"] == %{
+               "calls" => 2,
+               "input_tokens" => 250,
+               "output_tokens" => 30,
+               "cost" => 0.005
+             }
+
+      assert by_node["c"] == nil
+      assert by_node["start"] == nil
+    end
+
     test "accepts the model's values under atom keys" do
       code = graph_node("c", "Evaluate Code", %{"language" => "elixir", "code_elixir" => "input"})
 
