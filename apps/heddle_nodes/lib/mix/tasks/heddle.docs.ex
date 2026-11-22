@@ -5,7 +5,8 @@ defmodule Mix.Tasks.Heddle.Docs do
   Writes `docs/reference/nodes.json` from the definitions of the nodes, from
   `docs/nodes/` and from the `priv/docs.json` of each integration package, see
   `HeddleNodes.Docs`. Build with every package (`HEDDLE_INTEGRATIONS_PATH`) so the
-  reference covers them all.
+  reference covers them all. It also writes the icons of the nodes for the editor's
+  stylesheet, `apps/heddle_ui/assets/css/node_icons.css`.
 
       mix heddle.docs
 
@@ -34,5 +35,9 @@ defmodule Mix.Tasks.Heddle.Docs do
     File.mkdir_p!(Path.dirname(path))
     File.write!(path, HeddleNodes.Docs.encode())
     Mix.shell().info("Wrote #{Path.relative_to_cwd(path)}")
+
+    icons = HeddleNodes.Docs.icons_path()
+    File.write!(icons, HeddleNodes.Docs.encode_icons())
+    Mix.shell().info("Wrote #{Path.relative_to_cwd(icons)}")
   end
 end
