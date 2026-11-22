@@ -8,7 +8,7 @@ defmodule HeddleNodes.Services.Sql do
   Redshift, Neon and Supabase as PostgreSQL, and MariaDB, TiDB and PlanetScale as MySQL.
   """
 
-  alias HeddleNodes.Connections
+  alias Bobbin.Connections
   alias HeddleNodes.Integration
   alias HeddleNodes.Services.Sql.{MySQL, Oracle, Postgres, SQLite, SqlServer, Statement}
 

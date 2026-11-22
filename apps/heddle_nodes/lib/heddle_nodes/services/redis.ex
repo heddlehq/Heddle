@@ -4,7 +4,7 @@ defmodule HeddleNodes.Services.Redis do
   the Redis nodes.
   """
 
-  alias HeddleNodes.Connections
+  alias Bobbin.Connections
   alias HeddleNodes.Integration
 
   @timeout :timer.seconds(30)

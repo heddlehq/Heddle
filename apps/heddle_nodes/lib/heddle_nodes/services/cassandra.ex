@@ -6,7 +6,7 @@ defmodule HeddleNodes.Services.Cassandra do
   as a run mostly holds text.
   """
 
-  alias HeddleNodes.Connections
+  alias Bobbin.Connections
   alias HeddleNodes.Integration
   alias HeddleNodes.Services.Sql.{Options, Statement}
 

@@ -327,11 +327,11 @@ defmodule HeddleNodes.Nodes.Database.SqlTest do
     test "is shared by the runs of a credential" do
       :persistent_term.put(:heddle_sql_test_credential, @postgres)
       sql!("SELECT 1")
-      before = DynamicSupervisor.count_children(HeddleNodes.Connections.Supervisor).active
+      before = DynamicSupervisor.count_children(Bobbin.Connections.Supervisor).active
 
       for _time <- 1..5, do: sql!("SELECT 1")
 
-      assert DynamicSupervisor.count_children(HeddleNodes.Connections.Supervisor).active == before
+      assert DynamicSupervisor.count_children(Bobbin.Connections.Supervisor).active == before
     end
   end
 

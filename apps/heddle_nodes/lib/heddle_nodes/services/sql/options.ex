@@ -4,7 +4,7 @@ defmodule HeddleNodes.Services.Sql.Options do
   look the same in most dialects, and converting the values of a run.
   """
 
-  alias HeddleNodes.Connections
+  alias Bobbin.Connections
   alias HeddleNodes.Integration
 
   @timeout :timer.minutes(2)
@@ -53,7 +53,7 @@ defmodule HeddleNodes.Services.Sql.Options do
 
   @doc """
   Tries a connection before starting the pool, to learn why it fails. See
-  `HeddleNodes.Connections.check/1`.
+  `Bobbin.Connections.check/1`.
   """
   def start(protocol, options, start_link) do
     check = fn ->

@@ -5,7 +5,7 @@ defmodule HeddleNodes.Services.MongoDB do
   write the types JSON doesn't have.
   """
 
-  alias HeddleNodes.Connections
+  alias Bobbin.Connections
   alias HeddleNodes.Integration
 
   @timeout :timer.minutes(2)

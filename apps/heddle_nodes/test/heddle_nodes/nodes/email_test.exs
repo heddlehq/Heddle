@@ -51,11 +51,11 @@ defmodule HeddleNodes.Nodes.EmailTest do
   setup %{cacerts: cacerts} do
     previous = Application.get_env(:heddle_nodes, :credentials_client)
     Application.put_env(:heddle_nodes, :credentials_client, Vault)
-    Application.put_env(:heddle_nodes, :cacerts, cacerts)
+    Application.put_env(:bobbin, :cacerts, cacerts)
 
     on_exit(fn ->
       Application.put_env(:heddle_nodes, :credentials_client, previous)
-      Application.delete_env(:heddle_nodes, :cacerts)
+      Application.delete_env(:bobbin, :cacerts)
     end)
   end
 
@@ -220,7 +220,7 @@ defmodule HeddleNodes.Nodes.EmailTest do
 
     test "takes the error output when the certificate can't be trusted", context do
       start_imap(context, fn _command -> nil end)
-      Application.put_env(:heddle_nodes, :cacerts, :public_key.cacerts_get())
+      Application.put_env(:bobbin, :cacerts, :public_key.cacerts_get())
 
       assert {:ok, %{"result" => %{"error" => message}}, "error"} =
                Email.List.handler(%{"credential" => "imap"}, nil)

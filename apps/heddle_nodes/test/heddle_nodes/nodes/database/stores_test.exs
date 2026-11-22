@@ -49,10 +49,12 @@ defmodule HeddleNodes.Nodes.Database.StoresTest do
     plug = Application.get_env(:heddle_nodes, :req_plug)
     Application.put_env(:heddle_nodes, :credentials_client, Vault)
     Application.put_env(:heddle_nodes, :req_plug, nil)
+    Application.put_env(:bobbin, :req_plug, nil)
 
     on_exit(fn ->
       Application.put_env(:heddle_nodes, :credentials_client, client)
       Application.put_env(:heddle_nodes, :req_plug, plug)
+      Application.put_env(:bobbin, :req_plug, plug)
     end)
   end
 
