@@ -5,6 +5,7 @@ defmodule HeddleUI.Components.Flow.NodeSidebar do
   attr :search_query, :string, default: ""
   attr :collapsed_categories, :any, required: true
   attr :recent_nodes, :list, default: []
+  attr :uninstalled_integrations, :list, default: []
 
   def node_sidebar(assigns) do
     ~H"""
@@ -90,13 +91,61 @@ defmodule HeddleUI.Components.Flow.NodeSidebar do
           </div>
         <% end %>
 
+        <div :if={@uninstalled_integrations != []} id="node-sidebar-uninstalled">
+          <h3 class="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500">
+            {gettext("Not installed")}
+          </h3>
+          <div class="space-y-2 px-3">
+            <div
+              :for={integration <- @uninstalled_integrations}
+              id={"uninstalled-integration-#{integration.id}"}
+              class="flex items-center gap-3 rounded-lg border border-dashed border-gray-300 bg-white/60 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/40"
+            >
+              <span class={[
+                "size-7 shrink-0 rounded-md flex items-center justify-center",
+                integration.color
+              ]}>
+                <.icon name={integration.icon} class="size-4" />
+              </span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-medium text-gray-700 dark:text-slate-200">
+                  {integration.title}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-slate-400">
+                  {ngettext("1 action", "%{count} actions", length(integration.nodes))}
+                </p>
+              </div>
+              <button
+                id={"install-integration-#{integration.id}"}
+                type="button"
+                phx-click="install_integration"
+                phx-value-id={integration.id}
+                class="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary transition hover:bg-primary/20"
+              >
+                {gettext("Install")}
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div
-          :if={@nodes_by_category == []}
+          :if={@nodes_by_category == [] and @uninstalled_integrations == []}
           id="node-sidebar-empty"
           class="px-4 py-8 text-center text-sm text-gray-500 dark:text-slate-400"
         >
           {gettext("No nodes found")}
         </div>
+      </div>
+
+      <div class="border-t border-gray-200 p-3 dark:border-slate-700">
+        <.link
+          id="node-sidebar-integrations"
+          navigate={~p"/integrations"}
+          class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white"
+        >
+          <.icon name="hero-puzzle-piece" class="size-4" />
+          {gettext("Browse integrations")}
+        </.link>
       </div>
     </aside>
     """

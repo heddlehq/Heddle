@@ -35,11 +35,34 @@ defmodule HeddleUI.FlowLive.NodePaletteManagerTest do
     end
   end
 
-  describe "initial_assigns/0" do
-    test "starts with the services collapsed, so the sidebar stays short" do
-      collapsed = NodePaletteManager.initial_assigns()[:collapsed_node_categories]
+  describe "with the integrations a workspace installed" do
+    test "shows the core and only the installed integrations" do
+      categories =
+        "" |> NodePaletteManager.nodes_by_category(MapSet.new(["slack"])) |> Map.new()
 
-      assert MapSet.equal?(collapsed, MapSet.new(Nodes.service_categories()))
+      assert Map.has_key?(categories, :http)
+      assert length(categories[:slack]) == 7
+      refute Map.has_key?(categories, :google_sheets)
+      assert Enum.map(categories[:database], & &1.group) |> Enum.uniq() == ["Spool"]
+    end
+
+    test "a search offers the integrations that aren't installed" do
+      installed = MapSet.new(["slack"])
+
+      assert [] = NodePaletteManager.nodes_by_category("sheets", installed)
+
+      assert [%{id: "google_sheets"}] =
+               NodePaletteManager.uninstalled_integrations("sheets", installed)
+
+      assert [] = NodePaletteManager.uninstalled_integrations("slack", installed)
+      assert [] = NodePaletteManager.uninstalled_integrations("", installed)
+    end
+
+    test "starts with the installed services open" do
+      assigns = NodePaletteManager.initial_assigns(MapSet.new(["slack"]))
+
+      assert MapSet.size(assigns[:collapsed_node_categories]) == 0
+      refute Enum.any?(assigns[:filtered_nodes], &(&1.category == :google_sheets))
     end
   end
 end

@@ -12,14 +12,18 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
   @doc """
   Returns the default socket assigns for node search, categories, and creation modals.
   """
-  def initial_assigns do
+  # `installed` holds the ids of the integrations the workspace has, see
+  # `HeddleUI.Integrations`. Only their nodes show, next to the core.
+  def initial_assigns(installed \\ :all) do
     [
-      nodes_by_category: nodes_by_category(""),
+      installed_integrations: installed,
+      nodes_by_category: nodes_by_category("", installed),
+      uninstalled_integrations: [],
       node_search_query: "",
-      collapsed_node_categories: MapSet.new(HeddleNodes.Nodes.service_categories()),
+      collapsed_node_categories: MapSet.new(),
       recent_nodes: [],
-      available_nodes: HeddleNodes.Nodes.visible_nodes(),
-      filtered_nodes: HeddleNodes.Nodes.visible_nodes(),
+      available_nodes: filter_nodes("", installed),
+      filtered_nodes: filter_nodes("", installed),
       node_modal_search_query: "",
       create_node_modal_open: false,
       selected_position: nil
@@ -30,9 +34,31 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
   Filters nodes in the sidebar by category and search query.
   """
   def filter_sidebar_nodes(socket, query) do
+    installed = socket.assigns.installed_integrations
+
     assign(socket,
       node_search_query: query,
-      nodes_by_category: nodes_by_category(query)
+      nodes_by_category: nodes_by_category(query, installed),
+      uninstalled_integrations: uninstalled_integrations(query, installed)
+    )
+  end
+
+  @doc """
+  Shows the nodes of the integration `id` once the workspace installed it.
+  """
+  def integration_installed(socket, id) do
+    installed =
+      case socket.assigns.installed_integrations do
+        :all -> :all
+        ids -> MapSet.put(ids, id)
+      end
+
+    socket
+    |> assign(installed_integrations: installed)
+    |> filter_sidebar_nodes(socket.assigns.node_search_query)
+    |> assign(
+      filtered_nodes: filter_nodes("", installed),
+      available_nodes: filter_nodes("", installed)
     )
   end
 
@@ -41,7 +67,7 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
   """
   def filter_modal_nodes(socket, query) do
     assign(socket,
-      filtered_nodes: filter_nodes(query),
+      filtered_nodes: filter_nodes(query, socket.assigns.installed_integrations),
       node_modal_search_query: query
     )
   end
@@ -85,7 +111,7 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
     assign(socket,
       create_node_modal_open: false,
       selected_position: nil,
-      filtered_nodes: HeddleNodes.Nodes.visible_nodes(),
+      filtered_nodes: filter_nodes("", socket.assigns.installed_integrations),
       node_modal_search_query: ""
     )
   end
@@ -106,7 +132,7 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
     |> assign(
       create_node_modal_open: false,
       selected_position: nil,
-      filtered_nodes: HeddleNodes.Nodes.visible_nodes(),
+      filtered_nodes: filter_nodes("", socket.assigns.installed_integrations),
       node_modal_search_query: ""
     )
     |> record_recent_node(name)
@@ -153,37 +179,56 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
   def clear_recent_nodes(socket), do: assign(socket, recent_nodes: [])
 
   @doc """
-  Filters all visible nodes matching a query string.
+  Filters the visible nodes the workspace has that match a query string.
   """
-  def filter_nodes(query) do
-    all_nodes = HeddleNodes.Nodes.visible_nodes()
-    normalized_query = String.trim(query || "")
+  def filter_nodes(query, installed \\ :all) do
+    HeddleNodes.Nodes.visible_nodes()
+    |> Enum.filter(&available?(&1, installed))
+    |> Enum.filter(&matches?(&1, query))
+  end
 
-    if normalized_query == "" do
-      all_nodes
+  @doc """
+  The integrations the workspace hasn't installed that have a node matching a query,
+  so a search can offer them. None without a query.
+  """
+  def uninstalled_integrations(_query, :all), do: []
+
+  def uninstalled_integrations(query, installed) do
+    if String.trim(query || "") == "" do
+      []
     else
-      query_lower = String.downcase(normalized_query)
-
-      Enum.filter(all_nodes, fn node ->
-        name_match = String.contains?(String.downcase(node.name), query_lower)
-
-        category_match =
-          String.contains?(String.downcase(to_string(node.category)), query_lower)
-
-        description_match =
-          String.contains?(String.downcase(Map.get(node, :description, "")), query_lower)
-
-        name_match || category_match || description_match
+      Enum.filter(HeddleNodes.Integrations.all(), fn integration ->
+        not MapSet.member?(installed, integration.id) and
+          (matches?(%{name: integration.title, category: integration.category}, query) or
+             Enum.any?(integration.nodes, &matches?(&1, query)))
       end)
     end
   end
 
+  defp available?(_node, :all), do: true
+  defp available?(node, installed), do: HeddleNodes.Integrations.available?(node, installed)
+
+  defp matches?(node, query) do
+    case String.trim(query || "") do
+      "" ->
+        true
+
+      query ->
+        query = String.downcase(query)
+
+        Enum.any?(
+          [node.name, to_string(node.category), Map.get(node, :description, "")],
+          &String.contains?(String.downcase(&1), query)
+        )
+    end
+  end
+
   @doc """
-  Returns visible nodes grouped by category and sorted.
+  Returns the nodes the workspace has, grouped by category and sorted.
   """
-  def nodes_by_category(query) do
+  def nodes_by_category(query, installed \\ :all) do
     query
-    |> filter_nodes()
+    |> filter_nodes(installed)
     |> Enum.group_by(& &1.category)
     |> Enum.sort_by(fn {category, _nodes} -> category_sort_index(category) end)
   end
