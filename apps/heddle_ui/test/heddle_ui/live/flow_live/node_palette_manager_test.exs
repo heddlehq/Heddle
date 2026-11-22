@@ -22,7 +22,7 @@ defmodule HeddleUI.FlowLive.NodePaletteManagerTest do
 
     test "finds the actions of a service by its name" do
       assert [{:slack, actions}] = NodePaletteManager.nodes_by_category("slack")
-      assert length(actions) == 7
+      assert length(actions) == 8
     end
   end
 
@@ -41,7 +41,7 @@ defmodule HeddleUI.FlowLive.NodePaletteManagerTest do
         "" |> NodePaletteManager.nodes_by_category(MapSet.new(["slack"])) |> Map.new()
 
       assert Map.has_key?(categories, :http)
-      assert length(categories[:slack]) == 7
+      assert length(categories[:slack]) == 8
       refute Map.has_key?(categories, :google_sheets)
       assert Enum.map(categories[:database], & &1.group) |> Enum.uniq() == ["Spool"]
     end

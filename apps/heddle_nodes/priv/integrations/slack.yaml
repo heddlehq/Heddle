@@ -25,6 +25,25 @@ errors:
   ok_path: ok
   message_path: error
 
+triggers:
+  - name: New Message
+    description: Starts the flow for each new message in a channel the bot is in, checking every minute.
+    fields:
+      - name: channel
+        label: Channel ID
+    request:
+      method: GET
+      path: conversations.history
+      query:
+        channel: "{{fields.channel}}"
+        limit: 50
+    output:
+      path: messages
+      pick: [user, text, ts, thread_ts]
+    poll:
+      every: 1
+      id: ts
+
 actions:
   - name: Send Message
     description: Sends a message to a channel. Give a thread timestamp to reply in that thread.

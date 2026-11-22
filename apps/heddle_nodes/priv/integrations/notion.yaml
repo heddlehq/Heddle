@@ -23,6 +23,28 @@ credential:
 errors:
   message_path: message
 
+triggers:
+  - name: New Database Row
+    description: Starts the flow for each new row of a database, checking every 5 minutes.
+    fields:
+      - {name: database_id, label: Database ID}
+    request:
+      method: POST
+      path: "databases/{{fields.database_id}}/query"
+      headers:
+        Notion-Version: "2022-06-28"
+      body:
+        sorts:
+          - timestamp: created_time
+            direction: descending
+        page_size: 50
+    output:
+      path: results
+      pick: [id, url, created_time, properties]
+    poll:
+      every: 5
+      id: id
+
 actions:
   - name: Search
     description: Finds the pages and databases shared with the integration, by title.

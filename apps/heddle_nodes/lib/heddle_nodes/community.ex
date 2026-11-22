@@ -23,6 +23,9 @@ defmodule HeddleNodes.Community do
     for {_id, entry} <- state().integrations, definition <- entry.definitions, do: definition
   end
 
+  @doc "The manifest of every community integration the instance runs."
+  def manifests, do: for({_id, entry} <- state().integrations, do: entry.manifest)
+
   @doc "The community integration `id` the instance runs, or nil."
   def get(id), do: state().integrations[id]
 
@@ -105,14 +108,16 @@ defmodule HeddleNodes.Community do
   end
 
   defp build(manifest, sha) do
-    definitions =
-      for action <- manifest.actions do
-        module = module_name(manifest, action)
-        create(module, manifest, action)
+    nodes =
+      Enum.map(manifest.triggers, &{:trigger, &1, Definition.trigger_definition(manifest, &1)}) ++
+        Enum.map(manifest.actions, &{:action, &1, Definition.definition(manifest, &1)})
 
-        manifest
-        |> Definition.definition(action)
-        |> Map.merge(%{module: module, community: manifest.id, version: manifest.version})
+    definitions =
+      for {kind, step, definition} <- nodes do
+        module = module_name(manifest, step)
+        create(module, manifest, kind, step.name, definition)
+
+        Map.merge(definition, %{module: module, community: manifest.id, version: manifest.version})
       end
 
     %{
@@ -131,10 +136,8 @@ defmodule HeddleNodes.Community do
     ])
   end
 
-  defp create(module, manifest, action) do
-    definition = Definition.definition(manifest, action)
+  defp create(module, manifest, kind, name, definition) do
     id = manifest.id
-    name = action.name
 
     body =
       quote do
@@ -152,6 +155,9 @@ defmodule HeddleNodes.Community do
                 context,
                 "The integration #{unquote(id)} is no longer installed."
               )
+
+            %{manifest: manifest} when unquote(kind) == :trigger ->
+              HeddleNodes.Manifests.trigger(manifest, unquote(name), context)
 
             entry ->
               HeddleNodes.Manifests.run(entry.manifest, unquote(name), context)

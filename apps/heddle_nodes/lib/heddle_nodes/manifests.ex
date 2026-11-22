@@ -6,9 +6,14 @@ defmodule HeddleNodes.Manifests do
   Each action becomes a node module at compile time, named after the integration and
   the action, like `HeddleNodes.Manifests.Slack.SendMessage`. Its node works like any
   other service node: it takes a credential and answers through `success` and `error`.
+
+  Each trigger becomes a node a flow starts from. `HeddleWorker.PollWorker` calls it
+  every few minutes, see `poll/3`, and starts the flow once for each new item, which
+  the node passes on as `result`.
   """
 
   alias Bobbin.Integration, as: Manifest
+  alias Bobbin.Integration.Request
   alias HeddleNodes.Integration
   alias HeddleNodes.Template
 
@@ -34,10 +39,10 @@ defmodule HeddleNodes.Manifests do
   @doc "The manifest with `id`."
   def get(id), do: Map.fetch!(@manifests, id)
 
-  @doc "The module of each action of the manifest `id`, in its order."
+  @doc "The module of each trigger and action of the manifest `id`, in its order."
   def modules(id) do
     manifest = get(id)
-    Enum.map(manifest.actions, &module_name(manifest, &1))
+    Enum.map(manifest.triggers ++ manifest.actions, &module_name(manifest, &1))
   end
 
   @doc "The module of each action of every manifest."
@@ -105,23 +110,88 @@ defmodule HeddleNodes.Manifests do
 
   def run(manifest, action_name, context) do
     action = Manifest.action(manifest, action_name)
-    kind = manifest.credential && manifest.credential.kind
 
-    request = fn credential ->
-      Bobbin.Integration.Request.run(
+    result =
+      with_credential(manifest, context, fn credential ->
+        Request.run(
+          manifest,
+          action_name,
+          fields(action, context),
+          credential,
+          Integration.req_options([])
+        )
+      end)
+
+    case result do
+      {:ok, result} -> Integration.success(context, result)
+      {:error, message} -> Integration.failure(context, message)
+    end
+  end
+
+  @doc """
+  Calls the trigger `trigger_name` of `manifest` once, with the node's `context`: its
+  fields, the credential it picked and its flow's `workspace_id`.
+
+  Returns `{:ok, [{id, item}]}` or `{:error, message}`.
+  """
+  def poll(manifest, trigger_name, context) do
+    trigger = Manifest.trigger(manifest, trigger_name)
+
+    with_credential(manifest, context, fn credential ->
+      Request.poll(
         manifest,
-        action_name,
-        fields(action, context),
+        trigger_name,
+        fields(trigger, context),
         credential,
         Integration.req_options([])
       )
-    end
+    end)
+  end
 
+  @doc """
+  What a trigger node does: passes on the item that started the run as `result`. Run
+  from the editor, with no item, it takes the newest the service has, to try the flow.
+  """
+  def trigger(manifest, trigger_name, context) do
+    case context do
+      %{"item" => item} ->
+        {:ok, Map.put(context, "result", item), :exec}
+
+      _from_the_editor ->
+        case poll(manifest, trigger_name, context) do
+          {:ok, [{_id, item} | _rest]} ->
+            {:ok, Map.put(context, "result", item), :exec}
+
+          {:ok, []} ->
+            {:error, "#{manifest.name} has nothing for #{trigger_name} yet."}
+
+          error ->
+            error
+        end
+    end
+  end
+
+  @doc """
+  The trigger nodes of the manifests and of the community integrations:
+  `[%{type: node_name, manifest: manifest, trigger: trigger}]`.
+  """
+  def poll_triggers do
+    official = Map.values(@manifests)
+    community = HeddleNodes.Community.manifests()
+
+    for manifest <- official ++ community, trigger <- manifest.triggers do
+      %{type: "#{manifest.name}: #{trigger.name}", manifest: manifest, trigger: trigger}
+    end
+  end
+
+  # Calls `request` with the credential the node picked, if the manifest takes one.
+  defp with_credential(manifest, context, request) do
+    kind = manifest.credential && manifest.credential.kind
     oauth? = match?(%{auth: %{"type" => "oauth2"}}, manifest.credential)
 
     cond do
       kind && oauth? ->
-        Integration.run(context, kind, fn credential ->
+        with {:ok, credential} <- Integration.credential(context, kind) do
           case request.(credential) do
             # The service refused the token: renew it and try once more.
             {:error, message} = error ->
@@ -135,16 +205,13 @@ defmodule HeddleNodes.Manifests do
             result ->
               result
           end
-        end)
+        end
 
       kind ->
-        Integration.run(context, kind, request)
+        with {:ok, credential} <- Integration.credential(context, kind), do: request.(credential)
 
       true ->
-        case request.(%{}) do
-          {:ok, result} -> Integration.success(context, result)
-          {:error, message} -> Integration.failure(context, message)
-        end
+        request.(%{})
     end
   end
 
@@ -154,6 +221,29 @@ defmodule HeddleNodes.Manifests do
       template = context[field.name] || field.default
       {field.name, Template.render(template, context)}
     end)
+  end
+
+  for {_id, manifest} <- @manifests, trigger <- manifest.triggers do
+    defmodule HeddleNodes.Manifests.Definition.module_name(manifest, trigger) do
+      @moduledoc false
+      use Bobbin.Node
+
+      @manifest_id manifest.id
+      @trigger_name trigger.name
+      @definition HeddleNodes.Manifests.Definition.trigger_definition(manifest, trigger)
+
+      @impl true
+      def definition, do: @definition
+
+      @impl true
+      def handler(context, _input) do
+        HeddleNodes.Manifests.trigger(
+          HeddleNodes.Manifests.get(@manifest_id),
+          @trigger_name,
+          context
+        )
+      end
+    end
   end
 
   for {_id, manifest} <- @manifests, action <- manifest.actions do

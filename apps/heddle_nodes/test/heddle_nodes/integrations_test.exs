@@ -15,7 +15,7 @@ defmodule HeddleNodes.IntegrationsTest do
 
     slack = Integrations.get("slack")
     assert slack.title == "Slack"
-    assert length(slack.nodes) == 7
+    assert length(slack.nodes) == 8
     assert Enum.all?(slack.nodes, &String.starts_with?(&1.name, "Slack: "))
   end
 

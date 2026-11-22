@@ -1,4 +1,11 @@
 {
+  "Slack: New Message": {
+    "result": {"user": "U024BE7LH", "text": "Can someone review the deploy?", "ts": "1732270000.000200"},
+    "notes": {
+      "en": "Checks the channel every minute and starts the flow once for each new message, with the message as `result`. The first check only notes the messages already there, so turning the flow on doesn't run it for the channel's history.\n\nThe bot must be in the channel, and the token needs the `channels:history` scope (`groups:history` for private channels). Run from the editor, it takes the newest message, to try the flow.",
+      "pt": "Olha o canal a cada minuto e inicia o fluxo uma vez para cada mensagem nova, com a mensagem em `result`. A primeira olhada só anota as mensagens que já estão lá, então ligar o fluxo não o roda para o histórico do canal.\n\nO bot precisa estar no canal, e o token precisa do escopo `channels:history` (`groups:history` para canais privados). Rodando pelo editor, pega a mensagem mais recente, para testar o fluxo."
+    }
+  },
   "Slack: Send Message": {
     "result": {
       "channel": "C0123456789",

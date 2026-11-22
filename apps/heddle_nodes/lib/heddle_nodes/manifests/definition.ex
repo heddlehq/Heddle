@@ -32,6 +32,33 @@ defmodule HeddleNodes.Manifests.Definition do
     |> Map.put(:integration, manifest.id)
   end
 
+  @trigger_color "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+
+  @doc """
+  The node definition of `trigger`: a node a flow starts from, once for each new item
+  the service returns, see `HeddleNodes.Manifests.poll/3`.
+  """
+  def trigger_definition(manifest, trigger) do
+    name = "#{manifest.name}: #{trigger.name}"
+    kind = manifest.credential && manifest.credential.kind
+    credential = if kind, do: [Integration.credential_field(kind)], else: []
+
+    %{
+      name: name,
+      title: name,
+      category: String.to_atom(manifest.category),
+      color: @trigger_color,
+      description: trigger.description,
+      icon: manifest.icon,
+      inputs: [],
+      outputs: [:exec],
+      show: true,
+      ui_fields: credential ++ ui_fields(trigger),
+      integration: manifest.id,
+      poll: %{trigger: trigger.name, every: trigger.poll.every}
+    }
+  end
+
   defp ui_fields(action) do
     Enum.map(action.fields, fn field ->
       %{

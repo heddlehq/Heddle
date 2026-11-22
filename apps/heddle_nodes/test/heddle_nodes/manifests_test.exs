@@ -5,6 +5,7 @@ defmodule HeddleNodes.ManifestsTest do
 
   test "turns each action of a manifest into a node module" do
     assert Manifests.modules("slack") == [
+             Manifests.Slack.NewMessage,
              Manifests.Slack.SendMessage,
              Manifests.Slack.ReadMessages,
              Manifests.Slack.UpdateMessage,
@@ -72,5 +73,68 @@ defmodule HeddleNodes.ManifestsTest do
              Manifests.Notion.Search.handler(context, nil)
 
     assert_received :renewed
+  end
+
+  describe "triggers" do
+    defmodule SlackVault do
+      def fetch(7, "bot", "slack"), do: {:ok, %{"token" => "xoxb"}}
+    end
+
+    setup do
+      previous = Application.get_env(:heddle_nodes, :credentials_client)
+      Application.put_env(:heddle_nodes, :credentials_client, SlackVault)
+      on_exit(fn -> Application.put_env(:heddle_nodes, :credentials_client, previous) end)
+    end
+
+    defp history(messages) do
+      Req.Test.stub(HeddleNodes.Nodes.HttpRequest, fn conn ->
+        assert conn.request_path == "/api/conversations.history"
+        assert conn.query_params["channel"] == "C1"
+        assert Plug.Conn.get_req_header(conn, "authorization") == ["Bearer xoxb"]
+        Req.Test.json(conn, %{"ok" => true, "messages" => messages})
+      end)
+    end
+
+    test "a trigger is a node a flow starts from, in its integration" do
+      definition = Manifests.Slack.NewMessage.definition()
+
+      assert definition.name == "Slack: New Message"
+      assert definition.inputs == []
+      assert definition.outputs == [:exec]
+      assert definition.integration == "slack"
+      assert definition.poll == %{trigger: "New Message", every: 1}
+      assert [%{type: :credential, kind: "slack"}, %{name: :channel}] = definition.ui_fields
+
+      assert %{type: "Slack: New Message"} =
+               Enum.find(Manifests.poll_triggers(), &(&1.type == "Slack: New Message"))
+    end
+
+    test "polls the service and pairs each item with its id" do
+      history([%{"ts" => "2", "text" => "b"}, %{"ts" => "1", "text" => "a"}])
+      context = %{"workspace_id" => 7, "credential" => "bot", "channel" => "C1"}
+
+      assert {:ok, [{"2", %{"text" => "b"}}, {"1", %{"text" => "a"}}]} =
+               Manifests.poll(Manifests.get("slack"), "New Message", context)
+    end
+
+    test "passes on the item that started the run" do
+      context = %{"item" => %{"ts" => "1", "text" => "hi"}}
+
+      assert {:ok, %{"result" => %{"text" => "hi"}}, :exec} =
+               Manifests.Slack.NewMessage.handler(context, nil)
+    end
+
+    test "run from the editor, takes the newest item the service has" do
+      history([%{"ts" => "2", "text" => "newest"}, %{"ts" => "1", "text" => "a"}])
+      context = %{"workspace_id" => 7, "credential" => "bot", "channel" => "C1"}
+
+      assert {:ok, %{"result" => %{"text" => "newest"}}, :exec} =
+               Manifests.Slack.NewMessage.handler(context, nil)
+
+      history([])
+
+      assert {:error, "Slack has nothing for New Message yet."} =
+               Manifests.Slack.NewMessage.handler(context, nil)
+    end
   end
 end

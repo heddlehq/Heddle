@@ -28,6 +28,7 @@ config :heddle_worker, Oban,
     {Oban.Plugins.Cron,
      crontab: [
        {"* * * * *", HeddleWorker.ScheduleWorker},
+       {"* * * * *", HeddleWorker.PollWorker},
        {"17 3 * * *", HeddleWorker.VersionPruneWorker}
      ]}
   ],
