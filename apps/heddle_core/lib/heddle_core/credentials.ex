@@ -212,9 +212,24 @@ defmodule HeddleCore.Credentials do
     }
   ]
 
-  def kinds, do: @kinds
+  def kinds do
+    builtin = Enum.map(@kinds, & &1.id)
+    @kinds ++ Enum.reject(declared_kinds(), &(&1.id in builtin))
+  end
 
-  def kind(id), do: Enum.find(@kinds, &(&1.id == id))
+  # The kinds integration manifests declare, see `HeddleNodes.Manifests`. This app
+  # doesn't depend on that one, so the function comes from config.
+  defp declared_kinds do
+    case Application.get_env(:heddle_core, :declared_credential_kinds) do
+      {module, function} ->
+        if Code.ensure_loaded?(module), do: apply(module, function, []), else: []
+
+      nil ->
+        []
+    end
+  end
+
+  def kind(id), do: Enum.find(kinds(), &(&1.id == id))
 
   @doc """
   The credentials the caller's workspace can use: its own and the shared ones, by name.
@@ -432,5 +447,5 @@ defmodule HeddleCore.Credentials do
     :crypto.mac(:hmac, :sha256, secret, "heddle credentials")
   end
 
-  defp kind_ids, do: Enum.map(@kinds, & &1.id)
+  defp kind_ids, do: Enum.map(kinds(), & &1.id)
 end
