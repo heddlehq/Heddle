@@ -19,6 +19,7 @@ Nada aqui é obrigatório: o Heddle inicia com padrões razoáveis. Numa instala
 | `HEDDLE_UI_MODE` | `full` | `api` serve só a API e os webhooks, sem o editor. |
 | `HEDDLE_HOME` | `~/.heddle` | Onde uma instalação local fica. Defina quando sua pasta pessoal tem acento. |
 | `HEDDLE_NO_BROWSER` | | Defina para o `heddle start` não abrir o navegador. |
+| `HEDDLE_INTEGRATIONS` | | Ao gerar uma imagem ou um release: as [integrações](/pt/docs/guides/integrations/) em código que ele leva, como `sql,email,slack`, ou `all`. Nenhuma por padrão. Passe com `docker build --build-arg HEDDLE_INTEGRATIONS=sql`. |
 
 ## Banco e workers
 

@@ -19,6 +19,7 @@ Nothing here is required: Heddle starts with sensible defaults. On a local insta
 | `HEDDLE_UI_MODE` | `full` | `api` serves only the API and webhooks, without the editor. |
 | `HEDDLE_HOME` | `~/.heddle` | Where a local install lives. Set it when your home folder has accents. |
 | `HEDDLE_NO_BROWSER` | | Set it to stop `heddle start` from opening the browser. |
+| `HEDDLE_INTEGRATIONS` | | When building an image or a release: the [integrations](/docs/guides/integrations/) in code it carries, like `sql,email,slack`, or `all`. None by default. Pass it with `docker build --build-arg HEDDLE_INTEGRATIONS=sql`. |
 
 ## Database and workers
 
