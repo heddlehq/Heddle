@@ -157,21 +157,28 @@ defmodule HeddleUI.Components.Flow.NodeSidebar do
   defp node_button(assigns) do
     ~H"""
     <button
-      draggable="true"
+      type="button"
+      draggable="false"
       data-node-name={@node.name}
+      data-node-category={Map.get(@node, :category)}
+      data-node-icon={Map.get(@node, :icon, "hero-square-3-stack-3d")}
       phx-click="show_drag_tooltip"
       phx-value-name={@node.name}
       title={Map.get(@node, :description) || gettext("Drag and drop onto the canvas to add")}
       class={[
         "w-full flex items-center justify-between gap-3 px-4 py-2 text-sm font-medium transition-colors",
-        "text-gray-700 dark:text-slate-300 bg-transparent hover:bg-gray-100 dark:hover:bg-slate-700/50 focus:outline-none focus:bg-gray-100 dark:focus:bg-slate-700/50 cursor-grab active:cursor-grabbing"
+        "text-gray-700 dark:text-slate-300 bg-transparent hover:bg-gray-100 dark:hover:bg-slate-700/50 focus:outline-none focus:bg-gray-100 dark:focus:bg-slate-700/50 cursor-grab active:cursor-grabbing select-none touch-pan-y",
+        "data-dragging:opacity-40 data-dragging:bg-transparent"
       ]}
     >
       <div class="flex min-w-0 items-center gap-3">
-        <span class={[
-          "size-7 rounded-md flex items-center justify-center shrink-0",
-          @color_class
-        ]}>
+        <span
+          data-node-chip
+          class={[
+            "size-7 rounded-md flex items-center justify-center shrink-0",
+            @color_class
+          ]}
+        >
           <.icon name={Map.get(@node, :icon, "hero-square-3-stack-3d")} class="size-4" />
         </span>
         <span class="truncate">{@node.name}</span>

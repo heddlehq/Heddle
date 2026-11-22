@@ -567,29 +567,6 @@ export async function createEditor(container, { readOnly = false } = {}) {
 
     pushUndo();
 
-    container.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "copy";
-    });
-
-    container.addEventListener("drop", async (e) => {
-        e.preventDefault();
-        if (readOnly) return;
-        const nodeName = e.dataTransfer.getData("application/vnd.heddle.node");
-        
-        if (!nodeName) return;
-
-        if (editor.handleDrop) {
-            const rect = container.getBoundingClientRect();
-            
-            const { k, x: tx, y: ty } = area.area.transform;
-            const x = (e.clientX - rect.left - tx - 40 * k) / k;
-            const y = (e.clientY - rect.top - ty - 40 * k) / k;
-            
-            editor.handleDrop(nodeName, { x, y });
-        }
-    });
-
     let isSelecting = false;
     let selectionStartX = 0;
     let selectionStartY = 0;
@@ -1547,6 +1524,17 @@ export async function createEditor(container, { readOnly = false } = {}) {
         onDrop: (cb) => {
             editor.handleDrop = cb;
         },
+        // Adds the node named, dropped at a point of the window: its corner goes 40 units up
+        // and left of the point, so the pointer holds it near its middle.
+        dropNode: (name, clientX, clientY) => {
+            if (readOnly || !editor.handleDrop) return;
+            const rect = container.getBoundingClientRect();
+            const { k, x: tx, y: ty } = area.area.transform;
+            const x = (clientX - rect.left - tx - 40 * k) / k;
+            const y = (clientY - rect.top - ty - 40 * k) / k;
+            return editor.handleDrop(name, { x, y });
+        },
+        zoom: () => area.area.transform.k,
         // Called with the id of a section whose play button was pressed.
         onRunSection: (cb) => {
             editor.triggerRunSection = cb;
