@@ -58,3 +58,6 @@ config :heddle_nodes, :req_plug, {Req.Test, HeddleNodes.Nodes.HttpRequest}
 
 # A flow session goes soon after its last editor leaves, so it doesn't keep a connection.
 config :heddle_core, session_idle_after: 2_000
+
+# The community catalog is never fetched in tests, see HeddleUI.Integrations.Catalog.put/1.
+config :heddle_ui, :integrations_index_url, "http://127.0.0.1:1/index.json"

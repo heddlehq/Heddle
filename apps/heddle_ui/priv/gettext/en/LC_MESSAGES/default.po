@@ -1604,8 +1604,8 @@ msgid "Previous chats"
 msgstr ""
 
 #: lib/heddle_ui/components/modals/webhook_test_modal.ex:93
-#: lib/heddle_ui/live/integration_live/index.ex:264
-#: lib/heddle_ui/live/integration_live/index.ex:273
+#: lib/heddle_ui/live/integration_live/index.ex:379
+#: lib/heddle_ui/live/integration_live/index.ex:388
 #: lib/heddle_ui/live/workspace_live/show.ex:292
 #, elixir-autogen, elixir-format
 msgid "Remove"
@@ -4229,23 +4229,24 @@ msgstr ""
 msgid "Turn into steps"
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:40
+#: lib/heddle_ui/live/integration_live/index.ex:47
+#: lib/heddle_ui/live/integration_live/index.ex:58
 #, elixir-autogen, elixir-format
 msgid "%{name} installed."
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:53
+#: lib/heddle_ui/live/integration_live/index.ex:92
 #, elixir-autogen, elixir-format
 msgid "%{name} removed."
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:229
+#: lib/heddle_ui/live/integration_live/index.ex:316
 #, elixir-autogen, elixir-format
 msgid "+%{count} more"
 msgstr ""
 
 #: lib/heddle_ui/components/flow/node_sidebar.ex:115
-#: lib/heddle_ui/live/integration_live/index.ex:240
+#: lib/heddle_ui/live/integration_live/index.ex:327
 #, elixir-autogen, elixir-format
 msgid "1 action"
 msgid_plural "%{count} actions"
@@ -4257,40 +4258,41 @@ msgstr[1] ""
 msgid "Browse integrations"
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:59
+#: lib/heddle_ui/live/integration_live/index.ex:98
 #, elixir-autogen, elixir-format
 msgid "Flows still use %{name}."
 msgstr ""
 
 #: lib/heddle_ui/components/flow/node_sidebar.ex:125
-#: lib/heddle_ui/live/integration_live/index.ex:252
+#: lib/heddle_ui/live/integration_live/index.ex:358
+#: lib/heddle_ui/live/integration_live/index.ex:367
 #, elixir-autogen, elixir-format
 msgid "Install"
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:209
+#: lib/heddle_ui/live/integration_live/index.ex:282
 #, elixir-autogen, elixir-format
 msgid "Installed"
 msgstr ""
 
 #: lib/heddle_ui/components/layouts.ex:116
-#: lib/heddle_ui/live/integration_live/index.ex:18
-#: lib/heddle_ui/live/integration_live/index.ex:111
+#: lib/heddle_ui/live/integration_live/index.ex:22
+#: lib/heddle_ui/live/integration_live/index.ex:182
 #, elixir-autogen, elixir-format
 msgid "Integrations"
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:269
+#: lib/heddle_ui/live/integration_live/index.ex:384
 #, elixir-autogen, elixir-format
 msgid "Its nodes will leave the sidebar. Remove it?"
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:176
+#: lib/heddle_ui/live/integration_live/index.ex:249
 #, elixir-autogen, elixir-format
 msgid "No integrations found."
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:175
+#: lib/heddle_ui/live/integration_live/index.ex:248
 #, elixir-autogen, elixir-format
 msgid "No integrations installed yet."
 msgstr ""
@@ -4300,34 +4302,34 @@ msgstr ""
 msgid "Not installed"
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:213
+#: lib/heddle_ui/live/integration_live/index.ex:286
 #, elixir-autogen, elixir-format
 msgid "Official"
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:263
+#: lib/heddle_ui/live/integration_live/index.ex:378
 #, elixir-autogen, elixir-format
 msgid "Remove it from the flows that use it first."
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:159
+#: lib/heddle_ui/live/integration_live/index.ex:232
 #, elixir-autogen, elixir-format
 msgid "Search integrations"
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:113
+#: lib/heddle_ui/live/integration_live/index.ex:184
 #, elixir-autogen, elixir-format
 msgid "Services the flows of this workspace can reach. The editor's node sidebar shows only the installed ones."
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:237
+#: lib/heddle_ui/live/integration_live/index.ex:324
 #, elixir-autogen, elixir-format
 msgid "Used by 1 flow"
 msgid_plural "Used by %{count} flows"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:66
+#: lib/heddle_ui/live/integration_live/index.ex:105
 #, elixir-autogen, elixir-format
 msgid "Your role in this workspace can't change integrations."
 msgstr ""
@@ -4337,14 +4339,65 @@ msgstr ""
 msgid "Your role in this workspace can't install integrations."
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:127
+#: lib/heddle_ui/live/integration_live/index.ex:198
 #, elixir-autogen, elixir-format
 msgctxt "integrations filter"
 msgid "All"
 msgstr ""
 
-#: lib/heddle_ui/live/integration_live/index.ex:128
+#: lib/heddle_ui/live/integration_live/index.ex:199
 #, elixir-autogen, elixir-format
 msgctxt "integrations filter"
 msgid "Installed"
+msgstr ""
+
+#: lib/heddle_ui/live/integration_live/index.ex:79
+#, elixir-autogen, elixir-format
+msgid "%{name} updated."
+msgstr ""
+
+#: lib/heddle_ui/live/integration_live/index.ex:293
+#, elixir-autogen, elixir-format
+msgid "Community"
+msgstr ""
+
+#: lib/heddle_ui/live/integration_live/index.ex:353
+#, elixir-autogen, elixir-format
+msgid "Community integrations aren't reviewed by Heddle, and their nodes send what they get to their service. Install it?"
+msgstr ""
+
+#: lib/heddle_ui/live/integration_live/index.ex:339
+#, elixir-autogen, elixir-format
+msgid "Every workspace that has it will run version %{version}. Update?"
+msgstr ""
+
+#: lib/heddle_ui/live/integration_live/index.ex:297
+#, elixir-autogen, elixir-format
+msgid "Not reviewed by Heddle. It sends what its nodes get to its service."
+msgstr ""
+
+#: lib/heddle_ui/live/integration_live/index.ex:299
+#, elixir-autogen, elixir-format
+msgid "Not verified"
+msgstr ""
+
+#: lib/heddle_ui/live/integration_live/index.ex:68
+#, elixir-autogen, elixir-format
+msgid "This integration couldn't be installed. Its manifest is invalid or takes the name of an official one."
+msgstr ""
+
+#: lib/heddle_ui/live/integration_live/index.ex:82
+#, elixir-autogen, elixir-format
+msgid "This integration couldn't be updated."
+msgstr ""
+
+#: lib/heddle_ui/live/integration_live/index.ex:344
+#, elixir-autogen, elixir-format
+msgid "Update to v%{version}"
+msgstr ""
+
+#: lib/heddle_ui/live/integration_live/index.ex:200
+#, elixir-autogen, elixir-format
+msgctxt "integrations filter"
+msgid "Community"
 msgstr ""

@@ -4,15 +4,18 @@ defmodule HeddleNodes.Nodes do
   """
 
   def all_nodes do
-    HeddleNodes.get_definitions()
+    HeddleNodes.get_definitions() ++ HeddleNodes.Community.definitions()
   end
+
+  @doc "Every node definition, for `HeddleCore.Flows.GraphValidator`."
+  def get_definitions, do: all_nodes()
 
   def get_node(name) do
     Enum.find(all_nodes(), fn node -> node.name == name end)
   end
 
   def get_node_module(name) do
-    HeddleNodes.get_node_module(name)
+    HeddleNodes.get_node_module(name) || HeddleNodes.Community.get_node_module(name)
   end
 
   def nodes_by_category do

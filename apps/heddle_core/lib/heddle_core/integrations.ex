@@ -12,6 +12,7 @@ defmodule HeddleCore.Integrations do
 
   alias HeddleCore.Accounts.Scope
   alias HeddleCore.Flows.Flow
+  alias HeddleCore.Integrations.Community
   alias HeddleCore.Integrations.Installed
   alias HeddleCore.Repo
   alias HeddleCore.Workspaces
@@ -106,4 +107,61 @@ defmodule HeddleCore.Integrations do
   end
 
   def uninstall(_scope, _id, _node_types), do: {:error, :forbidden}
+
+  ## Community integrations
+
+  @doc """
+  The community integrations the instance installed, for every workspace. Node code
+  reads them through `:community_client`, see `HeddleNodes.Community`.
+  """
+  def list_community do
+    Repo.all(from c in Community, order_by: c.integration)
+  end
+
+  @doc "The community integration `id` the instance installed, or nil."
+  def get_community(id), do: Repo.get_by(Community, integration: id)
+
+  @doc """
+  Installs a community integration in the caller's workspace, which only its admins
+  may do. `attrs` holds its `"integration"` id, `"version"` and `"manifest"`.
+
+  The instance keeps one version of each, which the first install sets. Installing it
+  in another workspace uses that version, and changing it (see `update_community/2`)
+  is for system admins, since it changes every workspace that has it.
+  """
+  def install_community(%Scope{workspace: %{id: workspace_id}} = scope, attrs) do
+    id = attrs["integration"]
+
+    with :ok <- Workspaces.authorize(scope, :manage, workspace_id),
+         {:ok, _community} <- ensure_community(scope, attrs) do
+      install(scope, id)
+    end
+  end
+
+  def install_community(_scope, _attrs), do: {:error, :forbidden}
+
+  defp ensure_community(scope, attrs) do
+    case get_community(attrs["integration"]) do
+      nil ->
+        %Community{}
+        |> Community.changeset(Map.put(attrs, "installed_by_id", scope.user && scope.user.id))
+        |> Repo.insert()
+
+      community ->
+        {:ok, community}
+    end
+  end
+
+  @doc """
+  Moves the instance to another version of a community integration. Only system
+  admins can, since every workspace that has it runs the new version.
+  """
+  def update_community(%Scope{} = scope, attrs) do
+    with true <- Scope.system_admin?(scope) || {:error, :forbidden},
+         %Community{} = community <- get_community(attrs["integration"]) || {:error, :not_found} do
+      community
+      |> Community.changeset(Map.take(attrs, ["version", "manifest"]))
+      |> Repo.update()
+    end
+  end
 end

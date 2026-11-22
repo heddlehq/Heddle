@@ -50,28 +50,32 @@ defmodule HeddleNodes.Manifests do
   takes. `HeddleCore.Credentials` adds the ones it doesn't already have.
   """
   def credential_kinds do
-    for {_id, %{credential: %{} = credential}} <- @manifests do
-      %{
-        id: credential.kind,
-        label: credential.label,
-        fields:
-          Enum.map(credential.fields, fn field ->
-            %{
-              name: field.name,
-              label: field.label,
-              secret: field.secret,
-              required: field.required
-            }
-          end)
-      }
-    end
+    for {_id, %{credential: %{} = credential}} <- @manifests, do: credential_kind(credential)
+  end
+
+  @doc "A manifest's credential, in the form `HeddleCore.Credentials` takes."
+  def credential_kind(credential) do
+    %{
+      id: credential.kind,
+      label: credential.label,
+      fields:
+        Enum.map(credential.fields, fn field ->
+          %{name: field.name, label: field.label, secret: field.secret, required: field.required}
+        end)
+    }
+  end
+
+  @doc "The credential kinds of the manifests and of the community integrations."
+  def all_credential_kinds do
+    Enum.uniq_by(credential_kinds() ++ HeddleNodes.Community.credential_kinds(), & &1.id)
   end
 
   defdelegate definition(manifest, action), to: HeddleNodes.Manifests.Definition
 
   @doc "Runs `action` of the manifest `id` with the node's `context`."
-  def run(id, action_name, context) do
-    manifest = get(id)
+  def run(id, action_name, context) when is_binary(id), do: run(get(id), action_name, context)
+
+  def run(manifest, action_name, context) do
     action = Manifest.action(manifest, action_name)
     kind = manifest.credential && manifest.credential.kind
 

@@ -9,7 +9,8 @@ defmodule HeddleNodes.Manifests.Definition do
     Module.concat([HeddleNodes.Manifests, Macro.camelize(manifest.id), camelize(action.name)])
   end
 
-  defp camelize(name) do
+  @doc false
+  def camelize(name) do
     name
     |> String.split(~r/[^A-Za-z0-9]+/, trim: true)
     |> Enum.map_join(fn <<first::utf8, rest::binary>> ->
