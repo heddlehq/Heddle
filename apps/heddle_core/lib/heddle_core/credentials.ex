@@ -12,6 +12,7 @@ defmodule HeddleCore.Credentials do
 
   alias HeddleCore.Accounts.Scope
   alias HeddleCore.Credentials.Credential
+  alias HeddleCore.Credentials.OAuth
   alias HeddleCore.Repo
   alias HeddleCore.Workspaces
 
@@ -344,13 +345,20 @@ defmodule HeddleCore.Credentials do
   run in the workspace with `workspace_id` sees it: its own first, then the shared
   ones. With a nil `workspace_id`, only the shared ones.
   """
-  def fetch(workspace_id, name, kind) when is_binary(name) and is_binary(kind) do
+  def fetch(workspace_id, name, kind), do: fetch(workspace_id, name, kind, [])
+
+  @doc """
+  Like `fetch/3`. A credential that connects through OAuth 2.0 has its access token
+  renewed when it expires soon, or always with `refresh: true`, as when the service
+  refused the one it had. See `HeddleCore.Credentials.OAuth`.
+  """
+  def fetch(workspace_id, name, kind, opts) when is_binary(name) and is_binary(kind) do
     query =
       from c in Credential,
         where: c.name == ^name,
         order_by: [asc_nulls_last: c.workspace_id],
         limit: 1,
-        select: {c.kind, c.data}
+        select: {c.kind, c.data, c.id}
 
     query =
       if is_nil(workspace_id),
@@ -358,13 +366,47 @@ defmodule HeddleCore.Credentials do
         else: where(query, [c], c.workspace_id == ^workspace_id or is_nil(c.workspace_id))
 
     case Repo.one(query) do
-      nil -> {:error, ~s(There is no credential called "#{name}".)}
-      {^kind, data} -> decrypt(name, kind, data)
-      {other, _data} -> {:error, ~s(The credential "#{name}" is for #{other}, not #{kind}.)}
+      nil ->
+        {:error, ~s(There is no credential called "#{name}".)}
+
+      {^kind, data, id} ->
+        with {:ok, values} <- decrypt(name, kind, data), do: fresh(id, kind, values, opts)
+
+      {other, _data, _id} ->
+        {:error, ~s(The credential "#{name}" is for #{other}, not #{kind}.)}
     end
   end
 
-  def fetch(_workspace_id, _name, _kind), do: {:error, "Pick a credential for this node."}
+  def fetch(_workspace_id, _name, _kind, _opts),
+    do: {:error, "Pick a credential for this node."}
+
+  defp fresh(id, kind, values, opts) do
+    if match?(%{oauth2: _}, kind(kind)) do
+      case OAuth.ensure_fresh(kind, values, Keyword.get(opts, :refresh, false)) do
+        {:ok, values, true} ->
+          Repo.update_all(from(c in Credential, where: c.id == ^id),
+            set: [data: encrypt(kind, values), updated_at: DateTime.utc_now(:second)]
+          )
+
+          {:ok, values}
+
+        {:ok, values, false} ->
+          {:ok, values}
+
+        {:error, message} ->
+          {:error, "Couldn't renew the connection, so connect it again. #{message}"}
+      end
+    else
+      {:ok, values}
+    end
+  end
+
+  @doc false
+  # Encrypts `values` like a credential's, for other secrets: see `OAuth`.
+  def seal(context, values), do: encrypt(context, values)
+
+  @doc false
+  def unseal(context, data), do: decrypt(context, context, data)
 
   defp save(credential, attrs, current) do
     attrs = Map.new(attrs, fn {key, value} -> {to_string(key), value} end)

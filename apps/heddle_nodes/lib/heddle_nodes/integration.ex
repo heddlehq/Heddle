@@ -50,9 +50,11 @@ defmodule HeddleNodes.Integration do
 
   heddle_core is only a test dependency of this app, so the store comes from config.
   """
-  def credential(context, kind) do
-    Application.fetch_env!(:heddle_nodes, :credentials_client)
-    |> apply(:fetch, [context["workspace_id"], context["credential"], kind])
+  def credential(context, kind, opts \\ []) do
+    client = Application.fetch_env!(:heddle_nodes, :credentials_client)
+    args = [context["workspace_id"], context["credential"], kind]
+
+    if opts == [], do: apply(client, :fetch, args), else: apply(client, :fetch, args ++ [opts])
   end
 
   @doc """

@@ -27,7 +27,9 @@ defmodule HeddleNodes.Manifests.Definition do
       icon: manifest.icon
     }
 
-    Integration.definition(service, action.name, action.description, ui_fields(action))
+    service
+    |> Integration.definition(action.name, action.description, ui_fields(action))
+    |> Map.put(:integration, manifest.id)
   end
 
   defp ui_fields(action) do

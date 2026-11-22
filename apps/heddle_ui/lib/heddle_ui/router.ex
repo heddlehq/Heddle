@@ -92,6 +92,9 @@ defmodule HeddleUI.Router do
     get "/flows/:id/forms/:node_id/test", FormController, :test
     post "/flows/:id/forms/:node_id/test", FormController, :submit_test
 
+    get "/integrations/oauth/start", CredentialOAuthController, :start
+    get "/integrations/oauth/callback", CredentialOAuthController, :callback
+
     get "/oauth/authorize", OAuthController, :new
     post "/oauth/authorize", OAuthController, :create
   end

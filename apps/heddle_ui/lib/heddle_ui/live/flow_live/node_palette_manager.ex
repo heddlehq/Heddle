@@ -243,7 +243,8 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
 
   defp category_sort_index(category) do
     case Enum.find_index(HeddleNodes.Nodes.service_categories(), &(&1 == category)) do
-      nil -> 21
+      # Integrations written as manifests, after the other services.
+      nil -> 19
       position -> 6 + position
     end
   end

@@ -213,7 +213,7 @@ msgstr ""
 #: lib/heddle_ui/components/modals/publish_modal.ex:69
 #: lib/heddle_ui/components/modals/webhook_test_modal.ex:42
 #: lib/heddle_ui/controllers/oauth_html.ex:67
-#: lib/heddle_ui/live/credential_live/index.ex:250
+#: lib/heddle_ui/live/credential_live/index.ex:324
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:142
 #: lib/heddle_ui/live/flow_live/index.ex:178
 #: lib/heddle_ui/live/spool_live/components.ex:283
@@ -774,7 +774,7 @@ msgstr ""
 
 #: lib/heddle_ui/live/api_key_live/index.ex:135
 #: lib/heddle_ui/live/api_key_live/index.ex:217
-#: lib/heddle_ui/live/credential_live/index.ex:175
+#: lib/heddle_ui/live/credential_live/index.ex:211
 #: lib/heddle_ui/live/spool_live/table.ex:298
 #: lib/heddle_ui/live/workspace_live/index.ex:82
 #: lib/heddle_ui/live/workspace_live/index.ex:103
@@ -1135,29 +1135,29 @@ msgstr ""
 msgid "No code yet"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:241
+#: lib/heddle_ui/live/credential_live/index.ex:314
 #, elixir-autogen, elixir-format
 msgid "Add credential"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:80
+#: lib/heddle_ui/live/credential_live/index.ex:110
 #, elixir-autogen, elixir-format
 msgid "Credential deleted."
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:39
+#: lib/heddle_ui/live/credential_live/index.ex:51
 #, elixir-autogen, elixir-format
 msgid "Credential saved."
 msgstr ""
 
 #: lib/heddle_ui/components/layouts.ex:123
-#: lib/heddle_ui/live/credential_live/index.ex:17
-#: lib/heddle_ui/live/credential_live/index.ex:144
+#: lib/heddle_ui/live/credential_live/index.ex:18
+#: lib/heddle_ui/live/credential_live/index.ex:180
 #, elixir-autogen, elixir-format
 msgid "Credentials"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:306
+#: lib/heddle_ui/live/credential_live/index.ex:422
 #: lib/heddle_ui/live/flow_live/editor.html.heex:56
 #: lib/heddle_ui/live/spool_live/components.ex:279
 #: lib/heddle_ui/live/spool_live/table.ex:344
@@ -1166,17 +1166,17 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:294
+#: lib/heddle_ui/live/credential_live/index.ex:410
 #, elixir-autogen, elixir-format
 msgid "Edit"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:304
+#: lib/heddle_ui/live/credential_live/index.ex:420
 #, elixir-autogen, elixir-format
 msgid "Flows that use this credential will stop working. Delete it?"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:137
+#: lib/heddle_ui/live/credential_live/index.ex:173
 #, elixir-autogen, elixir-format
 msgid "Leave blank to keep the current value"
 msgstr ""
@@ -1187,7 +1187,7 @@ msgstr ""
 msgid "Manage credentials"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:262
+#: lib/heddle_ui/live/credential_live/index.ex:377
 #, elixir-autogen, elixir-format
 msgid "No credentials yet."
 msgstr ""
@@ -1197,23 +1197,23 @@ msgstr ""
 msgid "Pick a credential"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:241
+#: lib/heddle_ui/live/credential_live/index.ex:312
 #: lib/heddle_ui/live/spool_live/components.ex:521
 #, elixir-autogen, elixir-format
 msgid "Save changes"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:179
+#: lib/heddle_ui/live/credential_live/index.ex:215
 #, elixir-autogen, elixir-format
 msgid "Service"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:172
+#: lib/heddle_ui/live/credential_live/index.ex:208
 #, elixir-autogen, elixir-format
 msgid "Edit credential"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:172
+#: lib/heddle_ui/live/credential_live/index.ex:208
 #, elixir-autogen, elixir-format
 msgid "New credential"
 msgstr ""
@@ -2298,7 +2298,7 @@ msgstr ""
 msgid "Email or username"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:232
+#: lib/heddle_ui/live/credential_live/index.ex:294
 #, elixir-autogen, elixir-format
 msgid "Every workspace can use it, and only system admins can change it. The AI defaults use shared credentials."
 msgstr ""
@@ -2475,7 +2475,7 @@ msgstr ""
 msgid "Runs flows and sees their results, without changing them."
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:146
+#: lib/heddle_ui/live/credential_live/index.ex:182
 #, elixir-autogen, elixir-format
 msgid "Secrets the flows of this workspace use to reach other services. They are stored encrypted and never shown again."
 msgstr ""
@@ -2485,12 +2485,12 @@ msgstr ""
 msgid "Sees flows, runs and members."
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:229
+#: lib/heddle_ui/live/credential_live/index.ex:291
 #, elixir-autogen, elixir-format
 msgid "Share with every workspace"
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:281
+#: lib/heddle_ui/live/credential_live/index.ex:396
 #, elixir-autogen, elixir-format
 msgid "Shared"
 msgstr ""
@@ -2587,7 +2587,7 @@ msgstr ""
 msgid "You were invited to join %{workspace} on Heddle as %{role}."
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:97
+#: lib/heddle_ui/live/credential_live/index.ex:127
 #, elixir-autogen, elixir-format
 msgid "Your role in this workspace can't change this credential."
 msgstr ""
@@ -2613,7 +2613,7 @@ msgstr ""
 msgid "Your role in this workspace lets you see this flow, not change it."
 msgstr ""
 
-#: lib/heddle_ui/live/credential_live/index.ex:160
+#: lib/heddle_ui/live/credential_live/index.ex:196
 #, elixir-autogen, elixir-format
 msgid "Your role lets you see which credentials exist. Editors add and change them."
 msgstr ""
@@ -4400,4 +4400,95 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "integrations filter"
 msgid "Community"
+msgstr ""
+
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:84
+#, elixir-autogen, elixir-format
+msgid "%{name} connected."
+msgstr ""
+
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:87
+#, elixir-autogen, elixir-format
+msgid "A credential with this name already exists."
+msgstr ""
+
+#: lib/heddle_ui/live/credential_live/index.ex:240
+#, elixir-autogen, elixir-format
+msgid "A system admin has to register an app with this service before accounts can connect."
+msgstr ""
+
+#: lib/heddle_ui/live/credential_live/index.ex:339
+#, elixir-autogen, elixir-format
+msgid "App registered with the service"
+msgstr ""
+
+#: lib/heddle_ui/live/credential_live/index.ex:72
+#, elixir-autogen, elixir-format
+msgid "App saved. Accounts of this service can connect now."
+msgstr ""
+
+#: lib/heddle_ui/live/credential_live/index.ex:354
+#, elixir-autogen, elixir-format
+msgid "Client ID"
+msgstr ""
+
+#: lib/heddle_ui/live/credential_live/index.ex:362
+#, elixir-autogen, elixir-format
+msgid "Client secret"
+msgstr ""
+
+#: lib/heddle_ui/live/credential_live/index.ex:310
+#, elixir-autogen, elixir-format
+msgid "Connect"
+msgstr ""
+
+#: lib/heddle_ui/live/credential_live/index.ex:223
+#, elixir-autogen, elixir-format
+msgid "Connecting opens the service, where you allow Heddle in. It keeps the connection and renews it."
+msgstr ""
+
+#: lib/heddle_ui/live/credential_live/index.ex:342
+#, elixir-autogen, elixir-format
+msgid "Every workspace connects through it. Give the service this address to send people back to:"
+msgstr ""
+
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:30
+#, elixir-autogen, elixir-format
+msgid "Give the credential a name."
+msgstr ""
+
+#: lib/heddle_ui/live/credential_live/index.ex:75
+#, elixir-autogen, elixir-format
+msgid "Only system admins register apps."
+msgstr ""
+
+#: lib/heddle_ui/live/credential_live/index.ex:233
+#, elixir-autogen, elixir-format
+msgid "Register an app with this service first, below, with this address to send people back to:"
+msgstr ""
+
+#: lib/heddle_ui/live/credential_live/index.ex:367
+#, elixir-autogen, elixir-format
+msgid "Save app"
+msgstr ""
+
+#: lib/heddle_ui/live/credential_live/index.ex:364
+#, elixir-autogen, elixir-format
+msgid "Saved. Fill both in to replace it."
+msgstr ""
+
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:66
+#, elixir-autogen, elixir-format
+msgid "The service didn't allow the connection: %{error}"
+msgstr ""
+
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:60
+#, elixir-autogen, elixir-format
+msgid "This connection expired. Try again."
+msgstr ""
+
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:27
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:90
+#, elixir-autogen, elixir-format
+msgid "Your role in this workspace can't add credentials."
 msgstr ""

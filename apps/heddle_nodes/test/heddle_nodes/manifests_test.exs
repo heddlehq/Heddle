@@ -1,5 +1,5 @@
 defmodule HeddleNodes.ManifestsTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias HeddleNodes.Manifests
 
@@ -33,7 +33,44 @@ defmodule HeddleNodes.ManifestsTest do
   end
 
   test "declares the credential kinds of its manifests" do
-    assert [%{id: "slack", label: "Slack", fields: [%{name: "token", secret: true}]}] =
-             Manifests.credential_kinds()
+    kinds = Map.new(Manifests.credential_kinds(), &{&1.id, &1})
+
+    assert %{label: "Slack", fields: [%{name: "token", secret: true}]} = kinds["slack"]
+    refute Map.has_key?(kinds["slack"], :oauth2)
+
+    assert %{oauth2: %{token_url: "https://api.notion.com/v1/oauth/token"}} = kinds["notion"]
+  end
+
+  defmodule Vault do
+    def fetch(_ws, "docs", "notion"), do: {:ok, %{"access_token" => "old"}}
+
+    def fetch(_ws, "docs", "notion", refresh: true) do
+      send(self(), :renewed)
+      {:ok, %{"access_token" => "new"}}
+    end
+  end
+
+  test "a Notion node renews its token once when Notion refuses it" do
+    previous = Application.get_env(:heddle_nodes, :credentials_client)
+    Application.put_env(:heddle_nodes, :credentials_client, Vault)
+    on_exit(fn -> Application.put_env(:heddle_nodes, :credentials_client, previous) end)
+
+    Req.Test.stub(HeddleNodes.Nodes.HttpRequest, fn conn ->
+      case Plug.Conn.get_req_header(conn, "authorization") do
+        ["Bearer old"] ->
+          Plug.Conn.send_resp(conn, 401, "")
+
+        ["Bearer new"] ->
+          assert Plug.Conn.get_req_header(conn, "notion-version") == ["2022-06-28"]
+          Req.Test.json(conn, %{"results" => [%{"id" => "p1", "url" => "u", "x" => 1}]})
+      end
+    end)
+
+    context = %{"credential" => "docs", "query" => "Roadmap", "object" => "page"}
+
+    assert {:ok, %{"result" => [%{"id" => "p1", "url" => "u"}]}, "success"} =
+             Manifests.Notion.Search.handler(context, nil)
+
+    assert_received :renewed
   end
 end

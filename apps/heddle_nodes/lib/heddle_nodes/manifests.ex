@@ -55,7 +55,7 @@ defmodule HeddleNodes.Manifests do
 
   @doc "A manifest's credential, in the form `HeddleCore.Credentials` takes."
   def credential_kind(credential) do
-    %{
+    kind = %{
       id: credential.kind,
       label: credential.label,
       fields:
@@ -63,6 +63,34 @@ defmodule HeddleNodes.Manifests do
           %{name: field.name, label: field.label, secret: field.secret, required: field.required}
         end)
     }
+
+    case credential.auth do
+      %{"type" => "oauth2"} = auth ->
+        Map.merge(kind, %{
+          fields: oauth_fields(),
+          oauth2: %{
+            authorize_url: auth["authorize_url"],
+            token_url: auth["token_url"],
+            scopes: auth["scopes"] || [],
+            token_auth: auth["token_auth"],
+            token_body: auth["token_body"],
+            authorize_params: auth["authorize_params"] || %{}
+          }
+        })
+
+      _other ->
+        kind
+    end
+  end
+
+  # What a credential that connects through OAuth 2.0 keeps, see
+  # HeddleCore.Credentials.OAuth.
+  defp oauth_fields do
+    [
+      %{name: "access_token", label: "Access token", secret: true, required: true},
+      %{name: "refresh_token", label: "Refresh token", secret: true, required: false},
+      %{name: "expires_at", label: "Expires at", secret: false, required: false}
+    ]
   end
 
   @doc "The credential kinds of the manifests and of the community integrations."
@@ -89,13 +117,34 @@ defmodule HeddleNodes.Manifests do
       )
     end
 
-    if kind do
-      Integration.run(context, kind, request)
-    else
-      case request.(%{}) do
-        {:ok, result} -> Integration.success(context, result)
-        {:error, message} -> Integration.failure(context, message)
-      end
+    oauth? = match?(%{auth: %{"type" => "oauth2"}}, manifest.credential)
+
+    cond do
+      kind && oauth? ->
+        Integration.run(context, kind, fn credential ->
+          case request.(credential) do
+            # The service refused the token: renew it and try once more.
+            {:error, message} = error ->
+              if String.ends_with?(message, "answered 401") do
+                with {:ok, renewed} <- Integration.credential(context, kind, refresh: true),
+                     do: request.(renewed)
+              else
+                error
+              end
+
+            result ->
+              result
+          end
+        end)
+
+      kind ->
+        Integration.run(context, kind, request)
+
+      true ->
+        case request.(%{}) do
+          {:ok, result} -> Integration.success(context, result)
+          {:error, message} -> Integration.failure(context, message)
+        end
     end
   end
 

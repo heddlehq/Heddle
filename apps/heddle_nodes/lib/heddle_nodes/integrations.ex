@@ -99,15 +99,20 @@ defmodule HeddleNodes.Integrations do
   defp title(%{community: id} = node) when is_binary(id),
     do: node.name |> String.split(": ", parts: 2) |> hd()
 
+  defp title(%{integration: id} = node) when is_binary(id),
+    do: node.name |> String.split(": ", parts: 2) |> hd()
+
   defp title(node), do: node[:group] || Nodes.category_label(node.category)
 
   defp integration_node?(%{community: id}) when is_binary(id), do: true
+  defp integration_node?(%{integration: id}) when is_binary(id), do: true
 
   defp integration_node?(node) do
     node.category in Nodes.service_categories() and node[:group] not in @core_groups
   end
 
   defp id_for(%{community: id}) when is_binary(id), do: id
+  defp id_for(%{integration: id}) when is_binary(id), do: id
 
   defp id_for(node) do
     (node[:group] || to_string(node.category))

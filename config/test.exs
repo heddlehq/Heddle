@@ -61,3 +61,6 @@ config :heddle_core, session_idle_after: 2_000
 
 # The community catalog is never fetched in tests, see HeddleUI.Integrations.Catalog.put/1.
 config :heddle_ui, :integrations_index_url, "http://127.0.0.1:1/index.json"
+
+# Token requests of OAuth 2.0 credentials go to a stub, see HeddleCore.Credentials.OAuth.
+config :heddle_core, :oauth_req_options, plug: {Req.Test, HeddleCore.Credentials.OAuth}
