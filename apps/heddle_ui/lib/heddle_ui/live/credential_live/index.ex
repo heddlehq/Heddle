@@ -6,6 +6,7 @@ defmodule HeddleUI.CredentialLive.Index do
   alias HeddleCore.Accounts.Scope
   alias HeddleCore.Credentials
   alias HeddleCore.Credentials.Credential
+  alias HeddleCore.Credentials.OAuth
   alias HeddleCore.Workspaces
 
   @impl true
@@ -29,6 +30,17 @@ defmodule HeddleUI.CredentialLive.Index do
     {:noreply, assign_form(socket, credential, params)}
   end
 
+  def handle_event("save", %{"credential" => params}, socket) when socket.assigns.oauth do
+    query =
+      URI.encode_query(%{
+        "kind" => socket.assigns.credential.kind,
+        "name" => params["name"] || "",
+        "shared" => params["shared"] || "false"
+      })
+
+    {:noreply, redirect(socket, to: "/integrations/oauth/start?" <> query)}
+  end
+
   def handle_event("save", %{"credential" => params}, socket) do
     case save(socket.assigns.current_scope, socket.assigns.credential, params) do
       {:ok, _credential} ->
@@ -46,6 +58,24 @@ defmodule HeddleUI.CredentialLive.Index do
          socket
          |> assign(:form, to_form(changeset, as: :credential, action: :validate))
          |> assign(:values, params["values"] || %{})}
+    end
+  end
+
+  def handle_event("save_app", %{"app" => app}, socket) do
+    kind = socket.assigns.credential.kind
+
+    case OAuth.put_app(socket.assigns.current_scope, kind, app["client_id"], app["client_secret"]) do
+      {:ok, _app} ->
+        {:noreply,
+         socket
+         |> assign(:oauth_app?, true)
+         |> put_flash(:info, gettext("App saved. Accounts of this service can connect now."))}
+
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, gettext("Only system admins register apps."))}
+
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, message)}
     end
   end
 
@@ -104,8 +134,12 @@ defmodule HeddleUI.CredentialLive.Index do
   defp assign_form(socket, credential, params) do
     changeset = Credentials.change_credential(credential, Map.take(params, ["name", "kind"]))
 
+    oauth = match?(%{oauth2: _}, Credentials.kind(credential.kind))
+
     socket
     |> assign(:credential, credential)
+    |> assign(:oauth, oauth)
+    |> assign(:oauth_app?, oauth and OAuth.app?(credential.kind))
     |> assign(:shared, params["shared"] == "true" or not socket.assigns.can_edit)
     |> assign(:form, to_form(changeset, as: :credential))
     |> assign(:values, params["values"] || %{})
@@ -132,6 +166,8 @@ defmodule HeddleUI.CredentialLive.Index do
       kind -> kind.fields
     end
   end
+
+  defp oauth_kind?(kind), do: match?(%{oauth2: _}, Credentials.kind(kind))
 
   defp secret_placeholder(%Credential{id: nil}), do: ""
   defp secret_placeholder(_credential), do: gettext("Leave blank to keep the current value")
@@ -182,7 +218,33 @@ defmodule HeddleUI.CredentialLive.Index do
           />
           <input :if={@credential.id} type="hidden" name="credential[kind]" value={@credential.kind} />
 
-          <%= for field <- fields(@credential.kind) do %>
+          <div :if={@oauth} id="credential-oauth" class="space-y-3">
+            <p :if={@oauth_app?} class="text-sm text-gray-500 dark:text-gray-400">
+              {gettext(
+                "Connecting opens the service, where you allow Heddle in. It keeps the connection and renews it."
+              )}
+            </p>
+            <div
+              :if={not @oauth_app?}
+              id="credential-oauth-no-app"
+              class="rounded-lg border border-amber-300/60 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+            >
+              <%= if @system_admin do %>
+                {gettext(
+                  "Register an app with this service first, below, with this address to send people back to:"
+                )}
+                <code class="mt-1 block break-all rounded bg-white/70 px-2 py-1 text-xs dark:bg-slate-900/60">
+                  {HeddleUI.CredentialOAuthController.callback_url()}
+                </code>
+              <% else %>
+                {gettext(
+                  "A system admin has to register an app with this service before accounts can connect."
+                )}
+              <% end %>
+            </div>
+          </div>
+
+          <%= for field <- if(@oauth, do: [], else: fields(@credential.kind)) do %>
             <%= if field[:options] do %>
               <.input
                 id={"credential-value-#{field.name}"}
@@ -237,8 +299,20 @@ defmodule HeddleUI.CredentialLive.Index do
           </label>
 
           <div class="flex gap-2 pt-2">
-            <.button id="credential-save" type="submit" variant="primary">
-              {if(@credential.id, do: gettext("Save changes"), else: gettext("Add credential"))}
+            <.button
+              id="credential-save"
+              type="submit"
+              variant="primary"
+              disabled={@oauth and not @oauth_app?}
+            >
+              <%= cond do %>
+                <% @oauth -> %>
+                  <.icon name="hero-link" class="size-4" /> {gettext("Connect")}
+                <% @credential.id -> %>
+                  {gettext("Save changes")}
+                <% true -> %>
+                  {gettext("Add credential")}
+              <% end %>
             </.button>
             <.button
               :if={@credential.id}
@@ -252,7 +326,48 @@ defmodule HeddleUI.CredentialLive.Index do
           </div>
         </.form>
 
-        <div>
+        <.form
+          :if={@oauth and @system_admin and is_nil(@credential.id)}
+          for={%{}}
+          as={:app}
+          id="oauth-app-form"
+          phx-submit="save_app"
+          class="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm md:col-start-1 dark:border-slate-800 dark:bg-slate-900"
+        >
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {gettext("App registered with the service")}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {gettext(
+                "Every workspace connects through it. Give the service this address to send people back to:"
+              )}
+            </p>
+            <code class="mt-2 block break-all rounded bg-gray-100 px-2 py-1 text-xs dark:bg-slate-800">
+              {HeddleUI.CredentialOAuthController.callback_url()}
+            </code>
+          </div>
+          <.input
+            id="oauth-app-client-id"
+            name="app[client_id]"
+            type="text"
+            label={gettext("Client ID")}
+            value=""
+            required
+          />
+          <.input
+            id="oauth-app-client-secret"
+            name="app[client_secret]"
+            type="password"
+            label={gettext("Client secret")}
+            value=""
+            placeholder={if(@oauth_app?, do: gettext("Saved. Fill both in to replace it."))}
+            required
+          />
+          <.button id="oauth-app-save" type="submit">{gettext("Save app")}</.button>
+        </.form>
+
+        <div class="md:col-start-2 md:row-start-1">
           <div
             :if={@empty?}
             id="credentials-empty"
@@ -287,6 +402,7 @@ defmodule HeddleUI.CredentialLive.Index do
                 class="flex shrink-0 gap-1"
               >
                 <.button
+                  :if={not oauth_kind?(credential.kind)}
                   id={"edit-#{id}"}
                   variant="ghost"
                   phx-click="edit"

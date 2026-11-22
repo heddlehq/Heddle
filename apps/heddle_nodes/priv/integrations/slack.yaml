@@ -1,0 +1,173 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Slack's Web API. Upload File takes three requests, so it stays a node in Elixir:
+# HeddleNodes.Nodes.Slack.UploadFile.
+id: slack
+name: Slack
+version: 1.0.0
+description: Send, read and react to messages in Slack.
+icon: logo-slack
+base_url: https://slack.com/api/
+
+credential:
+  label: Slack
+  fields:
+    - name: token
+      label: Bot token
+      secret: true
+      required: true
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+# Slack answers 200 when something failed, with ok: false and the reason.
+errors:
+  ok_path: ok
+  message_path: error
+
+triggers:
+  - name: New Message
+    description: Starts the flow for each new message in a channel the bot is in, checking every minute.
+    fields:
+      - name: channel
+        label: Channel ID
+    request:
+      method: GET
+      path: conversations.history
+      query:
+        channel: "{{fields.channel}}"
+        limit: 50
+    output:
+      path: messages
+      pick: [user, text, ts, thread_ts]
+    poll:
+      every: 1
+      id: ts
+
+actions:
+  - name: Send Message
+    description: Sends a message to a channel. Give a thread timestamp to reply in that thread.
+    fields:
+      - name: channel
+        label: Channel
+      - name: text
+        label: Message
+      - name: thread_ts
+        label: Thread timestamp, to reply in a thread
+    request:
+      method: POST
+      path: chat.postMessage
+      body:
+        channel: "{{fields.channel}}"
+        text: "{{fields.text}}"
+        thread_ts: "{{fields.thread_ts}}"
+    output:
+      pick: [channel, ts]
+
+  - name: Read Messages
+    description: Returns the latest messages of a channel, newest first.
+    fields:
+      - name: channel
+        label: Channel ID
+      - name: limit
+        label: How many
+        type: number
+        default: 20
+    request:
+      method: GET
+      path: conversations.history
+      query:
+        channel: "{{fields.channel}}"
+        limit: "{{fields.limit}}"
+    output:
+      path: messages
+      pick: [user, text, ts, thread_ts]
+
+  - name: Update Message
+    description: Changes the text of a message the bot sent.
+    fields:
+      - name: channel
+        label: Channel ID
+        default: "{{result.channel}}"
+      - name: ts
+        label: Message timestamp
+        default: "{{result.ts}}"
+      - name: text
+        label: New message
+    request:
+      method: POST
+      path: chat.update
+      body:
+        channel: "{{fields.channel}}"
+        ts: "{{fields.ts}}"
+        text: "{{fields.text}}"
+    output:
+      pick: [channel, ts]
+
+  - name: Delete Message
+    description: Deletes a message the bot sent.
+    fields:
+      - name: channel
+        label: Channel ID
+        default: "{{result.channel}}"
+      - name: ts
+        label: Message timestamp
+        default: "{{result.ts}}"
+    request:
+      method: POST
+      path: chat.delete
+      body:
+        channel: "{{fields.channel}}"
+        ts: "{{fields.ts}}"
+    output:
+      pick: [channel, ts]
+
+  - name: Add Reaction
+    description: Adds an emoji reaction to a message.
+    fields:
+      - name: channel
+        label: Channel ID
+        default: "{{result.channel}}"
+      - name: ts
+        label: Message timestamp
+        default: "{{result.ts}}"
+      - name: emoji
+        label: Emoji name, like thumbsup
+        strip: ":"
+    request:
+      method: POST
+      path: reactions.add
+      body:
+        channel: "{{fields.channel}}"
+        timestamp: "{{fields.ts}}"
+        name: "{{fields.emoji}}"
+    output:
+      value:
+        emoji: "{{fields.emoji}}"
+
+  - name: List Channels
+    description: Returns the channels of the workspace, with the IDs the other Slack nodes take.
+    fields:
+      - name: types
+        label: Channels
+        type: select
+        default: public_channel
+        options:
+          - {label: Public, value: public_channel}
+          - {label: Private, value: private_channel}
+          - {label: Public and private, value: "public_channel,private_channel"}
+    request:
+      method: GET
+      path: conversations.list
+      query:
+        types: "{{fields.types}}"
+        exclude_archived: true
+    output:
+      pick: [id, name]
+    pagination:
+      type: cursor
+      items_path: channels
+      cursor_param: cursor
+      next_path: response_metadata.next_cursor
+      limit_param: limit
+      page_size: 200

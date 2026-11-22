@@ -4010,6 +4010,35 @@
       "nodes": [
         {
           "credential": "slack",
+          "description": "Starts the flow for each new message in a channel the bot is in, checking every minute.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Channel ID",
+              "name": "channel",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-slack",
+          "inputs": [],
+          "name": "Slack: New Message",
+          "notes": {
+            "en": "Checks the channel every minute and starts the flow once for each new message, with the message as `result`. The first check only notes the messages already there, so turning the flow on doesn't run it for the channel's history.\n\nThe bot must be in the channel, and the token needs the `channels:history` scope (`groups:history` for private channels). Run from the editor, it takes the newest message, to try the flow.",
+            "pt": "Olha o canal a cada minuto e inicia o fluxo uma vez para cada mensagem nova, com a mensagem em `result`. A primeira olhada só anota as mensagens que já estão lá, então ligar o fluxo não o roda para o histórico do canal.\n\nO bot precisa estar no canal, e o token precisa do escopo `channels:history` (`groups:history` para canais privados). Rodando pelo editor, pega a mensagem mais recente, para testar o fluxo."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": {
+            "text": "Can someone review the deploy?",
+            "ts": "1732270000.000200",
+            "user": "U024BE7LH"
+          },
+          "slug": "slack-new-message"
+        },
+        {
+          "credential": "slack",
           "description": "Sends a message to a channel. Give a thread timestamp to reply in that thread.",
           "fields": [
             {
@@ -5085,6 +5114,222 @@
             "path": "exports/2025"
           },
           "slug": "ftp-delete-folder"
+        }
+      ]
+    },
+    {
+      "id": "notion",
+      "label": "Notion",
+      "nodes": [
+        {
+          "credential": "notion",
+          "description": "Starts the flow for each new row of a database, checking every 5 minutes.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Database ID",
+              "name": "database_id",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-document-text",
+          "inputs": [],
+          "name": "Notion: New Database Row",
+          "notes": {
+            "en": "Checks the database every 5 minutes and starts the flow once for each new row, with the row as `result`. The first check only notes the rows already there. Run from the editor, it takes the newest row, to try the flow.\n\n**Database ID** is the 32 characters in the database's link, before `?v=`, and the database must be shared with the connection.",
+            "pt": "Olha o banco a cada 5 minutos e inicia o fluxo uma vez para cada linha nova, com a linha em `result`. A primeira olhada só anota as linhas que já estão lá. Rodando pelo editor, pega a linha mais recente, para testar o fluxo.\n\n**Database ID** são os 32 caracteres no link do banco, antes de `?v=`, e o banco precisa estar compartilhado com a conexão."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": {
+            "created_time": "2026-11-22T10:00:00.000Z",
+            "id": "5e6f7a8b-0000-0000-0000-000000000000",
+            "properties": {
+              "Name": {
+                "title": [
+                  {
+                    "plain_text": "Launch"
+                  }
+                ]
+              }
+            },
+            "url": "https://www.notion.so/5e6f7a8b"
+          },
+          "slug": "notion-new-database-row"
+        },
+        {
+          "credential": "notion",
+          "description": "Finds the pages and databases shared with the integration, by title.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Text in the title",
+              "name": "query",
+              "type": "text"
+            },
+            {
+              "default": "page",
+              "label": "Find",
+              "name": "object",
+              "options": [
+                {
+                  "label": "Pages",
+                  "value": "page"
+                },
+                {
+                  "label": "Databases",
+                  "value": "database"
+                }
+              ],
+              "type": "select"
+            }
+          ],
+          "group": null,
+          "icon": "hero-document-text",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Notion: Search",
+          "notes": {
+            "en": "Finds only the pages and databases shared with the connection: when connecting, Notion asks which ones to share. Leave **Text in the title** empty to list them all.\n\nThe credential connects through OAuth. A system admin registers a public integration with Notion first, on the Credentials page. See [Credentials](/docs/guides/credentials/).",
+            "pt": "Só encontra as páginas e bancos compartilhados com a conexão: ao conectar, o Notion pergunta quais compartilhar. Deixe **Text in the title** vazio para listar todos.\n\nA credencial se conecta por OAuth. Antes, um admin do sistema registra uma integração pública no Notion, na página de Credenciais. Veja [Credenciais](/docs/guides/credentials/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": [
+            {
+              "id": "1a2b3c4d-0000-0000-0000-000000000000",
+              "object": "page",
+              "properties": {},
+              "url": "https://www.notion.so/Roadmap-1a2b3c4d"
+            }
+          ],
+          "slug": "notion-search"
+        },
+        {
+          "credential": "notion",
+          "description": "Returns the rows of a database.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Database ID",
+              "name": "database_id",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-document-text",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Notion: Query Database",
+          "notes": {
+            "en": "**Database ID** is the 32 characters in the database's link, before `?v=`. Returns up to 100 rows, with Notion's properties as they come.",
+            "pt": "**Database ID** são os 32 caracteres no link do banco, antes de `?v=`. Devolve até 100 linhas, com as propriedades como o Notion manda."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": [
+            {
+              "id": "5e6f7a8b-0000-0000-0000-000000000000",
+              "properties": {
+                "Name": {
+                  "title": [
+                    {
+                      "plain_text": "Launch"
+                    }
+                  ]
+                }
+              },
+              "url": "https://www.notion.so/5e6f7a8b"
+            }
+          ],
+          "slug": "notion-query-database"
+        },
+        {
+          "credential": "notion",
+          "description": "Creates a page inside another page, with a title and a first paragraph.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Parent page ID",
+              "name": "parent_id",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Title",
+              "name": "title",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Text",
+              "name": "text",
+              "type": "textarea"
+            }
+          ],
+          "group": null,
+          "icon": "hero-document-text",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Notion: Create Page",
+          "notes": {
+            "en": "Creates the page inside **Parent page ID**, which must be shared with the connection.",
+            "pt": "Cria a página dentro de **Parent page ID**, que precisa estar compartilhada com a conexão."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "id": "9c0d1e2f-0000-0000-0000-000000000000",
+            "url": "https://www.notion.so/Weekly-notes-9c0d1e2f"
+          },
+          "slug": "notion-create-page"
+        },
+        {
+          "credential": "notion",
+          "description": "Adds a paragraph to the end of a page.",
+          "fields": [
+            {
+              "default": "{{result.id}}",
+              "label": "Page ID",
+              "name": "page_id",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Text",
+              "name": "text",
+              "type": "textarea"
+            }
+          ],
+          "group": null,
+          "icon": "hero-document-text",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Notion: Append Text",
+          "notes": {
+            "en": "Adds a paragraph at the end of the page. **Page ID** takes the page of the step before by default.",
+            "pt": "Adiciona um parágrafo no fim da página. **Page ID** usa a página do passo anterior por padrão."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "page_id": "9c0d1e2f-0000-0000-0000-000000000000"
+          },
+          "slug": "notion-append-text"
         }
       ]
     },

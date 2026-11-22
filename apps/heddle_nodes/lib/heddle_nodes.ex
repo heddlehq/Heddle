@@ -5,6 +5,8 @@ defmodule HeddleNodes do
 
   use Bobbin.Manifest
 
+  alias HeddleNodes.Manifests
+
   alias HeddleNodes.Nodes.{
     AI,
     AIAgent,
@@ -58,13 +60,19 @@ defmodule HeddleNodes do
       Csv.Read,
       Csv.Write,
       HttpRequest,
-      Slack.SendMessage,
-      Slack.ReadMessages,
-      Slack.UpdateMessage,
-      Slack.DeleteMessage,
-      Slack.AddReaction,
+      Manifests.Slack.NewMessage,
+      Manifests.Slack.SendMessage,
+      Manifests.Slack.ReadMessages,
+      Manifests.Slack.UpdateMessage,
+      Manifests.Slack.DeleteMessage,
+      Manifests.Slack.AddReaction,
       Slack.UploadFile,
-      Slack.ListChannels,
+      Manifests.Slack.ListChannels,
+      Manifests.Notion.NewDatabaseRow,
+      Manifests.Notion.Search,
+      Manifests.Notion.QueryDatabase,
+      Manifests.Notion.CreatePage,
+      Manifests.Notion.AppendText,
       Email.Send,
       Email.List,
       Email.Get,

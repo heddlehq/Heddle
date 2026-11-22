@@ -29,6 +29,7 @@ defmodule HeddleNodes.Docs do
     :google_sheets,
     :s3,
     :ftp,
+    :notion,
     :utility
   ]
 

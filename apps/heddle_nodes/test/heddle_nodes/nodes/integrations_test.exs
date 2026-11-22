@@ -2,7 +2,9 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
   use ExUnit.Case, async: false
 
   alias HeddleNodes.Integration
-  alias HeddleNodes.Nodes.{Csv, Ftp, HttpRequest, S3, Slack}
+  alias HeddleNodes.Manifests.Slack
+  alias HeddleNodes.Nodes.{Csv, Ftp, HttpRequest, S3}
+  alias HeddleNodes.Nodes.Slack.UploadFile
   alias HeddleNodes.Runner
 
   defmodule Vault do
@@ -240,7 +242,7 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
     test "lists the channels of every page" do
       Req.Test.stub(HttpRequest, fn conn ->
         case URI.decode_query(conn.query_string)["cursor"] do
-          "" ->
+          nil ->
             Req.Test.json(conn, %{
               "ok" => true,
               "channels" => [%{"id" => "C1", "name" => "a", "is_member" => true}],
@@ -291,7 +293,7 @@ defmodule HeddleNodes.Nodes.IntegrationsTest do
       }
 
       assert {:ok, %{"result" => %{"file_id" => "F1"}}, "success"} =
-               Slack.UploadFile.handler(context, nil)
+               UploadFile.handler(context, nil)
 
       assert_received {:step, "/api/files.getUploadURLExternal", query, ""}
       assert %{"filename" => "a.bin", "length" => "2"} = URI.decode_query(query)

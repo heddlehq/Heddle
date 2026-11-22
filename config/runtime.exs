@@ -103,6 +103,7 @@ if config_env() == :prod do
         {Oban.Plugins.Cron,
          crontab: [
            {"* * * * *", HeddleWorker.ScheduleWorker},
+           {"* * * * *", HeddleWorker.PollWorker},
            {"17 3 * * *", HeddleWorker.VersionPruneWorker}
          ]}
       ],

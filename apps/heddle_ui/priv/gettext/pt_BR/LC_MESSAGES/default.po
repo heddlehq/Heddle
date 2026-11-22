@@ -213,7 +213,7 @@ msgstr "Configurações de Conta"
 #: lib/heddle_ui/components/modals/publish_modal.ex:69
 #: lib/heddle_ui/components/modals/webhook_test_modal.ex:42
 #: lib/heddle_ui/controllers/oauth_html.ex:67
-#: lib/heddle_ui/live/credential_live/index.ex:250
+#: lib/heddle_ui/live/credential_live/index.ex:324
 #: lib/heddle_ui/live/flow_live/ai_creator.ex:142
 #: lib/heddle_ui/live/flow_live/index.ex:178
 #: lib/heddle_ui/live/spool_live/components.ex:283
@@ -774,7 +774,7 @@ msgstr "Copie sua chave agora. Você não vai conseguir vê-la de novo."
 
 #: lib/heddle_ui/live/api_key_live/index.ex:135
 #: lib/heddle_ui/live/api_key_live/index.ex:217
-#: lib/heddle_ui/live/credential_live/index.ex:175
+#: lib/heddle_ui/live/credential_live/index.ex:211
 #: lib/heddle_ui/live/spool_live/table.ex:298
 #: lib/heddle_ui/live/workspace_live/index.ex:82
 #: lib/heddle_ui/live/workspace_live/index.ex:103
@@ -1135,29 +1135,29 @@ msgstr "Usar no chat do editor"
 msgid "No code yet"
 msgstr "Sem código ainda"
 
-#: lib/heddle_ui/live/credential_live/index.ex:241
+#: lib/heddle_ui/live/credential_live/index.ex:314
 #, elixir-autogen, elixir-format
 msgid "Add credential"
 msgstr "Adicionar credencial"
 
-#: lib/heddle_ui/live/credential_live/index.ex:80
+#: lib/heddle_ui/live/credential_live/index.ex:110
 #, elixir-autogen, elixir-format
 msgid "Credential deleted."
 msgstr "Credencial excluída."
 
-#: lib/heddle_ui/live/credential_live/index.ex:39
+#: lib/heddle_ui/live/credential_live/index.ex:51
 #, elixir-autogen, elixir-format
 msgid "Credential saved."
 msgstr "Credencial salva."
 
 #: lib/heddle_ui/components/layouts.ex:123
-#: lib/heddle_ui/live/credential_live/index.ex:17
-#: lib/heddle_ui/live/credential_live/index.ex:144
+#: lib/heddle_ui/live/credential_live/index.ex:18
+#: lib/heddle_ui/live/credential_live/index.ex:180
 #, elixir-autogen, elixir-format
 msgid "Credentials"
 msgstr "Credenciais"
 
-#: lib/heddle_ui/live/credential_live/index.ex:306
+#: lib/heddle_ui/live/credential_live/index.ex:422
 #: lib/heddle_ui/live/flow_live/editor.html.heex:56
 #: lib/heddle_ui/live/spool_live/components.ex:279
 #: lib/heddle_ui/live/spool_live/table.ex:344
@@ -1166,17 +1166,17 @@ msgstr "Credenciais"
 msgid "Delete"
 msgstr "Excluir"
 
-#: lib/heddle_ui/live/credential_live/index.ex:294
+#: lib/heddle_ui/live/credential_live/index.ex:410
 #, elixir-autogen, elixir-format
 msgid "Edit"
 msgstr "Editar"
 
-#: lib/heddle_ui/live/credential_live/index.ex:304
+#: lib/heddle_ui/live/credential_live/index.ex:420
 #, elixir-autogen, elixir-format
 msgid "Flows that use this credential will stop working. Delete it?"
 msgstr "Os fluxos que usam esta credencial vão parar de funcionar. Excluir?"
 
-#: lib/heddle_ui/live/credential_live/index.ex:137
+#: lib/heddle_ui/live/credential_live/index.ex:173
 #, elixir-autogen, elixir-format
 msgid "Leave blank to keep the current value"
 msgstr "Deixe em branco para manter o valor atual"
@@ -1187,7 +1187,7 @@ msgstr "Deixe em branco para manter o valor atual"
 msgid "Manage credentials"
 msgstr "Gerenciar credenciais"
 
-#: lib/heddle_ui/live/credential_live/index.ex:262
+#: lib/heddle_ui/live/credential_live/index.ex:377
 #, elixir-autogen, elixir-format
 msgid "No credentials yet."
 msgstr "Nenhuma credencial ainda."
@@ -1197,23 +1197,23 @@ msgstr "Nenhuma credencial ainda."
 msgid "Pick a credential"
 msgstr "Escolha uma credencial"
 
-#: lib/heddle_ui/live/credential_live/index.ex:241
+#: lib/heddle_ui/live/credential_live/index.ex:312
 #: lib/heddle_ui/live/spool_live/components.ex:521
 #, elixir-autogen, elixir-format
 msgid "Save changes"
 msgstr "Salvar alterações"
 
-#: lib/heddle_ui/live/credential_live/index.ex:179
+#: lib/heddle_ui/live/credential_live/index.ex:215
 #, elixir-autogen, elixir-format
 msgid "Service"
 msgstr "Serviço"
 
-#: lib/heddle_ui/live/credential_live/index.ex:172
+#: lib/heddle_ui/live/credential_live/index.ex:208
 #, elixir-autogen, elixir-format
 msgid "Edit credential"
 msgstr "Editar credencial"
 
-#: lib/heddle_ui/live/credential_live/index.ex:172
+#: lib/heddle_ui/live/credential_live/index.ex:208
 #, elixir-autogen, elixir-format
 msgid "New credential"
 msgstr "Nova credencial"
@@ -1604,8 +1604,8 @@ msgid "Previous chats"
 msgstr "Conversas anteriores"
 
 #: lib/heddle_ui/components/modals/webhook_test_modal.ex:93
-#: lib/heddle_ui/live/integration_live/index.ex:264
-#: lib/heddle_ui/live/integration_live/index.ex:273
+#: lib/heddle_ui/live/integration_live/index.ex:379
+#: lib/heddle_ui/live/integration_live/index.ex:388
 #: lib/heddle_ui/live/workspace_live/show.ex:292
 #, elixir-autogen, elixir-format
 msgid "Remove"
@@ -2298,7 +2298,7 @@ msgstr "Editor"
 msgid "Email or username"
 msgstr "E-mail ou nome de usuário"
 
-#: lib/heddle_ui/live/credential_live/index.ex:232
+#: lib/heddle_ui/live/credential_live/index.ex:294
 #, elixir-autogen, elixir-format
 msgid "Every workspace can use it, and only system admins can change it. The AI defaults use shared credentials."
 msgstr "Todo workspace pode usá-la, e só administradores do sistema a alteram. Os padrões de IA usam credenciais compartilhadas."
@@ -2475,7 +2475,7 @@ msgstr "Papéis"
 msgid "Runs flows and sees their results, without changing them."
 msgstr "Roda fluxos e vê os resultados, sem alterá-los."
 
-#: lib/heddle_ui/live/credential_live/index.ex:146
+#: lib/heddle_ui/live/credential_live/index.ex:182
 #, elixir-autogen, elixir-format
 msgid "Secrets the flows of this workspace use to reach other services. They are stored encrypted and never shown again."
 msgstr "Segredos que os fluxos deste workspace usam para acessar outros serviços. Ficam guardados com criptografia e nunca são exibidos de novo."
@@ -2485,12 +2485,12 @@ msgstr "Segredos que os fluxos deste workspace usam para acessar outros serviço
 msgid "Sees flows, runs and members."
 msgstr "Vê fluxos, execuções e membros."
 
-#: lib/heddle_ui/live/credential_live/index.ex:229
+#: lib/heddle_ui/live/credential_live/index.ex:291
 #, elixir-autogen, elixir-format
 msgid "Share with every workspace"
 msgstr "Compartilhar com todos os workspaces"
 
-#: lib/heddle_ui/live/credential_live/index.ex:281
+#: lib/heddle_ui/live/credential_live/index.ex:396
 #, elixir-autogen, elixir-format
 msgid "Shared"
 msgstr "Compartilhada"
@@ -2587,7 +2587,7 @@ msgstr "Você foi convidado para o Heddle. Preencha o formulário abaixo."
 msgid "You were invited to join %{workspace} on Heddle as %{role}."
 msgstr "Você foi convidado para entrar em %{workspace} no Heddle como %{role}."
 
-#: lib/heddle_ui/live/credential_live/index.ex:97
+#: lib/heddle_ui/live/credential_live/index.ex:127
 #, elixir-autogen, elixir-format
 msgid "Your role in this workspace can't change this credential."
 msgstr "Seu papel neste workspace não permite alterar esta credencial."
@@ -2613,7 +2613,7 @@ msgstr "Seu papel neste workspace não permite rodar fluxos."
 msgid "Your role in this workspace lets you see this flow, not change it."
 msgstr "Seu papel neste workspace permite ver este fluxo, não alterá-lo."
 
-#: lib/heddle_ui/live/credential_live/index.ex:160
+#: lib/heddle_ui/live/credential_live/index.ex:196
 #, elixir-autogen, elixir-format
 msgid "Your role lets you see which credentials exist. Editors add and change them."
 msgstr "Seu papel permite ver quais credenciais existem. Editores as adicionam e alteram."
@@ -4229,23 +4229,24 @@ msgstr "Pedir ao chat de IA para trocar este agente pelos passos que ele seguiu,
 msgid "Turn into steps"
 msgstr "Transformar em passos"
 
-#: lib/heddle_ui/live/integration_live/index.ex:40
+#: lib/heddle_ui/live/integration_live/index.ex:47
+#: lib/heddle_ui/live/integration_live/index.ex:58
 #, elixir-autogen, elixir-format
 msgid "%{name} installed."
 msgstr "%{name} instalada."
 
-#: lib/heddle_ui/live/integration_live/index.ex:53
+#: lib/heddle_ui/live/integration_live/index.ex:92
 #, elixir-autogen, elixir-format
 msgid "%{name} removed."
 msgstr "%{name} removida."
 
-#: lib/heddle_ui/live/integration_live/index.ex:229
+#: lib/heddle_ui/live/integration_live/index.ex:316
 #, elixir-autogen, elixir-format
 msgid "+%{count} more"
 msgstr "+%{count}"
 
 #: lib/heddle_ui/components/flow/node_sidebar.ex:115
-#: lib/heddle_ui/live/integration_live/index.ex:240
+#: lib/heddle_ui/live/integration_live/index.ex:327
 #, elixir-autogen, elixir-format
 msgid "1 action"
 msgid_plural "%{count} actions"
@@ -4257,40 +4258,41 @@ msgstr[1] "%{count} ações"
 msgid "Browse integrations"
 msgstr "Ver integrações"
 
-#: lib/heddle_ui/live/integration_live/index.ex:59
+#: lib/heddle_ui/live/integration_live/index.ex:98
 #, elixir-autogen, elixir-format
 msgid "Flows still use %{name}."
 msgstr "Ainda há fluxos usando %{name}."
 
 #: lib/heddle_ui/components/flow/node_sidebar.ex:125
-#: lib/heddle_ui/live/integration_live/index.ex:252
+#: lib/heddle_ui/live/integration_live/index.ex:358
+#: lib/heddle_ui/live/integration_live/index.ex:367
 #, elixir-autogen, elixir-format
 msgid "Install"
 msgstr "Instalar"
 
-#: lib/heddle_ui/live/integration_live/index.ex:209
+#: lib/heddle_ui/live/integration_live/index.ex:282
 #, elixir-autogen, elixir-format
 msgid "Installed"
 msgstr "Instalada"
 
 #: lib/heddle_ui/components/layouts.ex:116
-#: lib/heddle_ui/live/integration_live/index.ex:18
-#: lib/heddle_ui/live/integration_live/index.ex:111
+#: lib/heddle_ui/live/integration_live/index.ex:22
+#: lib/heddle_ui/live/integration_live/index.ex:182
 #, elixir-autogen, elixir-format
 msgid "Integrations"
 msgstr "Integrações"
 
-#: lib/heddle_ui/live/integration_live/index.ex:269
+#: lib/heddle_ui/live/integration_live/index.ex:384
 #, elixir-autogen, elixir-format
 msgid "Its nodes will leave the sidebar. Remove it?"
 msgstr "Os nós dela vão sair da barra lateral. Remover?"
 
-#: lib/heddle_ui/live/integration_live/index.ex:176
+#: lib/heddle_ui/live/integration_live/index.ex:249
 #, elixir-autogen, elixir-format
 msgid "No integrations found."
 msgstr "Nenhuma integração encontrada."
 
-#: lib/heddle_ui/live/integration_live/index.ex:175
+#: lib/heddle_ui/live/integration_live/index.ex:248
 #, elixir-autogen, elixir-format
 msgid "No integrations installed yet."
 msgstr "Nenhuma integração instalada ainda."
@@ -4300,34 +4302,34 @@ msgstr "Nenhuma integração instalada ainda."
 msgid "Not installed"
 msgstr "Não instaladas"
 
-#: lib/heddle_ui/live/integration_live/index.ex:213
+#: lib/heddle_ui/live/integration_live/index.ex:286
 #, elixir-autogen, elixir-format
 msgid "Official"
 msgstr "Oficial"
 
-#: lib/heddle_ui/live/integration_live/index.ex:263
+#: lib/heddle_ui/live/integration_live/index.ex:378
 #, elixir-autogen, elixir-format
 msgid "Remove it from the flows that use it first."
 msgstr "Tire-a dos fluxos que a usam primeiro."
 
-#: lib/heddle_ui/live/integration_live/index.ex:159
+#: lib/heddle_ui/live/integration_live/index.ex:232
 #, elixir-autogen, elixir-format
 msgid "Search integrations"
 msgstr "Buscar integrações"
 
-#: lib/heddle_ui/live/integration_live/index.ex:113
+#: lib/heddle_ui/live/integration_live/index.ex:184
 #, elixir-autogen, elixir-format
 msgid "Services the flows of this workspace can reach. The editor's node sidebar shows only the installed ones."
 msgstr "Serviços que os fluxos deste workspace podem acessar. A barra de nós do editor mostra só as instaladas."
 
-#: lib/heddle_ui/live/integration_live/index.ex:237
+#: lib/heddle_ui/live/integration_live/index.ex:324
 #, elixir-autogen, elixir-format
 msgid "Used by 1 flow"
 msgid_plural "Used by %{count} flows"
 msgstr[0] "Usada por 1 fluxo"
 msgstr[1] "Usada por %{count} fluxos"
 
-#: lib/heddle_ui/live/integration_live/index.ex:66
+#: lib/heddle_ui/live/integration_live/index.ex:105
 #, elixir-autogen, elixir-format
 msgid "Your role in this workspace can't change integrations."
 msgstr "Seu papel neste workspace não permite alterar integrações."
@@ -4337,14 +4339,156 @@ msgstr "Seu papel neste workspace não permite alterar integrações."
 msgid "Your role in this workspace can't install integrations."
 msgstr "Seu papel neste workspace não permite instalar integrações."
 
-#: lib/heddle_ui/live/integration_live/index.ex:127
+#: lib/heddle_ui/live/integration_live/index.ex:198
 #, elixir-autogen, elixir-format
 msgctxt "integrations filter"
 msgid "All"
 msgstr "Todas"
 
-#: lib/heddle_ui/live/integration_live/index.ex:128
+#: lib/heddle_ui/live/integration_live/index.ex:199
 #, elixir-autogen, elixir-format
 msgctxt "integrations filter"
 msgid "Installed"
 msgstr "Instaladas"
+
+#: lib/heddle_ui/live/integration_live/index.ex:79
+#, elixir-autogen, elixir-format
+msgid "%{name} updated."
+msgstr "%{name} atualizada."
+
+#: lib/heddle_ui/live/integration_live/index.ex:293
+#, elixir-autogen, elixir-format
+msgid "Community"
+msgstr "Comunidade"
+
+#: lib/heddle_ui/live/integration_live/index.ex:353
+#, elixir-autogen, elixir-format
+msgid "Community integrations aren't reviewed by Heddle, and their nodes send what they get to their service. Install it?"
+msgstr "Integrações da comunidade não são revisadas pelo Heddle, e os nós delas enviam o que recebem ao serviço delas. Instalar?"
+
+#: lib/heddle_ui/live/integration_live/index.ex:339
+#, elixir-autogen, elixir-format
+msgid "Every workspace that has it will run version %{version}. Update?"
+msgstr "Todo workspace que a usa vai rodar a versão %{version}. Atualizar?"
+
+#: lib/heddle_ui/live/integration_live/index.ex:297
+#, elixir-autogen, elixir-format
+msgid "Not reviewed by Heddle. It sends what its nodes get to its service."
+msgstr "Não revisada pelo Heddle. Ela envia ao serviço dela o que os nós recebem."
+
+#: lib/heddle_ui/live/integration_live/index.ex:299
+#, elixir-autogen, elixir-format
+msgid "Not verified"
+msgstr "Não verificada"
+
+#: lib/heddle_ui/live/integration_live/index.ex:68
+#, elixir-autogen, elixir-format
+msgid "This integration couldn't be installed. Its manifest is invalid or takes the name of an official one."
+msgstr "Não foi possível instalar esta integração. O manifesto é inválido ou usa o nome de uma oficial."
+
+#: lib/heddle_ui/live/integration_live/index.ex:82
+#, elixir-autogen, elixir-format
+msgid "This integration couldn't be updated."
+msgstr "Não foi possível atualizar esta integração."
+
+#: lib/heddle_ui/live/integration_live/index.ex:344
+#, elixir-autogen, elixir-format
+msgid "Update to v%{version}"
+msgstr "Atualizar para v%{version}"
+
+#: lib/heddle_ui/live/integration_live/index.ex:200
+#, elixir-autogen, elixir-format
+msgctxt "integrations filter"
+msgid "Community"
+msgstr "Comunidade"
+
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:84
+#, elixir-autogen, elixir-format
+msgid "%{name} connected."
+msgstr "%{name} conectada."
+
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:87
+#, elixir-autogen, elixir-format
+msgid "A credential with this name already exists."
+msgstr "Já existe uma credencial com esse nome."
+
+#: lib/heddle_ui/live/credential_live/index.ex:240
+#, elixir-autogen, elixir-format
+msgid "A system admin has to register an app with this service before accounts can connect."
+msgstr "Um admin do sistema precisa registrar um app neste serviço antes que contas possam se conectar."
+
+#: lib/heddle_ui/live/credential_live/index.ex:339
+#, elixir-autogen, elixir-format
+msgid "App registered with the service"
+msgstr "App registrado no serviço"
+
+#: lib/heddle_ui/live/credential_live/index.ex:72
+#, elixir-autogen, elixir-format
+msgid "App saved. Accounts of this service can connect now."
+msgstr "App salvo. Contas deste serviço já podem se conectar."
+
+#: lib/heddle_ui/live/credential_live/index.ex:354
+#, elixir-autogen, elixir-format
+msgid "Client ID"
+msgstr "Client ID"
+
+#: lib/heddle_ui/live/credential_live/index.ex:362
+#, elixir-autogen, elixir-format
+msgid "Client secret"
+msgstr "Client secret"
+
+#: lib/heddle_ui/live/credential_live/index.ex:310
+#, elixir-autogen, elixir-format
+msgid "Connect"
+msgstr "Conectar"
+
+#: lib/heddle_ui/live/credential_live/index.ex:223
+#, elixir-autogen, elixir-format
+msgid "Connecting opens the service, where you allow Heddle in. It keeps the connection and renews it."
+msgstr "Conectar abre o serviço, onde você autoriza o Heddle. Ele guarda a conexão e a renova."
+
+#: lib/heddle_ui/live/credential_live/index.ex:342
+#, elixir-autogen, elixir-format
+msgid "Every workspace connects through it. Give the service this address to send people back to:"
+msgstr "Todos os workspaces se conectam por ele. Informe ao serviço este endereço de retorno:"
+
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:30
+#, elixir-autogen, elixir-format
+msgid "Give the credential a name."
+msgstr "Dê um nome à credencial."
+
+#: lib/heddle_ui/live/credential_live/index.ex:75
+#, elixir-autogen, elixir-format
+msgid "Only system admins register apps."
+msgstr "Só admins do sistema registram apps."
+
+#: lib/heddle_ui/live/credential_live/index.ex:233
+#, elixir-autogen, elixir-format
+msgid "Register an app with this service first, below, with this address to send people back to:"
+msgstr "Registre antes um app neste serviço, abaixo, com este endereço de retorno:"
+
+#: lib/heddle_ui/live/credential_live/index.ex:367
+#, elixir-autogen, elixir-format
+msgid "Save app"
+msgstr "Salvar app"
+
+#: lib/heddle_ui/live/credential_live/index.ex:364
+#, elixir-autogen, elixir-format
+msgid "Saved. Fill both in to replace it."
+msgstr "Salvo. Preencha os dois para substituir."
+
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:66
+#, elixir-autogen, elixir-format
+msgid "The service didn't allow the connection: %{error}"
+msgstr "O serviço não permitiu a conexão: %{error}"
+
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:60
+#, elixir-autogen, elixir-format
+msgid "This connection expired. Try again."
+msgstr "Esta conexão expirou. Tente de novo."
+
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:27
+#: lib/heddle_ui/controllers/credential_oauth_controller.ex:90
+#, elixir-autogen, elixir-format
+msgid "Your role in this workspace can't add credentials."
+msgstr "Seu papel neste workspace não permite adicionar credenciais."

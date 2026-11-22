@@ -35,7 +35,7 @@ defmodule HeddleNodes.MixProject do
       {:heddle, in_umbrella: true},
       {:heddle_core, in_umbrella: true, only: :test},
       {:heddle_runtime, in_umbrella: true},
-      {:bobbin, "~> 0.2.1"},
+      {:bobbin, "~> 0.4.0"},
       {:gen_smtp, "~> 1.3"},
       {:nimble_csv, "~> 1.3"},
       {:req, "~> 0.5"},

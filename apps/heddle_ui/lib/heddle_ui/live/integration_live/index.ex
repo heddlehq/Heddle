@@ -8,8 +8,12 @@ defmodule HeddleUI.IntegrationLive.Index do
 
   on_mount {HeddleUI.UserAuth, {:require_workspace, :view}}
 
+  alias HeddleCore.Accounts.Scope
   alias HeddleCore.Workspaces
   alias HeddleUI.Integrations
+  alias HeddleUI.Integrations.Catalog
+
+  @community_color "bg-violet-500/15 text-violet-700 dark:text-violet-300"
 
   @impl true
   def mount(_params, _session, socket) do
@@ -17,6 +21,8 @@ defmodule HeddleUI.IntegrationLive.Index do
      socket
      |> assign(:page_title, gettext("Integrations"))
      |> assign(:can_edit, Workspaces.can?(socket.assigns.current_scope, :edit))
+     |> assign(:can_manage, Workspaces.can?(socket.assigns.current_scope, :manage))
+     |> assign(:system_admin, Scope.system_admin?(socket.assigns.current_scope))
      |> assign(:query, "")
      |> assign(:filter, "all")
      |> load()}
@@ -27,7 +33,8 @@ defmodule HeddleUI.IntegrationLive.Index do
     {:noreply, assign(socket, :query, query)}
   end
 
-  def handle_event("filter", %{"filter" => filter}, socket) when filter in ["all", "installed"] do
+  def handle_event("filter", %{"filter" => filter}, socket)
+      when filter in ["all", "installed", "community"] do
     {:noreply, assign(socket, :filter, filter)}
   end
 
@@ -41,6 +48,38 @@ defmodule HeddleUI.IntegrationLive.Index do
 
       _error ->
         {:noreply, put_flash(socket, :error, forbidden_message())}
+    end
+  end
+
+  def handle_event("install_community", %{"id" => id}, socket) do
+    case Integrations.install_community(socket.assigns.current_scope, id) do
+      :ok ->
+        {:noreply,
+         socket |> load() |> put_flash(:info, gettext("%{name} installed.", name: title(id)))}
+
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, forbidden_message())}
+
+      _error ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext(
+             "This integration couldn't be installed. Its manifest is invalid or takes the name of an official one."
+           )
+         )}
+    end
+  end
+
+  def handle_event("update_community", %{"id" => id}, socket) do
+    case Integrations.update_community(socket.assigns.current_scope, id) do
+      :ok ->
+        {:noreply,
+         socket |> load() |> put_flash(:info, gettext("%{name} updated.", name: title(id)))}
+
+      _error ->
+        {:noreply, put_flash(socket, :error, gettext("This integration couldn't be updated."))}
     end
   end
 
@@ -66,9 +105,10 @@ defmodule HeddleUI.IntegrationLive.Index do
   defp forbidden_message, do: gettext("Your role in this workspace can't change integrations.")
 
   defp title(id) do
-    case HeddleNodes.Integrations.get(id) do
+    case HeddleNodes.Integrations.get(id) || Catalog.get(id) do
       nil -> id
-      integration -> integration.title
+      %{title: title} -> title
+      %{"name" => name} -> name
     end
   end
 
@@ -76,13 +116,43 @@ defmodule HeddleUI.IntegrationLive.Index do
     scope = socket.assigns.current_scope
     installed = Integrations.installed_ids(scope)
 
-    integrations =
+    catalog = Catalog.all()
+
+    known =
       Enum.map(HeddleNodes.Integrations.all(), fn integration ->
         installed? = MapSet.member?(installed, integration.id)
         flows = if installed?, do: Integrations.flows_using(scope, integration.id), else: []
-        Map.merge(integration, %{installed?: installed?, flows: flows})
+        latest = integration.community && catalog[integration.id]["version"]
+
+        Map.merge(integration, %{
+          installed?: installed?,
+          flows: flows,
+          action_names: Enum.map(integration.nodes, &action_name/1),
+          update: if(latest && latest != integration.version, do: latest)
+        })
       end)
 
+    ids = MapSet.new(known, & &1.id)
+
+    published =
+      for {id, entry} <- catalog, not MapSet.member?(ids, id) do
+        %{
+          id: id,
+          title: entry["name"] || id,
+          category: id,
+          icon: entry["icon"] || "hero-puzzle-piece",
+          color: @community_color,
+          community: true,
+          version: entry["version"],
+          action_names: entry["actions"] || [],
+          description: entry["description"],
+          installed?: false,
+          flows: [],
+          update: nil
+        }
+      end
+
+    integrations = Enum.sort_by(known ++ published, &String.downcase(&1.title))
     assign(socket, :integrations, integrations)
   end
 
@@ -90,9 +160,10 @@ defmodule HeddleUI.IntegrationLive.Index do
     query = query |> String.trim() |> String.downcase()
 
     Enum.filter(integrations, fn integration ->
-      (filter == "all" or integration.installed?) and
+      (filter == "all" or (filter == "installed" and integration.installed?) or
+         (filter == "community" and integration.community)) and
         (query == "" or String.contains?(String.downcase(integration.title), query) or
-           Enum.any?(integration.nodes, &String.contains?(String.downcase(&1.name), query)))
+           Enum.any?(integration.action_names, &String.contains?(String.downcase(&1), query)))
     end)
   end
 
@@ -125,7 +196,9 @@ defmodule HeddleUI.IntegrationLive.Index do
             :for={
               {value, label, count} <- [
                 {"all", pgettext("integrations filter", "All"), length(@integrations)},
-                {"installed", pgettext("integrations filter", "Installed"), @installed_count}
+                {"installed", pgettext("integrations filter", "Installed"), @installed_count},
+                {"community", pgettext("integrations filter", "Community"),
+                 Enum.count(@integrations, & &1.community)}
               ]
             }
             id={"integration-filter-#{value}"}
@@ -209,24 +282,38 @@ defmodule HeddleUI.IntegrationLive.Index do
                   <.icon name="hero-check-mini" class="size-3" /> {gettext("Installed")}
                 </span>
               </div>
-              <p class="text-xs text-gray-500 dark:text-gray-400">
+              <p :if={not integration.community} class="text-xs text-gray-500 dark:text-gray-400">
                 {HeddleNodes.Nodes.category_label(integration.category)} · {gettext("Official")}
+              </p>
+              <p
+                :if={integration.community}
+                class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400"
+              >
+                <span class="font-medium text-violet-600 dark:text-violet-300">
+                  {gettext("Community")}
+                </span>
+                · v{integration.version} ·
+                <span title={
+                  gettext("Not reviewed by Heddle. It sends what its nodes get to its service.")
+                }>
+                  {gettext("Not verified")}
+                </span>
               </p>
             </div>
           </div>
 
           <div class="mt-4 flex flex-wrap gap-1.5">
             <span
-              :for={node <- Enum.take(integration.nodes, 4)}
+              :for={name <- Enum.take(integration.action_names, 4)}
               class="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-slate-800 dark:text-gray-300"
             >
-              {action_name(node)}
+              {name}
             </span>
             <span
-              :if={length(integration.nodes) > 4}
+              :if={length(integration.action_names) > 4}
               class="rounded-md px-1 py-0.5 text-xs text-gray-400 dark:text-gray-500"
             >
-              {gettext("+%{count} more", count: length(integration.nodes) - 4)}
+              {gettext("+%{count} more", count: length(integration.action_names) - 4)}
             </span>
           </div>
 
@@ -237,13 +324,41 @@ defmodule HeddleUI.IntegrationLive.Index do
                   {ngettext("Used by 1 flow", "Used by %{count} flows", length(integration.flows))}
                 </span>
               <% else %>
-                {ngettext("1 action", "%{count} actions", length(integration.nodes))}
+                {ngettext("1 action", "%{count} actions", length(integration.action_names))}
               <% end %>
             </p>
 
-            <div :if={@can_edit}>
+            <div :if={@can_edit} class="flex gap-1">
               <.button
-                :if={not integration.installed?}
+                :if={integration.update && @system_admin}
+                id={"update-#{integration.id}"}
+                variant="ghost"
+                phx-click="update_community"
+                phx-value-id={integration.id}
+                data-confirm={
+                  gettext("Every workspace that has it will run version %{version}. Update?",
+                    version: integration.update
+                  )
+                }
+              >
+                {gettext("Update to v%{version}", version: integration.update)}
+              </.button>
+              <.button
+                :if={not integration.installed? and integration.community and @can_manage}
+                id={"install-#{integration.id}"}
+                variant="primary"
+                phx-click="install_community"
+                phx-value-id={integration.id}
+                data-confirm={
+                  gettext(
+                    "Community integrations aren't reviewed by Heddle, and their nodes send what they get to their service. Install it?"
+                  )
+                }
+              >
+                {gettext("Install")}
+              </.button>
+              <.button
+                :if={not integration.installed? and not integration.community}
                 id={"install-#{integration.id}"}
                 variant="primary"
                 phx-click="install"

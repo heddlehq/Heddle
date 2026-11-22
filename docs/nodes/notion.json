@@ -1,0 +1,41 @@
+{
+  "Notion: New Database Row": {
+    "result": {"id": "5e6f7a8b-0000-0000-0000-000000000000", "url": "https://www.notion.so/5e6f7a8b", "created_time": "2026-11-22T10:00:00.000Z", "properties": {"Name": {"title": [{"plain_text": "Launch"}]}}},
+    "notes": {
+      "en": "Checks the database every 5 minutes and starts the flow once for each new row, with the row as `result`. The first check only notes the rows already there. Run from the editor, it takes the newest row, to try the flow.\n\n**Database ID** is the 32 characters in the database's link, before `?v=`, and the database must be shared with the connection.",
+      "pt": "Olha o banco a cada 5 minutos e inicia o fluxo uma vez para cada linha nova, com a linha em `result`. A primeira olhada só anota as linhas que já estão lá. Rodando pelo editor, pega a linha mais recente, para testar o fluxo.\n\n**Database ID** são os 32 caracteres no link do banco, antes de `?v=`, e o banco precisa estar compartilhado com a conexão."
+    }
+  },
+  "Notion: Search": {
+    "result": [
+      {"id": "1a2b3c4d-0000-0000-0000-000000000000", "object": "page", "url": "https://www.notion.so/Roadmap-1a2b3c4d", "properties": {}}
+    ],
+    "notes": {
+      "en": "Finds only the pages and databases shared with the connection: when connecting, Notion asks which ones to share. Leave **Text in the title** empty to list them all.\n\nThe credential connects through OAuth. A system admin registers a public integration with Notion first, on the Credentials page. See [Credentials](/docs/guides/credentials/).",
+      "pt": "Só encontra as páginas e bancos compartilhados com a conexão: ao conectar, o Notion pergunta quais compartilhar. Deixe **Text in the title** vazio para listar todos.\n\nA credencial se conecta por OAuth. Antes, um admin do sistema registra uma integração pública no Notion, na página de Credenciais. Veja [Credenciais](/docs/guides/credentials/)."
+    }
+  },
+  "Notion: Query Database": {
+    "result": [
+      {"id": "5e6f7a8b-0000-0000-0000-000000000000", "url": "https://www.notion.so/5e6f7a8b", "properties": {"Name": {"title": [{"plain_text": "Launch"}]}}}
+    ],
+    "notes": {
+      "en": "**Database ID** is the 32 characters in the database's link, before `?v=`. Returns up to 100 rows, with Notion's properties as they come.",
+      "pt": "**Database ID** são os 32 caracteres no link do banco, antes de `?v=`. Devolve até 100 linhas, com as propriedades como o Notion manda."
+    }
+  },
+  "Notion: Create Page": {
+    "result": {"id": "9c0d1e2f-0000-0000-0000-000000000000", "url": "https://www.notion.so/Weekly-notes-9c0d1e2f"},
+    "notes": {
+      "en": "Creates the page inside **Parent page ID**, which must be shared with the connection.",
+      "pt": "Cria a página dentro de **Parent page ID**, que precisa estar compartilhada com a conexão."
+    }
+  },
+  "Notion: Append Text": {
+    "result": {"page_id": "9c0d1e2f-0000-0000-0000-000000000000"},
+    "notes": {
+      "en": "Adds a paragraph at the end of the page. **Page ID** takes the page of the step before by default.",
+      "pt": "Adiciona um parágrafo no fim da página. **Page ID** usa a página do passo anterior por padrão."
+    }
+  }
+}

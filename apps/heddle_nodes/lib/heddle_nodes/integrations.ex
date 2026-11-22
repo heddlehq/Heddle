@@ -18,7 +18,9 @@ defmodule HeddleNodes.Integrations do
           category: atom(),
           icon: String.t(),
           color: String.t(),
-          nodes: [map()]
+          nodes: [map()],
+          community: boolean(),
+          version: String.t() | nil
         }
 
   # Spool is Heddle's own table store, so it needs no service and stays in the core.
@@ -33,11 +35,13 @@ defmodule HeddleNodes.Integrations do
     |> Enum.map(fn {id, [first | _] = nodes} ->
       %{
         id: id,
-        title: first[:group] || Nodes.category_label(first.category),
+        title: title(first),
         category: first.category,
         icon: first.icon,
         color: first.color,
-        nodes: nodes
+        nodes: nodes,
+        community: first[:community] != nil,
+        version: first[:version]
       }
     end)
     |> Enum.sort_by(&String.downcase(&1.title))
@@ -92,9 +96,23 @@ defmodule HeddleNodes.Integrations do
     end
   end
 
+  defp title(%{community: id} = node) when is_binary(id),
+    do: node.name |> String.split(": ", parts: 2) |> hd()
+
+  defp title(%{integration: id} = node) when is_binary(id),
+    do: node.name |> String.split(": ", parts: 2) |> hd()
+
+  defp title(node), do: node[:group] || Nodes.category_label(node.category)
+
+  defp integration_node?(%{community: id}) when is_binary(id), do: true
+  defp integration_node?(%{integration: id}) when is_binary(id), do: true
+
   defp integration_node?(node) do
     node.category in Nodes.service_categories() and node[:group] not in @core_groups
   end
+
+  defp id_for(%{community: id}) when is_binary(id), do: id
+  defp id_for(%{integration: id}) when is_binary(id), do: id
 
   defp id_for(node) do
     (node[:group] || to_string(node.category))

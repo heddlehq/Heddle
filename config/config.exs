@@ -28,6 +28,7 @@ config :heddle_worker, Oban,
     {Oban.Plugins.Cron,
      crontab: [
        {"* * * * *", HeddleWorker.ScheduleWorker},
+       {"* * * * *", HeddleWorker.PollWorker},
        {"17 3 * * *", HeddleWorker.VersionPruneWorker}
      ]}
   ],
@@ -45,6 +46,9 @@ config :heddle_core, :oban_name, HeddleCore.Oban
 config :heddle_nodes, :llm_client, HeddleAI.AI
 config :heddle_nodes, :agent_memory, HeddleCore.AgentMemory
 config :heddle_nodes, :credentials_client, HeddleCore.Credentials
+config :heddle_core, :declared_credential_kinds, {HeddleNodes.Manifests, :all_credential_kinds}
+config :heddle_core, :graph_manifest, HeddleNodes.Nodes
+config :heddle_nodes, :community_client, HeddleCore.Integrations
 config :heddle_nodes, :spool_client, HeddleCore.Spool.Client
 config :heddle_nodes, :subflow_client, HeddleWorker.Subflow
 

@@ -31,7 +31,7 @@ defmodule HeddleNodes.ManifestTest do
       actions =
         Enum.filter(
           HeddleNodes.get_definitions(),
-          &(&1.category in services and &1[:group] != "Spool")
+          &(&1.category in services and &1[:group] != "Spool" and &1.inputs != [])
         )
 
       names = Enum.map(actions, & &1.name)
