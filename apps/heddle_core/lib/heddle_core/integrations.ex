@@ -128,11 +128,15 @@ defmodule HeddleCore.Integrations do
   The instance keeps one version of each, which the first install sets. Installing it
   in another workspace uses that version, and changing it (see `update_community/2`)
   is for system admins, since it changes every workspace that has it.
+
+  With `"official" => true`, which the caller says after checking the manifest is the
+  one Heddle pins, anyone who edits the workspace may install it, as an official one.
   """
   def install_community(%Scope{workspace: %{id: workspace_id}} = scope, attrs) do
     id = attrs["integration"]
+    action = if attrs["official"] == true, do: :edit, else: :manage
 
-    with :ok <- Workspaces.authorize(scope, :manage, workspace_id),
+    with :ok <- Workspaces.authorize(scope, action, workspace_id),
          {:ok, _community} <- ensure_community(scope, attrs) do
       install(scope, id)
     end

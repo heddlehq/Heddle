@@ -30,7 +30,7 @@ defmodule HeddleNodes.ManifestTest do
       # Spool lives in Heddle, so its nodes need no credential.
       actions =
         Enum.filter(
-          HeddleNodes.get_definitions(),
+          HeddleNodes.Nodes.all_nodes(),
           &(&1.category in services and &1[:group] != "Spool" and &1.inputs != [])
         )
 
@@ -54,13 +54,13 @@ defmodule HeddleNodes.ManifestTest do
 
       assert groups == [
                "Spool",
-               "SQL",
-               "MongoDB",
-               "Redis",
-               "Elasticsearch",
-               "DynamoDB",
                "Cassandra",
-               "Neo4j"
+               "DynamoDB",
+               "Elasticsearch",
+               "MongoDB",
+               "Neo4j",
+               "Redis",
+               "SQL"
              ]
     end
 

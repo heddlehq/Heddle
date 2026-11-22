@@ -19,6 +19,11 @@ RUN mix local.hex --force && \
 
 ENV MIX_ENV="prod"
 
+# The integrations in code to build in, from heddlehq/integrations: "all", or a list
+# like "sql,email". None by default; the manifests (Notion, community) download.
+ARG HEDDLE_INTEGRATIONS=""
+ENV HEDDLE_INTEGRATIONS=${HEDDLE_INTEGRATIONS}
+
 COPY mix.exs mix.lock VERSION ./
 COPY apps/heddle/mix.exs apps/heddle/mix.exs
 COPY apps/heddle_local/mix.exs apps/heddle_local/mix.exs

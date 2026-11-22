@@ -2,8 +2,10 @@ defmodule Mix.Tasks.Heddle.Docs do
   @shortdoc "Writes the reference of the nodes for the documentation site"
 
   @moduledoc """
-  Writes `docs/reference/nodes.json` from the definitions of the nodes and from
-  `docs/nodes/`, see `HeddleNodes.Docs`.
+  Writes `docs/reference/nodes.json` from the definitions of the nodes, from
+  `docs/nodes/` and from the `priv/docs.json` of each integration package, see
+  `HeddleNodes.Docs`. Build with every package (`HEDDLE_INTEGRATIONS_PATH`) so the
+  reference covers them all.
 
       mix heddle.docs
 
@@ -19,11 +21,13 @@ defmodule Mix.Tasks.Heddle.Docs do
     %{missing: missing, unknown: unknown} = HeddleNodes.Docs.coverage()
 
     if missing != [] do
-      Mix.shell().info("Nodes with no entry in docs/nodes/: " <> Enum.join(missing, ", "))
+      Mix.shell().info(
+        "Nodes with no entry in docs/nodes/ or a package: " <> Enum.join(missing, ", ")
+      )
     end
 
     if unknown != [] do
-      Mix.shell().info("Entries in docs/nodes/ for no node: " <> Enum.join(unknown, ", "))
+      Mix.shell().info("Entries for no node: " <> Enum.join(unknown, ", "))
     end
 
     path = HeddleNodes.Docs.reference_path()

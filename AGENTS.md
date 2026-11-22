@@ -36,10 +36,16 @@ The graph of a flow is its **draft**. What production runs (webhooks, schedules,
 - **A draft may be unfinished** (half a cron expression): publishing checks it in full.
 - **Running or publishing reads the database**, so it saves the session first: `Flows.saved_draft/1`.
 
+## Integrations with outside services live in heddlehq/integrations
+`apps/heddle_nodes` keeps the core and the utilities: flow control, triggers, Spool, HTTP Request, CSV, AI, Logger. A node that talks to an outside service (a database, Slack, S3) is not written here.
+- **Manifests** (`integration.yaml`) are installed from the catalog in the Integrations page. An official one is a manifest whose sha256 `HeddleNodes.Official` holds.
+- **What a manifest can't say** is a Mix package written with `Bobbin.Service`, a git dependency of `heddle_nodes` (see its `mix.exs`). A release carries the ones named in `HEDDLE_INTEGRATIONS`, none by default; dev and test carry them all. `HEDDLE_INTEGRATIONS_PATH` points at a clone of the repo, to change both at once. `HeddleNodes.Packages` finds them.
+- **The SDK lives in Bobbin** (`Bobbin.Service`, `Bobbin.Host`, `Bobbin.Template`), and `HeddleNodes.BobbinHost` is Heddle's side of it.
+
 ## Documentation lives next to the code
 The documentation site (`/docs` on the website) is built from `docs/`, so a change and its documentation go in the same PR.
 - **Pages**: `docs/site/en` and `docs/site/pt`, in Markdown, one file per page in both languages. A behavior a person sees changes the page that describes it, in both.
-- **Nodes**: each page comes from the node's definition and its entry in `docs/nodes/<category>.json`: an example of what it leaves in `result`, and notes in English and Portuguese. After adding or changing a node, update its entry and run `mix heddle.docs`. A test fails while a node has no entry or `docs/reference/nodes.json` is out of date.
+- **Nodes**: each page comes from the node's definition and its entry in `docs/nodes/<category>.json`, or in `priv/docs.json` of its package for the integrations in heddlehq/integrations: an example of what it leaves in `result`, and notes in English and Portuguese. After adding or changing a node, update its entry and run `mix heddle.docs`. A test fails while a node has no entry or `docs/reference/nodes.json` is out of date.
 - **Examples**: `docs/examples/*.json` are flows the tutorials offer to import. A test imports and validates each one.
 - Links between pages are absolute, like `/docs/concepts/versions/` and `/pt/docs/concepts/versions/`.
 

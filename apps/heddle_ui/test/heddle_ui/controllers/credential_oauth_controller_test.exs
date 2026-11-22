@@ -12,6 +12,20 @@ defmodule HeddleUI.CredentialOAuthControllerTest do
     admin = system_admin_fixture()
     workspace = ensure_workspace(admin)
     scope = Scope.for_user(HeddleCore.Accounts.get_user!(admin.id))
+
+    # Notion is downloaded from the catalog; this is the YAML HeddleNodes.Official pins.
+    yaml = File.read!(Path.expand("../../support/fixtures/notion.yaml", __DIR__))
+
+    :ok =
+      HeddleCore.Integrations.install_community(scope, %{
+        "integration" => "notion",
+        "version" => "1.0.0",
+        "manifest" => yaml
+      })
+
+    HeddleNodes.Community.refresh()
+    on_exit(&HeddleNodes.Community.reset/0)
+
     %{conn: log_in_user(conn, admin), scope: scope, workspace: workspace}
   end
 

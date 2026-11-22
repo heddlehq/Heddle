@@ -4,7 +4,8 @@ defmodule HeddleNodes.Docs do
 
   What a node is comes from its definition: its name, what it does, its fields, its
   inputs and its outputs. What it leaves in the run comes from `docs/nodes/`, one JSON
-  file per category, which holds for each node:
+  file per category, and from `priv/docs.json` in each integration package Heddle was
+  built with (see `HeddleNodes.Packages`). They hold for each node:
 
     * `"result"`, an example of what the node leaves in `result`, or `null` when it
       leaves `result` alone;
@@ -64,19 +65,21 @@ defmodule HeddleNodes.Docs do
   end
 
   @doc """
-  The entries of `docs/nodes/`, by node name. Raises when one is malformed.
+  The entries of `docs/nodes/` and of the packages, by node name. Raises when one is
+  malformed.
   """
   def notes(root \\ root()) do
     root
     |> Path.join("docs/nodes/*.json")
     |> Path.wildcard()
     |> Enum.sort()
+    |> Kernel.++(HeddleNodes.Packages.docs_files())
     |> Enum.reduce(%{}, fn file, acc ->
       file |> File.read!() |> Jason.decode!() |> Map.merge(acc)
     end)
   end
 
-  @doc "The names of the nodes `docs/nodes/` doesn't cover, and of entries for no node."
+  @doc "The names of the nodes no entry covers, and of entries for no node."
   def coverage(root \\ root()) do
     names = Enum.map(Nodes.all_nodes(), & &1.name)
     documented = root |> notes() |> Map.keys()

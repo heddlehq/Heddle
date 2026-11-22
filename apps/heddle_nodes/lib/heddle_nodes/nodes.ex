@@ -4,7 +4,8 @@ defmodule HeddleNodes.Nodes do
   """
 
   def all_nodes do
-    HeddleNodes.get_definitions() ++ HeddleNodes.Community.definitions()
+    HeddleNodes.get_definitions() ++
+      HeddleNodes.Packages.definitions() ++ HeddleNodes.Community.definitions()
   end
 
   @doc "Every node definition, for `HeddleCore.Flows.GraphValidator`."
@@ -15,7 +16,8 @@ defmodule HeddleNodes.Nodes do
   end
 
   def get_node_module(name) do
-    HeddleNodes.get_node_module(name) || HeddleNodes.Community.get_node_module(name)
+    HeddleNodes.get_node_module(name) || HeddleNodes.Packages.get_node_module(name) ||
+      HeddleNodes.Community.get_node_module(name)
   end
 
   def nodes_by_category do

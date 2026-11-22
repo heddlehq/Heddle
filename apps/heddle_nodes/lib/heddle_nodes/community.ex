@@ -3,9 +3,12 @@ defmodule HeddleNodes.Community do
   The community integrations the instance installed: manifests from
   `heddlehq/integrations`, stored by `HeddleCore.Integrations`.
 
-  Their actions become node modules at runtime, like the ones `HeddleNodes.Manifests`
-  makes at compile time, named `HeddleNodes.Community.<Id>.<Action>`. So the runner,
-  the graph validator and the editor find them like any other node.
+  Their actions become node modules at runtime, named
+  `HeddleNodes.Community.<Id>.<Action>`, so the runner, the graph validator and the
+  editor find them like any other node.
+
+  A manifest whose YAML has the hash `HeddleNodes.Official` pins is official: its
+  nodes say so, and show no "Not verified" warning.
 
   The manifests come from `:community_client` (heddle_core, through config), and are
   read again when a minute has passed, so a UI and a worker running apart agree soon
@@ -13,7 +16,7 @@ defmodule HeddleNodes.Community do
   """
 
   alias Bobbin.Integration, as: Manifest
-  alias HeddleNodes.Manifests.Definition
+  alias Bobbin.Integration.Definition
 
   @key {__MODULE__, :state}
   @ttl_ms 60_000
@@ -23,7 +26,7 @@ defmodule HeddleNodes.Community do
     for {_id, entry} <- state().integrations, definition <- entry.definitions, do: definition
   end
 
-  @doc "The manifest of every community integration the instance runs."
+  @doc "The manifest of every downloaded integration the instance runs."
   def manifests, do: for({_id, entry} <- state().integrations, do: entry.manifest)
 
   @doc "The community integration `id` the instance runs, or nil."
@@ -101,13 +104,16 @@ defmodule HeddleNodes.Community do
 
       _other ->
         case Manifest.parse(row.manifest) do
-          {:ok, %{id: ^id} = manifest} -> [{id, build(manifest, sha)}]
-          _invalid -> []
+          {:ok, %{id: ^id} = manifest} ->
+            [{id, build(manifest, sha, HeddleNodes.Official.manifest?(id, row.manifest))}]
+
+          _invalid ->
+            []
         end
     end
   end
 
-  defp build(manifest, sha) do
+  defp build(manifest, sha, official?) do
     nodes =
       Enum.map(manifest.triggers, &{:trigger, &1, Definition.trigger_definition(manifest, &1)}) ++
         Enum.map(manifest.actions, &{:action, &1, Definition.definition(manifest, &1)})
@@ -117,7 +123,12 @@ defmodule HeddleNodes.Community do
         module = module_name(manifest, step)
         create(module, manifest, kind, step.name, definition)
 
-        Map.merge(definition, %{module: module, community: manifest.id, version: manifest.version})
+        Map.merge(definition, %{
+          module: module,
+          community: if(official?, do: nil, else: manifest.id),
+          official: official?,
+          version: manifest.version
+        })
       end
 
     %{
