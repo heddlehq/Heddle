@@ -40,29 +40,6 @@ defmodule HeddleNodes.Docs do
   @doc "Where `mix heddle.docs` writes the reference."
   def reference_path(root \\ root()), do: Path.join(root, "docs/reference/nodes.json")
 
-  @doc """
-  Where `mix heddle.docs` writes the icons of the nodes for the editor's stylesheet.
-  Tailwind only makes the `hero-*` icons it finds in Heddle's code, and the nodes of
-  the integration packages live elsewhere.
-  """
-  def icons_path(root \\ root()), do: Path.join(root, "apps/heddle_ui/assets/css/node_icons.css")
-
-  @doc "The icons of every node, as the CSS Tailwind reads."
-  def encode_icons do
-    icons =
-      Nodes.all_nodes()
-      |> Enum.map(& &1.icon)
-      |> Enum.filter(&(is_binary(&1) and String.starts_with?(&1, "hero-")))
-      |> Enum.uniq()
-      |> Enum.sort()
-
-    """
-    /* Written by `mix heddle.docs`: the icons of the nodes, which Tailwind can't find in
-       Heddle's code when they come from an integration package. */
-    @source inline("#{Enum.join(icons, " ")}");
-    """
-  end
-
   @doc "The reference, as the JSON the site reads."
   def encode(root \\ root()) do
     root |> reference() |> Jason.encode!(pretty: true) |> Kernel.<>("\n")

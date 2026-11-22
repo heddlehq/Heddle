@@ -25,11 +25,6 @@ defmodule HeddleNodes.DocsTest do
            "Run `mix heddle.docs` and commit docs/reference/nodes.json"
   end
 
-  test "the editor's stylesheet has the icon of every node" do
-    assert File.read!(Docs.icons_path()) == Docs.encode_icons(),
-           "Run `mix heddle.docs` and commit apps/heddle_ui/assets/css/node_icons.css"
-  end
-
   test "pages have stable addresses" do
     assert Docs.slug("Slack: Send Message") == "slack-send-message"
     assert Docs.slug("AI: Text to Speech") == "ai-text-to-speech"
