@@ -26,4 +26,21 @@ if Code.ensure_loaded?(Mix) and Mix.env() in [:dev, :test] do
 
     IO.puts("Created system admin: username=admin, password=admin")
   end
+
+  # Every official integration installed in every workspace, so their nodes are in
+  # the sidebar, as the e2e tests expect. See HeddleCore.Integrations.
+  if Code.ensure_loaded?(HeddleNodes.Integrations) do
+    now = DateTime.utc_now(:second)
+
+    rows =
+      for workspace <- HeddleCore.Repo.all(HeddleCore.Workspaces.Workspace),
+          integration <- HeddleNodes.Integrations.all(),
+          !integration[:community],
+          do: %{workspace_id: workspace.id, integration: integration.id, inserted_at: now}
+
+    HeddleCore.Repo.insert_all(HeddleCore.Integrations.Installed, rows,
+      on_conflict: :nothing,
+      conflict_target: [:workspace_id, :integration]
+    )
+  end
 end

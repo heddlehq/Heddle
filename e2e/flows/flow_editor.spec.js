@@ -696,24 +696,21 @@ test.describe('Flow Editor', () => {
       });
     }
 
-    test('groups the actions of a service in the sidebar, with its logo', async ({ page }) => {
+    test('groups the actions of an installed service in the sidebar, with its logo', async ({ page }) => {
       const group = page.locator('#node-category-slack');
       const action = group.locator('[data-node-name="Slack: Send Message"]');
-
-      await expect(group).toBeVisible({ timeout: 5000 });
-      await expect(action).toBeHidden();
-
-      await group.getByRole('button', { name: 'Slack', exact: true }).click();
 
       await expect(action).toBeVisible({ timeout: 5000 });
       await expect(action.locator('.logo-slack')).toBeVisible();
       await expect(group.locator('[data-node-name="Slack: Add Reaction"]')).toBeVisible();
+
+      await group.getByRole('button', { name: 'Slack', exact: true }).click();
+
+      await expect(action).toBeHidden({ timeout: 5000 });
     });
 
     test('groups the databases in one category, by store', async ({ page }) => {
       const category = page.locator('#node-category-database');
-
-      await category.getByRole('button', { name: 'Database', exact: true }).click();
 
       for (const store of ['SQL', 'MongoDB', 'Redis', 'Elasticsearch', 'DynamoDB', 'Cassandra', 'Neo4j']) {
         await expect(category.locator(`[id="node-group-${store}"]`)).toBeVisible({ timeout: 5000 });

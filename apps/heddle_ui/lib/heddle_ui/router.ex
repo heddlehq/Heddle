@@ -79,6 +79,7 @@ defmodule HeddleUI.Router do
       live "/ai", AILive.Index
       live "/api-keys", ApiKeyLive.Index
       live "/credentials", CredentialLive.Index
+      live "/integrations", IntegrationLive.Index
       live "/spool", SpoolLive.Index
       live "/spool/:id", SpoolLive.Table
       live "/workspace", WorkspaceLive.Show

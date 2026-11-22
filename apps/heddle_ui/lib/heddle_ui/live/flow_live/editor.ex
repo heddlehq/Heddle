@@ -91,7 +91,7 @@ defmodule HeddleUI.FlowLive.Editor do
       InspectorManager.initial_assigns() ++
       TerminalManager.initial_assigns(scope.user, can_edit) ++
       CodeEditorManager.initial_assigns() ++
-      NodePaletteManager.initial_assigns() ++
+      NodePaletteManager.initial_assigns(HeddleUI.Integrations.installed_ids(scope)) ++
       VersionsManager.initial_assigns(flow) ++
       FormManager.initial_assigns() ++
       ValidateManager.initial_assigns() ++
@@ -158,6 +158,21 @@ defmodule HeddleUI.FlowLive.Editor do
   end
 
   @impl true
+  def handle_event("install_integration", %{"id" => id}, socket) do
+    case HeddleUI.Integrations.install(socket.assigns.current_scope, id) do
+      :ok ->
+        {:noreply, NodePaletteManager.integration_installed(socket, id)}
+
+      _error ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext("Your role in this workspace can't install integrations.")
+         )}
+    end
+  end
+
   def handle_event("toggle_node_category", %{"category" => category}, socket) do
     {:noreply, NodePaletteManager.toggle_category(socket, category)}
   end

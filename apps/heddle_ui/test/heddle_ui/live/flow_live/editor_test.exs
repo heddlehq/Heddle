@@ -210,18 +210,39 @@ defmodule HeddleUI.FlowLive.EditorTest do
       assert has_element?(lv, "#node-category-data_manipulation [data-node-name=Variable]")
     end
 
-    test "groups the database nodes by store", %{conn: conn} do
+    test "groups the database nodes of the installed integrations by store", %{conn: conn} do
       flow = flow_fixture()
+      scope = HeddleCore.Accounts.Scope.for_user(HeddleCore.Accounts.get_user!(flow.user_id))
+      :ok = HeddleCore.Integrations.install(scope, "sql")
+      :ok = HeddleCore.Integrations.install(scope, "mongodb")
 
       {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
-
-      refute has_element?(lv, "#node-category-database [data-node-name=\"SQL: Run Query\"]")
-
-      render_click(lv, "toggle_node_category", %{"category" => "database"})
 
       assert has_element?(lv, "#node-category-database [data-node-name=\"SQL: Run Query\"]")
       assert has_element?(lv, "#node-category-database [id=\"node-group-SQL\"]")
       assert has_element?(lv, "#node-category-database [id=\"node-group-MongoDB\"]")
+      refute has_element?(lv, "#node-category-database [id=\"node-group-Redis\"]")
+
+      render_click(lv, "toggle_node_category", %{"category" => "database"})
+
+      refute has_element?(lv, "#node-category-database [data-node-name=\"SQL: Run Query\"]")
+    end
+
+    test "a search offers to install an integration, which adds its nodes", %{conn: conn} do
+      flow = flow_fixture()
+
+      {:ok, lv, _html} = live(conn, ~p"/flows/#{flow.id}")
+
+      refute has_element?(lv, "[id=\"node-group-Redis\"]")
+
+      lv
+      |> form("#node-sidebar-search-form", %{"node_search" => %{"query" => "redis"}})
+      |> render_change()
+
+      lv |> element("#install-integration-redis") |> render_click()
+
+      refute has_element?(lv, "#uninstalled-integration-redis")
+      assert has_element?(lv, "#node-category-database [id=\"node-group-Redis\"]")
     end
 
     test "groups HTTP Request under HTTP", %{conn: conn} do

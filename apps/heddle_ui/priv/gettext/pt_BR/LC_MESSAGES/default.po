@@ -17,18 +17,18 @@ msgstr ""
 msgid "Actions"
 msgstr "Ações"
 
-#: lib/heddle_ui/components/layouts.ex:202
-#: lib/heddle_ui/components/layouts.ex:214
+#: lib/heddle_ui/components/layouts.ex:209
+#: lib/heddle_ui/components/layouts.ex:221
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr "Tentando reconectar"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:33
+#: lib/heddle_ui/live/flow_live/editor.html.heex:34
 #, elixir-autogen, elixir-format
 msgid "Coming Soon"
 msgstr "Em Breve"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:30
+#: lib/heddle_ui/live/flow_live/editor.html.heex:31
 #, elixir-autogen, elixir-format
 msgid "Configure Node"
 msgstr "Configurar Nó"
@@ -50,14 +50,14 @@ msgstr "Crie seu primeiro fluxo"
 msgid "Dashboard"
 msgstr "Painel"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:35
+#: lib/heddle_ui/live/flow_live/editor.html.heex:36
 #, elixir-autogen, elixir-format
 msgid "Drag to canvas"
 msgstr "Arraste para a tela"
 
 #: lib/heddle_ui/components/modals/code_editor_modal.ex:22
 #: lib/heddle_ui/components/modals/node_config_modal.ex:654
-#: lib/heddle_ui/live/flow_live/editor.html.heex:32
+#: lib/heddle_ui/live/flow_live/editor.html.heex:33
 #, elixir-autogen, elixir-format
 msgid "Edit Code"
 msgstr "Editar Código"
@@ -102,24 +102,24 @@ msgstr "Nenhum fluxo"
 msgid "No flows created yet"
 msgstr "Nenhum fluxo criado ainda"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:29
+#: lib/heddle_ui/live/flow_live/editor.html.heex:30
 #, elixir-autogen, elixir-format
 msgid "Remove Node"
 msgstr "Remover Nó"
 
 #: lib/heddle_ui/components/modals/webhook_test_modal.ex:45
 #: lib/heddle_ui/live/components/chat_component.ex:370
-#: lib/heddle_ui/live/flow_live/editor.html.heex:27
+#: lib/heddle_ui/live/flow_live/editor.html.heex:28
 #, elixir-autogen, elixir-format
 msgid "Run"
 msgstr "Executar"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:34
+#: lib/heddle_ui/live/flow_live/editor.html.heex:35
 #, elixir-autogen, elixir-format
 msgid "Select Integration"
 msgstr "Selecione a Integração"
 
-#: lib/heddle_ui/components/layouts.ex:209
+#: lib/heddle_ui/components/layouts.ex:216
 #, elixir-autogen, elixir-format
 msgid "Something went wrong!"
 msgstr "Algo deu errado!"
@@ -135,17 +135,17 @@ msgstr "Tema"
 msgid "Updated"
 msgstr "Atualizado"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:31
+#: lib/heddle_ui/live/flow_live/editor.html.heex:32
 #, elixir-autogen, elixir-format
 msgid "View Error"
 msgstr "Ver Erro"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:28
+#: lib/heddle_ui/live/flow_live/editor.html.heex:29
 #, elixir-autogen, elixir-format
 msgid "Waiting..."
 msgstr "Aguardando..."
 
-#: lib/heddle_ui/components/layouts.ex:197
+#: lib/heddle_ui/components/layouts.ex:204
 #, elixir-autogen, elixir-format
 msgid "We can't find the internet"
 msgstr "Não conseguimos conectar à internet"
@@ -264,7 +264,7 @@ msgstr "Digite seu nome de usuário"
 msgid "Log in"
 msgstr "Entrar"
 
-#: lib/heddle_ui/components/layouts.ex:344
+#: lib/heddle_ui/components/layouts.ex:351
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr "Sair"
@@ -297,7 +297,7 @@ msgid "Save Changes"
 msgstr "Salvar Alterações"
 
 #: lib/heddle_ui/components/flow/flow_header.ex:96
-#: lib/heddle_ui/live/flow_live/editor.html.heex:66
+#: lib/heddle_ui/live/flow_live/editor.html.heex:67
 #: lib/heddle_ui/live/spool_live/components.ex:289
 #: lib/heddle_ui/live/spool_live/components.ex:515
 #: lib/heddle_ui/live/user_live/settings.ex:51
@@ -367,7 +367,7 @@ msgstr "Você precisa se reautenticar para realizar ações sensíveis."
 msgid "Account created successfully. You can now log in."
 msgstr "Conta criada. Agora você já pode entrar."
 
-#: lib/heddle_ui/components/layouts.ex:485
+#: lib/heddle_ui/components/layouts.ex:492
 #: lib/heddle_ui/live/user_live/index.ex:142
 #, elixir-autogen, elixir-format
 msgid "Admin"
@@ -390,13 +390,13 @@ msgid "Confirm password"
 msgstr "Confirmar senha"
 
 #: lib/heddle_ui/components/modals/node_config_modal.ex:265
-#: lib/heddle_ui/live/flow_live/editor.html.heex:37
+#: lib/heddle_ui/live/flow_live/editor.html.heex:38
 #, elixir-autogen, elixir-format
 msgid "Copy"
 msgstr "Copiar"
 
 #: lib/heddle_ui/components/modals/create_node_modal.ex:19
-#: lib/heddle_ui/live/flow_live/editor.html.heex:36
+#: lib/heddle_ui/live/flow_live/editor.html.heex:37
 #, elixir-autogen, elixir-format
 msgid "Create Node"
 msgstr "Criar nó"
@@ -419,12 +419,12 @@ msgstr "Crie a primeira conta de administrador para começar."
 msgid "Create your account"
 msgstr "Crie sua conta"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:39
+#: lib/heddle_ui/live/flow_live/editor.html.heex:40
 #, elixir-autogen, elixir-format
 msgid "Delete Selected"
 msgstr "Excluir selecionados"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:42
+#: lib/heddle_ui/live/flow_live/editor.html.heex:43
 #, elixir-autogen, elixir-format
 msgid "Delete connection"
 msgstr "Excluir conexão"
@@ -495,12 +495,12 @@ msgstr "Só administradores do sistema podem abrir esta página."
 msgid "Open link"
 msgstr "Abrir link"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:38
+#: lib/heddle_ui/live/flow_live/editor.html.heex:39
 #, elixir-autogen, elixir-format
 msgid "Paste"
 msgstr "Colar"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:41
+#: lib/heddle_ui/live/flow_live/editor.html.heex:42
 #, elixir-autogen, elixir-format
 msgid "Redo"
 msgstr "Refazer"
@@ -530,12 +530,12 @@ msgstr "Este convite já foi usado."
 msgid "This invite has expired."
 msgstr "Este convite expirou."
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:40
+#: lib/heddle_ui/live/flow_live/editor.html.heex:41
 #, elixir-autogen, elixir-format
 msgid "Undo"
 msgstr "Desfazer"
 
-#: lib/heddle_ui/components/layouts.ex:158
+#: lib/heddle_ui/components/layouts.ex:165
 #: lib/heddle_ui/live/user_live/index.ex:18
 #: lib/heddle_ui/live/user_live/index.ex:53
 #, elixir-autogen, elixir-format
@@ -583,7 +583,7 @@ msgstr "A resposta da IA falhou: %{reason}"
 msgid "API key created. Copy it now; it will not be shown again."
 msgstr "Chave de API criada. Copie agora: ela não será mostrada de novo."
 
-#: lib/heddle_ui/components/layouts.ex:123
+#: lib/heddle_ui/components/layouts.ex:130
 #: lib/heddle_ui/live/api_key_live/index.ex:20
 #: lib/heddle_ui/live/api_key_live/index.ex:90
 #, elixir-autogen, elixir-format
@@ -665,7 +665,7 @@ msgstr "Descreva mudanças ou explique o que o fluxo deve fazer..."
 msgid "Describe the workflow you want, and let AI build the nodes and connections."
 msgstr "Descreva o fluxo que você quer e deixe a IA montar os nós e as conexões."
 
-#: lib/heddle_ui/components/flow/node_sidebar.ex:115
+#: lib/heddle_ui/components/flow/node_sidebar.ex:164
 #, elixir-autogen, elixir-format
 msgid "Drag and drop onto the canvas to add"
 msgstr "Arraste para o canvas para adicionar"
@@ -799,7 +799,7 @@ msgstr "Nenhuma chave de API ativa."
 msgid "No executions recorded yet."
 msgstr "Nenhuma execução ainda."
 
-#: lib/heddle_ui/components/flow/node_sidebar.ex:98
+#: lib/heddle_ui/components/flow/node_sidebar.ex:136
 #, elixir-autogen, elixir-format
 msgid "No nodes found"
 msgstr "Nenhum nó encontrado"
@@ -829,7 +829,7 @@ msgstr "Ver e listar fluxos."
 msgid "Read workflow executions and statuses."
 msgstr "Ver execuções e seus status."
 
-#: lib/heddle_ui/components/flow/node_sidebar.ex:40
+#: lib/heddle_ui/components/flow/node_sidebar.ex:41
 #: lib/heddle_ui/live/execution_live/index.ex:71
 #, elixir-autogen, elixir-format
 msgid "Recent"
@@ -866,7 +866,7 @@ msgstr "Salvar"
 msgid "Scopes"
 msgstr "Permissões"
 
-#: lib/heddle_ui/components/flow/node_sidebar.ex:28
+#: lib/heddle_ui/components/flow/node_sidebar.ex:29
 #, elixir-autogen, elixir-format
 msgid "Search nodes"
 msgstr "Buscar nós"
@@ -1150,7 +1150,7 @@ msgstr "Credencial excluída."
 msgid "Credential saved."
 msgstr "Credencial salva."
 
-#: lib/heddle_ui/components/layouts.ex:116
+#: lib/heddle_ui/components/layouts.ex:123
 #: lib/heddle_ui/live/credential_live/index.ex:17
 #: lib/heddle_ui/live/credential_live/index.ex:144
 #, elixir-autogen, elixir-format
@@ -1158,7 +1158,7 @@ msgid "Credentials"
 msgstr "Credenciais"
 
 #: lib/heddle_ui/live/credential_live/index.ex:306
-#: lib/heddle_ui/live/flow_live/editor.html.heex:55
+#: lib/heddle_ui/live/flow_live/editor.html.heex:56
 #: lib/heddle_ui/live/spool_live/components.ex:279
 #: lib/heddle_ui/live/spool_live/table.ex:344
 #: lib/heddle_ui/live/workspace_live/show.ex:448
@@ -1243,7 +1243,7 @@ msgstr "%{model} não está disponível em %{provider}. Escolha um da lista."
 msgid "%{provider} can't do this here. Use a credential from another provider."
 msgstr "%{provider} não faz isso aqui. Use uma credencial de outro provedor."
 
-#: lib/heddle_ui/components/layouts.ex:144
+#: lib/heddle_ui/components/layouts.ex:151
 #: lib/heddle_ui/live/ai_live/index.ex:17
 #: lib/heddle_ui/live/ai_live/index.ex:117
 #: lib/heddle_ui/live/execution_live/index.ex:179
@@ -1379,74 +1379,74 @@ msgstr "O que cada tipo de tarefa usa quando o nó não escolhe o próprio."
 msgid "Same as text"
 msgstr "Igual a texto"
 
-#: lib/heddle_ui/components/flow/node_sidebar.ex:48
+#: lib/heddle_ui/components/flow/node_sidebar.ex:49
 #, elixir-autogen, elixir-format
 msgid "Clear"
 msgstr "Limpar"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:49
+#: lib/heddle_ui/live/flow_live/editor.html.heex:50
 #, elixir-autogen, elixir-format
 msgid "Add Note"
 msgstr "Adicionar nota"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:50
+#: lib/heddle_ui/live/flow_live/editor.html.heex:51
 #, elixir-autogen, elixir-format
 msgid "Add Section"
 msgstr "Adicionar seção"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:48
+#: lib/heddle_ui/live/flow_live/editor.html.heex:49
 #, elixir-autogen, elixir-format
 msgid "Add Text"
 msgstr "Adicionar texto"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:47
+#: lib/heddle_ui/live/flow_live/editor.html.heex:48
 #, elixir-autogen, elixir-format
 msgid "Add Title"
 msgstr "Adicionar título"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:51
+#: lib/heddle_ui/live/flow_live/editor.html.heex:52
 #, elixir-autogen, elixir-format
 msgid "Add a title"
 msgstr "Adicione um título"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:54
+#: lib/heddle_ui/live/flow_live/editor.html.heex:55
 #, elixir-autogen, elixir-format
 msgid "Color"
 msgstr "Cor"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:53
+#: lib/heddle_ui/live/flow_live/editor.html.heex:54
 #, elixir-autogen, elixir-format
 msgid "Name this section"
 msgstr "Dê um nome à seção"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:45
-#: lib/heddle_ui/live/flow_live/editor.html.heex:96
+#: lib/heddle_ui/live/flow_live/editor.html.heex:46
+#: lib/heddle_ui/live/flow_live/editor.html.heex:97
 #, elixir-autogen, elixir-format
 msgid "Note"
 msgstr "Nota"
 
 #: lib/heddle_ui/components/dashboard.ex:364
-#: lib/heddle_ui/live/flow_live/editor.html.heex:46
-#: lib/heddle_ui/live/flow_live/editor.html.heex:97
+#: lib/heddle_ui/live/flow_live/editor.html.heex:47
+#: lib/heddle_ui/live/flow_live/editor.html.heex:98
 #, elixir-autogen, elixir-format
 msgid "Section"
 msgstr "Seção"
 
 #: lib/heddle_ui/components/flow/validation_rules_editor.ex:296
-#: lib/heddle_ui/live/flow_live/editor.html.heex:44
-#: lib/heddle_ui/live/flow_live/editor.html.heex:95
+#: lib/heddle_ui/live/flow_live/editor.html.heex:45
+#: lib/heddle_ui/live/flow_live/editor.html.heex:96
 #: lib/heddle_ui/live/spool_live/components.ex:546
 #, elixir-autogen, elixir-format
 msgid "Text"
 msgstr "Texto"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:43
-#: lib/heddle_ui/live/flow_live/editor.html.heex:94
+#: lib/heddle_ui/live/flow_live/editor.html.heex:44
+#: lib/heddle_ui/live/flow_live/editor.html.heex:95
 #, elixir-autogen, elixir-format
 msgid "Title"
 msgstr "Título"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:52
+#: lib/heddle_ui/live/flow_live/editor.html.heex:53
 #, elixir-autogen, elixir-format
 msgid "Write something"
 msgstr "Escreva algo"
@@ -1459,7 +1459,7 @@ msgstr[0] "1 nó"
 msgstr[1] "%{count} nós"
 
 #: lib/heddle_ui/live/components/chat_component.ex:43
-#: lib/heddle_ui/live/flow_live/editor.html.heex:68
+#: lib/heddle_ui/live/flow_live/editor.html.heex:69
 #, elixir-autogen, elixir-format
 msgid "Agent"
 msgstr "Agente"
@@ -1545,7 +1545,7 @@ msgid "Testing the flow"
 msgstr "Testando o fluxo"
 
 #: lib/heddle_ui/components/modals/webhook_test_modal.ex:94
-#: lib/heddle_ui/live/flow_live/editor.ex:626
+#: lib/heddle_ui/live/flow_live/editor.ex:641
 #, elixir-autogen, elixir-format
 msgid "The body isn't valid JSON."
 msgstr "O corpo não é um JSON válido."
@@ -1604,6 +1604,8 @@ msgid "Previous chats"
 msgstr "Conversas anteriores"
 
 #: lib/heddle_ui/components/modals/webhook_test_modal.ex:93
+#: lib/heddle_ui/live/integration_live/index.ex:264
+#: lib/heddle_ui/live/integration_live/index.ex:273
 #: lib/heddle_ui/live/workspace_live/show.ex:292
 #, elixir-autogen, elixir-format
 msgid "Remove"
@@ -1682,32 +1684,32 @@ msgid "There is no program at this path."
 msgstr "Não há um programa neste caminho."
 
 #: lib/heddle_ui/components/dashboard.ex:358
-#: lib/heddle_ui/live/flow_live/editor.html.heex:56
+#: lib/heddle_ui/live/flow_live/editor.html.heex:57
 #, elixir-autogen, elixir-format
 msgid "Manual"
 msgstr "Manual"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:62
+#: lib/heddle_ui/live/flow_live/editor.html.heex:63
 #, elixir-autogen, elixir-format
 msgid "Nothing in this section can start a run"
 msgstr "Nada nesta seção pode começar uma execução"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:61
+#: lib/heddle_ui/live/flow_live/editor.html.heex:62
 #, elixir-autogen, elixir-format
 msgid "Put nodes in this section to run it"
 msgstr "Coloque nós nesta seção para rodá-la"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:57
+#: lib/heddle_ui/live/flow_live/editor.html.heex:58
 #, elixir-autogen, elixir-format
 msgid "Run section"
 msgstr "Rodar seção"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:59
+#: lib/heddle_ui/live/flow_live/editor.html.heex:60
 #, elixir-autogen, elixir-format
 msgid "Run with the flow"
 msgstr "Rodar com o fluxo"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:58
+#: lib/heddle_ui/live/flow_live/editor.html.heex:59
 #, elixir-autogen, elixir-format
 msgid "Section settings"
 msgstr "Configurações da seção"
@@ -1722,12 +1724,12 @@ msgstr "Seção: %{name}"
 msgid "Untitled"
 msgstr "Sem nome"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:60
+#: lib/heddle_ui/live/flow_live/editor.html.heex:61
 #, elixir-autogen, elixir-format
 msgid "When off, it runs only from the play button."
 msgstr "Desligado, ela só roda pelo botão de play."
 
-#: lib/heddle_ui/live/flow_live/editor.ex:1069
+#: lib/heddle_ui/live/flow_live/editor.ex:1084
 #, elixir-autogen, elixir-format
 msgid "Execution waiting"
 msgstr "Execução aguardando"
@@ -1747,7 +1749,7 @@ msgstr "Ela continua quando o endereço for chamado, ou pela saída timeout em %
 msgid "It goes on when its address is called."
 msgstr "Ela continua quando o endereço for chamado."
 
-#: lib/heddle_ui/live/flow_live/editor.ex:1070
+#: lib/heddle_ui/live/flow_live/editor.ex:1085
 #, elixir-autogen, elixir-format
 msgid "The flow is paused at a Wait, and goes on by itself when the wait ends."
 msgstr "O fluxo está pausado num Wait e continua sozinho quando a espera terminar."
@@ -1763,22 +1765,22 @@ msgstr "Aguardando em %{node}"
 msgid "a Wait"
 msgstr "um Wait"
 
-#: lib/heddle_ui/live/flow_live/editor.ex:898
+#: lib/heddle_ui/live/flow_live/editor.ex:913
 #, elixir-autogen, elixir-format
 msgid "That file is too big to be a flow."
 msgstr "Esse arquivo é grande demais para ser um fluxo."
 
-#: lib/heddle_ui/live/flow_live/editor.ex:896
+#: lib/heddle_ui/live/flow_live/editor.ex:911
 #, elixir-autogen, elixir-format
 msgid "That file isn't JSON."
 msgstr "Esse arquivo não é JSON."
 
-#: lib/heddle_ui/live/flow_live/editor.ex:897
+#: lib/heddle_ui/live/flow_live/editor.ex:912
 #, elixir-autogen, elixir-format
 msgid "That file isn't a Heddle flow."
 msgstr "Esse arquivo não é um fluxo do Heddle."
 
-#: lib/heddle_ui/live/flow_live/editor.ex:901
+#: lib/heddle_ui/live/flow_live/editor.ex:916
 #, elixir-autogen, elixir-format
 msgid "That flow can't be imported: %{reason}."
 msgstr "Não dá para importar esse fluxo: %{reason}."
@@ -1883,7 +1885,7 @@ msgstr "Filtrar chaves e valores"
 msgid "Flow settings"
 msgstr "Configurações do fluxo"
 
-#: lib/heddle_ui/live/flow_live/editor.ex:349
+#: lib/heddle_ui/live/flow_live/editor.ex:364
 #, elixir-autogen, elixir-format
 msgid "Flow settings saved."
 msgstr "Configurações do fluxo salvas."
@@ -1903,7 +1905,7 @@ msgstr "Entrada"
 msgid "Inspect in the editor"
 msgstr "Inspecionar no editor"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:64
+#: lib/heddle_ui/live/flow_live/editor.html.heex:65
 #, elixir-autogen, elixir-format
 msgid "Inspect this step"
 msgstr "Inspecionar este passo"
@@ -1938,7 +1940,7 @@ msgstr "Só parte desta saída foi guardada, então ela não pode ser fixada"
 msgid "Only part of what this step got was kept, so it can't run again from here"
 msgstr "Só parte do que este passo recebeu foi guardada, então não dá para rodar de novo daqui"
 
-#: lib/heddle_ui/live/flow_live/editor.ex:424
+#: lib/heddle_ui/live/flow_live/editor.ex:439
 #, elixir-autogen, elixir-format
 msgid "Only part of what this step got was kept, so it can't run again from here."
 msgstr "Só parte do que este passo recebeu foi guardada, então não dá para rodar de novo daqui."
@@ -1948,7 +1950,7 @@ msgstr "Só parte do que este passo recebeu foi guardada, então não dá para r
 msgid "Output"
 msgstr "Saída"
 
-#: lib/heddle_ui/live/flow_live/editor.ex:450
+#: lib/heddle_ui/live/flow_live/editor.ex:465
 #, elixir-autogen, elixir-format
 msgid "Output pinned. Runs from the editor take it instead of running the node."
 msgstr "Saída fixada. As execuções do editor usam ela em vez de rodar o node."
@@ -1965,7 +1967,7 @@ msgstr "Fixar saída"
 
 #: lib/heddle_ui/components/flow/run_inspector.ex:365
 #: lib/heddle_ui/components/modals/node_config_modal.ex:432
-#: lib/heddle_ui/live/flow_live/editor.html.heex:63
+#: lib/heddle_ui/live/flow_live/editor.html.heex:64
 #, elixir-autogen, elixir-format
 msgid "Pinned data"
 msgstr "Dados fixados"
@@ -2061,7 +2063,7 @@ msgstr "Parar a execução"
 msgid "Succeeded"
 msgstr "Concluída"
 
-#: lib/heddle_ui/live/flow_live/editor.ex:882
+#: lib/heddle_ui/live/flow_live/editor.ex:897
 #, elixir-autogen, elixir-format
 msgid "That run was not found in this flow."
 msgstr "Essa execução não foi encontrada neste fluxo."
@@ -2116,7 +2118,7 @@ msgstr "Este passo não mudou nada no contexto."
 msgid "This step got an empty context."
 msgstr "Este passo recebeu um contexto vazio."
 
-#: lib/heddle_ui/live/flow_live/editor.ex:352
+#: lib/heddle_ui/live/flow_live/editor.ex:367
 #, elixir-autogen, elixir-format
 msgid "Those settings couldn't be saved."
 msgstr "Não foi possível salvar essas configurações."
@@ -2261,7 +2263,7 @@ msgstr "Criar"
 msgid "Create a workspace"
 msgstr "Criar um workspace"
 
-#: lib/heddle_ui/components/layouts.ex:496
+#: lib/heddle_ui/components/layouts.ex:503
 #, elixir-autogen, elixir-format
 msgid "Creates and changes flows and credentials, and uses the agent."
 msgstr "Cria e altera fluxos e credenciais, e usa o agente."
@@ -2286,7 +2288,7 @@ msgstr "Exclui os fluxos e suas execuções, as credenciais, as chaves de API e 
 msgid "Each team keeps its flows, credentials and API keys in a workspace, and nobody outside it sees them. System admins can open every one."
 msgstr "Cada equipe guarda seus fluxos, credenciais e chaves de API num workspace, e ninguém de fora os vê. Administradores do sistema abrem todos."
 
-#: lib/heddle_ui/components/layouts.ex:486
+#: lib/heddle_ui/components/layouts.ex:493
 #, elixir-autogen, elixir-format
 msgid "Editor"
 msgstr "Editor"
@@ -2301,7 +2303,7 @@ msgstr "E-mail ou nome de usuário"
 msgid "Every workspace can use it, and only system admins can change it. The AI defaults use shared credentials."
 msgstr "Todo workspace pode usá-la, e só administradores do sistema a alteram. Os padrões de IA usam credenciais compartilhadas."
 
-#: lib/heddle_ui/components/layouts.ex:493
+#: lib/heddle_ui/components/layouts.ex:500
 #, elixir-autogen, elixir-format
 msgid "Everything, plus members, invites and the workspace itself."
 msgstr "Tudo, e ainda membros, convites e o próprio workspace."
@@ -2326,7 +2328,7 @@ msgstr "Gere um link que cria uma conta e entra num workspace. Se já existir um
 msgid "Get invite link"
 msgstr "Gerar link de convite"
 
-#: lib/heddle_ui/components/layouts.ex:138
+#: lib/heddle_ui/components/layouts.ex:145
 #, elixir-autogen, elixir-format
 msgid "Instance"
 msgstr "Instância"
@@ -2366,19 +2368,19 @@ msgstr "Sair deste workspace? Você perde o acesso aos fluxos dele."
 msgid "Marketing, Finance, Operations…"
 msgstr "Marketing, Financeiro, Operações…"
 
-#: lib/heddle_ui/components/layouts.ex:130
+#: lib/heddle_ui/components/layouts.ex:137
 #: lib/heddle_ui/live/workspace_live/index.ex:104
 #: lib/heddle_ui/live/workspace_live/show.ex:229
 #, elixir-autogen, elixir-format
 msgid "Members"
 msgstr "Membros"
 
-#: lib/heddle_ui/components/layouts.ex:464
+#: lib/heddle_ui/components/layouts.ex:471
 #, elixir-autogen, elixir-format
 msgid "Members and settings"
 msgstr "Membros e configurações"
 
-#: lib/heddle_ui/components/layouts.ex:471
+#: lib/heddle_ui/components/layouts.ex:478
 #: lib/heddle_ui/live/workspace_live/index.ex:70
 #, elixir-autogen, elixir-format
 msgid "New workspace"
@@ -2420,7 +2422,7 @@ msgstr "Abrir"
 msgid "Open invites"
 msgstr "Convites abertos"
 
-#: lib/heddle_ui/components/layouts.ex:487
+#: lib/heddle_ui/components/layouts.ex:494
 #, elixir-autogen, elixir-format
 msgid "Operator"
 msgstr "Operador"
@@ -2468,7 +2470,7 @@ msgstr "Papel alterado."
 msgid "Roles"
 msgstr "Papéis"
 
-#: lib/heddle_ui/components/layouts.ex:499
+#: lib/heddle_ui/components/layouts.ex:506
 #, elixir-autogen, elixir-format
 msgid "Runs flows and sees their results, without changing them."
 msgstr "Roda fluxos e vê os resultados, sem alterá-los."
@@ -2478,7 +2480,7 @@ msgstr "Roda fluxos e vê os resultados, sem alterá-los."
 msgid "Secrets the flows of this workspace use to reach other services. They are stored encrypted and never shown again."
 msgstr "Segredos que os fluxos deste workspace usam para acessar outros serviços. Ficam guardados com criptografia e nunca são exibidos de novo."
 
-#: lib/heddle_ui/components/layouts.ex:501
+#: lib/heddle_ui/components/layouts.ex:508
 #, elixir-autogen, elixir-format
 msgid "Sees flows, runs and members."
 msgstr "Vê fluxos, execuções e membros."
@@ -2498,13 +2500,13 @@ msgstr "Compartilhada"
 msgid "Something went wrong. Try again."
 msgstr "Algo deu errado. Tente de novo."
 
-#: lib/heddle_ui/components/layouts.ex:392
+#: lib/heddle_ui/components/layouts.ex:399
 #, elixir-autogen, elixir-format
 msgid "Switch workspace"
 msgstr "Trocar de workspace"
 
 #: lib/heddle_ui/controllers/form_controller.ex:133
-#: lib/heddle_ui/live/flow_live/editor.ex:1000
+#: lib/heddle_ui/live/flow_live/editor.ex:1015
 #, elixir-autogen, elixir-format
 msgid "The flow could not be started."
 msgstr "Não foi possível iniciar o fluxo."
@@ -2529,7 +2531,7 @@ msgstr "Digite o nome do workspace para excluí-lo."
 msgid "View only"
 msgstr "Só leitura"
 
-#: lib/heddle_ui/components/layouts.ex:488
+#: lib/heddle_ui/components/layouts.ex:495
 #, elixir-autogen, elixir-format
 msgid "Viewer"
 msgstr "Leitor"
@@ -2546,8 +2548,8 @@ msgstr "Workspace"
 msgid "Workspace renamed."
 msgstr "Workspace renomeado."
 
-#: lib/heddle_ui/components/layouts.ex:151
-#: lib/heddle_ui/components/layouts.ex:427
+#: lib/heddle_ui/components/layouts.ex:158
+#: lib/heddle_ui/components/layouts.ex:434
 #: lib/heddle_ui/live/workspace_live/index.ex:15
 #: lib/heddle_ui/live/workspace_live/index.ex:60
 #, elixir-autogen, elixir-format
@@ -2601,12 +2603,12 @@ msgid "Your role in this workspace can't open that page."
 msgstr "Seu papel neste workspace não permite abrir essa página."
 
 #: lib/heddle_ui/controllers/form_html.ex:290
-#: lib/heddle_ui/live/flow_live/editor.ex:983
+#: lib/heddle_ui/live/flow_live/editor.ex:998
 #, elixir-autogen, elixir-format
 msgid "Your role in this workspace can't run flows."
 msgstr "Seu papel neste workspace não permite rodar fluxos."
 
-#: lib/heddle_ui/live/flow_live/editor.ex:978
+#: lib/heddle_ui/live/flow_live/editor.ex:993
 #, elixir-autogen, elixir-format
 msgid "Your role in this workspace lets you see this flow, not change it."
 msgstr "Seu papel neste workspace permite ver este fluxo, não alterá-lo."
@@ -2945,7 +2947,7 @@ msgstr "só moveu coisas de lugar"
 msgid "removed"
 msgstr "removido"
 
-#: lib/heddle_ui/live/flow_live/editor.ex:570
+#: lib/heddle_ui/live/flow_live/editor.ex:585
 #, elixir-autogen, elixir-format
 msgid "Flow imported."
 msgstr "Fluxo importado."
@@ -2955,7 +2957,7 @@ msgstr "Fluxo importado."
 msgid "Load theirs"
 msgstr "Carregar o deles"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:67
+#: lib/heddle_ui/live/flow_live/editor.html.heex:68
 #, elixir-autogen, elixir-format
 msgid "Reconnecting..."
 msgstr "Reconectando..."
@@ -2965,7 +2967,7 @@ msgstr "Reconectando..."
 msgid "Save mine anyway"
 msgstr "Salvar o meu mesmo assim"
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:65
+#: lib/heddle_ui/live/flow_live/editor.html.heex:66
 #, elixir-autogen, elixir-format
 msgid "Saved"
 msgstr "Salvo"
@@ -2975,12 +2977,12 @@ msgstr "Salvo"
 msgid "Someone else changed this code since you opened it."
 msgstr "Outra pessoa mudou este código depois que você o abriu."
 
-#: lib/heddle_ui/live/flow_live/editor.ex:832
+#: lib/heddle_ui/live/flow_live/editor.ex:847
 #, elixir-autogen, elixir-format
 msgid "Someone else removed the node you had open."
 msgstr "Outra pessoa removeu o nó que você estava editando."
 
-#: lib/heddle_ui/live/flow_live/editor.ex:576
+#: lib/heddle_ui/live/flow_live/editor.ex:591
 #, elixir-autogen, elixir-format
 msgid "That flow can't be imported here."
 msgstr "Não dá para importar esse fluxo aqui."
@@ -2995,7 +2997,7 @@ msgstr "O canvas não conseguiu se conectar a este fluxo."
 msgid "The flow can't be published until this is fixed: %{problem}."
 msgstr "O fluxo só pode ser publicado depois que isto for corrigido: %{problem}."
 
-#: lib/heddle_ui/live/flow_live/editor.html.heex:69
+#: lib/heddle_ui/live/flow_live/editor.html.heex:70
 #, elixir-autogen, elixir-format
 msgid "Click to follow"
 msgstr "Clique para seguir"
@@ -3052,7 +3054,7 @@ msgstr[1] "%{count} linhas"
 msgid "A workspace keeps up to %{max} tables."
 msgstr "Um workspace guarda até %{max} tabelas."
 
-#: lib/heddle_ui/components/layouts.ex:335
+#: lib/heddle_ui/components/layouts.ex:342
 #, elixir-autogen, elixir-format
 msgid "Account"
 msgstr "Conta"
@@ -3330,7 +3332,7 @@ msgstr "Página %{page} de %{pages}"
 msgid "Pick one of the options."
 msgstr "Escolha uma das opções."
 
-#: lib/heddle_ui/components/layouts.ex:329
+#: lib/heddle_ui/components/layouts.ex:336
 #: lib/heddle_ui/live/user_live/preferences.ex:19
 #: lib/heddle_ui/live/user_live/preferences.ex:68
 #, elixir-autogen, elixir-format
@@ -4226,3 +4228,123 @@ msgstr "Pedir ao chat de IA para trocar este agente pelos passos que ele seguiu,
 #, elixir-autogen, elixir-format
 msgid "Turn into steps"
 msgstr "Transformar em passos"
+
+#: lib/heddle_ui/live/integration_live/index.ex:40
+#, elixir-autogen, elixir-format
+msgid "%{name} installed."
+msgstr "%{name} instalada."
+
+#: lib/heddle_ui/live/integration_live/index.ex:53
+#, elixir-autogen, elixir-format
+msgid "%{name} removed."
+msgstr "%{name} removida."
+
+#: lib/heddle_ui/live/integration_live/index.ex:229
+#, elixir-autogen, elixir-format
+msgid "+%{count} more"
+msgstr "+%{count}"
+
+#: lib/heddle_ui/components/flow/node_sidebar.ex:115
+#: lib/heddle_ui/live/integration_live/index.ex:240
+#, elixir-autogen, elixir-format
+msgid "1 action"
+msgid_plural "%{count} actions"
+msgstr[0] "1 ação"
+msgstr[1] "%{count} ações"
+
+#: lib/heddle_ui/components/flow/node_sidebar.ex:147
+#, elixir-autogen, elixir-format
+msgid "Browse integrations"
+msgstr "Ver integrações"
+
+#: lib/heddle_ui/live/integration_live/index.ex:59
+#, elixir-autogen, elixir-format
+msgid "Flows still use %{name}."
+msgstr "Ainda há fluxos usando %{name}."
+
+#: lib/heddle_ui/components/flow/node_sidebar.ex:125
+#: lib/heddle_ui/live/integration_live/index.ex:252
+#, elixir-autogen, elixir-format
+msgid "Install"
+msgstr "Instalar"
+
+#: lib/heddle_ui/live/integration_live/index.ex:209
+#, elixir-autogen, elixir-format
+msgid "Installed"
+msgstr "Instalada"
+
+#: lib/heddle_ui/components/layouts.ex:116
+#: lib/heddle_ui/live/integration_live/index.ex:18
+#: lib/heddle_ui/live/integration_live/index.ex:111
+#, elixir-autogen, elixir-format
+msgid "Integrations"
+msgstr "Integrações"
+
+#: lib/heddle_ui/live/integration_live/index.ex:269
+#, elixir-autogen, elixir-format
+msgid "Its nodes will leave the sidebar. Remove it?"
+msgstr "Os nós dela vão sair da barra lateral. Remover?"
+
+#: lib/heddle_ui/live/integration_live/index.ex:176
+#, elixir-autogen, elixir-format
+msgid "No integrations found."
+msgstr "Nenhuma integração encontrada."
+
+#: lib/heddle_ui/live/integration_live/index.ex:175
+#, elixir-autogen, elixir-format
+msgid "No integrations installed yet."
+msgstr "Nenhuma integração instalada ainda."
+
+#: lib/heddle_ui/components/flow/node_sidebar.ex:96
+#, elixir-autogen, elixir-format
+msgid "Not installed"
+msgstr "Não instaladas"
+
+#: lib/heddle_ui/live/integration_live/index.ex:213
+#, elixir-autogen, elixir-format
+msgid "Official"
+msgstr "Oficial"
+
+#: lib/heddle_ui/live/integration_live/index.ex:263
+#, elixir-autogen, elixir-format
+msgid "Remove it from the flows that use it first."
+msgstr "Tire-a dos fluxos que a usam primeiro."
+
+#: lib/heddle_ui/live/integration_live/index.ex:159
+#, elixir-autogen, elixir-format
+msgid "Search integrations"
+msgstr "Buscar integrações"
+
+#: lib/heddle_ui/live/integration_live/index.ex:113
+#, elixir-autogen, elixir-format
+msgid "Services the flows of this workspace can reach. The editor's node sidebar shows only the installed ones."
+msgstr "Serviços que os fluxos deste workspace podem acessar. A barra de nós do editor mostra só as instaladas."
+
+#: lib/heddle_ui/live/integration_live/index.ex:237
+#, elixir-autogen, elixir-format
+msgid "Used by 1 flow"
+msgid_plural "Used by %{count} flows"
+msgstr[0] "Usada por 1 fluxo"
+msgstr[1] "Usada por %{count} fluxos"
+
+#: lib/heddle_ui/live/integration_live/index.ex:66
+#, elixir-autogen, elixir-format
+msgid "Your role in this workspace can't change integrations."
+msgstr "Seu papel neste workspace não permite alterar integrações."
+
+#: lib/heddle_ui/live/flow_live/editor.ex:171
+#, elixir-autogen, elixir-format
+msgid "Your role in this workspace can't install integrations."
+msgstr "Seu papel neste workspace não permite instalar integrações."
+
+#: lib/heddle_ui/live/integration_live/index.ex:127
+#, elixir-autogen, elixir-format
+msgctxt "integrations filter"
+msgid "All"
+msgstr "Todas"
+
+#: lib/heddle_ui/live/integration_live/index.ex:128
+#, elixir-autogen, elixir-format
+msgctxt "integrations filter"
+msgid "Installed"
+msgstr "Instaladas"

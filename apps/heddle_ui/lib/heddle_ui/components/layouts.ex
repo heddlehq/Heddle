@@ -110,6 +110,13 @@ defmodule HeddleUI.Layouts do
               label={gettext("Workspace")}
             >
               <.nav_link
+                id="nav-integrations"
+                navigate={~p"/integrations"}
+                icon="hero-puzzle-piece"
+                label={gettext("Integrations")}
+                active={@section == :integrations}
+              />
+              <.nav_link
                 id="nav-credentials"
                 navigate={~p"/credentials"}
                 icon="hero-lock-closed"
@@ -509,6 +516,7 @@ defmodule HeddleUI.Layouts do
   defp nav_section("/spool" <> _), do: :spool
   defp nav_section("/api-keys"), do: :api_keys
   defp nav_section("/credentials"), do: :credentials
+  defp nav_section("/integrations"), do: :integrations
   defp nav_section("/users"), do: :users
   defp nav_section("/workspace"), do: :workspace
   defp nav_section("/workspaces"), do: :workspaces
