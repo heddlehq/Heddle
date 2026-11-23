@@ -11,6 +11,7 @@ defmodule HeddleUI.FlowLive.Editor do
   alias HeddleUI.FlowLive.TerminalManager
   alias HeddleUI.FlowLive.{CodeEditorManager, InspectorManager, NodePaletteManager, NodeSettings}
   alias HeddleUI.FlowLive.FormManager
+  alias HeddleUI.FlowLive.IntegrationManager
   alias HeddleUI.FlowLive.ValidateManager
   alias HeddleUI.FlowLive.VersionsManager
 
@@ -94,6 +95,7 @@ defmodule HeddleUI.FlowLive.Editor do
       NodePaletteManager.initial_assigns(HeddleUI.Integrations.installed_ids(scope)) ++
       VersionsManager.initial_assigns(flow) ++
       FormManager.initial_assigns() ++
+      IntegrationManager.initial_assigns() ++
       ValidateManager.initial_assigns() ++
       [publish_note: nil]
   end
@@ -226,6 +228,7 @@ defmodule HeddleUI.FlowLive.Editor do
        current_node_id: node_data["id"]
      )
      |> FormManager.opened(node_data)
+     |> IntegrationManager.opened(node_data)
      |> ValidateManager.opened(node_data)}
   end
 
@@ -236,6 +239,7 @@ defmodule HeddleUI.FlowLive.Editor do
     node_data = socket.assigns.editing_node_data
     params = FormManager.encode_fields(node_data, params)
     params = ValidateManager.encode(node_data, params)
+    params = IntegrationManager.encode(node_data, params)
 
     socket =
       update(socket, :editing_node_data, fn node_data ->
@@ -264,6 +268,13 @@ defmodule HeddleUI.FlowLive.Editor do
   @impl true
   def handle_event("validate_toggle_json", _params, socket) do
     {:noreply, ValidateManager.toggle_json(socket)}
+  end
+
+  # Options an integration's field lists from the service, see
+  # `HeddleUI.FlowLive.IntegrationManager`.
+  @impl true
+  def handle_event("integration_load_options", %{"field" => field}, socket) do
+    {:noreply, IntegrationManager.load_options(socket, field)}
   end
 
   # A Form Trigger's fields and link, see `HeddleUI.FlowLive.FormManager`.

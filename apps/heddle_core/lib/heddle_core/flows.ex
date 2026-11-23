@@ -315,6 +315,7 @@ defmodule HeddleCore.Flows do
   def delete_flow(%Flow{} = flow) do
     HeddleCore.Flows.Cache.invalidate(flow.id)
     HeddleCore.Webhooks.unregister_flow(flow)
+    HeddleCore.Integrations.Hooks.forget_flow(flow)
     Repo.delete(flow)
   end
 
