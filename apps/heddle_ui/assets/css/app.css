@@ -174,16 +174,10 @@
   margin-bottom: 0 !important;
 }
 
-/* Logos of the services nodes reach. They work like the hero-* icon classes. */
-.logo-slack,
-.logo-google-sheets,
-.logo-s3,
-.logo-mongodb,
-.logo-redis,
-.logo-elasticsearch,
-.logo-dynamodb,
-.logo-cassandra,
-.logo-neo4j {
+/* Logos of the services nodes reach. They work like the hero-* icon classes. The
+   integrations written as manifests get theirs from /integrations/logos.css. */
+[class^="logo-"],
+[class*=" logo-"] {
   display: inline-block;
   background-position: center;
   background-repeat: no-repeat;
