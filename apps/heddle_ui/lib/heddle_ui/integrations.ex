@@ -5,6 +5,8 @@ defmodule HeddleUI.Integrations do
   (`HeddleNodes.Integrations`).
   """
 
+  use Gettext, backend: HeddleUI.Gettext
+
   @doc "The ids of the integrations the caller's workspace has."
   def installed_ids(scope) do
     HeddleNodes.Integrations.installed_ids(
@@ -59,6 +61,50 @@ defmodule HeddleUI.Integrations do
              "manifest" => entry["manifest"]
            }) do
       HeddleNodes.Community.refresh()
+    end
+  end
+
+  @doc """
+  Checks a manifest written in the Integrations page: `{:ok, manifest}`, or
+  `{:error, problems}` with what to fix, in the words of Bobbin.
+  """
+  def check_new(yaml) do
+    with {:ok, manifest} <- HeddleNodes.Community.parse(yaml) do
+      cond do
+        HeddleUI.Integrations.Catalog.get(manifest.id) ||
+            HeddleCore.Integrations.get_community(manifest.id) ->
+          {:error, [gettext("The id %{id} is already taken: choose another.", id: manifest.id)]}
+
+        check_manifest(manifest.id, yaml) != :ok ->
+          {:error,
+           [
+             gettext(
+               "%{name} takes the name of an official integration or of one of its nodes.",
+               name: manifest.name
+             )
+           ]}
+
+        true ->
+          {:ok, manifest}
+      end
+    end
+  end
+
+  @doc """
+  Installs a manifest written in the Integrations page in the caller's workspace,
+  which only its admins may do. Like one from the catalog, the instance keeps it for
+  every workspace.
+  """
+  def create(scope, yaml) do
+    with {:ok, manifest} <- check_new(yaml),
+         :ok <-
+           HeddleCore.Integrations.install_community(scope, %{
+             "integration" => manifest.id,
+             "version" => manifest.version,
+             "manifest" => yaml
+           }) do
+      HeddleNodes.Community.refresh()
+      {:ok, manifest}
     end
   end
 

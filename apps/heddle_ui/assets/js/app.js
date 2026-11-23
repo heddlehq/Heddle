@@ -4,6 +4,7 @@ import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import { CodeEditorHook, loadMonaco } from "./code_editor"
 import { WebhookBodyHook } from "./webhook_body"
+import { ManifestEditorHook } from "./manifest_editor"
 import { TerminalHook } from "./terminal"
 import { FlowDragHook } from "./flow_drag"
 import "./json-tree"
@@ -35,6 +36,7 @@ const hooks = {
   },
   CodeEditor: CodeEditorHook,
   WebhookBody: WebhookBodyHook,
+  ManifestEditor: ManifestEditorHook,
   Terminal: TerminalHook,
   FlowDrag: FlowDragHook,
   NodeSearch: {

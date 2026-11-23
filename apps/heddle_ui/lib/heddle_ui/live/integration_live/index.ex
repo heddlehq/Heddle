@@ -8,6 +8,8 @@ defmodule HeddleUI.IntegrationLive.Index do
 
   on_mount {HeddleUI.UserAuth, {:require_workspace, :view}}
 
+  import HeddleUI.Components.Modals.CreateIntegrationModal
+
   alias HeddleCore.Accounts.Scope
   alias HeddleCore.Workspaces
   alias HeddleUI.Integrations
@@ -25,6 +27,7 @@ defmodule HeddleUI.IntegrationLive.Index do
      |> assign(:system_admin, Scope.system_admin?(socket.assigns.current_scope))
      |> assign(:query, "")
      |> assign(:filter, "all")
+     |> assign(:create, nil)
      |> load()}
   end
 
@@ -36,6 +39,42 @@ defmodule HeddleUI.IntegrationLive.Index do
   def handle_event("filter", %{"filter" => filter}, socket)
       when filter in ["all", "installed", "community"] do
     {:noreply, assign(socket, :filter, filter)}
+  end
+
+  def handle_event("open_create", _params, socket) do
+    if socket.assigns.can_manage do
+      {:noreply, assign_create(socket, template())}
+    else
+      {:noreply, put_flash(socket, :error, forbidden_message())}
+    end
+  end
+
+  def handle_event("close_create", _params, socket) do
+    {:noreply, assign(socket, :create, nil)}
+  end
+
+  def handle_event("check_manifest", %{"integration" => %{"manifest" => yaml}}, socket) do
+    {:noreply, assign_create(socket, yaml)}
+  end
+
+  def handle_event("create_integration", %{"integration" => %{"manifest" => yaml}}, socket) do
+    case Integrations.create(socket.assigns.current_scope, yaml) do
+      {:ok, manifest} ->
+        {:noreply,
+         socket
+         |> assign(:create, nil)
+         |> load()
+         |> put_flash(:info, gettext("%{name} created and installed.", name: manifest.name))}
+
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, forbidden_message())}
+
+      {:error, problems} when is_list(problems) ->
+        {:noreply, assign_create(socket, yaml, {:error, problems})}
+
+      _error ->
+        {:noreply, put_flash(socket, :error, gettext("This integration couldn't be created."))}
+    end
   end
 
   def handle_event("install", %{"id" => id}, socket) do
@@ -100,6 +139,13 @@ defmodule HeddleUI.IntegrationLive.Index do
       _error ->
         {:noreply, put_flash(socket, :error, forbidden_message())}
     end
+  end
+
+  defp assign_create(socket, yaml, check \\ nil) do
+    assign(socket, :create, %{
+      form: to_form(%{"manifest" => yaml}, as: :integration),
+      check: check || Integrations.check_new(yaml)
+    })
   end
 
   defp forbidden_message, do: gettext("Your role in this workspace can't change integrations.")
@@ -178,14 +224,31 @@ defmodule HeddleUI.IntegrationLive.Index do
 
     ~H"""
     <div class="p-6 md:p-8 w-full max-w-7xl mx-auto space-y-6">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{gettext("Integrations")}</h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          {gettext(
-            "Services the flows of this workspace can reach. The editor's node sidebar shows only the installed ones."
-          )}
-        </p>
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{gettext("Integrations")}</h1>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {gettext(
+              "Services the flows of this workspace can reach. The editor's node sidebar shows only the installed ones."
+            )}
+          </p>
+        </div>
+        <.button
+          :if={@can_manage}
+          id="create-integration"
+          variant="primary"
+          phx-click="open_create"
+          class="shrink-0"
+        >
+          <.icon name="hero-plus" class="size-4" /> {gettext("Create integration")}
+        </.button>
       </div>
+
+      <.create_integration_modal
+        :if={@create}
+        form={@create.form}
+        check={@create.check}
+      />
 
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div
