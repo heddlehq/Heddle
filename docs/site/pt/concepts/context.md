@@ -70,4 +70,4 @@ Enquanto um nó roda, os campos dele ficam no contexto com os próprios nomes, e
 
 ## Até onde uma execução cresce
 
-O contexto é salvo com a execução, então mantenha ele com dados. Uma lista de um [For Each](/pt/docs/nodes/for-each/), e as linhas de uma consulta, aceitam até 10.000 itens. Arquivos, como um download ou uma imagem, viajam em base64 dentro de `result`, e todo nó que recebe arquivo lê de volta. Valores longos são cortados no inspetor, não na execução.
+O contexto é salvo com a execução, então mantenha ele com dados. Uma lista de um [For Each](/pt/docs/nodes/for-each/), e as linhas de uma consulta, aceitam até 10.000 itens. Arquivos, como um download ou uma imagem, viajam em base64 dentro de `result`, e todo nó que recebe arquivo lê de volta. Os nós das integrações instaladas guardam o arquivo no Heddle e passam uma referência, `{"file": {"id", "name", "mime", "size"}}`, que um nó que envia arquivo aceita como está. Esses arquivos ficam guardados por 7 dias. Valores longos são cortados no inspetor, não na execução.

@@ -57,6 +57,39 @@ defmodule HeddleUI.FlowLive.IntegrationEditorTest do
     })
   end
 
+  @issue %{
+    "id" => "issue",
+    "type" => "Forge: Create Issue",
+    "controls" => %{
+      "credential" => "forge",
+      "repo" => "",
+      "title" => "",
+      "draft" => "false",
+      "labels" => ""
+    },
+    "types" => %{
+      "credential" => "credential",
+      "repo" => "select",
+      "draft" => "boolean",
+      "labels" => "multiselect"
+    },
+    "extra" => %{
+      "repo" => %{"options_from" => true},
+      "labels" => %{
+        "options" => [
+          %{"label" => "Bug", "value" => "bug"},
+          %{"label" => "Docs", "value" => "docs"}
+        ]
+      }
+    }
+  }
+
+  test "the sidebar lists a service's actions under the resource they work on", context do
+    {:ok, lv, _html} = live(context.conn, ~p"/flows/#{flow(context, @issue).id}")
+    assert has_element?(lv, ~s(#node-category-developer [id="node-group-Issue"]))
+    assert has_element?(lv, ~s(#node-category-developer [data-node-name="Forge: Create Issue"]))
+  end
+
   describe "a webhook trigger" do
     @push %{
       "id" => "push",
@@ -88,33 +121,6 @@ defmodule HeddleUI.FlowLive.IntegrationEditorTest do
   end
 
   describe "an action" do
-    @issue %{
-      "id" => "issue",
-      "type" => "Forge: Create Issue",
-      "controls" => %{
-        "credential" => "forge",
-        "repo" => "",
-        "title" => "",
-        "draft" => "false",
-        "labels" => ""
-      },
-      "types" => %{
-        "credential" => "credential",
-        "repo" => "select",
-        "draft" => "boolean",
-        "labels" => "multiselect"
-      },
-      "extra" => %{
-        "repo" => %{"options_from" => true},
-        "labels" => %{
-          "options" => [
-            %{"label" => "Bug", "value" => "bug"},
-            %{"label" => "Docs", "value" => "docs"}
-          ]
-        }
-      }
-    }
-
     test "loads a field's options from the service, with the node's credential", context do
       Req.Test.stub(HeddleNodes.Nodes.HttpRequest, fn conn ->
         assert conn.request_path == "/repos"
@@ -154,7 +160,7 @@ defmodule HeddleUI.FlowLive.IntegrationEditorTest do
       assert has_element?(lv, ~s(input#node-field-draft[checked]))
     end
 
-    test "labels come in the user's language when the manifest has it", context do
+    test "labels come in the user's language when the manifest has it", _context do
       Gettext.put_locale(HeddleUI.Gettext, "pt_BR")
       on_exit(fn -> Gettext.put_locale(HeddleUI.Gettext, "en") end)
 

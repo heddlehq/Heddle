@@ -70,4 +70,4 @@ While a node runs, its fields are in the context under their own names, and they
 
 ## How big a run can be
 
-The context is saved with the run, so keep it to data. A list for a [For Each](/docs/nodes/for-each/), and the rows of a query, hold up to 10,000 items. Files, like a download or an image, travel as base64 inside `result`, and every node that takes a file reads them back. Long values are cut in the inspector, not in the run.
+The context is saved with the run, so keep it to data. A list for a [For Each](/docs/nodes/for-each/), and the rows of a query, hold up to 10,000 items. Files, like a download or an image, travel as base64 inside `result`, and every node that takes a file reads them back. The nodes of installed integrations keep the file in Heddle instead and pass on a reference, `{"file": {"id", "name", "mime", "size"}}`, which a node that uploads a file takes as it is. Those files are kept 7 days. Long values are cut in the inspector, not in the run.
