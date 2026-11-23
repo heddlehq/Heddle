@@ -42,6 +42,12 @@ defmodule HeddleWorker.HookWorkerTest do
       {:ok, body, conn} = Plug.Conn.read_body(conn)
       Agent.update(calls, &(&1 ++ [{conn.method, conn.request_path, body}]))
 
+      # Like Trello, the service checks the address before it answers.
+      if conn.method == "POST" do
+        url = Jason.decode!(body)["url"]
+        assert %{error: nil} = Hooks.get_by_token(url |> String.split("/") |> List.last())
+      end
+
       case conn.method do
         "POST" -> Req.Test.json(conn, %{"id" => 42})
         "DELETE" -> Plug.Conn.send_resp(conn, 204, "")

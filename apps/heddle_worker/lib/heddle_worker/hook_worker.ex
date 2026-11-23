@@ -91,6 +91,11 @@ defmodule HeddleWorker.HookWorker do
     controls = node.controls || %{}
     attrs = %{type: node.type, controls: controls}
 
+    # Some services (Trello) call the address while Heddle registers it, so it must
+    # answer by then.
+    if trigger.trigger.webhook.register,
+      do: Hooks.save(flow.id, node.id, token, Map.put(attrs, :webhook, webhook))
+
     case register(trigger, controls, flow.workspace_id, webhook) do
       {:ok, :manual} ->
         # The person pasted the address already, with the secret it had.
