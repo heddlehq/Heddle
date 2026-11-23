@@ -99,7 +99,7 @@ defmodule Heddle.Umbrella.MixProject do
   end
 
   # Monaco loads its own files at run time, so it can't go through esbuild. This
-  # copies only what the code modal uses: the package is 13 MB, most of it for
+  # copies only what the code modal and the manifest editor use: the package is 13 MB, most of it for
   # languages Heddle doesn't run.
   defp copy_monaco(_args) do
     assets_path = Path.expand("apps/heddle_ui", File.cwd!())
@@ -117,6 +117,7 @@ defmodule Heddle.Umbrella.MixProject do
           base
           basic-languages/elixir
           basic-languages/python
+          basic-languages/yaml
           editor/editor.main.js
           editor/editor.main.css
           editor/editor.main.nls.js

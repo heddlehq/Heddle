@@ -244,7 +244,11 @@ defmodule HeddleUI.IntegrationLive.Index do
         </.button>
       </div>
 
-      <.create_integration_modal :if={@create} form={@create.form} check={@create.check} />
+      <.create_integration_modal
+        :if={@create}
+        form={@create.form}
+        check={@create.check}
+      />
 
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div

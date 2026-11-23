@@ -41,4 +41,4 @@ actions:
 A página confere o manifesto enquanto você escreve e mostra o que corrigir. **Create and install** instala no workspace, como uma integração da comunidade da instância, então outros workspaces também podem instalar.
 
 - O `id` não pode ser de outra integração, e os nós não podem ter o nome de nós oficiais.
-- O que um manifesto pode ter (paginação, gatilhos, OAuth2) está no [README do Bobbin](https://github.com/heddlehq/Bobbin#integrations-without-code). Para compartilhar, abra um pull request em [heddlehq/integrations](https://github.com/heddlehq/integrations).
+- O que um manifesto pode ter (paginação, gatilhos, OAuth2) está no [guia do Bobbin](https://hexdocs.pm/bobbin/manifest.html), e integrações em Elixir [em outro](https://hexdocs.pm/bobbin/packages.html). Para compartilhar, abra um pull request em [heddlehq/integrations](https://github.com/heddlehq/integrations).

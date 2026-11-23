@@ -208,7 +208,7 @@ msgid "Account Settings"
 msgstr "Configurações de Conta"
 
 #: lib/heddle_ui/components/modals/code_editor_modal.ex:126
-#: lib/heddle_ui/components/modals/create_integration_modal.ex:125
+#: lib/heddle_ui/components/modals/create_integration_modal.ex:158
 #: lib/heddle_ui/components/modals/create_node_modal.ex:92
 #: lib/heddle_ui/components/modals/flow_settings_modal.ex:67
 #: lib/heddle_ui/components/modals/publish_modal.ex:69
@@ -666,7 +666,7 @@ msgstr "Descreva mudanças ou explique o que o fluxo deve fazer..."
 msgid "Describe the workflow you want, and let AI build the nodes and connections."
 msgstr "Descreva o fluxo que você quer e deixe a IA montar os nós e as conexões."
 
-#: lib/heddle_ui/components/flow/node_sidebar.ex:164
+#: lib/heddle_ui/components/flow/node_sidebar.ex:167
 #, elixir-autogen, elixir-format
 msgid "Drag and drop onto the canvas to add"
 msgstr "Arraste para o canvas para adicionar"
@@ -2667,7 +2667,7 @@ msgid "Back to the draft"
 msgstr "Voltar ao rascunho"
 
 #: lib/heddle_ui/components/flow/version_history.ex:32
-#: lib/heddle_ui/components/modals/create_integration_modal.ex:86
+#: lib/heddle_ui/components/modals/create_integration_modal.ex:101
 #, elixir-autogen, elixir-format
 msgid "Close"
 msgstr "Fechar"
@@ -4248,7 +4248,7 @@ msgid "+%{count} more"
 msgstr "+%{count}"
 
 #: lib/heddle_ui/components/flow/node_sidebar.ex:115
-#: lib/heddle_ui/components/modals/create_integration_modal.ex:163
+#: lib/heddle_ui/components/modals/create_integration_modal.ex:196
 #: lib/heddle_ui/live/integration_live/index.ex:390
 #, elixir-autogen, elixir-format
 msgid "1 action"
@@ -4280,7 +4280,7 @@ msgstr "Instalada"
 
 #: lib/heddle_ui/components/layouts.ex:116
 #: lib/heddle_ui/live/integration_live/index.ex:24
-#: lib/heddle_ui/live/integration_live/index.ex:233
+#: lib/heddle_ui/live/integration_live/index.ex:229
 #, elixir-autogen, elixir-format
 msgid "Integrations"
 msgstr "Integrações"
@@ -4320,7 +4320,7 @@ msgstr "Tire-a dos fluxos que a usam primeiro."
 msgid "Search integrations"
 msgstr "Buscar integrações"
 
-#: lib/heddle_ui/live/integration_live/index.ex:235
+#: lib/heddle_ui/live/integration_live/index.ex:231
 #, elixir-autogen, elixir-format
 msgid "Services the flows of this workspace can reach. The editor's node sidebar shows only the installed ones."
 msgstr "Serviços que os fluxos deste workspace podem acessar. A barra de nós do editor mostra só as instaladas."
@@ -4501,57 +4501,47 @@ msgstr "Seu papel neste workspace não permite adicionar credenciais."
 msgid "%{name} created and installed."
 msgstr "%{name} criada e instalada."
 
-#: lib/heddle_ui/integrations.ex:82
+#: lib/heddle_ui/integrations.ex:81
 #, elixir-autogen, elixir-format
 msgid "%{name} takes the name of an official integration or of one of its nodes."
 msgstr "%{name} usa o nome de uma integração oficial ou de um dos nós dela."
 
-#: lib/heddle_ui/components/modals/create_integration_modal.ex:192
+#: lib/heddle_ui/components/modals/create_integration_modal.ex:225
 #, elixir-autogen, elixir-format
 msgid "1 thing to fix"
 msgid_plural "%{count} things to fix"
 msgstr[0] "1 coisa para corrigir"
 msgstr[1] "%{count} coisas para corrigir"
 
-#: lib/heddle_ui/components/modals/create_integration_modal.ex:166
+#: lib/heddle_ui/components/modals/create_integration_modal.ex:199
 #, elixir-autogen, elixir-format
 msgid "1 trigger"
 msgid_plural "%{count} triggers"
 msgstr[0] "1 gatilho"
 msgstr[1] "%{count} gatilhos"
 
-#: lib/heddle_ui/components/modals/create_integration_modal.ex:134
+#: lib/heddle_ui/components/modals/create_integration_modal.ex:167
 #, elixir-autogen, elixir-format
 msgid "Create and install"
 msgstr "Criar e instalar"
 
-#: lib/heddle_ui/components/modals/create_integration_modal.ex:73
-#: lib/heddle_ui/live/integration_live/index.ex:247
+#: lib/heddle_ui/components/modals/create_integration_modal.ex:87
+#: lib/heddle_ui/live/integration_live/index.ex:243
 #, elixir-autogen, elixir-format
 msgid "Create integration"
 msgstr "Criar integração"
 
-#: lib/heddle_ui/components/modals/create_integration_modal.ex:132
+#: lib/heddle_ui/components/modals/create_integration_modal.ex:165
 #, elixir-autogen, elixir-format
 msgid "Creating..."
 msgstr "Criando..."
 
-#: lib/heddle_ui/components/modals/create_integration_modal.ex:76
-#, elixir-autogen, elixir-format
-msgid "Describe a service's credential and its actions as HTTP requests. Each action becomes a node."
-msgstr "Descreva a credencial de um serviço e as ações dele como requisições HTTP. Cada ação vira um nó."
-
-#: lib/heddle_ui/components/modals/create_integration_modal.ex:121
-#, elixir-autogen, elixir-format
-msgid "How to write a manifest"
-msgstr "Como escrever um manifesto"
-
-#: lib/heddle_ui/components/modals/create_integration_modal.ex:106
+#: lib/heddle_ui/components/modals/create_integration_modal.ex:128
 #, elixir-autogen, elixir-format
 msgid "Manifest"
 msgstr "Manifesto"
 
-#: lib/heddle_ui/integrations.ex:77
+#: lib/heddle_ui/integrations.ex:76
 #, elixir-autogen, elixir-format
 msgid "The id %{id} is already taken: choose another."
 msgstr "O id %{id} já está em uso: escolha outro."
@@ -4560,3 +4550,18 @@ msgstr "O id %{id} já está em uso: escolha outro."
 #, elixir-autogen, elixir-format
 msgid "This integration couldn't be created."
 msgstr "Não foi possível criar esta integração."
+
+#: lib/heddle_ui/components/modals/create_integration_modal.ex:90
+#, elixir-autogen, elixir-format
+msgid "A manifest in YAML: a service's credential and its actions as HTTP requests. Each action becomes a node."
+msgstr "Um manifesto em YAML: a credencial de um serviço e as ações dele como requisições HTTP. Cada ação vira um nó."
+
+#: lib/heddle_ui/components/modals/create_integration_modal.ex:151
+#, elixir-autogen, elixir-format
+msgid "It's installed in this workspace, and other workspaces of the instance can install it too."
+msgstr "Ela é instalada neste workspace, e outros workspaces da instância também podem instalar."
+
+#: lib/heddle_ui/components/modals/create_integration_modal.ex:147
+#, elixir-autogen, elixir-format
+msgid "How to write a manifest"
+msgstr "Como escrever um manifesto"

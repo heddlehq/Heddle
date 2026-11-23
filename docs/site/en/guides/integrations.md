@@ -41,4 +41,4 @@ actions:
 The page checks the manifest as you write and shows what to fix. **Create and install** installs it in the workspace, as a community integration of the instance, so other workspaces can install it too.
 
 - The `id` can't be taken by another integration, and its nodes can't take the name of official ones.
-- What a manifest can hold (pagination, triggers, OAuth2) is in [Bobbin's README](https://github.com/heddlehq/Bobbin#integrations-without-code). To share it, open a pull request in [heddlehq/integrations](https://github.com/heddlehq/integrations).
+- What a manifest can hold (pagination, triggers, OAuth2) is in [Bobbin's guide](https://hexdocs.pm/bobbin/manifest.html), and integrations in Elixir in [another one](https://hexdocs.pm/bobbin/packages.html). To share it, open a pull request in [heddlehq/integrations](https://github.com/heddlehq/integrations).

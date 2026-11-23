@@ -70,8 +70,19 @@ defmodule HeddleUI.IntegrationLive.CreateTest do
 
     lv |> open()
 
-    assert has_element?(lv, "#create-integration-valid", "Acme CRM")
+    assert has_element?(lv, "#create-integration-valid", "My Service")
     refute has_element?(lv, "#create-integration-submit[disabled]")
+  end
+
+  test "links to Bobbin's guide to write a manifest", %{conn: conn} do
+    {:ok, lv, _html} = live(conn, ~p"/integrations")
+
+    lv |> open()
+
+    assert has_element?(
+             lv,
+             ~s(#create-integration-docs[href="https://hexdocs.pm/bobbin/manifest.html"])
+           )
   end
 
   test "what is wrong shows while writing, and nothing is created", %{conn: conn} do
