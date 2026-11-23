@@ -121,7 +121,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
                             placeholder={~s({"key": "value"})}
                             class="w-full px-4 py-3 rounded-lg font-mono text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
                           >{json_text(control["value"])}</textarea>
-                        <% "date" -> %>
+                        <% "datetime" -> %>
                           <input
                             id={"node-field-#{key}"}
                             type="text"

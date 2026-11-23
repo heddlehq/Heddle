@@ -1245,7 +1245,7 @@ export async function createEditor(container, { readOnly = false } = {}) {
                     }
                 };
             } else {
-                control.type = ['select', 'credential', 'model', 'textarea', 'form_fields', 'flow', 'schema', 'boolean', 'json', 'multiselect', 'date'].includes(field.type) ? field.type : 'text';
+                control.type = ['select', 'credential', 'model', 'textarea', 'form_fields', 'flow', 'schema', 'boolean', 'json', 'multiselect', 'datetime'].includes(field.type) ? field.type : 'text';
                 control.label = field.label;
                 control.credentialKind = field.kind;
                 if (field.options) control.options = field.options;
