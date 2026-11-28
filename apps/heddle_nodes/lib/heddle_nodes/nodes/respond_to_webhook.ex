@@ -25,7 +25,8 @@ defmodule HeddleNodes.Nodes.RespondToWebhook do
           default: "200"
         },
         %{
-          type: :text,
+          type: :textarea,
+          language: :json,
           name: :response_body,
           label: "Body",
           default: "{{result}}"

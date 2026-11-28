@@ -3,6 +3,7 @@ import { Socket } from "phoenix"
 import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import { CodeEditorHook, loadMonaco } from "./code_editor"
+import { CodeFieldHook } from "./code_field"
 import { WebhookBodyHook } from "./webhook_body"
 import { TerminalHook } from "./terminal"
 import { FlowDragHook } from "./flow_drag"
@@ -13,6 +14,7 @@ import "./json-tree"
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024
 
 const hooks = {
+  CodeField: CodeFieldHook,
   // Reads a flow from a JSON file and hands it to the server, which checks it.
   ImportFlow: {
     mounted() {
@@ -240,6 +242,23 @@ const hooks = {
     },
     updated() {
       this.el.scrollTop = this.el.scrollHeight;
+    },
+  },
+  // A chat's box: Enter sends and Shift+Enter breaks the line. It empties once the
+  // message is sent, and keeps what was written when it couldn't be.
+  SubmitOnEnter: {
+    mounted() {
+      this.el.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+          event.preventDefault();
+          this.el.form.requestSubmit();
+        }
+      });
+      this.handleEvent("chat:sent", () => {
+        this.el.value = "";
+        this.el.focus();
+      });
+      this.el.focus();
     },
   },
   FocusInput: {

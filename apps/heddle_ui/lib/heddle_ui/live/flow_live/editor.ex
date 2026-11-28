@@ -11,6 +11,7 @@ defmodule HeddleUI.FlowLive.Editor do
   alias HeddleUI.FlowLive.TerminalManager
   alias HeddleUI.FlowLive.{CodeEditorManager, InspectorManager, NodePaletteManager, NodeSettings}
   alias HeddleUI.FlowLive.FormManager
+  alias HeddleUI.FlowLive.PackageManager
   alias HeddleUI.FlowLive.IntegrationManager
   alias HeddleUI.FlowLive.ValidateManager
   alias HeddleUI.FlowLive.VersionsManager
@@ -95,6 +96,7 @@ defmodule HeddleUI.FlowLive.Editor do
       NodePaletteManager.initial_assigns(HeddleUI.Integrations.installed_ids(scope)) ++
       VersionsManager.initial_assigns(flow) ++
       FormManager.initial_assigns() ++
+      PackageManager.initial_assigns() ++
       IntegrationManager.initial_assigns() ++
       ValidateManager.initial_assigns() ++
       [publish_note: nil]
@@ -228,6 +230,7 @@ defmodule HeddleUI.FlowLive.Editor do
        current_node_id: node_data["id"]
      )
      |> FormManager.opened(node_data)
+     |> PackageManager.opened(node_data)
      |> IntegrationManager.opened(node_data)
      |> ValidateManager.opened(node_data)}
   end
@@ -291,6 +294,17 @@ defmodule HeddleUI.FlowLive.Editor do
   @impl true
   def handle_event("form_field_move", %{"index" => index, "direction" => direction}, socket) do
     {:noreply, FormManager.move_field(socket, String.to_integer(index), direction)}
+  end
+
+  # A package node's panel and chat link, see `HeddleUI.FlowLive.PackageManager`.
+  @impl true
+  def handle_event("package_panel_refresh", _params, socket) do
+    {:noreply, PackageManager.refresh(socket)}
+  end
+
+  @impl true
+  def handle_event("chat_regenerate_link", _params, socket) do
+    {:noreply, PackageManager.regenerate_chat(socket)}
   end
 
   @impl true

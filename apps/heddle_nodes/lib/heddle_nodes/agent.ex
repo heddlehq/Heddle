@@ -11,10 +11,9 @@ defmodule HeddleNodes.Agent do
   and heddle_core is only one of its test dependencies.
   """
 
-  alias HeddleNodes.Nodes
+  alias HeddleNodes.Tools
 
   @json_instruction "Reply with a single valid JSON value and nothing else."
-  @max_tool_output 20_000
 
   @doc """
   Answers `request`. `run_tool` runs a node with its new controls and input.
@@ -81,53 +80,22 @@ defmodule HeddleNodes.Agent do
   defp save_memory(flow_id, %{memory_key: key}, messages),
     do: memory().save(flow_id, key, messages)
 
-  defp build_tools(nodes, run_tool, target) do
-    nodes
-    |> Enum.reduce({[], MapSet.new()}, fn node, {tools, names} ->
-      name = unique_name(node, names)
-      {[build_tool(node, name, run_tool, target) | tools], MapSet.put(names, name)}
-    end)
-    |> elem(0)
-    |> Enum.reverse()
-  end
+  defp build_tools(nodes, run_tool, {parent, ref}) do
+    for tool <- Tools.build(nodes) do
+      fun = fn args ->
+        case Tools.call(tool, args, run_tool) do
+          {:ok, output, call, logs} ->
+            send(parent, {ref, call, logs})
+            {:ok, output}
 
-  defp build_tool(node, name, run_tool, target) do
-    definition = Nodes.get_node(node.type) || %{}
-    fields = open_fields(node, definition)
-    allowed = Enum.map(fields, &to_string(&1.name))
+          {:error, message, call} ->
+            send(parent, {ref, call, []})
+            {:error, message}
+        end
+      end
 
-    fun = fn args ->
-      args = Map.new(args, fn {key, value} -> {to_string(key), value} end)
-      controls = Map.merge(node.controls, Map.take(args, allowed))
-
-      name
-      |> call_tool(args, run_tool.(%{node | controls: controls}, args["input"]), target)
+      llm().tool(tool.name, tool.description, tool.parameters, fun)
     end
-
-    llm().tool(name, description(node, definition), schema(fields), fun)
-  end
-
-  defp call_tool(name, args, {:ok, context}, {parent, ref}) do
-    send(parent, {ref, %{"tool" => name, "args" => args, "ok" => true}, context["logs"] || []})
-
-    {:ok, tool_output(context["result"])}
-  end
-
-  defp call_tool(name, args, {:error, reason, _node_id, _context}, {parent, ref}) do
-    send(parent, {ref, %{"tool" => name, "args" => args, "ok" => false}, []})
-
-    {:error, if(is_binary(reason), do: reason, else: inspect(reason))}
-  end
-
-  defp tool_output(nil), do: "Done."
-
-  # The model can't read base64, and it would fill its context.
-  defp tool_output(%{"encoding" => "base64", "type" => type}) do
-    "Done. The result is a #{type} file, which the next step of the flow gets."
-  end
-
-  defp tool_output(result) do
-    result |> Jason.encode!() |> String.slice(0, @max_tool_output)
   end
 
   defp collect(ref, calls, logs) do
@@ -136,54 +104,6 @@ defmodule HeddleNodes.Agent do
     after
       0 -> {Enum.reverse(calls), logs}
     end
-  end
-
-  defp open_fields(node, definition) do
-    definition
-    |> Map.get(:ui_fields, [])
-    |> Enum.reject(&(&1.type in [:credential, :code, :model]))
-    |> Enum.filter(&blank?(node.controls[to_string(&1.name)]))
-  end
-
-  defp blank?(nil), do: true
-  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
-  defp blank?(_value), do: false
-
-  defp schema([]) do
-    input = %{type: "string", description: "What to pass to this step, if it needs anything."}
-
-    %{type: "object", properties: %{"input" => input}, required: []}
-  end
-
-  defp schema(fields) do
-    properties = Map.new(fields, &{to_string(&1.name), property(&1)})
-
-    %{type: "object", properties: properties, required: Map.keys(properties)}
-  end
-
-  defp property(%{type: :select, options: options} = field) do
-    %{type: "string", description: field.label, enum: Enum.map(options, &option/1)}
-  end
-
-  defp property(field), do: %{type: "string", description: field.label}
-
-  defp option(%{value: value}), do: value
-  defp option(value), do: to_string(value)
-
-  defp description(node, definition) do
-    "#{node.label}: #{Map.get(definition, :description, "A step of this flow.")}"
-  end
-
-  defp unique_name(node, names) do
-    base =
-      (node.label || node.type)
-      |> String.downcase()
-      |> String.replace(~r/[^a-z0-9]+/, "_")
-      |> String.trim("_")
-      |> then(&if(&1 =~ ~r/\A[a-z]/, do: &1, else: "tool_" <> &1))
-      |> String.slice(0, 48)
-
-    if MapSet.member?(names, base), do: "#{base}_#{node.id}", else: base
   end
 
   defp llm, do: Application.fetch_env!(:heddle_nodes, :llm_client)

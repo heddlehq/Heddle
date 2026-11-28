@@ -29,6 +29,17 @@ defmodule HeddleUI.Router do
     plug HeddleUI.Plugs.SetLocale
   end
 
+  # An agent's chat page anyone with its link can talk on, see `HeddleUI.ChatLive.Show`.
+  pipeline :public_chat do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :put_root_layout, html: {HeddleUI.Layouts, :root}
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+    plug HeddleUI.Plugs.SetLocale
+    plug HeddleUI.Plugs.ChatVisitor
+  end
+
   pipeline :redirect_if_authenticated do
     plug :redirect_if_user_is_authenticated
   end
@@ -73,6 +84,7 @@ defmodule HeddleUI.Router do
       live "/flows", FlowLive.Index
       live "/flows/new/ai", FlowLive.AICreator
       live "/flows/:id", FlowLive.Editor
+      live "/flows/:id/chat/:node_id", ChatLive.Show, :test
       live "/executions", ExecutionLive.Index, :index
       live "/executions/:public_id", ExecutionLive.Index, :show
       live "/approvals", ApprovalLive.Index
@@ -97,6 +109,14 @@ defmodule HeddleUI.Router do
 
     get "/oauth/authorize", OAuthController, :new
     post "/oauth/authorize", OAuthController, :create
+  end
+
+  scope "/c", HeddleUI do
+    pipe_through :public_chat
+
+    live_session :public_chat, session: {HeddleUI.Plugs.ChatVisitor, :live_session, []} do
+      live "/:token", ChatLive.Show, :show
+    end
   end
 
   scope "/f", HeddleUI do

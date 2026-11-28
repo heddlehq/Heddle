@@ -47,6 +47,8 @@ config :heddle_core, :oban_name, HeddleCore.Oban
 config :heddle_nodes, :llm_client, HeddleAI.AI
 config :heddle_nodes, :agent_memory, HeddleCore.AgentMemory
 config :heddle_nodes, :credentials_client, HeddleCore.Credentials
+config :heddle_nodes, :store_client, HeddleCore.PackageStore
+config :heddle_nodes, :runs_client, HeddleWorker.PackageRuns
 config :bobbin, :host, HeddleNodes.BobbinHost
 config :bobbin, :files, HeddleNodes.Files
 config :heddle_nodes, :files_client, HeddleCore.Files

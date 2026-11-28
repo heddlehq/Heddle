@@ -168,13 +168,24 @@ defmodule HeddleCore.Flows.Versions do
   what starts runs on its own, such as the scheduler.
   """
   def list_published_with_node(type) do
-    Repo.all(
-      from f in Flow,
-        join: v in Version,
-        on: v.id == f.published_version_id,
-        where: fragment("? @> ?::jsonb", v.nodes, ^[%{type: type}]),
-        select: %{f | nodes: v.nodes, connections: v.connections, comments: v.comments}
-    )
+    type |> published_with_node() |> Repo.all()
+  end
+
+  @doc "Like `list_published_with_node/1`, for the flows of one workspace."
+  def list_published_with_node(type, workspace_id) do
+    type
+    |> published_with_node()
+    |> where([f], f.workspace_id == ^workspace_id)
+    |> order_by([f], f.id)
+    |> Repo.all()
+  end
+
+  defp published_with_node(type) do
+    from f in Flow,
+      join: v in Version,
+      on: v.id == f.published_version_id,
+      where: fragment("? @> ?::jsonb", v.nodes, ^[%{type: type}]),
+      select: %{f | nodes: v.nodes, connections: v.connections, comments: v.comments}
   end
 
   ## Writing

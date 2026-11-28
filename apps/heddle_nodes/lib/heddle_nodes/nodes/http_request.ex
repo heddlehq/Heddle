@@ -35,13 +35,15 @@ defmodule HeddleNodes.Nodes.HttpRequest do
           default: "https://api.example.com"
         },
         %{
-          type: :text,
+          type: :textarea,
+          language: :json,
           name: :headers,
           label: "Headers (JSON)",
           default: "{}"
         },
         %{
-          type: :text,
+          type: :textarea,
+          language: :json,
           name: :body,
           label: "Body",
           default: ""

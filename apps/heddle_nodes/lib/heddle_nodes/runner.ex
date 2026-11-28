@@ -28,6 +28,7 @@ defmodule HeddleNodes.Runner do
   alias HeddleNodes.Agent
   alias HeddleNodes.Nodes
   alias HeddleNodes.Nodes.Approval
+  alias HeddleNodes.Tools
   alias HeddleNodes.Trace
   alias HeddleNodes.Usage
 
@@ -35,7 +36,7 @@ defmodule HeddleNodes.Runner do
   # order they began to wait. It travels in the context so it is saved with a pause.
   @merging "_merging"
   @run_only [@merging, "resume_url", "_form_answered"]
-  @internal_keys ["flow_id", "workspace_id", "logs" | @run_only]
+  @internal_keys ["flow_id", "workspace_id", "run_id", "logs" | @run_only]
   @run_keys ["node_id", "section_id", "replay_from", "debug"]
   @drain %{"kind" => "drain"}
 
@@ -59,6 +60,8 @@ defmodule HeddleNodes.Runner do
     * `:on_step` is called with the log entry of each step as it ends.
     * `:resume_url` is the address that resumes a `Wait` on a call. A flow with a
       `Wait` reads it as `{{resume_url}}`, to send it before it waits.
+    * `:run_id` is the run, pinned in each node's context as `"run_id"`, like the flow
+      and the workspace: a package keeps data with it, see `Bobbin.Host`.
     * `:debug`, when true, takes the data pinned to a node instead of running it. Only
       runs started from the editor set it.
     * `:sleep` waits between the tries of a step, `Process.sleep/1` by default.
@@ -131,13 +134,48 @@ defmodule HeddleNodes.Runner do
     resumed =
       case Graph.get(state.graph, wait["node_id"]) do
         nil -> {:ok, context}
-        node -> wake(node, context, resumption, state)
+        node -> wake(node, context, outputs(wait, resumption), state, wait)
       end
 
     paused
     |> Map.get("frames", [])
     |> continue(resumed, state)
     |> finish(state)
+  end
+
+  # A node of a package names the outputs it goes on through, see
+  # `Bobbin.Node.wait_for_call/2`. A Wait goes on through `exec` and `timeout`.
+  defp outputs(%{"outputs" => %{} = outputs}, %{"by" => by} = resumption) do
+    case outputs[by] do
+      nil -> resumption
+      output -> Map.put(resumption, "output", output)
+    end
+  end
+
+  defp outputs(_wait, resumption), do: resumption
+
+  # A package's node that asked for it is called again, with what ended its wait as
+  # `"resumed"`, see `Bobbin.Node.handler/2`.
+  defp wake(node, context, resumption, state, %{"again" => true} = wait) do
+    resumed = %{
+      "by" => resumption["by"],
+      "request" => resumption["request"],
+      "wait" => Map.drop(wait, ["node_id"])
+    }
+
+    run_node(node, context, state, resumed)
+  end
+
+  defp wake(node, context, resumption, state, _wait), do: wake(node, context, resumption, state)
+
+  defp wake(node, context, %{"by" => "call", "output" => output} = resumption, state) do
+    context
+    |> Map.put("result", resumption["request"])
+    |> follow(output, step(node, context, state))
+  end
+
+  defp wake(node, context, %{"by" => "timeout", "output" => output}, state) do
+    follow(context, output, step(node, context, state))
   end
 
   defp wake(%{type: "Approval"} = node, context, %{"by" => "call"} = resumption, state) do
@@ -231,6 +269,7 @@ defmodule HeddleNodes.Runner do
       section_id: section_id,
       flow_id: flow.id,
       workspace_id: Map.get(flow, :workspace_id),
+      run_id: Keyword.get(opts, :run_id),
       on_respond: Keyword.get(opts, :on_respond, fn _response -> :ok end),
       on_step: Keyword.get(opts, :on_step, fn _entry -> :ok end),
       debug: Keyword.get(opts, :debug, false) == true,
@@ -384,6 +423,7 @@ defmodule HeddleNodes.Runner do
       attempts: 1,
       retry_errors: [],
       pinned: false,
+      resumed: nil,
       usage: Usage.enter()
     }
   end
@@ -395,10 +435,10 @@ defmodule HeddleNodes.Runner do
     end
   end
 
-  defp run_node(node, context, flow) do
+  defp run_node(node, context, flow, resumed \\ nil) do
     if definition = Nodes.get_node(node.type) do
       context = if is_map(context), do: context, else: %{"result" => context}
-      step = step(node, context, flow)
+      step = %{step(node, context, flow) | resumed: resumed}
 
       try do
         case pin(node, flow) do
@@ -429,9 +469,14 @@ defmodule HeddleNodes.Runner do
     node_context =
       step.context
       |> Map.merge(step.node.controls)
-      |> Map.merge(%{"flow_id" => step.flow.flow_id, "workspace_id" => step.flow.workspace_id})
+      |> Map.merge(%{
+        "flow_id" => step.flow.flow_id,
+        "workspace_id" => step.flow.workspace_id,
+        "run_id" => step.flow.run_id
+      })
+      |> then(&if(step.resumed, do: Map.put(&1, "resumed", step.resumed), else: &1))
 
-    outcome = call(module, node_context)
+    outcome = module |> call(node_context) |> forget_resumed()
     settings = step.node.settings
 
     case failure(outcome) do
@@ -451,6 +496,13 @@ defmodule HeddleNodes.Runner do
   catch
     kind, reason -> {:crash, Exception.format(kind, reason, __STACKTRACE__)}
   end
+
+  # What ended a wait is for the node called again, not for the steps after it.
+  defp forget_resumed({:ok, %{} = result, output}),
+    do: {:ok, Map.delete(result, "resumed"), output}
+
+  defp forget_resumed({:ok, %{} = result}), do: {:ok, Map.delete(result, "resumed")}
+  defp forget_resumed(outcome), do: outcome
 
   defp failure({:error, reason}), do: {:failed, format_reason(reason)}
   defp failure({:crash, message}), do: {:failed, message}
@@ -488,6 +540,9 @@ defmodule HeddleNodes.Runner do
 
       {:agent, request} ->
         run_agent(request, step)
+
+      {:with_tools, fun} ->
+        run_with_tools(fun, step)
 
       {:wait, wait} ->
         Usage.leave(step.usage)
@@ -571,17 +626,7 @@ defmodule HeddleNodes.Runner do
   defp run_agent(request, step) do
     tools = Graph.next(step.flow.graph, step.node, "tools")
 
-    run_tool = fn node, input ->
-      case execute_node(node, tool_context(step.context, input), step.flow) do
-        {:wait, _wait, context, _frames} ->
-          {:error, "A Wait can't be the tool of an AI Agent.", node.id, context}
-
-        result ->
-          result
-      end
-    end
-
-    case Agent.run(request, step.flow.flow_id, tools, run_tool) do
+    case Agent.run(request, step.flow.flow_id, tools, tool_runner(step)) do
       {:ok, value, calls, logs} ->
         step.context
         |> agent_result(value, calls, logs)
@@ -593,6 +638,91 @@ defmodule HeddleNodes.Runner do
         step.context
         |> agent_result(error, calls, logs)
         |> follow("error", step)
+    end
+  end
+
+  # A node that brings its own model, like a package's agent: `fun` gets what the tools
+  # are and a function that calls one by name, and answers `{:ok, value}`,
+  # `{:ok, value, output}` or `{:error, reason}`. `tool_calls` and the logs of the tools
+  # are kept, like the AI Agent's.
+  defp run_with_tools(fun, step) do
+    tools = Tools.build(Graph.next(step.flow.graph, step.node, "tools"))
+    {parent, ref} = {self(), make_ref()}
+    run_tool = tool_runner(step)
+
+    call = fn name, args ->
+      case Enum.find(tools, &(&1.name == to_string(name))) do
+        nil ->
+          {:error, "There is no tool called #{name}."}
+
+        tool ->
+          case Tools.call(tool, args, run_tool) do
+            {:ok, output, call, logs} ->
+              send(parent, {ref, call, logs})
+              {:ok, output}
+
+            {:error, message, call} ->
+              send(parent, {ref, call, []})
+              {:error, message}
+          end
+      end
+    end
+
+    outcome = call_with_tools(fun, Enum.map(tools, &Tools.describe/1), call)
+    {calls, logs} = collect_tool_calls(ref, [], [])
+
+    case outcome do
+      # Like a tool that needs a person's approval first: the node is called again
+      # when the wait ends, see `Bobbin.Node.handler/2`.
+      {:wait, wait} ->
+        Usage.leave(step.usage)
+        {:wait, Map.put(wait, "node_id", step.node.id), step.context, []}
+
+      {:ok, value} ->
+        step.context |> agent_result(value, calls, logs) |> follow("success", step)
+
+      {:ok, value, output} ->
+        step.context |> agent_result(value, calls, logs) |> follow(to_string(output), step)
+
+      {:error, error} ->
+        error = if is_binary(error), do: %{"error" => error}, else: error
+        step.context |> agent_result(error, calls, logs) |> follow("error", step)
+    end
+  end
+
+  defp call_with_tools(fun, tools, call) do
+    case fun.(tools, call) do
+      {:ok, _value} = ok -> ok
+      {:ok, _value, _output} = ok -> ok
+      {:wait, %{}} = wait -> wait
+      {:error, _reason} = error -> error
+      other -> {:error, "The node answered #{inspect(other)}."}
+    end
+  rescue
+    e -> {:error, Exception.message(e)}
+  catch
+    kind, reason -> {:error, Exception.format(kind, reason, __STACKTRACE__)}
+  end
+
+  defp collect_tool_calls(ref, calls, logs) do
+    receive do
+      {^ref, call, new_logs} -> collect_tool_calls(ref, [call | calls], logs ++ new_logs)
+    after
+      0 -> {Enum.reverse(calls), logs}
+    end
+  end
+
+  # Runs a tool's node with its new controls and input. A Wait would hold the node
+  # that called it, so it can't be one.
+  defp tool_runner(step) do
+    fn node, input ->
+      case execute_node(node, tool_context(step.context, input), step.flow) do
+        {:wait, _wait, context, _frames} ->
+          {:error, "A Wait can't be a tool.", node.id, context}
+
+        result ->
+          result
+      end
     end
   end
 

@@ -9,7 +9,7 @@ defmodule HeddleNodes.Nodes.Spool.UpdateRows do
       "Changes the rows of a Spool table that match a filter. A null clears a column.",
       [
         %{Spool.filter_field() | default: ~s({"id": "{{result.id}}"})},
-        %{type: :textarea, name: :values, label: "Values (JSON)", default: ""}
+        %{type: :textarea, language: :json, name: :values, label: "Values (JSON)", default: ""}
       ]
     )
   end

@@ -1,5 +1,7 @@
 defmodule HeddleAI.Agents.Shared do
   def nodes_description do
+    notes = package_notes()
+
     node_definitions()
     |> Enum.map(fn node ->
       """
@@ -8,10 +10,43 @@ defmodule HeddleAI.Agents.Shared do
         Inputs: #{inspect(node[:inputs] || [])}
         Outputs: #{inspect(node[:outputs] || [])}
         Description: #{node[:description] || "A node to perform #{node.name} operations."}
-        Controls: #{controls_description(node)}
+        Controls: #{controls_description(node)}#{notes_description(notes, node.name)}
       """
     end)
     |> Enum.join("\n")
+  end
+
+  # How to use the nodes of packages, from their `priv/docs.json`, which tell more than
+  # a line can, like how an agent's flow is put together.
+  @max_notes 1_500
+
+  defp package_notes do
+    packages = Module.concat([HeddleNodes, Packages])
+
+    if Code.ensure_loaded?(packages) do
+      packages
+      |> apply(:docs_files, [])
+      |> Enum.reduce(%{}, fn file, acc ->
+        with {:ok, text} <- File.read(file), {:ok, %{} = docs} <- Jason.decode(text) do
+          Map.merge(acc, docs)
+        else
+          _other -> acc
+        end
+      end)
+    else
+      %{}
+    end
+  end
+
+  defp notes_description(notes, name) do
+    case get_in(notes, [name, "notes", "en"]) do
+      text when is_binary(text) and text != "" ->
+        "\n    How to use it: " <>
+          (text |> String.slice(0, @max_notes) |> String.replace("\n", "\n    "))
+
+      _none ->
+        ""
+    end
   end
 
   defp controls_description(node) do

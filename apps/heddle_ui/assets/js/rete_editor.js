@@ -220,6 +220,7 @@ export async function createEditor(container, { readOnly = false } = {}) {
                                                 options: control.options || [],
                                                 credential_kind: control.credentialKind,
                                                 options_from: control.optionsFrom || false,
+                                                language: control.language,
                                                 required: control.required || false
                                             };
                                         });
@@ -1229,6 +1230,8 @@ export async function createEditor(container, { readOnly = false } = {}) {
                 // The drawer lists these from the service, see HeddleUI.FlowLive.IntegrationManager.
                 if (field.options_from) control.optionsFrom = true;
                 if (field.required) control.required = true;
+                // A field of code, like a JSON body or a query, edited with its colors.
+                if (field.language) control.language = field.language;
             }
 
             node.addControl(field.name, control);

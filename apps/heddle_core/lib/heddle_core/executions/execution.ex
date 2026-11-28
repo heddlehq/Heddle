@@ -20,6 +20,10 @@ defmodule HeddleCore.Executions.Execution do
     field :paused, :map
     # The secret part of the address that resumes a Wait on a call.
     field :resume_token, :string, redact: true
+    # Runs with the same lane run one at a time, see `HeddleCore.Executions.admit/1`.
+    field :lane, :string
+    field :lane_held, :boolean, default: false
+    field :lane_position, :integer, read_after_writes: true
     field :started_at, :utc_datetime
     field :finished_at, :utc_datetime
 
@@ -44,6 +48,8 @@ defmodule HeddleCore.Executions.Execution do
       :result,
       :error,
       :logs,
+      :lane,
+      :lane_held,
       :started_at,
       :finished_at
     ])

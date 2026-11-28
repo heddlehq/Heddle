@@ -79,4 +79,47 @@ defmodule HeddleUI.FlowLive.IndexTest do
       |> render_click()
     end
   end
+
+  describe "templates" do
+    setup do
+      dir = Path.join(System.tmp_dir!(), "heddle-templates-#{System.unique_integer([:positive])}")
+      File.mkdir_p!(dir)
+      path = Path.join(dir, "support.json")
+
+      File.write!(
+        path,
+        Jason.encode!(%{
+          "name" => "Support Agent",
+          "description" => "Answers customers.",
+          "i18n" => %{"pt-BR" => %{"name" => "Atendente"}},
+          "nodes" => [
+            %{"id" => "start", "type" => "Start", "label" => "Start", "controls" => %{}}
+          ],
+          "connections" => []
+        })
+      )
+
+      Application.put_env(:heddle_ui, :bobbin_templates, [path])
+
+      on_exit(fn ->
+        Application.delete_env(:heddle_ui, :bobbin_templates)
+        File.rm_rf!(dir)
+      end)
+    end
+
+    test "a package's template becomes a new flow", %{conn: conn} do
+      admin = system_admin_fixture()
+      {:ok, lv, _html} = conn |> log_in_user(admin) |> live(~p"/flows")
+
+      lv |> element("#flow-templates-toggle") |> render_click()
+      assert has_element?(lv, "#flow-template-heddle_ui-support", "Support Agent")
+
+      assert {:error, {:live_redirect, %{to: "/flows/" <> id}}} =
+               lv |> element("#flow-template-heddle_ui-support") |> render_click()
+
+      flow = HeddleCore.Flows.get_flow!(String.to_integer(id))
+      assert flow.name == "Support Agent"
+      assert [%{"type" => "Start"}] = flow.nodes
+    end
+  end
 end
