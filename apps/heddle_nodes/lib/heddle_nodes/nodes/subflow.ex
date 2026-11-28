@@ -32,7 +32,13 @@ defmodule HeddleNodes.Nodes.Subflow do
       show: true,
       ui_fields: [
         %{type: :flow, name: :subflow_id, label: "Flow", default: ""},
-        %{type: :textarea, name: :subflow_data, label: "Data", default: "{{result}}"},
+        %{
+          type: :textarea,
+          language: :json,
+          name: :subflow_data,
+          label: "Data",
+          default: "{{result}}"
+        },
         %{
           type: :select,
           name: :subflow_mode,

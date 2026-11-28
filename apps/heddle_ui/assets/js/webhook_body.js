@@ -35,12 +35,12 @@ const typeOf = (value) => {
 
 const toText = (value) => (typeof value === "string" ? value : JSON.stringify(value));
 
-const isDark = () => document.documentElement.dataset.theme === "dark";
+export const isDark = () => document.documentElement.dataset.theme === "dark";
 
-const themeName = () => (isDark() ? "heddle-json-dark" : "heddle-json-light");
+export const themeName = () => (isDark() ? "heddle-json-dark" : "heddle-json-light");
 
 // Only the part of Monaco the code modal uses is served, which leaves JSON out.
-const registerJson = (monaco) => {
+export const registerJson = (monaco) => {
     if (monaco.languages.getLanguages().some(({ id }) => id === "heddle-json")) return;
 
     monaco.languages.register({ id: "heddle-json" });

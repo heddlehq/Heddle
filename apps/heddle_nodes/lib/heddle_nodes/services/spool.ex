@@ -36,11 +36,11 @@ defmodule HeddleNodes.Services.Spool do
   def table_field, do: %{type: :text, name: :table, label: "Table", default: ""}
 
   def rows_field do
-    %{type: :textarea, name: :rows, label: "Rows", default: "{{form}}"}
+    %{type: :textarea, language: :json, name: :rows, label: "Rows", default: "{{form}}"}
   end
 
   def filter_field do
-    %{type: :textarea, name: :filter, label: "Filter (JSON)", default: ""}
+    %{type: :textarea, language: :json, name: :filter, label: "Filter (JSON)", default: ""}
   end
 
   @doc """

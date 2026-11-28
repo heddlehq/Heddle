@@ -3,6 +3,7 @@ import { Socket } from "phoenix"
 import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import { CodeEditorHook, loadMonaco } from "./code_editor"
+import { CodeFieldHook } from "./code_field"
 import { WebhookBodyHook } from "./webhook_body"
 import { TerminalHook } from "./terminal"
 import { FlowDragHook } from "./flow_drag"
@@ -13,6 +14,7 @@ import "./json-tree"
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024
 
 const hooks = {
+  CodeField: CodeFieldHook,
   // Reads a flow from a JSON file and hands it to the server, which checks it.
   ImportFlow: {
     mounted() {

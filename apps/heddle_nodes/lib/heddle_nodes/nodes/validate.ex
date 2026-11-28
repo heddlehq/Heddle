@@ -35,7 +35,13 @@ defmodule HeddleNodes.Nodes.Validate do
       outputs: ["valid", "invalid"],
       show: true,
       ui_fields: [
-        %{type: :textarea, name: :validation_data, label: "Data", default: "{{result}}"},
+        %{
+          type: :textarea,
+          language: :json,
+          name: :validation_data,
+          label: "Data",
+          default: "{{result}}"
+        },
         %{type: :schema, name: :validation_schema, label: "Rules", default: @default_schema}
       ]
     }

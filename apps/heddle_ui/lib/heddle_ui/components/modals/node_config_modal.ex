@@ -124,14 +124,14 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
                         <% "boolean" -> %>
                           <.boolean_field key={key} value={control["value"]} />
                         <% "json" -> %>
-                          <textarea
+                          <.code_input
                             id={"node-field-#{key}"}
-                            name={key}
-                            rows="6"
-                            spellcheck="false"
-                            placeholder={~s({"key": "value"})}
-                            class="w-full px-4 py-3 rounded-lg font-mono text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
-                          >{json_text(control["value"])}</textarea>
+                            node_id={@editing_node_data["id"]}
+                            key={key}
+                            value={json_text(control["value"])}
+                            language="json"
+                            read_only={@read_only}
+                          />
                         <% "datetime" -> %>
                           <input
                             id={"node-field-#{key}"}
@@ -224,7 +224,17 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
                             read_only={@read_only}
                           />
                         <% "textarea" -> %>
+                          <.code_input
+                            :if={control["language"] not in [nil, ""]}
+                            id={"node-field-#{key}"}
+                            node_id={@editing_node_data["id"]}
+                            key={key}
+                            value={control["value"]}
+                            language={control["language"]}
+                            read_only={@read_only}
+                          />
                           <textarea
+                            :if={control["language"] in [nil, ""]}
                             id={"node-field-#{key}"}
                             name={key}
                             rows="6"
@@ -1054,6 +1064,38 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
       {gettext("Open this flow")}
       <.icon name="hero-arrow-top-right-on-square-mini" class="w-3.5 h-3.5" />
     </.link>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :node_id, :string, default: nil
+  attr :key, :string, required: true
+  attr :value, :any, default: nil
+  attr :language, :string, default: "text"
+  attr :read_only, :boolean, default: false
+
+  # A field of code, like a JSON body or a SQL query, with its colors and the flow's
+  # {{placeholders}} marked, see `CodeField` in assets/js/code_field.js. The textarea is
+  # what the form sends, and shows the text until the editor loads.
+  defp code_input(assigns) do
+    ~H"""
+    <div
+      id={"code-field-#{@node_id}-#{@key}"}
+      phx-hook="CodeField"
+      phx-update="ignore"
+      data-language={@language}
+      data-read-only={to_string(@read_only)}
+      class="overflow-hidden rounded-lg border border-gray-200 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 dark:border-slate-700"
+    >
+      <textarea
+        id={@id}
+        name={@key}
+        rows="6"
+        spellcheck="false"
+        class="block w-full border-0 bg-gray-50 px-4 py-3 font-mono text-sm text-gray-900 placeholder-gray-400 focus:outline-none dark:bg-slate-800 dark:text-gray-100"
+      >{@value}</textarea>
+      <div data-monaco class="hidden w-full"></div>
+    </div>
     """
   end
 
