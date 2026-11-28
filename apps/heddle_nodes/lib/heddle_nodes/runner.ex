@@ -134,7 +134,7 @@ defmodule HeddleNodes.Runner do
     resumed =
       case Graph.get(state.graph, wait["node_id"]) do
         nil -> {:ok, context}
-        node -> wake(node, context, outputs(wait, resumption), state)
+        node -> wake(node, context, outputs(wait, resumption), state, wait)
       end
 
     paused
@@ -153,6 +153,20 @@ defmodule HeddleNodes.Runner do
   end
 
   defp outputs(_wait, resumption), do: resumption
+
+  # A package's node that asked for it is called again, with what ended its wait as
+  # `"resumed"`, see `Bobbin.Node.handler/2`.
+  defp wake(node, context, resumption, state, %{"again" => true} = wait) do
+    resumed = %{
+      "by" => resumption["by"],
+      "request" => resumption["request"],
+      "wait" => Map.drop(wait, ["node_id"])
+    }
+
+    run_node(node, context, state, resumed)
+  end
+
+  defp wake(node, context, resumption, state, _wait), do: wake(node, context, resumption, state)
 
   defp wake(node, context, %{"by" => "call", "output" => output} = resumption, state) do
     context
@@ -409,6 +423,7 @@ defmodule HeddleNodes.Runner do
       attempts: 1,
       retry_errors: [],
       pinned: false,
+      resumed: nil,
       usage: Usage.enter()
     }
   end
@@ -420,10 +435,10 @@ defmodule HeddleNodes.Runner do
     end
   end
 
-  defp run_node(node, context, flow) do
+  defp run_node(node, context, flow, resumed \\ nil) do
     if definition = Nodes.get_node(node.type) do
       context = if is_map(context), do: context, else: %{"result" => context}
-      step = step(node, context, flow)
+      step = %{step(node, context, flow) | resumed: resumed}
 
       try do
         case pin(node, flow) do
@@ -459,8 +474,9 @@ defmodule HeddleNodes.Runner do
         "workspace_id" => step.flow.workspace_id,
         "run_id" => step.flow.run_id
       })
+      |> then(&if(step.resumed, do: Map.put(&1, "resumed", step.resumed), else: &1))
 
-    outcome = call(module, node_context)
+    outcome = module |> call(node_context) |> forget_resumed()
     settings = step.node.settings
 
     case failure(outcome) do
@@ -480,6 +496,11 @@ defmodule HeddleNodes.Runner do
   catch
     kind, reason -> {:crash, Exception.format(kind, reason, __STACKTRACE__)}
   end
+
+  # What ended a wait is for the node called again, not for the steps after it.
+  defp forget_resumed({:ok, %{} = result, output}), do: {:ok, Map.delete(result, "resumed"), output}
+  defp forget_resumed({:ok, %{} = result}), do: {:ok, Map.delete(result, "resumed")}
+  defp forget_resumed(outcome), do: outcome
 
   defp failure({:error, reason}), do: {:failed, format_reason(reason)}
   defp failure({:crash, message}), do: {:failed, message}
@@ -649,6 +670,12 @@ defmodule HeddleNodes.Runner do
     {calls, logs} = collect_tool_calls(ref, [], [])
 
     case outcome do
+      # Like a tool that needs a person's approval first: the node is called again
+      # when the wait ends, see `Bobbin.Node.handler/2`.
+      {:wait, wait} ->
+        Usage.leave(step.usage)
+        {:wait, Map.put(wait, "node_id", step.node.id), step.context, []}
+
       {:ok, value} ->
         step.context |> agent_result(value, calls, logs) |> follow("success", step)
 
@@ -665,6 +692,7 @@ defmodule HeddleNodes.Runner do
     case fun.(tools, call) do
       {:ok, _value} = ok -> ok
       {:ok, _value, _output} = ok -> ok
+      {:wait, %{}} = wait -> wait
       {:error, _reason} = error -> error
       other -> {:error, "The node answered #{inspect(other)}."}
     end
