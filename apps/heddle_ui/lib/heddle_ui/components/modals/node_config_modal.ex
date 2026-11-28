@@ -16,6 +16,8 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
   attr :validate_form, :boolean, default: false
   attr :read_only, :boolean, default: false
   attr :form_link, :map, default: nil
+  attr :chat_link, :map, default: nil
+  attr :package_panel, :list, default: nil
   attr :hook_link, :map, default: nil
   attr :field_options, :map, default: %{}
   attr :can_run, :boolean, default: false
@@ -81,6 +83,15 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
               />
 
               <.hook_link :if={@hook_link} link={@hook_link} />
+
+              <.chat_link
+                :if={@chat_link}
+                link={@chat_link}
+                read_only={@read_only}
+                can_run={@can_run}
+              />
+
+              <.package_panel :if={@package_panel} sections={@package_panel} />
 
               <%= if @editing_node_data["controls"] do %>
                 <%= for {key, control} <- ordered_controls(@editing_node_data) do %>
@@ -570,6 +581,152 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
     </div>
     """
   end
+
+  attr :link, :map, required: true
+  attr :read_only, :boolean, default: false
+  attr :can_run, :boolean, default: false
+
+  # Where people talk to a trigger like an Agent, and how to try it.
+  defp chat_link(assigns) do
+    ~H"""
+    <div
+      id="chat-link"
+      class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
+    >
+      <div class="flex items-center justify-between gap-2">
+        <p class="text-sm font-medium text-gray-900 dark:text-white">{gettext("Chat link")}</p>
+        <span
+          :if={not @link.published}
+          id="chat-link-unpublished"
+          class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+        >
+          {gettext("Publish to open it")}
+        </span>
+        <span
+          :if={@link.published}
+          class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+        >
+          {gettext("Live")}
+        </span>
+      </div>
+      <div class="mt-2 flex gap-2">
+        <input
+          id="chat-link-url"
+          type="text"
+          readonly
+          value={@link.url}
+          class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-xs text-gray-700 focus:border-primary focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300"
+        />
+        <button
+          id="chat-link-copy"
+          type="button"
+          phx-click={JS.dispatch("phx:copy", detail: %{to: "#chat-link-url"})}
+          class="group inline-flex shrink-0 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 transition-colors hover:border-primary hover:text-primary dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300"
+        >
+          <.icon name="hero-clipboard-document-mini" class="size-4 group-data-[copied]:hidden" />
+          <.icon name="hero-check-mini" class="hidden size-4 text-emerald-600 group-data-[copied]:block" />
+          <span class="group-data-[copied]:hidden">{gettext("Copy")}</span>
+          <span class="hidden group-data-[copied]:inline">{gettext("Copied")}</span>
+        </button>
+      </div>
+      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+        {gettext("Anyone with the link can talk to it, each in a conversation of their own. It talks with what is published.")}
+      </p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <a
+          :if={@can_run and @link.published}
+          id="chat-link-test"
+          href={@link.test_url}
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-content transition-colors hover:bg-primary/90"
+        >
+          <.icon name="hero-chat-bubble-left-right-mini" class="size-4" /> {gettext("Chat")}
+        </a>
+        <a
+          :if={@link.published}
+          id="chat-link-open"
+          href={@link.url}
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+        >
+          <.icon name="hero-arrow-top-right-on-square-mini" class="size-4" /> {gettext("Open")}
+        </a>
+        <button
+          :if={not @read_only}
+          id="chat-link-regenerate"
+          type="button"
+          phx-click="chat_regenerate_link"
+          data-confirm={gettext("The current link will stop working. Make a new one?")}
+          class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200/60 dark:text-gray-300 dark:hover:bg-slate-700"
+        >
+          <.icon name="hero-arrow-path-mini" class="size-4" /> {gettext("New link")}
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  attr :sections, :list, required: true
+
+  # What a package's node keeps while its flow runs, see `c:Bobbin.Node.panel/2`.
+  defp package_panel(assigns) do
+    ~H"""
+    <div id="package-panel" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <p class="text-sm font-medium text-gray-900 dark:text-white">{gettext("While it runs")}</p>
+        <button
+          id="package-panel-refresh"
+          type="button"
+          phx-click="package_panel_refresh"
+          class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
+        >
+          <.icon name="hero-arrow-path-mini" class="size-4" /> {gettext("Refresh")}
+        </button>
+      </div>
+      <div
+        :for={{section, index} <- Enum.with_index(@sections)}
+        id={"package-panel-#{index}"}
+        class="rounded-xl border border-gray-200 dark:border-slate-700"
+      >
+        <p class="border-b border-gray-200 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-slate-700 dark:text-gray-400">
+          {section[:title]}
+        </p>
+        <p
+          :if={section[:text]}
+          class="whitespace-pre-line px-4 py-3 text-sm text-gray-700 dark:text-gray-300"
+        >
+          {section[:text]}
+        </p>
+        <div :if={section[:columns]} class="overflow-x-auto">
+          <table :if={section[:rows] not in [nil, []]} class="w-full text-left text-xs">
+            <thead>
+              <tr class="text-gray-500 dark:text-gray-400">
+                <th :for={column <- section[:columns]} class="px-4 py-2 font-medium">{column}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+              <tr :for={row <- section[:rows]} class="align-top text-gray-800 dark:text-gray-200">
+                <td :for={column <- section[:columns]} class="max-w-[16rem] break-words px-4 py-2 font-mono">
+                  {panel_cell(row[column])}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p :if={section[:rows] in [nil, []]} class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+            {section[:empty] || gettext("Nothing yet.")}
+          </p>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  defp panel_cell(nil), do: ""
+  defp panel_cell(value) when is_binary(value), do: value
+  defp panel_cell(value) when is_number(value) or is_boolean(value), do: to_string(value)
+  defp panel_cell(value), do: Jason.encode!(value)
 
   defp form_link_hint do
     gettext(

@@ -29,6 +29,42 @@ defmodule HeddleNodes.Packages do
         do: file
   end
 
+  @doc """
+  The flows the packages offer to start from, from the JSON files each one lists in
+  `bobbin_templates`, by path in its app: `name`, `description`, `nodes`,
+  `connections`, and the same texts in other languages under `i18n`, like
+  `"i18n": {"pt-BR": {"name": ..., "description": ...}}`. Each gets an `id`, its app and
+  file name, and its `package`.
+  """
+  def templates do
+    for app <- template_apps(),
+        path <- Application.get_env(app, :bobbin_templates, []),
+        template = read_template(app, path),
+        template != nil do
+      template
+    end
+  end
+
+  defp template_apps do
+    for {app, _description, _version} <- Application.loaded_applications(),
+        Application.get_env(app, :bobbin_templates) not in [nil, []],
+        do: app
+  end
+
+  defp read_template(app, path) do
+    file = if Path.type(path) == :absolute, do: path, else: Application.app_dir(app, path)
+
+    with {:ok, text} <- File.read(file),
+         {:ok, %{"name" => _, "nodes" => nodes} = template} when is_list(nodes) <- Jason.decode(text) do
+      template
+      |> Map.put("id", "#{app}/#{Path.basename(path, ".json")}")
+      |> Map.put("package", to_string(app))
+      |> Map.put_new("connections", [])
+    else
+      _other -> nil
+    end
+  end
+
   defp state do
     case :persistent_term.get(@key, nil) do
       nil ->

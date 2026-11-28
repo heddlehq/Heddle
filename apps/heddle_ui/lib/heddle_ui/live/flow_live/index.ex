@@ -17,10 +17,19 @@ defmodule HeddleUI.FlowLive.Index do
        page_title: gettext("Flows"),
        ai_configured: HeddleAI.LLM.configured?(),
        group_form: nil,
+       templates: HeddleNodes.Packages.templates(),
+       templates_open: false,
        renaming_group_id: nil,
        rename_form: nil
      )
      |> load()}
+  end
+
+  # A template's text in the person's language, or as it is written.
+  defp template_text(template, key) do
+    locale = Gettext.get_locale(HeddleUI.Gettext) |> String.replace("_", "-")
+
+    get_in(template, ["i18n", locale, key]) || template[key] || ""
   end
 
   defp load(socket) do
@@ -43,6 +52,29 @@ defmodule HeddleUI.FlowLive.Index do
          put_flash(socket, :error, gettext("Your role in this workspace can't create flows."))}
 
       {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to create flow."))}
+    end
+  end
+
+  # The flows the packages offer to start from, like the Agents' models.
+  def handle_event("toggle_templates", _params, socket) do
+    {:noreply, assign(socket, :templates_open, not socket.assigns.templates_open)}
+  end
+
+  def handle_event("use_template", %{"id" => id}, socket) do
+    with %{} = template <- Enum.find(socket.assigns.templates, &(&1["id"] == id)),
+         {:ok, flow} <-
+           Flows.create_flow(socket.assigns.current_scope, %{
+             name: template_text(template, "name"),
+             nodes: template["nodes"],
+             connections: template["connections"] || []
+           }) do
+      {:noreply, push_navigate(socket, to: ~p"/flows/#{flow}")}
+    else
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, gettext("Your role in this workspace can't create flows."))}
+
+      _other ->
         {:noreply, put_flash(socket, :error, gettext("Failed to create flow."))}
     end
   end
@@ -146,12 +178,42 @@ defmodule HeddleUI.FlowLive.Index do
             <.icon name="hero-sparkles" class="h-4 w-4" /> {gettext("Create with AI")}
           </.button>
           <.button
+            :if={@templates != []}
+            id="flow-templates-toggle"
+            phx-click="toggle_templates"
+            variant="outline"
+          >
+            <.icon name="hero-squares-plus" class="h-4 w-4" /> {gettext("From a template")}
+          </.button>
+          <.button
             phx-click="create_flow"
             variant="primary"
           >
             <.icon name="hero-plus" class="h-4 w-4" /> {gettext("New Flow")}
           </.button>
         </div>
+      </div>
+
+      <div
+        :if={@templates_open and @can_edit}
+        id="flow-templates"
+        class="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <button
+          :for={template <- @templates}
+          id={"flow-template-" <> String.replace(template["id"], "/", "-")}
+          type="button"
+          phx-click="use_template"
+          phx-value-id={template["id"]}
+          class="flex flex-col items-start gap-1.5 rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-primary dark:border-slate-700 dark:bg-slate-800"
+        >
+          <span class="text-sm font-semibold text-gray-900 dark:text-white">
+            {template_text(template, "name")}
+          </span>
+          <span class="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+            {template_text(template, "description")}
+          </span>
+        </button>
       </div>
 
       <.form

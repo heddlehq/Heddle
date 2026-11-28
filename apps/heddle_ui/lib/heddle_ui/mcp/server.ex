@@ -27,6 +27,9 @@ defmodule HeddleUI.MCP.Server do
   component(Tools.PublishFlow)
   component(Tools.RestoreVersion)
   component(Tools.Chat)
+  component(Tools.ListAgents)
+  component(Tools.ReadAgent)
+  component(Tools.MessageAgent)
 
   # Long enough for a person to answer a confirmation before the request gives up.
   def request_timeout, do: to_timeout(minute: 6)

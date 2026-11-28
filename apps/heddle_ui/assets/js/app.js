@@ -242,6 +242,23 @@ const hooks = {
       this.el.scrollTop = this.el.scrollHeight;
     },
   },
+  // A chat's box: Enter sends and Shift+Enter breaks the line. It empties once the
+  // message is sent, and keeps what was written when it couldn't be.
+  SubmitOnEnter: {
+    mounted() {
+      this.el.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+          event.preventDefault();
+          this.el.form.requestSubmit();
+        }
+      });
+      this.handleEvent("chat:sent", () => {
+        this.el.value = "";
+        this.el.focus();
+      });
+      this.el.focus();
+    },
+  },
   FocusInput: {
     mounted() {
       this.el.focus();
