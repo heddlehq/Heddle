@@ -19,7 +19,7 @@ defmodule HeddleWorker.FlowExecutionWorker do
   alias HeddleNodes.Runner
   alias HeddleWorker.Subflow
 
-  @internal_result_keys ["flow_id", "workspace_id", "logs"]
+  @internal_result_keys ["flow_id", "workspace_id", "run_id", "logs"]
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"execution_id" => id, "wait_id" => wait_id} = args, id: job_id}) do
@@ -88,6 +88,7 @@ defmodule HeddleWorker.FlowExecutionWorker do
     [
       on_respond: &Executions.put_response(execution, &1),
       resume_url: Executions.resume_url(execution),
+      run_id: execution.id,
       debug: debug
     ] ++ if(debug, do: [on_step: &Executions.broadcast_step(execution.id, &1)], else: [])
   end

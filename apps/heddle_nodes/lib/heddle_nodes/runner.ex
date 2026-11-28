@@ -36,7 +36,7 @@ defmodule HeddleNodes.Runner do
   # order they began to wait. It travels in the context so it is saved with a pause.
   @merging "_merging"
   @run_only [@merging, "resume_url", "_form_answered"]
-  @internal_keys ["flow_id", "workspace_id", "logs" | @run_only]
+  @internal_keys ["flow_id", "workspace_id", "run_id", "logs" | @run_only]
   @run_keys ["node_id", "section_id", "replay_from", "debug"]
   @drain %{"kind" => "drain"}
 
@@ -60,6 +60,8 @@ defmodule HeddleNodes.Runner do
     * `:on_step` is called with the log entry of each step as it ends.
     * `:resume_url` is the address that resumes a `Wait` on a call. A flow with a
       `Wait` reads it as `{{resume_url}}`, to send it before it waits.
+    * `:run_id` is the run, pinned in each node's context as `"run_id"`, like the flow
+      and the workspace: a package keeps data with it, see `Bobbin.Host`.
     * `:debug`, when true, takes the data pinned to a node instead of running it. Only
       runs started from the editor set it.
     * `:sleep` waits between the tries of a step, `Process.sleep/1` by default.
@@ -232,6 +234,7 @@ defmodule HeddleNodes.Runner do
       section_id: section_id,
       flow_id: flow.id,
       workspace_id: Map.get(flow, :workspace_id),
+      run_id: Keyword.get(opts, :run_id),
       on_respond: Keyword.get(opts, :on_respond, fn _response -> :ok end),
       on_step: Keyword.get(opts, :on_step, fn _entry -> :ok end),
       debug: Keyword.get(opts, :debug, false) == true,
@@ -430,7 +433,11 @@ defmodule HeddleNodes.Runner do
     node_context =
       step.context
       |> Map.merge(step.node.controls)
-      |> Map.merge(%{"flow_id" => step.flow.flow_id, "workspace_id" => step.flow.workspace_id})
+      |> Map.merge(%{
+        "flow_id" => step.flow.flow_id,
+        "workspace_id" => step.flow.workspace_id,
+        "run_id" => step.flow.run_id
+      })
 
     outcome = call(module, node_context)
     settings = step.node.settings
