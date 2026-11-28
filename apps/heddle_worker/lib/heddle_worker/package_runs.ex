@@ -1,7 +1,8 @@
 defmodule HeddleWorker.PackageRuns do
   @moduledoc """
-  Starts the runs a package asks for, for `start_runs/1` and `cancel_run/2` of
-  `Bobbin.Host`, through the `:runs_client` config of `:heddle_nodes`.
+  Starts the runs a package asks for, for `start_runs/1`, `cancel_run/2` and
+  `resume_run/4` of `Bobbin.Host`, through the `:runs_client` config of
+  `:heddle_nodes`.
 
   A package's trigger node is the start of a flow, like a Subflow Trigger. Every
   published flow of the workspace with that trigger, whose controls hold the ones
@@ -49,6 +50,10 @@ defmodule HeddleWorker.PackageRuns do
 
   @doc "Cancels a run that hasn't begun, see `Bobbin.Host`."
   def cancel_run(workspace_id, run_id), do: Executions.cancel_queued(workspace_id, run_id)
+
+  @doc "Resumes a run a package's node paused, see `Bobbin.Host`."
+  def resume_run(workspace_id, run_id, key, value),
+    do: Executions.resume_run(workspace_id, run_id, key, value)
 
   defp start(flow, node, request, caller) do
     input = %{

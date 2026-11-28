@@ -643,8 +643,45 @@ defmodule HeddleCore.Executions do
     end
   end
 
-  defp call(execution, request, deadline, poll) do
+  @doc """
+  Resumes the run `execution_id` of a flow of `workspace_id`, which a package's node
+  paused with `key`, with `value` as its `result`, for `Bobbin.Host.resume_run/4`. A
+  run still running is waited for a moment, as for `resume_by_call/3`.
+  """
+  def resume_run(workspace_id, execution_id, key, value, opts \\ []) do
+    deadline = System.monotonic_time(:millisecond) + Keyword.get(opts, :timeout, @call_timeout)
+    poll = Keyword.get(opts, :poll, @response_poll)
+
+    query =
+      from e in Execution,
+        join: f in assoc(e, :flow),
+        where: e.id == ^execution_id and f.workspace_id == ^workspace_id
+
+    with {:ok, _uuid} <- Ecto.UUID.cast(execution_id),
+         %Execution{} = execution <- Repo.one(query),
+         {:ok, _execution} <- call(execution, value, deadline, poll, key) do
+      :ok
+    else
+      :error -> {:error, :not_found}
+      nil -> {:error, :not_found}
+      {:error, :finished} -> {:error, :not_waiting}
+      {:error, :already_resumed} -> {:error, :not_waiting}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  # A wait with a key, a package's, is ended only by a call with that key, and a Wait,
+  # with none, only by a call without one.
+  defp call(execution, request, deadline, poll, key \\ nil) do
     case execution do
+      %Execution{status: "waiting", paused: %{"wait" => %{"call" => true} = wait}}
+      when not is_map_key(wait, "key") and not is_nil(key) ->
+        {:error, :not_waiting}
+
+      %Execution{status: "waiting", paused: %{"wait" => %{"call" => true, "key" => wait_key}}}
+      when wait_key != key ->
+        {:error, :not_waiting}
+
       %Execution{status: "waiting", paused: %{"wait_id" => id, "wait" => %{"call" => true}}} ->
         job = resume_job(execution, id, "call", %{request: request})
 
@@ -657,7 +694,7 @@ defmodule HeddleCore.Executions do
       %Execution{status: status} when status in ["queued", "running"] ->
         if System.monotonic_time(:millisecond) < deadline do
           Process.sleep(poll)
-          call(Repo.reload!(execution), request, deadline, poll)
+          call(Repo.reload!(execution), request, deadline, poll, key)
         else
           {:error, :not_waiting}
         end

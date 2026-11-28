@@ -134,13 +134,34 @@ defmodule HeddleNodes.Runner do
     resumed =
       case Graph.get(state.graph, wait["node_id"]) do
         nil -> {:ok, context}
-        node -> wake(node, context, resumption, state)
+        node -> wake(node, context, outputs(wait, resumption), state)
       end
 
     paused
     |> Map.get("frames", [])
     |> continue(resumed, state)
     |> finish(state)
+  end
+
+  # A node of a package names the outputs it goes on through, see
+  # `Bobbin.Node.wait_for_call/2`. A Wait goes on through `exec` and `timeout`.
+  defp outputs(%{"outputs" => %{} = outputs}, %{"by" => by} = resumption) do
+    case outputs[by] do
+      nil -> resumption
+      output -> Map.put(resumption, "output", output)
+    end
+  end
+
+  defp outputs(_wait, resumption), do: resumption
+
+  defp wake(node, context, %{"by" => "call", "output" => output} = resumption, state) do
+    context
+    |> Map.put("result", resumption["request"])
+    |> follow(output, step(node, context, state))
+  end
+
+  defp wake(node, context, %{"by" => "timeout", "output" => output}, state) do
+    follow(context, output, step(node, context, state))
   end
 
   defp wake(%{type: "Approval"} = node, context, %{"by" => "call"} = resumption, state) do

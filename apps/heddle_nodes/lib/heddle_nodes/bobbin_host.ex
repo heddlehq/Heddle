@@ -26,6 +26,10 @@ defmodule HeddleNodes.BobbinHost do
   def cancel_run(workspace_id, run_id), do: runs().cancel_run(workspace_id, run_id)
 
   @impl true
+  def resume_run(workspace_id, run_id, key, value),
+    do: runs().resume_run(workspace_id, run_id, key, value)
+
+  @impl true
   def store_get(workspace_id, namespace, key, opts),
     do: store().get(workspace_id, namespace, key, opts)
 
