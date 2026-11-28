@@ -488,3 +488,68 @@ test.describe('Terminal', () => {
   });
 });
 
+
+test.describe('Dragging a node from the sidebar', () => {
+  test.describe.configure({ timeout: 60000 });
+
+  const pressOn = async (page, name) => {
+    const row = page.locator(`aside button[data-node-name="${name}"]`).first();
+    await row.scrollIntoViewIfNeeded();
+    const box = await row.boundingBox();
+    await page.mouse.move(box.x + 30, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 60, box.y + box.height / 2 + 10, { steps: 4 });
+  };
+
+  test('turns into the node over the canvas and lands where it is let go', async ({ page }) => {
+    await openNewFlow(page);
+    const canvas = await page.locator('#flow-canvas').boundingBox();
+    const before = await page.locator('custom-node').count();
+
+    await pressOn(page, 'Logger');
+    const ghost = page.locator('.node-ghost');
+    await expect(ghost).toBeVisible();
+    await expect(ghost).not.toHaveClass(/is-node/);
+
+    const x = canvas.x + canvas.width / 2;
+    const y = canvas.y + canvas.height / 2;
+    await page.mouse.move(x, y, { steps: 12 });
+    await expect(ghost).toHaveClass(/is-node/);
+    await page.mouse.up();
+
+    await expect(page.locator('custom-node')).toHaveCount(before + 1, { timeout: 5000 });
+    await expect(ghost).toHaveCount(0, { timeout: 3000 });
+
+    const node = await page.locator('custom-node .circular-node').last().boundingBox();
+    expect(Math.abs(node.x + node.width / 2 - x)).toBeLessThan(20);
+    expect(Math.abs(node.y + node.height / 2 - y)).toBeLessThan(20);
+  });
+
+  test('goes back to the sidebar when let go outside the canvas', async ({ page }) => {
+    await openNewFlow(page);
+    const before = await page.locator('custom-node').count();
+
+    await pressOn(page, 'Logger');
+    await expect(page.locator('.node-ghost')).toBeVisible();
+    await page.mouse.up();
+
+    await expect(page.locator('.node-ghost')).toHaveCount(0, { timeout: 3000 });
+    await page.waitForTimeout(500);
+    await expect(page.locator('custom-node')).toHaveCount(before);
+  });
+
+  test('goes back with Escape', async ({ page }) => {
+    await openNewFlow(page);
+    const before = await page.locator('custom-node').count();
+    const canvas = await page.locator('#flow-canvas').boundingBox();
+
+    await pressOn(page, 'Logger');
+    await page.mouse.move(canvas.x + canvas.width / 2, canvas.y + canvas.height / 2, { steps: 8 });
+    await page.keyboard.press('Escape');
+    await page.mouse.up();
+
+    await expect(page.locator('.node-ghost')).toHaveCount(0, { timeout: 3000 });
+    await page.waitForTimeout(500);
+    await expect(page.locator('custom-node')).toHaveCount(before);
+  });
+});

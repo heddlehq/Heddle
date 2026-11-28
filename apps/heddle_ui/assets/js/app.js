@@ -6,6 +6,7 @@ import { CodeEditorHook, loadMonaco } from "./code_editor"
 import { WebhookBodyHook } from "./webhook_body"
 import { TerminalHook } from "./terminal"
 import { FlowDragHook } from "./flow_drag"
+import { setupNodeDrag } from "./node_drag"
 import "./json-tree"
 
 // A flow is a few hundred kilobytes at most. A bigger file is something else.
@@ -90,68 +91,25 @@ const hooks = {
       });
       this.collab = collab;
 
-      if (editor.onDrop) {
-        editor.onDrop(async (name, position) => {
-            this.pushEvent("get_node_definition", { name }, async ({ definition }) => {
-                const node_data = {
-                    id: `node_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-                    label: name,
-                    position: position
-                };
-                
-                await editor.addNode(name, definition, node_data);
-                this.pushEvent("node_added_internally", { name, data: node_data });
-            });
+      // Resolves once the node is on the canvas, so what was dragged fades into it.
+      editor.onDrop((name, position) => new Promise((resolve) => {
+        this.pushEvent("get_node_definition", { name }, async ({ definition }) => {
+          const node_data = {
+            id: `node_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            label: name,
+            position: position
+          };
+
+          try {
+            await editor.addNode(name, definition, node_data);
+            this.pushEvent("node_added_internally", { name, data: node_data });
+          } finally {
+            resolve();
+          }
         });
-      }
+      }));
 
-      const handleDragStart = (e) => {
-        const btn = e.target.closest('button[draggable="true"]');
-        if (!btn) return;
-
-        const nodeName = btn.dataset.nodeName;
-        if (nodeName) {
-            e.dataTransfer.setData("application/vnd.heddle.node", nodeName);
-            e.dataTransfer.effectAllowed = "copy";
-
-            // Create a custom drag image that looks like a node
-            const dragImage = document.createElement('div');
-            const isDark = document.documentElement.classList.contains('dark');
-            dragImage.style.width = '88px';
-            dragImage.style.height = '88px';
-            dragImage.style.backgroundColor = 'var(--editor-surface)';
-            dragImage.style.border = '3px solid var(--editor-border)';
-            dragImage.style.borderRadius = '50%';
-            dragImage.style.boxShadow = isDark ? '0 4px 6px -1px rgba(0, 0, 0, 0.3)' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-            dragImage.style.position = 'absolute';
-            dragImage.style.top = '-1000px';
-            dragImage.style.display = 'flex';
-            dragImage.style.alignItems = 'center';
-            dragImage.style.justifyContent = 'center';
-            
-            const icon = document.createElement('div');
-            icon.style.width = '40px';
-            icon.style.height = '40px';
-            icon.style.backgroundColor = 'var(--color-primary)';
-            icon.style.maskImage = "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-10.5v10.5\" /></svg>')";
-            icon.style.maskRepeat = 'no-repeat';
-            icon.style.maskSize = 'contain';
-            
-            dragImage.appendChild(icon);
-            document.body.appendChild(dragImage);
-
-            // Set drag image centered on cursor
-            e.dataTransfer.setDragImage(dragImage, 44, 44);
-
-            // Cleanup immediately after the browser sets the drag image
-            setTimeout(() => {
-                document.body.removeChild(dragImage);
-            }, 0);
-        }
-      };
-
-      // Use event delegation for draggables to avoid MutationObserver performance issues
-      document.addEventListener('dragstart', handleDragStart);
+      const stopNodeDrag = setupNodeDrag({ root: document.body, container, editor });
 
       if (editor.onRunSection) {
         editor.onRunSection(async (sectionId) => {
@@ -249,6 +207,7 @@ const hooks = {
 
 
       this.destroyed = () => {
+        stopNodeDrag();
         collab.destroy();
         if (editor.destroy) editor.destroy();
       };

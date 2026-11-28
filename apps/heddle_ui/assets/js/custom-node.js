@@ -1,5 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { repeat } from "lit/directives/repeat.js";
+import { categoryColor } from "./node_colors.js";
 /**
  * Icon Safelist for Tailwind CSS
  * Since node icons are used dynamically via classes, we need to list them here
@@ -380,23 +381,7 @@ export class CustomNodeElement extends LitElement {
     const inputs = Object.entries(this.data.inputs || {});
     const outputs = Object.entries(this.data.outputs || {});
 
-    const category = this.data.category || 'default';
-    const colors = {
-      'trigger': 'var(--node-trigger)',
-      'flow_control': 'var(--node-flow-control)',
-      'code': 'var(--node-code)',
-      'data_manipulation': 'var(--node-data)',
-      'http': 'var(--node-integration)',
-      'database': 'var(--node-integration)',
-      'email': 'var(--node-integration)',
-      'ftp': 'var(--node-integration)',
-      'google_sheets': 'var(--node-integration)',
-      's3': 'var(--node-integration)',
-      'slack': 'var(--node-integration)',
-      'utility': 'var(--node-utility)',
-      'default': 'var(--node-utility)'
-    };
-    const nodeColor = colors[category] || colors['default'];
+    const nodeColor = categoryColor(this.data.category);
     const language = this.data.controls?.language?.value;
     const langLabel = language === 'elixir' ? 'EX' : (language === 'python' ? 'PY' : null);
 
