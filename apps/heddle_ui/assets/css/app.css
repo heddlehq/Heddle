@@ -188,6 +188,10 @@
   background-image: url("/images/services/slack.svg");
 }
 
+.logo-agents {
+  background-image: url("/images/services/agents.svg");
+}
+
 .logo-google-sheets {
   background-image: url("/images/services/google-sheets.svg");
 }

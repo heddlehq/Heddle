@@ -5173,6 +5173,708 @@
           "slug": "logger"
         }
       ]
+    },
+    {
+      "id": "agents",
+      "label": "Agents",
+      "nodes": [
+        {
+          "credential": "ai",
+          "description": "Starts this flow when the agent gets a message. Its name, instructions, what it keeps and its limits are set here.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Name",
+              "name": "name",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Instructions",
+              "name": "instructions",
+              "type": "textarea"
+            },
+            {
+              "capability": "text",
+              "default": "",
+              "label": "Model",
+              "name": "model",
+              "type": "model"
+            },
+            {
+              "default": "{}",
+              "label": "State",
+              "name": "state",
+              "type": "json"
+            },
+            {
+              "default": "",
+              "label": "Messages per hour, per instance",
+              "name": "max_messages",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Spending per day, per instance (US$)",
+              "name": "max_cost",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Who may message it",
+              "name": "allowed",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [],
+          "name": "Agent",
+          "notes": {
+            "en": "An **agent** is a flow that begins here. It has a name, lives in the workspace and keeps what it learns between messages: a support agent remembers each customer, a collections agent what it promised. Publishing the flow creates the agent, and each message to it is a run.\n\nA typical agent: **Agent → Agent: Think → Agent: Reply**. Connect nodes to Think's `tools` output for what it can do, like reading an order.\n\n- **Name**: how other flows reach it (Agent: Send Message, Agent: Ask) and how it shows on its chat.\n- **Instructions**: who it is and how it works, in plain words.\n- **State**: what it keeps, as JSON with each field's starting value, like `{\"stage\": \"new\", \"attempts\": 0}`. The value sets the field's type. Agent: Set State and its `remember` tool change it.\n- **Instances**: each message names a key, like a customer id, and each key is an instance with its own state and conversation. Without a key it is `main`. Messages to one instance are handled one at a time.\n- **Limits**: messages per hour and spending per day (US$) per instance, and **Who may message it**: agent names, `chat` for people, `flows` for any flow, or `flow:ID`. Blank lets anyone.\n\n`{{agent.message}}` is the message, `{{agent.key}}` the instance, `{{agent.state}}` what it keeps and `{{agent.from}}` who sent it. Its drawer shows its instances and a **chat link**: anyone with it talks to the agent, each in a conversation of their own, and **Chat** tries it. Powered by [Jido](https://hex.pm/packages/jido). See [Agents](/docs/guides/agents/).",
+            "pt": "Um **agente** é um fluxo que começa aqui. Ele tem nome, mora no workspace e guarda o que aprende entre as mensagens: um atendente lembra de cada cliente, um agente de cobrança do que prometeu. Publicar o fluxo cria o agente, e cada mensagem para ele é uma run.\n\nUm agente típico: **Agent → Agent: Think → Agent: Reply**. Ligue nós na saída `tools` do Think para o que ele pode fazer, como ler um pedido.\n\n- **Name**: como outros fluxos o encontram (Agent: Send Message, Agent: Ask) e como ele aparece no chat.\n- **Instructions**: quem ele é e como trabalha, em palavras simples.\n- **State**: o que ele guarda, em JSON com o valor inicial de cada campo, como `{\"stage\": \"new\", \"attempts\": 0}`. O valor define o tipo do campo. O Agent: Set State e a tool `remember` mudam o estado.\n- **Instâncias**: cada mensagem diz uma chave, como o id do cliente, e cada chave é uma instância com estado e conversa próprios. Sem chave, é `main`. As mensagens de uma instância são tratadas uma de cada vez.\n- **Limites**: mensagens por hora e gasto por dia (US$) por instância, e **Who may message it**: nomes de agentes, `chat` para pessoas, `flows` para qualquer fluxo, ou `flow:ID`. Em branco, qualquer um.\n\n`{{agent.message}}` é a mensagem, `{{agent.key}}` a instância, `{{agent.state}}` o que ele guarda e `{{agent.from}}` quem mandou. A gaveta mostra as instâncias e um **link de chat**: qualquer pessoa com ele conversa com o agente, cada uma numa conversa própria, e **Conversar** testa. Feito com [Jido](https://hex.pm/packages/jido). Veja [Agentes](/pt/docs/guides/agents/)."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": {
+            "from": {
+              "conversation": "c-42",
+              "type": "chat"
+            },
+            "key": "c-42",
+            "message": "Is invoice F-7 paid?",
+            "name": "Ana",
+            "state": {
+              "attempts": 0,
+              "stage": "new"
+            }
+          },
+          "slug": "agent"
+        },
+        {
+          "credential": null,
+          "description": "The agent answers the message with its model, and can use the nodes connected to tools, ask other agents, and wait for approval.",
+          "fields": [
+            {
+              "default": "{{agent.message}}",
+              "label": "Message",
+              "name": "message",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Agents it can ask",
+              "name": "agents",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Tools that need approval",
+              "name": "approval",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Agent: Think",
+          "notes": {
+            "en": "The agent answers the message with its model, using the nodes connected to its `tools` output. It remembers the conversation of its instance: the last 20 messages go with each new one, and older ones as a summary. `result.reply` is what it said; connect Agent: Reply to send it.\n\nBesides its tools, it can:\n\n- **remember** a field of its State, when the trigger declares one.\n- **ask another agent**, of those in **Agents it can ask** (comma separated). The run waits for the reply, holding no worker, and the agent goes on with it.\n- wait for **a person's approval** before the tools in **Tools that need approval** (their names, comma separated). The run waits on the Approvals page, and the tool runs only once approved.\n\nThe model is the trigger's, or the AI page's. What each call costs counts for the run, and for the instance's limit per day.",
+            "pt": "O agente responde a mensagem com o modelo dele, usando os nós ligados na saída `tools`. Ele lembra da conversa da instância: as últimas 20 mensagens vão junto com cada nova, e as mais antigas como um resumo. `result.reply` é o que ele disse; ligue o Agent: Reply para mandar.\n\nAlém das tools, ele pode:\n\n- **lembrar** (remember) um campo do State, quando o gatilho declara algum.\n- **perguntar a outro agente**, dos que estão em **Agents it can ask** (separados por vírgula). A run espera a resposta sem ocupar worker, e o agente continua com ela.\n- esperar a **aprovação de uma pessoa** antes das tools em **Tools that need approval** (os nomes, separados por vírgula). A run espera na página Aprovações, e a tool só roda depois de aprovada.\n\nO modelo é o do gatilho, ou o da página de IA. O custo de cada chamada entra na run e no limite por dia da instância."
+          },
+          "outputs": [
+            "success",
+            "error",
+            "tools"
+          ],
+          "result": {
+            "reply": "Invoice F-7 was paid on the 3rd. Anything else?"
+          },
+          "slug": "agent-think"
+        },
+        {
+          "credential": null,
+          "description": "Answers who sent the message, like an Agent: Ask node waiting for the agent.",
+          "fields": [
+            {
+              "default": "{{result.reply}}",
+              "label": "Message",
+              "name": "message",
+              "type": "textarea"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Agent: Reply",
+          "notes": {
+            "en": "Answers who sent the message: the person on the agent's chat sees it there, and an Agent: Ask waiting for the agent goes on with it. A message sent with Agent: Send Message waits for no reply, and `result.answered` is false.\n\nMessage is `{{result.reply}}` by default, what Agent: Think said.",
+            "pt": "Responde a quem mandou a mensagem: a pessoa no chat do agente vê a resposta lá, e um Agent: Ask esperando o agente continua com ela. Uma mensagem enviada com Agent: Send Message não espera resposta, e `result.answered` vem false.\n\nO padrão do Message é `{{result.reply}}`, o que o Agent: Think disse."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "answered": true,
+            "reply": "Invoice F-7 was paid on the 3rd."
+          },
+          "slug": "agent-reply"
+        },
+        {
+          "credential": null,
+          "description": "Changes what the agent keeps for this instance, like the stage of a deal.",
+          "fields": [
+            {
+              "default": "{}",
+              "label": "Changes",
+              "name": "changes",
+              "type": "json"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Agent: Set State",
+          "notes": {
+            "en": "Changes what the agent keeps for this instance, like `{\"stage\": \"won\"}`. Each field must be in the State of its Agent trigger, with the same type. It is kept once the run ends well, and the next message sees it in `{{agent.state}}`.",
+            "pt": "Muda o que o agente guarda para esta instância, como `{\"stage\": \"won\"}`. Cada campo precisa estar no State do gatilho Agent, com o mesmo tipo. Fica guardado quando a run termina bem, e a próxima mensagem vê em `{{agent.state}}`."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "attempts": 2,
+            "stage": "won"
+          },
+          "slug": "agent-set-state"
+        },
+        {
+          "credential": null,
+          "description": "Sends a message to an agent, without waiting for its reply.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Agent",
+              "name": "to",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Instance key",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Message",
+              "name": "message",
+              "type": "textarea"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Agent: Send Message",
+          "notes": {
+            "en": "Sends a message to an agent, from any flow, and goes on without waiting: a run of the agent's flow starts for the instance **Instance key** (blank for `main`). Messages to one instance are handled one at a time, in the order they were sent. To wait for the reply, use Agent: Ask.\n\nA chain of agents messaging each other stops 5 messages deep, so they can't go on forever.",
+            "pt": "Manda uma mensagem para um agente, de qualquer fluxo, e segue sem esperar: uma run do fluxo do agente começa para a instância **Instance key** (em branco, `main`). As mensagens de uma instância são tratadas uma de cada vez, na ordem em que chegaram. Para esperar a resposta, use o Agent: Ask.\n\nUma cadeia de agentes mandando mensagens uns aos outros para em 5 mensagens, para não seguir para sempre."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "agent": "Ana",
+            "key": "c-42",
+            "runs": [
+              {
+                "flow_id": 12,
+                "flow_name": "Ana",
+                "run_id": "0b9f..."
+              }
+            ]
+          },
+          "slug": "agent-send-message"
+        },
+        {
+          "credential": null,
+          "description": "Sends a message to an agent and waits for its reply.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Agent",
+              "name": "to",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Instance key",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Message",
+              "name": "message",
+              "type": "textarea"
+            },
+            {
+              "default": "300",
+              "label": "Wait up to (seconds)",
+              "name": "timeout",
+              "type": "number"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Agent: Ask",
+          "notes": {
+            "en": "Sends a message to an agent and waits for its reply, which its flow gives with Agent: Reply. The run pauses, holding no worker, and goes on through `success` with `result.reply`, or through `timeout` when the agent doesn't answer in time (Wait up to, in seconds).",
+            "pt": "Manda uma mensagem para um agente e espera a resposta, que o fluxo dele dá com o Agent: Reply. A run pausa sem ocupar worker e segue por `success` com `result.reply`, ou por `timeout` quando o agente não responde a tempo (Wait up to, em segundos)."
+          },
+          "outputs": [
+            "success",
+            "timeout",
+            "error"
+          ],
+          "result": {
+            "agent": "Ana",
+            "key": "c-42",
+            "reply": "Yes, it was paid."
+          },
+          "slug": "agent-ask"
+        },
+        {
+          "credential": null,
+          "description": "Sends the agent a message later, like a follow-up in three days.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Message",
+              "name": "message",
+              "type": "textarea"
+            },
+            {
+              "default": "1",
+              "label": "In",
+              "name": "in",
+              "type": "text"
+            },
+            {
+              "default": "days",
+              "label": "Unit",
+              "name": "unit",
+              "options": [
+                {
+                  "label": "minutes",
+                  "value": "minutes"
+                },
+                {
+                  "label": "hours",
+                  "value": "hours"
+                },
+                {
+                  "label": "days",
+                  "value": "days"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "",
+              "label": "Or at (ISO 8601, overrides In)",
+              "name": "at",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Instance key",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": false,
+              "label": "Call off the ones set before",
+              "name": "replace",
+              "type": "boolean"
+            },
+            {
+              "default": false,
+              "label": "Not from a scheduled message",
+              "name": "not_scheduled",
+              "type": "boolean"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Agent: Schedule",
+          "notes": {
+            "en": "Sends the agent a message later, like a follow-up in three days: a run of its flow starts then, for this instance or for **Instance key**. Set **In** and **Unit**, or **Or at** a date like `2026-12-01T09:00:00-03:00`. Until it comes, it shows in the trigger's drawer, and Agent: Cancel Schedule calls it off with `result.id`.\n\n**Call off the ones set before** moves a follow-up each time someone writes, and **Not from a scheduled message** keeps a follow-up from scheduling another forever. A follow-up's reply shows on the chat of its instance.",
+            "pt": "Manda uma mensagem para o agente mais tarde, como um follow-up em três dias: uma run do fluxo dele começa nessa hora, para esta instância ou para **Instance key**. Preencha **In** e **Unit**, ou **Or at** com uma data como `2026-12-01T09:00:00-03:00`. Até chegar, aparece na gaveta do gatilho, e o Agent: Cancel Schedule cancela com o `result.id`.\n\n**Call off the ones set before** move o follow-up cada vez que alguém escreve, e **Not from a scheduled message** impede um follow-up de agendar outro para sempre. A resposta de um follow-up aparece no chat da instância."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "at": "2026-12-01T12:00:00Z",
+            "id": "s-4kQ2",
+            "key": "c-42",
+            "message": "Check if F-7 was paid"
+          },
+          "slug": "agent-schedule"
+        },
+        {
+          "credential": null,
+          "description": "Calls off a message Agent: Schedule set for this instance, or all of them.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Schedule id, blank for all",
+              "name": "id",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Agent: Cancel Schedule",
+          "notes": {
+            "en": "Calls off a message Agent: Schedule set for this instance, by its id, or all of them when the id is blank, like when the customer already paid.",
+            "pt": "Cancela uma mensagem que o Agent: Schedule agendou para esta instância, pelo id, ou todas quando o id está em branco, como quando o cliente já pagou."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "cancelled": [
+              "s-4kQ2"
+            ]
+          },
+          "slug": "agent-cancel-schedule"
+        },
+        {
+          "credential": null,
+          "description": "Tells the flows that wait for an event, like deal.won, that it happened.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Event",
+              "name": "event",
+              "type": "text"
+            },
+            {
+              "default": "{}",
+              "label": "Data",
+              "name": "data",
+              "type": "json"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Agent: Publish Event",
+          "notes": {
+            "en": "Tells the workspace something happened, like `deal.won`, with **Data** as JSON. Every published flow that begins at **When an Agent Publishes**, for this event or for any, starts with it. Works in any flow; in an agent's, the event says which agent and instance published it.",
+            "pt": "Avisa o workspace que algo aconteceu, como `deal.won`, com **Data** em JSON. Todo fluxo publicado que começa no **When an Agent Publishes**, para esse evento ou para qualquer um, começa com ele. Funciona em qualquer fluxo; no de um agente, o evento diz qual agente e instância publicou."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "event": "deal.won",
+            "runs": []
+          },
+          "slug": "agent-publish-event"
+        },
+        {
+          "credential": null,
+          "description": "Ends this instance once its work is done: its state, conversation and schedules are forgotten.",
+          "fields": [],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Agent: End Instance",
+          "notes": {
+            "en": "Ends this instance once its work is done, like a collection that was paid: its state, conversation and schedules are forgotten once the run ends well. A new message to its key starts over.",
+            "pt": "Encerra esta instância quando o trabalho dela acabou, como uma cobrança paga: o estado, a conversa e os agendamentos são esquecidos quando a run termina bem. Uma nova mensagem para a chave começa do zero."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "key": "c-42",
+            "state": {
+              "stage": "paid"
+            }
+          },
+          "slug": "agent-end-instance"
+        },
+        {
+          "credential": null,
+          "description": "Reads an instance of an agent: its state, messages and schedules.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Agent",
+              "name": "to",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Instance key",
+              "name": "key",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Agent: Read Agent",
+          "notes": {
+            "en": "Reads an instance of an agent, from any flow: its `state`, how many `messages` it handled, a `summary` of its older conversation and its `last_messages`, its `schedules`, whether it is `paused`, and what it spent `today`. `exists` is false for a key that never got a message.",
+            "pt": "Lê uma instância de um agente, de qualquer fluxo: o `state`, quantas `messages` tratou, um `summary` da conversa mais antiga e as `last_messages`, os `schedules`, se está `paused`, e quanto gastou `today`. `exists` vem false para uma chave que nunca recebeu mensagem."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "agent": "Ana",
+            "exists": true,
+            "key": "c-42",
+            "last_messages": [
+              {
+                "role": "user",
+                "text": "I'll pay Friday"
+              },
+              {
+                "role": "assistant",
+                "text": "Thanks, Bia!"
+              }
+            ],
+            "messages": 7,
+            "paused": false,
+            "schedules": [],
+            "state": {
+              "stage": "late"
+            },
+            "summary": "Bia owes F-7 and promised to pay on Friday.",
+            "today": {
+              "cost": 0.0042,
+              "messages_this_hour": 1
+            },
+            "updated_at": "2026-11-28T12:00:00Z"
+          },
+          "slug": "agent-read-agent"
+        },
+        {
+          "credential": null,
+          "description": "Lists the instances of an agent, with their state.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Agent",
+              "name": "to",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Key starts with",
+              "name": "prefix",
+              "type": "text"
+            },
+            {
+              "default": "100",
+              "label": "Limit",
+              "name": "limit",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Agent: List Instances",
+          "notes": {
+            "en": "Lists the instances of an agent, from any flow, with their state: those whose key begins with **Key starts with**, up to **Limit** (100). Use it with For Each to message every late customer.",
+            "pt": "Lista as instâncias de um agente, de qualquer fluxo, com o estado: as que têm a chave começando com **Key starts with**, até o **Limit** (100). Use com For Each para mandar mensagem a cada cliente atrasado."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "instances": [
+              {
+                "key": "c-42",
+                "messages": 7,
+                "schedules": 1,
+                "state": {
+                  "stage": "late"
+                },
+                "updated_at": "2026-11-28T12:00:00Z"
+              }
+            ]
+          },
+          "slug": "agent-list-instances"
+        },
+        {
+          "credential": null,
+          "description": "Pauses an agent, or one of its instances, so it takes no messages, or resumes it.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Agent",
+              "name": "to",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Instance key, blank for the whole agent",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": "pause",
+              "label": "Action",
+              "name": "action",
+              "options": [
+                {
+                  "label": "pause",
+                  "value": "pause"
+                },
+                {
+                  "label": "resume",
+                  "value": "resume"
+                }
+              ],
+              "type": "select"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Agent: Pause or Resume",
+          "notes": {
+            "en": "Pauses an agent, or only the instance **Instance key**, so it takes no messages: sending one says it is paused, and a schedule that comes meanwhile fails its run, saying so. **resume** lets it take messages again. The trigger's drawer shows what is paused.",
+            "pt": "Pausa um agente, ou só a instância **Instance key**, para ele não receber mensagens: mandar uma avisa que está pausado, e um agendamento que chega nesse tempo falha a run dizendo por quê. **resume** volta a receber. A gaveta do gatilho mostra o que está pausado."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "agent": "Ana",
+            "key": null,
+            "paused": true
+          },
+          "slug": "agent-pause-or-resume"
+        },
+        {
+          "credential": null,
+          "description": "Starts an instance of an agent over: its state, conversation and schedules are forgotten.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Agent",
+              "name": "to",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Instance key",
+              "name": "key",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Agent: Reset Instance",
+          "notes": {
+            "en": "Starts an instance of an agent over, from any flow: its state, conversation and schedules are forgotten. `result.existed` says whether there was one.",
+            "pt": "Começa uma instância de um agente do zero, de qualquer fluxo: o estado, a conversa e os agendamentos são esquecidos. `result.existed` diz se ela existia."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "agent": "Ana",
+            "existed": true,
+            "key": "c-42"
+          },
+          "slug": "agent-reset-instance"
+        },
+        {
+          "credential": null,
+          "description": "Starts this flow when an agent publishes an event, like deal.won.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Event, blank for any",
+              "name": "event",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-agents",
+          "inputs": [],
+          "name": "Agent Event",
+          "notes": {
+            "en": "Starts this flow when an agent, or a flow, publishes an event with Agent: Publish Event. A blank **Event** takes every one. `result` has the `event`, its `data`, and the `agent` and `key` that published it. Use it to let agents work together: a sales agent publishes `deal.won`, and this flow sends the onboarding agent a message.",
+            "pt": "Começa este fluxo quando um agente, ou um fluxo, publica um evento com o Agent: Publish Event. Com **Event** em branco, pega todos. `result` tem o `event`, os `data`, e o `agent` e a `key` que publicaram. Use para os agentes trabalharem juntos: o agente de vendas publica `deal.won`, e este fluxo manda uma mensagem para o agente de onboarding."
+          },
+          "outputs": [
+            "exec"
+          ],
+          "result": {
+            "agent": "Ana",
+            "at": "2026-11-28T12:00:00Z",
+            "data": {
+              "value": 1200
+            },
+            "event": "deal.won",
+            "key": "c-42"
+          },
+          "slug": "agent-event"
+        }
+      ]
     }
   ]
 }

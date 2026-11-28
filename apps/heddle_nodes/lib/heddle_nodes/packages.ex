@@ -55,7 +55,8 @@ defmodule HeddleNodes.Packages do
     file = if Path.type(path) == :absolute, do: path, else: Application.app_dir(app, path)
 
     with {:ok, text} <- File.read(file),
-         {:ok, %{"name" => _, "nodes" => nodes} = template} when is_list(nodes) <- Jason.decode(text) do
+         {:ok, %{"name" => _, "nodes" => nodes} = template} when is_list(nodes) <-
+           Jason.decode(text) do
       template
       |> Map.put("id", "#{app}/#{Path.basename(path, ".json")}")
       |> Map.put("package", to_string(app))

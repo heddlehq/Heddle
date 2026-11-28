@@ -72,7 +72,8 @@ defmodule HeddleUI.FlowLive.Index do
       {:noreply, push_navigate(socket, to: ~p"/flows/#{flow}")}
     else
       {:error, :forbidden} ->
-        {:noreply, put_flash(socket, :error, gettext("Your role in this workspace can't create flows."))}
+        {:noreply,
+         put_flash(socket, :error, gettext("Your role in this workspace can't create flows."))}
 
       _other ->
         {:noreply, put_flash(socket, :error, gettext("Failed to create flow."))}

@@ -92,7 +92,9 @@ defmodule HeddleUI.FlowLive.IndexTest do
           "name" => "Support Agent",
           "description" => "Answers customers.",
           "i18n" => %{"pt-BR" => %{"name" => "Atendente"}},
-          "nodes" => [%{"id" => "start", "type" => "Start", "label" => "Start", "controls" => %{}}],
+          "nodes" => [
+            %{"id" => "start", "type" => "Start", "label" => "Start", "controls" => %{}}
+          ],
           "connections" => []
         })
       )

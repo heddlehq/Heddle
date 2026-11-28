@@ -28,13 +28,18 @@ defmodule HeddleUI.FlowLive.PackageManager do
     |> assign(:chat_link, chat_link(socket, type, node_id))
   end
 
-  def opened(socket, _node_data), do: assign(socket, :package_panel, nil) |> assign(:chat_link, nil)
+  def opened(socket, _node_data),
+    do: assign(socket, :package_panel, nil) |> assign(:chat_link, nil)
 
   @doc "Reads the panel again, for its Refresh button."
   def refresh(socket) do
     case socket.assigns[:editing_node_data] do
       %{"type" => type} = node_data ->
-        assign(socket, :package_panel, panel(socket, HeddleNodes.Packages.get_node_module(type), node_data))
+        assign(
+          socket,
+          :package_panel,
+          panel(socket, HeddleNodes.Packages.get_node_module(type), node_data)
+        )
 
       _none ->
         socket
@@ -82,8 +87,11 @@ defmodule HeddleUI.FlowLive.PackageManager do
 
   defp published?(flow, node_id, type) do
     case Versions.published_flow(flow) do
-      nil -> false
-      published -> match?(%Graph.Node{type: ^type}, published |> Graph.new() |> Graph.get(node_id))
+      nil ->
+        false
+
+      published ->
+        match?(%Graph.Node{type: ^type}, published |> Graph.new() |> Graph.get(node_id))
     end
   end
 

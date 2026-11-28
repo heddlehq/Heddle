@@ -498,7 +498,9 @@ defmodule HeddleNodes.Runner do
   end
 
   # What ended a wait is for the node called again, not for the steps after it.
-  defp forget_resumed({:ok, %{} = result, output}), do: {:ok, Map.delete(result, "resumed"), output}
+  defp forget_resumed({:ok, %{} = result, output}),
+    do: {:ok, Map.delete(result, "resumed"), output}
+
   defp forget_resumed({:ok, %{} = result}), do: {:ok, Map.delete(result, "resumed")}
   defp forget_resumed(outcome), do: outcome
 

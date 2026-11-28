@@ -37,7 +37,15 @@ defmodule HeddleCore.Chats do
 
     Repo.insert_all(
       Chat,
-      [%{flow_id: flow_id, node_id: node_id, token: Chat.new_token(), inserted_at: now, updated_at: now}],
+      [
+        %{
+          flow_id: flow_id,
+          node_id: node_id,
+          token: Chat.new_token(),
+          inserted_at: now,
+          updated_at: now
+        }
+      ],
       on_conflict: :nothing,
       conflict_target: [:flow_id, :node_id]
     )

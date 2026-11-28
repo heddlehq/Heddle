@@ -40,7 +40,7 @@ hero:
 
 <div class="docs-columns">
 <div class="docs-column"><p class="docs-column-title"><!-- icon:hero-light-bulb -->Conceitos</p><a href="/pt/docs/concepts/context/">Dados numa execução</a><a href="/pt/docs/concepts/runs/">Como uma execução anda</a><a href="/pt/docs/concepts/versions/">Rascunhos e versões</a><a href="/pt/docs/concepts/collaboration/">Edição em grupo</a><a href="/pt/docs/concepts/workspaces/">Workspaces e papéis</a></div>
-<div class="docs-column"><p class="docs-column-title"><!-- icon:hero-wrench-screwdriver -->Guias</p><a href="/pt/docs/guides/credentials/">Credenciais</a><a href="/pt/docs/guides/starting-flows/">Disparando fluxos</a><a href="/pt/docs/guides/error-handling/">Tratando erros</a><a href="/pt/docs/guides/debugging/">Depurando uma execução</a><a href="/pt/docs/guides/ai-agent/">O AI Agent e o chat</a></div>
+<div class="docs-column"><p class="docs-column-title"><!-- icon:hero-wrench-screwdriver -->Guias</p><a href="/pt/docs/guides/credentials/">Credenciais</a><a href="/pt/docs/guides/starting-flows/">Disparando fluxos</a><a href="/pt/docs/guides/error-handling/">Tratando erros</a><a href="/pt/docs/guides/debugging/">Depurando uma execução</a><a href="/pt/docs/guides/ai-agent/">O AI Agent e o chat</a><a href="/pt/docs/guides/agents/">Agentes</a></div>
 <div class="docs-column"><p class="docs-column-title"><!-- icon:hero-book-open -->Referência</p><a href="/pt/docs/nodes/">Os 103 nós</a><a href="/pt/docs/reference/api/">API REST</a><a href="/pt/docs/reference/mcp/">Servidor MCP</a><a href="/pt/docs/reference/cli/">O comando heddle</a><a href="/pt/docs/reference/configuration/">Configuração</a></div>
 </div>
 

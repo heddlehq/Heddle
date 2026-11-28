@@ -102,7 +102,11 @@ defmodule HeddleUI.ChatLive.Show do
 
       not HeddleUI.FormRateLimit.allow?({:chat, peer(socket), socket.assigns.key}) ->
         {:noreply,
-         assign(socket, :alert, gettext("You sent many messages in a row. Wait a minute and try again."))}
+         assign(
+           socket,
+           :alert,
+           gettext("You sent many messages in a row. Wait a minute and try again.")
+         )}
 
       true ->
         %{chat: chat, module: module, conversation: conversation} = socket.assigns

@@ -33,7 +33,10 @@ defmodule HeddleUI.FakeChatNode do
 
   def chat_message(workspace_id, controls, conversation, text) do
     key = {workspace_id, controls["name"], conversation}
-    messages = history(key) ++ [%{role: :visitor, text: text}, %{role: :agent, text: "You said: " <> text}]
+
+    messages =
+      history(key) ++ [%{role: :visitor, text: text}, %{role: :agent, text: "You said: " <> text}]
+
     :ets.insert(@table, {key, messages})
     {:ok, :sent}
   end

@@ -40,7 +40,7 @@ hero:
 
 <div class="docs-columns">
 <div class="docs-column"><p class="docs-column-title"><!-- icon:hero-light-bulb -->Concepts</p><a href="/docs/concepts/context/">Data in a run</a><a href="/docs/concepts/runs/">How a run moves</a><a href="/docs/concepts/versions/">Drafts and versions</a><a href="/docs/concepts/collaboration/">Editing together</a><a href="/docs/concepts/workspaces/">Workspaces and roles</a></div>
-<div class="docs-column"><p class="docs-column-title"><!-- icon:hero-wrench-screwdriver -->Guides</p><a href="/docs/guides/credentials/">Credentials</a><a href="/docs/guides/starting-flows/">Starting flows</a><a href="/docs/guides/error-handling/">Handling errors</a><a href="/docs/guides/debugging/">Debugging a run</a><a href="/docs/guides/ai-agent/">The AI Agent and the chat</a></div>
+<div class="docs-column"><p class="docs-column-title"><!-- icon:hero-wrench-screwdriver -->Guides</p><a href="/docs/guides/credentials/">Credentials</a><a href="/docs/guides/starting-flows/">Starting flows</a><a href="/docs/guides/error-handling/">Handling errors</a><a href="/docs/guides/debugging/">Debugging a run</a><a href="/docs/guides/ai-agent/">The AI Agent and the chat</a><a href="/docs/guides/agents/">Agents</a></div>
 <div class="docs-column"><p class="docs-column-title"><!-- icon:hero-book-open -->Reference</p><a href="/docs/nodes/">All 103 nodes</a><a href="/docs/reference/api/">REST API</a><a href="/docs/reference/mcp/">MCP server</a><a href="/docs/reference/cli/">The heddle command</a><a href="/docs/reference/configuration/">Configuration</a></div>
 </div>
 

@@ -9,7 +9,7 @@ defmodule HeddleNodes.Official do
       it shows no "Not verified" warning, and no other manifest can take its id.
   """
 
-  @packages ~w(cassandra dynamodb elasticsearch email ftp google_sheets mongodb neo4j redis s3 slack sql)
+  @packages ~w(cassandra dynamodb elasticsearch email ftp google_sheets jido mongodb neo4j redis s3 slack sql)
 
   # Raise a pin to move every instance to a new version of an official manifest.
   @manifests %{

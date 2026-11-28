@@ -33,7 +33,9 @@ defmodule HeddleWorker.PackageAgainTest do
     @impl true
     def handler(%{"resumed" => %{"request" => request, "wait" => wait}} = context, _input) do
       decision = request["decision"]
-      {:ok, Map.put(context, "result", %{"decision" => decision, "data" => wait["data"]}), "success"}
+
+      {:ok, Map.put(context, "result", %{"decision" => decision, "data" => wait["data"]}),
+       "success"}
     end
 
     def handler(_context, _input) do
@@ -70,7 +72,12 @@ defmodule HeddleWorker.PackageAgainTest do
     do: %{"id" => id, "type" => type, "label" => type, "controls" => controls}
 
   defp wire(source, output, target),
-    do: %{"source" => source, "sourceOutput" => output, "target" => target, "targetInput" => "exec"}
+    do: %{
+      "source" => source,
+      "sourceOutput" => output,
+      "target" => target,
+      "targetInput" => "exec"
+    }
 
   test "a tool waits for an approval, and the node is called again with the decision" do
     user = user_fixture()
@@ -99,13 +106,21 @@ defmodule HeddleWorker.PackageAgainTest do
     assert {:ok, _execution} = Executions.decide(scope, execution.id, "approved")
 
     job =
-      Enum.find(all_enqueued(worker: @worker), &(&1.args["execution_id"] == execution.id and &1.args["by"] == "call"))
+      Enum.find(
+        all_enqueued(worker: @worker),
+        &(&1.args["execution_id"] == execution.id and &1.args["by"] == "call")
+      )
 
     assert :ok = FlowExecutionWorker.perform(job)
 
     finished = Executions.get_execution!(execution.id)
     assert finished.status == "succeeded"
-    assert finished.result["result"] == %{"decision" => "approved", "data" => %{"tool" => "refund"}}
+
+    assert finished.result["result"] == %{
+             "decision" => "approved",
+             "data" => %{"tool" => "refund"}
+           }
+
     refute Map.has_key?(finished.result, "resumed")
   end
 end

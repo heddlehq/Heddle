@@ -15,7 +15,12 @@ defmodule HeddleUI.MCP.AgentToolsTest do
       flow_fixture(
         user: user,
         nodes: [
-          %{"id" => "talk", "type" => "Test: Talk", "label" => "Talk", "controls" => %{"name" => "Ana"}}
+          %{
+            "id" => "talk",
+            "type" => "Test: Talk",
+            "label" => "Talk",
+            "controls" => %{"name" => "Ana"}
+          }
         ]
       )
 
@@ -82,7 +87,11 @@ defmodule HeddleUI.MCP.AgentToolsTest do
   defp payload(%{"content" => [%{"text" => text} | _]}), do: Jason.decode!(text)
   defp text(%{"content" => [%{"text" => text} | _]}), do: text
 
-  test "list_agents names the published triggers people talk to", %{conn: conn, user: user, flow: flow} do
+  test "list_agents names the published triggers people talk to", %{
+    conn: conn,
+    user: user,
+    flow: flow
+  } do
     result = call(conn, token(user), "list_agents")
 
     assert %{"agents" => [%{"name" => "Ana", "flow_id" => flow_id, "node_id" => "talk"}]} =
@@ -108,7 +117,9 @@ defmodule HeddleUI.MCP.AgentToolsTest do
   end
 
   test "message_agent needs executions:write", %{conn: conn, user: user} do
-    result = call(conn, token(user, ~w(workflows:read)), "message_agent", %{name: "Ana", message: "oi"})
+    result =
+      call(conn, token(user, ~w(workflows:read)), "message_agent", %{name: "Ana", message: "oi"})
+
     assert text(result) =~ "executions:write"
   end
 end

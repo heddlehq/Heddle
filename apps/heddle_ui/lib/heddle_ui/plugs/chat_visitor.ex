@@ -14,7 +14,11 @@ defmodule HeddleUI.Plugs.ChatVisitor do
         conn
 
       _none ->
-        put_session(conn, :chat_visitor, Base.url_encode64(:crypto.strong_rand_bytes(12), padding: false))
+        put_session(
+          conn,
+          :chat_visitor,
+          Base.url_encode64(:crypto.strong_rand_bytes(12), padding: false)
+        )
     end
   end
 

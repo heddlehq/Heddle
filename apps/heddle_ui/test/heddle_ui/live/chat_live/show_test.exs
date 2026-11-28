@@ -18,7 +18,12 @@ defmodule HeddleUI.ChatLive.ShowTest do
         user: user,
         workspace: workspace,
         nodes: [
-          %{"id" => "talk", "type" => "Test: Talk", "label" => "Talk", "controls" => %{"name" => "Ana"}}
+          %{
+            "id" => "talk",
+            "type" => "Test: Talk",
+            "label" => "Talk",
+            "controls" => %{"name" => "Ana"}
+          }
         ]
       )
 
@@ -65,7 +70,11 @@ defmodule HeddleUI.ChatLive.ShowTest do
     assert has_element?(lv, "#chat-missing")
   end
 
-  test "someone who can run the flow tries it from the editor", %{conn: conn, user: user, flow: flow} do
+  test "someone who can run the flow tries it from the editor", %{
+    conn: conn,
+    user: user,
+    flow: flow
+  } do
     {:ok, lv, html} = conn |> log_in_user(user) |> live(~p"/flows/#{flow.id}/chat/talk")
     assert html =~ "chat-test-banner"
 
@@ -84,10 +93,16 @@ defmodule HeddleUI.ChatLive.ShowTest do
     {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/flows/#{draft.id}/chat/talk")
     assert has_element?(lv, "#chat-missing", "Publish the flow")
     assert {:ok, _chat} = Chats.link(scope, draft, "talk")
-    assert {:error, :not_found} = Chats.published(Chats.link(scope, draft, "talk") |> elem(1) |> Map.get(:token))
+
+    assert {:error, :not_found} =
+             Chats.published(Chats.link(scope, draft, "talk") |> elem(1) |> Map.get(:token))
   end
 
-  test "the editor's drawer shows the chat link and the package's panel", %{conn: conn, user: user, flow: flow} do
+  test "the editor's drawer shows the chat link and the package's panel", %{
+    conn: conn,
+    user: user,
+    flow: flow
+  } do
     {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/flows/#{flow.id}")
 
     render_hook(lv, "open_node_config", %{

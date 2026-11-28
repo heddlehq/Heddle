@@ -41,7 +41,8 @@ defmodule HeddleAI.Agents.Shared do
   defp notes_description(notes, name) do
     case get_in(notes, [name, "notes", "en"]) do
       text when is_binary(text) and text != "" ->
-        "\n    How to use it: " <> (text |> String.slice(0, @max_notes) |> String.replace("\n", "\n    "))
+        "\n    How to use it: " <>
+          (text |> String.slice(0, @max_notes) |> String.replace("\n", "\n    "))
 
       _none ->
         ""

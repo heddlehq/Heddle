@@ -45,7 +45,7 @@ defmodule HeddleNodes.MixProject do
   # BOBBIN_PATH points at a Bobbin checkout, to try a change in both at once.
   defp bobbin do
     case System.get_env("BOBBIN_PATH") do
-      nil -> {:bobbin, "~> 0.6"}
+      nil -> {:bobbin, "~> 0.7"}
       path -> {:bobbin, path: Path.expand(path), override: true}
     end
   end
@@ -54,7 +54,7 @@ defmodule HeddleNodes.MixProject do
   # from heddlehq/integrations: HEDDLE_INTEGRATIONS=all, or a list like "sql,email".
   # None by default in prod, every one in dev and test. HEDDLE_INTEGRATIONS_PATH points
   # at a checkout of that repo, to change both at once.
-  @official ~w(cassandra dynamodb elasticsearch email ftp google_sheets mongodb neo4j redis s3 slack sql)
+  @official ~w(cassandra dynamodb elasticsearch email ftp google_sheets jido mongodb neo4j redis s3 slack sql)
 
   defp integrations do
     ids =

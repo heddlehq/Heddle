@@ -624,13 +624,18 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
           class="group inline-flex shrink-0 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 transition-colors hover:border-primary hover:text-primary dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300"
         >
           <.icon name="hero-clipboard-document-mini" class="size-4 group-data-[copied]:hidden" />
-          <.icon name="hero-check-mini" class="hidden size-4 text-emerald-600 group-data-[copied]:block" />
+          <.icon
+            name="hero-check-mini"
+            class="hidden size-4 text-emerald-600 group-data-[copied]:block"
+          />
           <span class="group-data-[copied]:hidden">{gettext("Copy")}</span>
           <span class="hidden group-data-[copied]:inline">{gettext("Copied")}</span>
         </button>
       </div>
       <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-        {gettext("Anyone with the link can talk to it, each in a conversation of their own. It talks with what is published.")}
+        {gettext(
+          "Anyone with the link can talk to it, each in a conversation of their own. It talks with what is published."
+        )}
       </p>
       <div class="mt-3 flex flex-wrap gap-2">
         <a
@@ -708,13 +713,19 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
               <tr :for={row <- section[:rows]} class="align-top text-gray-800 dark:text-gray-200">
-                <td :for={column <- section[:columns]} class="max-w-[16rem] break-words px-4 py-2 font-mono">
+                <td
+                  :for={column <- section[:columns]}
+                  class="max-w-[16rem] break-words px-4 py-2 font-mono"
+                >
                   {panel_cell(row[column])}
                 </td>
               </tr>
             </tbody>
           </table>
-          <p :if={section[:rows] in [nil, []]} class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+          <p
+            :if={section[:rows] in [nil, []]}
+            class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400"
+          >
             {section[:empty] || gettext("Nothing yet.")}
           </p>
         </div>
