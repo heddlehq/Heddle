@@ -136,13 +136,17 @@ defmodule HeddleUI.IntegrationLive.Index do
 
     published =
       for {id, entry} <- catalog, not MapSet.member?(ids, id) do
+        # An official manifest is downloaded like a community one, but it's official.
+        official? = HeddleNodes.Official.manifest?(id, entry["manifest"])
+
         %{
           id: id,
           title: entry["name"] || id,
           category: id,
-          icon: entry["icon"] || "hero-puzzle-piece",
+          icon: if(entry["logo"], do: "logo-" <> id, else: entry["icon"] || "hero-puzzle-piece"),
           color: @community_color,
-          community: true,
+          community: not official?,
+          download: official?,
           version: entry["version"],
           action_names: entry["actions"] || [],
           description: entry["description"],
@@ -361,7 +365,7 @@ defmodule HeddleUI.IntegrationLive.Index do
                 :if={not integration.installed? and not integration.community}
                 id={"install-#{integration.id}"}
                 variant="primary"
-                phx-click="install"
+                phx-click={if integration[:download], do: "install_community", else: "install"}
                 phx-value-id={integration.id}
               >
                 {gettext("Install")}

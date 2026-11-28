@@ -1889,25 +1889,25 @@
           "slug": "spool-delete-rows"
         },
         {
-          "credential": "sql",
-          "description": "Runs any statement on PostgreSQL, MySQL, MariaDB, SQL Server, SQLite or Oracle. {{placeholders}} go as parameters, so a value can't change the query.",
+          "credential": "cassandra",
+          "description": "Runs a CQL statement on Cassandra or ScyllaDB, a BATCH included. {{placeholders}} go as parameters, so a value can't change the query.",
           "fields": [
             {
               "default": "",
               "label": "Query",
-              "name": "sql",
+              "name": "cql",
               "type": "textarea"
             }
           ],
-          "group": "SQL",
-          "icon": "hero-circle-stack-solid",
+          "group": "Cassandra",
+          "icon": "logo-cassandra",
           "inputs": [
             "exec"
           ],
-          "name": "SQL: Run Query",
+          "name": "Cassandra: Run Query",
           "notes": {
-            "en": "Runs any statement, on PostgreSQL, MySQL, MariaDB, SQL Server, Oracle or SQLite, depending on the credential.\n\n```sql\nSELECT id, total FROM orders WHERE customer = {{body.email}} AND status = 'open'\n```\n\n`result.rows` is a list of objects and `result.count` how many. Statements that change rows return the changed ones where the engine can (PostgreSQL with `RETURNING`), and MySQL returns `result.last_id` after an insert. Decimal numbers come as text, like `\"129.90\"`, so no cent is lost. A query that returns more than 10,000 rows fails: use `LIMIT`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
-            "pt": "Roda qualquer comando, no PostgreSQL, MySQL, MariaDB, SQL Server, Oracle ou SQLite, conforme a credencial.\n\n```sql\nSELECT id, total FROM orders WHERE customer = {{body.email}} AND status = 'open'\n```\n\n`result.rows` é uma lista de objetos e `result.count` quantos são. Comandos que alteram linhas devolvem as alteradas quando o banco permite (PostgreSQL com `RETURNING`), e o MySQL devolve `result.last_id` depois de um insert. Números decimais vêm como texto, como `\"129.90\"`, para nenhum centavo se perder. Uma consulta que devolve mais de 10.000 linhas falha: use `LIMIT`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+            "en": "Runs a CQL statement on Cassandra or ScyllaDB, in the credential's keyspace: `SELECT * FROM users WHERE id = {{body.id}}`. Statements that return nothing give an empty `rows`. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "Roda um comando CQL no Cassandra ou ScyllaDB, no keyspace da credencial: `SELECT * FROM users WHERE id = {{body.id}}`. Comandos que não devolvem nada dão `rows` vazio. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
           },
           "outputs": [
             "success",
@@ -1917,17 +1917,155 @@
             "count": 1,
             "rows": [
               {
-                "customer": "ana@example.com",
-                "id": 4411,
-                "total": "129.90"
+                "id": "6f1c...",
+                "name": "Ana"
               }
             ]
           },
-          "slug": "sql-run-query"
+          "slug": "cassandra-run-query"
         },
         {
-          "credential": "sql",
-          "description": "Reads rows from a table, without writing SQL.",
+          "credential": "dynamodb",
+          "description": "Deletes an item by its key.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{\"id\": \"{{id}}\"}",
+              "label": "Key",
+              "name": "item_key",
+              "type": "textarea"
+            }
+          ],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: Delete Item",
+          "notes": {
+            "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+            "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "deleted": true
+          },
+          "slug": "dynamodb-delete-item"
+        },
+        {
+          "credential": "dynamodb",
+          "description": "Reads an item by its key.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{\"id\": \"{{id}}\"}",
+              "label": "Key",
+              "name": "item_key",
+              "type": "textarea"
+            }
+          ],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: Get Item",
+          "notes": {
+            "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. `result.found` is false, and `item` null, when there is none. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+            "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. `result.found` é falso, e `item` nulo, quando não existe. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "found": true,
+            "item": {
+              "id": "42",
+              "name": "Ana",
+              "plan": "pro"
+            }
+          },
+          "slug": "dynamodb-get-item"
+        },
+        {
+          "credential": "dynamodb",
+          "description": "Returns the names of the tables.",
+          "fields": [],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: List Tables",
+          "notes": {
+            "en": "Lists the tables of the credential's region.",
+            "pt": "Lista as tabelas da região da credencial."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "tables": [
+              "customers",
+              "orders"
+            ]
+          },
+          "slug": "dynamodb-list-tables"
+        },
+        {
+          "credential": "dynamodb",
+          "description": "Saves an item, and replaces the one with the same key.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Item",
+              "name": "item_data",
+              "type": "textarea"
+            }
+          ],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: Put Item",
+          "notes": {
+            "en": "Saves **Item**, an object with the primary key, `{{result}}` by default. An item with the same key is replaced. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+            "pt": "Salva **Item**, um objeto com a chave primária, `{{result}}` por padrão. Um item com a mesma chave é substituído. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "saved": true
+          },
+          "slug": "dynamodb-put-item"
+        },
+        {
+          "credential": "dynamodb",
+          "description": "Reads the items of a partition key, with a condition like pk = :pk.",
           "fields": [
             {
               "default": "",
@@ -1937,21 +2075,336 @@
             },
             {
               "default": "",
-              "label": "Columns (empty for all)",
-              "name": "columns",
+              "label": "Index (optional)",
+              "name": "index_name",
               "type": "text"
             },
             {
               "default": "",
-              "label": "Where",
-              "name": "where",
+              "label": "Key condition",
+              "name": "condition",
+              "type": "text"
+            },
+            {
+              "default": "{\":pk\": \"{{id}}\"}",
+              "label": "Values",
+              "name": "condition_values",
+              "type": "textarea"
+            },
+            {
+              "default": "100",
+              "label": "Limit",
+              "name": "limit",
+              "type": "text"
+            }
+          ],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: Query Items",
+          "notes": {
+            "en": "Reads the items of one partition. **Condition** is a key condition, like `customer = :pk AND begins_with(order, :prefix)`, and **Condition values** gives its values, like `{\":pk\": \"{{id}}\"}`. **Index** queries a secondary index instead of the table. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+            "pt": "Lê os itens de uma partição. **Condition** é uma condição de chave, como `customer = :pk AND begins_with(order, :prefix)`, e **Condition values** dá os valores, como `{\":pk\": \"{{id}}\"}`. **Index** consulta um índice secundário em vez da tabela. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "items": [
+              {
+                "customer": "42",
+                "order": "4411",
+                "total": 129.9
+              }
+            ]
+          },
+          "slug": "dynamodb-query-items"
+        },
+        {
+          "credential": "dynamodb",
+          "description": "Reads the items of a table, one after the other. Query is cheaper when it can be used.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "100",
+              "label": "Limit",
+              "name": "limit",
+              "type": "text"
+            }
+          ],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: Scan Items",
+          "notes": {
+            "en": "Reads items across the whole table, up to **Limit**. It reads every item to find them, so prefer **Query Items** on big tables. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+            "pt": "Lê itens da tabela inteira, até **Limit**. Ele lê todos os itens para achar, então prefira **Query Items** em tabelas grandes. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "items": [
+              {
+                "id": "42",
+                "name": "Ana"
+              }
+            ]
+          },
+          "slug": "dynamodb-scan-items"
+        },
+        {
+          "credential": "dynamodb",
+          "description": "Changes some attributes of an item, and leaves the others as they are.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{\"id\": \"{{id}}\"}",
+              "label": "Key",
+              "name": "item_key",
               "type": "textarea"
             },
             {
               "default": "",
-              "label": "Order by",
-              "name": "order_by",
+              "label": "New values",
+              "name": "changes",
+              "type": "textarea"
+            }
+          ],
+          "group": "DynamoDB",
+          "icon": "logo-dynamodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "DynamoDB: Update Item",
+          "notes": {
+            "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. Sets the attributes of **New values**, an object, keeps the others, and returns the whole item. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+            "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. Define os atributos de **New values**, um objeto, mantém os outros e devolve o item inteiro. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "item": {
+              "id": "42",
+              "name": "Ana",
+              "plan": "business"
+            }
+          },
+          "slug": "dynamodb-update-item"
+        },
+        {
+          "credential": "elasticsearch",
+          "description": "Deletes a document by its ID.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Index",
+              "name": "index_name",
               "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Document ID",
+              "name": "document_id",
+              "type": "text"
+            }
+          ],
+          "group": "Elasticsearch",
+          "icon": "logo-elasticsearch",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Elasticsearch: Delete Document",
+          "notes": {
+            "en": "It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).",
+            "pt": "Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "id": "p-1",
+            "outcome": "deleted"
+          },
+          "slug": "elasticsearch-delete-document"
+        },
+        {
+          "credential": "elasticsearch",
+          "description": "Reads a document by its ID.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Index",
+              "name": "index_name",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Document ID",
+              "name": "document_id",
+              "type": "text"
+            }
+          ],
+          "group": "Elasticsearch",
+          "icon": "logo-elasticsearch",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Elasticsearch: Get Document",
+          "notes": {
+            "en": "Returns the document with its `_id`. It goes down `error` when it doesn't exist. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).",
+            "pt": "Devolve o documento com o `_id` dele. Sai por `error` quando não existe. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "_id": "p-1",
+            "name": "Blue mug",
+            "price": 39.9
+          },
+          "slug": "elasticsearch-get-document"
+        },
+        {
+          "credential": "elasticsearch",
+          "description": "Saves a document in an index, and replaces the one with the same ID.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Index",
+              "name": "index_name",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Document ID (empty to generate one)",
+              "name": "document_id",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Document",
+              "name": "document",
+              "type": "textarea"
+            }
+          ],
+          "group": "Elasticsearch",
+          "icon": "logo-elasticsearch",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Elasticsearch: Index Document",
+          "notes": {
+            "en": "Saves **Document**, an object. With **Document ID**, it creates or replaces that one; blank lets the server pick an ID. `result.outcome` is `created` or `updated`. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "Salva **Document**, um objeto. Com **Document ID**, cria ou substitui aquele; em branco o servidor escolhe um ID. `result.outcome` é `created` ou `updated`. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "id": "p-1",
+            "outcome": "created"
+          },
+          "slug": "elasticsearch-index-document"
+        },
+        {
+          "credential": "elasticsearch",
+          "description": "Calls any endpoint of the API, like /_cat/indices or /products/_bulk.",
+          "fields": [
+            {
+              "default": "GET",
+              "label": "Method",
+              "name": "method",
+              "options": [
+                {
+                  "label": "GET",
+                  "value": "GET"
+                },
+                {
+                  "label": "POST",
+                  "value": "POST"
+                },
+                {
+                  "label": "PUT",
+                  "value": "PUT"
+                },
+                {
+                  "label": "DELETE",
+                  "value": "DELETE"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "/",
+              "label": "Path",
+              "name": "path",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Payload (JSON)",
+              "name": "payload",
+              "type": "textarea"
+            }
+          ],
+          "group": "Elasticsearch",
+          "icon": "logo-elasticsearch",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Elasticsearch: Run Request",
+          "notes": {
+            "en": "Calls any endpoint, like `GET /_cat/indices?format=json` or `POST /products/_bulk`, and `result` is what it answered. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "Chama qualquer endpoint, como `GET /_cat/indices?format=json` ou `POST /products/_bulk`, e `result` é o que ele respondeu. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "acknowledged": true
+          },
+          "slug": "elasticsearch-run-request"
+        },
+        {
+          "credential": "elasticsearch",
+          "description": "Searches an index, with a query like {\"match\": {\"title\": \"{{term}}\"}}.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Index",
+              "name": "index_name",
+              "type": "text"
+            },
+            {
+              "default": "{\"match_all\": {}}",
+              "label": "Query",
+              "name": "search",
+              "type": "textarea"
             },
             {
               "default": "100",
@@ -1966,83 +2419,46 @@
               "type": "text"
             }
           ],
-          "group": "SQL",
-          "icon": "hero-circle-stack-solid",
+          "group": "Elasticsearch",
+          "icon": "logo-elasticsearch",
           "inputs": [
             "exec"
           ],
-          "name": "SQL: Select Rows",
+          "name": "Elasticsearch: Search",
           "notes": {
-            "en": "Reads rows without writing SQL. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`. **Columns** is a list with commas, and blank reads them all. **Where** and **Order by** are SQL, with placeholders as parameters: `status = 'open' AND total > {{min}}`, `created_at DESC`. **Limit** is 100 by default, and **Offset** skips rows, for pages.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
-            "pt": "Lê linhas sem escrever SQL. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`. **Columns** é uma lista com vírgulas, e em branco lê todas. **Where** e **Order by** são SQL, com placeholders como parâmetros: `status = 'open' AND total > {{minimo}}`, `created_at DESC`. **Limit** é 100 por padrão, e **Offset** pula linhas, para paginar.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+            "en": "**Search** is the query part of the search, like `{\"match\": {\"name\": \"{{term}}\"}}`. Each document comes with its `_id` and `_score`. **Limit** and **Offset** page through the hits. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "**Search** é a parte `query` da busca, como `{\"match\": {\"name\": \"{{termo}}\"}}`. Cada documento vem com `_id` e `_score`. **Limit** e **Offset** paginam os resultados. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
           },
           "outputs": [
             "success",
             "error"
           ],
           "result": {
-            "count": 1,
-            "rows": [
+            "documents": [
               {
-                "customer": "ana@example.com",
-                "id": 4411,
-                "total": "129.90"
+                "_id": "p-1",
+                "_score": 3.2,
+                "name": "Blue mug"
               }
-            ]
+            ],
+            "total": 1
           },
-          "slug": "sql-select-rows"
+          "slug": "elasticsearch-search"
         },
         {
-          "credential": "sql",
-          "description": "Adds one row or a list of them, from column to value. All of them or none go in.",
+          "credential": "elasticsearch",
+          "description": "Changes some fields of a document, and leaves the others as they are.",
           "fields": [
             {
               "default": "",
-              "label": "Table",
-              "name": "table",
+              "label": "Index",
+              "name": "index_name",
               "type": "text"
             },
             {
-              "default": "{{result}}",
-              "label": "Rows",
-              "name": "rows",
-              "type": "textarea"
-            }
-          ],
-          "group": "SQL",
-          "icon": "hero-circle-stack-solid",
-          "inputs": [
-            "exec"
-          ],
-          "name": "SQL: Insert Rows",
-          "notes": {
-            "en": "**Rows** is one object or a list of them, from column to value, like `{\"customer\": \"{{body.email}}\", \"total\": {{body.total}}}`. It is `{{result}}` by default, so it inserts what the previous node returned, a **Select Rows** included. Many rows go in batches, all or none. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
-            "pt": "**Rows** é um objeto ou uma lista deles, de coluna para valor, como `{\"customer\": \"{{body.email}}\", \"total\": {{body.total}}}`. O padrão é `{{result}}`, então insere o que o nó anterior devolveu, inclusive um **Select Rows**. Muitas linhas vão em lotes, todas ou nenhuma. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "count": 1,
-            "rows": [
-              {
-                "customer": "bruno@example.com",
-                "id": 4412,
-                "total": "89.00"
-              }
-            ]
-          },
-          "slug": "sql-insert-rows"
-        },
-        {
-          "credential": "sql",
-          "description": "Changes the rows that match. To change every row, write 1 = 1 in Where.",
-          "fields": [
-            {
               "default": "",
-              "label": "Table",
-              "name": "table",
+              "label": "Document ID",
+              "name": "document_id",
               "type": "text"
             },
             {
@@ -2050,222 +2466,141 @@
               "label": "New values",
               "name": "changes",
               "type": "textarea"
-            },
-            {
-              "default": "",
-              "label": "Where",
-              "name": "where",
-              "type": "textarea"
             }
           ],
-          "group": "SQL",
-          "icon": "hero-circle-stack-solid",
+          "group": "Elasticsearch",
+          "icon": "logo-elasticsearch",
           "inputs": [
             "exec"
           ],
-          "name": "SQL: Update Rows",
+          "name": "Elasticsearch: Update Document",
           "notes": {
-            "en": "**New values** is an object from column to value, like `{\"status\": \"shipped\"}`. **Where** is SQL, and can't be empty: to change every row on purpose, write `1 = 1`. `result.count` is how many rows changed. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
-            "pt": "**New values** é um objeto de coluna para valor, como `{\"status\": \"shipped\"}`. **Where** é SQL e não pode ficar vazio: para alterar todas as linhas de propósito, escreva `1 = 1`. `result.count` é quantas linhas mudaram. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+            "en": "Changes only the fields in **New values**, an object, and keeps the others. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "Altera só os campos de **New values**, um objeto, e mantém os outros. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
           },
           "outputs": [
             "success",
             "error"
           ],
           "result": {
-            "count": 3,
-            "rows": []
+            "id": "p-1",
+            "outcome": "updated"
           },
-          "slug": "sql-update-rows"
+          "slug": "elasticsearch-update-document"
         },
         {
-          "credential": "sql",
-          "description": "Adds rows, and updates the ones whose key columns already exist.",
+          "credential": "mongodb",
+          "description": "Runs an aggregation pipeline on a collection.",
           "fields": [
             {
               "default": "",
-              "label": "Table",
-              "name": "table",
+              "label": "Collection",
+              "name": "collection",
               "type": "text"
             },
             {
-              "default": "{{result}}",
-              "label": "Rows",
-              "name": "rows",
+              "default": "[]",
+              "label": "Pipeline",
+              "name": "pipeline",
               "type": "textarea"
-            },
-            {
-              "default": "",
-              "label": "Key columns",
-              "name": "key_columns",
-              "type": "text"
             }
           ],
-          "group": "SQL",
-          "icon": "hero-circle-stack-solid",
+          "group": "MongoDB",
+          "icon": "logo-mongodb",
           "inputs": [
             "exec"
           ],
-          "name": "SQL: Upsert Rows",
+          "name": "MongoDB: Aggregate",
           "notes": {
-            "en": "Inserts the rows, or updates the ones that already exist. **Key columns** say which columns identify a row, like `email`, and need a unique index on them. **Rows** works as in **Insert Rows**. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
-            "pt": "Insere as linhas, ou atualiza as que já existem. **Key columns** dizem quais colunas identificam uma linha, como `email`, e precisam de um índice único nelas. **Rows** funciona como no **Insert Rows**. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+            "en": "Runs **Pipeline**, a list of stages:\n\n```json\n[{\"$match\": {\"status\": \"active\"}}, {\"$group\": {\"_id\": \"$plan\", \"customers\": {\"$sum\": 1}}}]\n```\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "Roda **Pipeline**, uma lista de estágios:\n\n```json\n[{\"$match\": {\"status\": \"active\"}}, {\"$group\": {\"_id\": \"$plan\", \"customers\": {\"$sum\": 1}}}]\n```\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
           },
           "outputs": [
             "success",
             "error"
           ],
           "result": {
-            "count": 2,
-            "rows": []
-          },
-          "slug": "sql-upsert-rows"
-        },
-        {
-          "credential": "sql",
-          "description": "Deletes the rows that match. To delete every row, write 1 = 1 in Where.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Table",
-              "name": "table",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Where",
-              "name": "where",
-              "type": "textarea"
-            }
-          ],
-          "group": "SQL",
-          "icon": "hero-circle-stack-solid",
-          "inputs": [
-            "exec"
-          ],
-          "name": "SQL: Delete Rows",
-          "notes": {
-            "en": "**Where** is SQL, and can't be empty: to delete every row on purpose, write `1 = 1`. `result.count` is how many were deleted. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
-            "pt": "**Where** é SQL e não pode ficar vazio: para apagar todas as linhas de propósito, escreva `1 = 1`. `result.count` é quantas foram apagadas. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "count": 12,
-            "rows": []
-          },
-          "slug": "sql-delete-rows"
-        },
-        {
-          "credential": "sql",
-          "description": "Runs several statements, separated by semicolons. If one fails, none of them count.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Statements",
-              "name": "statements",
-              "type": "textarea"
-            }
-          ],
-          "group": "SQL",
-          "icon": "hero-circle-stack-solid",
-          "inputs": [
-            "exec"
-          ],
-          "name": "SQL: Run Transaction",
-          "notes": {
-            "en": "Runs **Statements**, separated by `;`, all or none: if one fails, none of them is applied. `result.results` has what each returned, in order.\n\n```sql\nUPDATE accounts SET balance = balance - {{amount}} WHERE id = {{from}};\nUPDATE accounts SET balance = balance + {{amount}} WHERE id = {{to}}\n```\n\nA transaction can't span several nodes. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
-            "pt": "Roda **Statements**, separados por `;`, todos ou nenhum: se um falha, nenhum é aplicado. `result.results` tem o que cada um devolveu, em ordem.\n\n```sql\nUPDATE accounts SET balance = balance - {{valor}} WHERE id = {{origem}};\nUPDATE accounts SET balance = balance + {{valor}} WHERE id = {{destino}}\n```\n\nUma transação não atravessa vários nós. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "count": 2,
-            "results": [
+            "count": 1,
+            "documents": [
               {
-                "count": 1,
-                "rows": []
-              },
-              {
-                "count": 1,
-                "rows": []
+                "_id": "pro",
+                "customers": 41
               }
             ]
           },
-          "slug": "sql-run-transaction"
+          "slug": "mongodb-aggregate"
         },
         {
-          "credential": "sql",
-          "description": "Returns the names of the tables of the database.",
-          "fields": [],
-          "group": "SQL",
-          "icon": "hero-circle-stack-solid",
-          "inputs": [
-            "exec"
-          ],
-          "name": "SQL: List Tables",
-          "notes": {
-            "en": "Lists the tables the credential's user sees. Useful as a tool of an AI Agent, so it finds out what the database holds before querying it.",
-            "pt": "Lista as tabelas que o usuário da credencial enxerga. Útil como ferramenta de um AI Agent, para ele descobrir o que o banco tem antes de consultar."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "tables": [
-              "public.customers",
-              "public.orders"
-            ]
-          },
-          "slug": "sql-list-tables"
-        },
-        {
-          "credential": "sql",
-          "description": "Returns the columns of a table, with their types.",
+          "credential": "mongodb",
+          "description": "Returns how many documents match a filter.",
           "fields": [
             {
               "default": "",
-              "label": "Table",
-              "name": "table",
+              "label": "Collection",
+              "name": "collection",
               "type": "text"
+            },
+            {
+              "default": "{}",
+              "label": "Filter",
+              "name": "filter",
+              "type": "textarea"
             }
           ],
-          "group": "SQL",
-          "icon": "hero-circle-stack-solid",
+          "group": "MongoDB",
+          "icon": "logo-mongodb",
           "inputs": [
             "exec"
           ],
-          "name": "SQL: Describe Table",
+          "name": "MongoDB: Count Documents",
           "notes": {
-            "en": "Lists the columns of **Table**, with type, whether they take null, and default. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.",
-            "pt": "Lista as colunas de **Table**, com tipo, se aceitam nulo e o valor padrão. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`."
+            "en": "Counts what matches. **Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. `{}` counts everything.",
+            "pt": "Conta o que bate. **Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. `{}` conta tudo."
           },
           "outputs": [
             "success",
             "error"
           ],
           "result": {
-            "columns": [
-              {
-                "default": "nextval('orders_id_seq'::regclass)",
-                "name": "id",
-                "nullable": false,
-                "type": "integer"
-              },
-              {
-                "default": null,
-                "name": "total",
-                "nullable": true,
-                "type": "numeric"
-              }
-            ]
+            "count": 42
           },
-          "slug": "sql-describe-table"
+          "slug": "mongodb-count-documents"
+        },
+        {
+          "credential": "mongodb",
+          "description": "Deletes the documents that match a filter.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Collection",
+              "name": "collection",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Filter",
+              "name": "filter",
+              "type": "textarea"
+            }
+          ],
+          "group": "MongoDB",
+          "icon": "logo-mongodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "MongoDB: Delete Documents",
+          "notes": {
+            "en": "Deletes every document that matches. **Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. It can't be empty: to delete everything on purpose, use `{\"_id\": {\"$exists\": true}}`.",
+            "pt": "Apaga todos os documentos que batem. **Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. Não pode ficar vazio: para apagar tudo de propósito, use `{\"_id\": {\"$exists\": true}}`."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 3
+          },
+          "slug": "mongodb-delete-documents"
         },
         {
           "credential": "mongodb",
@@ -2375,6 +2710,32 @@
         },
         {
           "credential": "mongodb",
+          "description": "Returns the names of the collections.",
+          "fields": [],
+          "group": "MongoDB",
+          "icon": "logo-mongodb",
+          "inputs": [
+            "exec"
+          ],
+          "name": "MongoDB: List Collections",
+          "notes": {
+            "en": "Lists the collections of the credential's database, in order.",
+            "pt": "Lista as coleções do banco da credencial, em ordem."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "collections": [
+              "customers",
+              "orders"
+            ]
+          },
+          "slug": "mongodb-list-collections"
+        },
+        {
+          "credential": "mongodb",
           "description": "Changes the documents that match, with an update like {\"$set\": {\"status\": \"done\"}}.",
           "fields": [
             {
@@ -2450,67 +2811,25 @@
           "slug": "mongodb-update-documents"
         },
         {
-          "credential": "mongodb",
-          "description": "Deletes the documents that match a filter.",
+          "credential": "neo4j",
+          "description": "Runs a Cypher query on a graph. {{placeholders}} go as parameters, so a value can't change the query.",
           "fields": [
             {
               "default": "",
-              "label": "Collection",
-              "name": "collection",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Filter",
-              "name": "filter",
+              "label": "Query",
+              "name": "cypher",
               "type": "textarea"
             }
           ],
-          "group": "MongoDB",
-          "icon": "logo-mongodb",
+          "group": "Neo4j",
+          "icon": "logo-neo4j",
           "inputs": [
             "exec"
           ],
-          "name": "MongoDB: Delete Documents",
+          "name": "Neo4j: Run Query",
           "notes": {
-            "en": "Deletes every document that matches. **Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. It can't be empty: to delete everything on purpose, use `{\"_id\": {\"$exists\": true}}`.",
-            "pt": "Apaga todos os documentos que batem. **Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. Não pode ficar vazio: para apagar tudo de propósito, use `{\"_id\": {\"$exists\": true}}`."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "count": 3
-          },
-          "slug": "mongodb-delete-documents"
-        },
-        {
-          "credential": "mongodb",
-          "description": "Runs an aggregation pipeline on a collection.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Collection",
-              "name": "collection",
-              "type": "text"
-            },
-            {
-              "default": "[]",
-              "label": "Pipeline",
-              "name": "pipeline",
-              "type": "textarea"
-            }
-          ],
-          "group": "MongoDB",
-          "icon": "logo-mongodb",
-          "inputs": [
-            "exec"
-          ],
-          "name": "MongoDB: Aggregate",
-          "notes": {
-            "en": "Runs **Pipeline**, a list of stages:\n\n```json\n[{\"$match\": {\"status\": \"active\"}}, {\"$group\": {\"_id\": \"$plan\", \"customers\": {\"$sum\": 1}}}]\n```\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
-            "pt": "Roda **Pipeline**, uma lista de estágios:\n\n```json\n[{\"$match\": {\"status\": \"active\"}}, {\"$group\": {\"_id\": \"$plan\", \"customers\": {\"$sum\": 1}}}]\n```\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+            "en": "Runs a Cypher query on Neo4j or Aura: `MATCH (p:Person {email: {{body.email}}})-[:KNOWS]->(f) RETURN p.name AS name, count(f) AS friends`. Each row is an object by the names in `RETURN`. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "Roda uma consulta Cypher no Neo4j ou Aura: `MATCH (p:Person {email: {{body.email}}})-[:KNOWS]->(f) RETURN p.name AS name, count(f) AS friends`. Cada linha é um objeto com os nomes do `RETURN`. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
           },
           "outputs": [
             "success",
@@ -2518,150 +2837,14 @@
           ],
           "result": {
             "count": 1,
-            "documents": [
+            "rows": [
               {
-                "_id": "pro",
-                "customers": 41
+                "friends": 12,
+                "name": "Ana"
               }
             ]
           },
-          "slug": "mongodb-aggregate"
-        },
-        {
-          "credential": "mongodb",
-          "description": "Returns how many documents match a filter.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Collection",
-              "name": "collection",
-              "type": "text"
-            },
-            {
-              "default": "{}",
-              "label": "Filter",
-              "name": "filter",
-              "type": "textarea"
-            }
-          ],
-          "group": "MongoDB",
-          "icon": "logo-mongodb",
-          "inputs": [
-            "exec"
-          ],
-          "name": "MongoDB: Count Documents",
-          "notes": {
-            "en": "Counts what matches. **Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. `{}` counts everything.",
-            "pt": "Conta o que bate. **Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. `{}` conta tudo."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "count": 42
-          },
-          "slug": "mongodb-count-documents"
-        },
-        {
-          "credential": "mongodb",
-          "description": "Returns the names of the collections.",
-          "fields": [],
-          "group": "MongoDB",
-          "icon": "logo-mongodb",
-          "inputs": [
-            "exec"
-          ],
-          "name": "MongoDB: List Collections",
-          "notes": {
-            "en": "Lists the collections of the credential's database, in order.",
-            "pt": "Lista as coleções do banco da credencial, em ordem."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "collections": [
-              "customers",
-              "orders"
-            ]
-          },
-          "slug": "mongodb-list-collections"
-        },
-        {
-          "credential": "redis",
-          "description": "Reads the value of a key.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Key",
-              "name": "key",
-              "type": "text"
-            }
-          ],
-          "group": "Redis",
-          "icon": "logo-redis",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Redis: Get Value",
-          "notes": {
-            "en": "`result.found` is false when the key doesn't exist, and `value` is then `null`. Values come as text. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
-            "pt": "`result.found` é falso quando a chave não existe, e `value` vem `null`. Os valores vêm como texto. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "found": true,
-            "key": "session:ana",
-            "value": "{\"cart\":3}"
-          },
-          "slug": "redis-get-value"
-        },
-        {
-          "credential": "redis",
-          "description": "Saves a value in a key, for good or for some seconds.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Key",
-              "name": "key",
-              "type": "text"
-            },
-            {
-              "default": "{{result}}",
-              "label": "Value",
-              "name": "value",
-              "type": "textarea"
-            },
-            {
-              "default": "",
-              "label": "Expires after (seconds)",
-              "name": "seconds",
-              "type": "text"
-            }
-          ],
-          "group": "Redis",
-          "icon": "logo-redis",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Redis: Set Value",
-          "notes": {
-            "en": "Saves **Value** in **Key**. Objects and lists are saved as JSON. With **Expires after (seconds)**, the key goes away on its own, which suits caches and locks. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
-            "pt": "Salva **Value** em **Key**. Objetos e listas são salvos como JSON. Com **Expires after (seconds)**, a chave some sozinha, o que serve para cache e travas. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "key": "session:ana"
-          },
-          "slug": "redis-set-value"
+          "slug": "neo4j-run-query"
         },
         {
           "credential": "redis",
@@ -2692,43 +2875,6 @@
             "count": 2
           },
           "slug": "redis-delete-keys"
-        },
-        {
-          "credential": "redis",
-          "description": "Adds to the number in a key, which starts at 0, and returns the new number.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Key",
-              "name": "key",
-              "type": "text"
-            },
-            {
-              "default": "1",
-              "label": "Amount",
-              "name": "amount",
-              "type": "text"
-            }
-          ],
-          "group": "Redis",
-          "icon": "logo-redis",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Redis: Increment",
-          "notes": {
-            "en": "Adds **Amount** to the number in **Key**, 1 by default, and returns the new value. A key that doesn't exist starts at 0, so it counts things and limits rates. A negative amount subtracts. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
-            "pt": "Soma **Amount** ao número em **Key**, 1 por padrão, e devolve o novo valor. Uma chave que não existe começa em 0, então serve para contar e limitar taxa. Um valor negativo subtrai. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "key": "visits:2026-05-12",
-            "value": 18
-          },
-          "slug": "redis-increment"
         },
         {
           "credential": "redis",
@@ -2772,7 +2918,7 @@
         },
         {
           "credential": "redis",
-          "description": "Returns the fields of a hash.",
+          "description": "Reads the value of a key.",
           "fields": [
             {
               "default": "",
@@ -2786,27 +2932,25 @@
           "inputs": [
             "exec"
           ],
-          "name": "Redis: Read Hash",
+          "name": "Redis: Get Value",
           "notes": {
-            "en": "Returns every field of the hash. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
-            "pt": "Devolve todos os campos do hash. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+            "en": "`result.found` is false when the key doesn't exist, and `value` is then `null`. Values come as text. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "`result.found` é falso quando a chave não existe, e `value` vem `null`. Os valores vêm como texto. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
           },
           "outputs": [
             "success",
             "error"
           ],
           "result": {
-            "fields": {
-              "name": "Ana",
-              "plan": "pro"
-            },
-            "key": "customer:42"
+            "found": true,
+            "key": "session:ana",
+            "value": "{\"cart\":3}"
           },
-          "slug": "redis-read-hash"
+          "slug": "redis-get-value"
         },
         {
           "credential": "redis",
-          "description": "Saves fields in a hash, and leaves the others as they are.",
+          "description": "Adds to the number in a key, which starts at 0, and returns the new number.",
           "fields": [
             {
               "default": "",
@@ -2815,9 +2959,46 @@
               "type": "text"
             },
             {
+              "default": "1",
+              "label": "Amount",
+              "name": "amount",
+              "type": "text"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Increment",
+          "notes": {
+            "en": "Adds **Amount** to the number in **Key**, 1 by default, and returns the new value. A key that doesn't exist starts at 0, so it counts things and limits rates. A negative amount subtracts. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "Soma **Amount** ao número em **Key**, 1 por padrão, e devolve o novo valor. Uma chave que não existe começa em 0, então serve para contar e limitar taxa. Um valor negativo subtrai. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "key": "visits:2026-05-12",
+            "value": 18
+          },
+          "slug": "redis-increment"
+        },
+        {
+          "credential": "redis",
+          "description": "Sends a message to a channel, and returns how many subscribers got it.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Channel",
+              "name": "channel",
+              "type": "text"
+            },
+            {
               "default": "{{result}}",
-              "label": "Fields",
-              "name": "fields",
+              "label": "Message",
+              "name": "value",
               "type": "textarea"
             }
           ],
@@ -2826,20 +3007,19 @@
           "inputs": [
             "exec"
           ],
-          "name": "Redis: Write Hash",
+          "name": "Redis: Publish Message",
           "notes": {
-            "en": "**Fields** is an object from field to value, `{{result}}` by default. `result.added` counts the fields that are new. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
-            "pt": "**Fields** é um objeto de campo para valor, `{{result}}` por padrão. `result.added` conta os campos que são novos. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+            "en": "Publishes **Value** on **Channel**. `result.subscribers` is how many got it. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "Publica **Value** em **Channel**. `result.subscribers` é quantos receberam. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
           },
           "outputs": [
             "success",
             "error"
           ],
           "result": {
-            "added": 1,
-            "key": "customer:42"
+            "subscribers": 3
           },
-          "slug": "redis-write-hash"
+          "slug": "redis-publish-message"
         },
         {
           "credential": "redis",
@@ -2896,6 +3076,40 @@
         },
         {
           "credential": "redis",
+          "description": "Returns the fields of a hash.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Key",
+              "name": "key",
+              "type": "text"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Read Hash",
+          "notes": {
+            "en": "Returns every field of the hash. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "Devolve todos os campos do hash. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "fields": {
+              "name": "Ana",
+              "plan": "pro"
+            },
+            "key": "customer:42"
+          },
+          "slug": "redis-read-hash"
+        },
+        {
+          "credential": "redis",
           "description": "Returns the first items of a list, without taking them out.",
           "fields": [
             {
@@ -2937,42 +3151,6 @@
         },
         {
           "credential": "redis",
-          "description": "Sends a message to a channel, and returns how many subscribers got it.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Channel",
-              "name": "channel",
-              "type": "text"
-            },
-            {
-              "default": "{{result}}",
-              "label": "Message",
-              "name": "value",
-              "type": "textarea"
-            }
-          ],
-          "group": "Redis",
-          "icon": "logo-redis",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Redis: Publish Message",
-          "notes": {
-            "en": "Publishes **Value** on **Channel**. `result.subscribers` is how many got it. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
-            "pt": "Publica **Value** em **Channel**. `result.subscribers` é quantos receberam. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "subscribers": 3
-          },
-          "slug": "redis-publish-message"
-        },
-        {
-          "credential": "redis",
           "description": "Runs any command, as a JSON list like [\"SADD\", \"tags\", \"{{tag}}\"].",
           "fields": [
             {
@@ -3002,20 +3180,337 @@
           "slug": "redis-run-command"
         },
         {
-          "credential": "elasticsearch",
-          "description": "Searches an index, with a query like {\"match\": {\"title\": \"{{term}}\"}}.",
+          "credential": "redis",
+          "description": "Saves a value in a key, for good or for some seconds.",
           "fields": [
             {
               "default": "",
-              "label": "Index",
-              "name": "index_name",
+              "label": "Key",
+              "name": "key",
               "type": "text"
             },
             {
-              "default": "{\"match_all\": {}}",
-              "label": "Query",
-              "name": "search",
+              "default": "{{result}}",
+              "label": "Value",
+              "name": "value",
               "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Expires after (seconds)",
+              "name": "seconds",
+              "type": "text"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Set Value",
+          "notes": {
+            "en": "Saves **Value** in **Key**. Objects and lists are saved as JSON. With **Expires after (seconds)**, the key goes away on its own, which suits caches and locks. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "Salva **Value** em **Key**. Objetos e listas são salvos como JSON. Com **Expires after (seconds)**, a chave some sozinha, o que serve para cache e travas. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "key": "session:ana"
+          },
+          "slug": "redis-set-value"
+        },
+        {
+          "credential": "redis",
+          "description": "Saves fields in a hash, and leaves the others as they are.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Key",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Fields",
+              "name": "fields",
+              "type": "textarea"
+            }
+          ],
+          "group": "Redis",
+          "icon": "logo-redis",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Redis: Write Hash",
+          "notes": {
+            "en": "**Fields** is an object from field to value, `{{result}}` by default. `result.added` counts the fields that are new. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+            "pt": "**Fields** é um objeto de campo para valor, `{{result}}` por padrão. `result.added` conta os campos que são novos. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "added": 1,
+            "key": "customer:42"
+          },
+          "slug": "redis-write-hash"
+        },
+        {
+          "credential": "sql",
+          "description": "Deletes the rows that match. To delete every row, write 1 = 1 in Where.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Where",
+              "name": "where",
+              "type": "textarea"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Delete Rows",
+          "notes": {
+            "en": "**Where** is SQL, and can't be empty: to delete every row on purpose, write `1 = 1`. `result.count` is how many were deleted. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "**Where** é SQL e não pode ficar vazio: para apagar todas as linhas de propósito, escreva `1 = 1`. `result.count` é quantas foram apagadas. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 12,
+            "rows": []
+          },
+          "slug": "sql-delete-rows"
+        },
+        {
+          "credential": "sql",
+          "description": "Returns the columns of a table, with their types.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Describe Table",
+          "notes": {
+            "en": "Lists the columns of **Table**, with type, whether they take null, and default. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.",
+            "pt": "Lista as colunas de **Table**, com tipo, se aceitam nulo e o valor padrão. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "columns": [
+              {
+                "default": "nextval('orders_id_seq'::regclass)",
+                "name": "id",
+                "nullable": false,
+                "type": "integer"
+              },
+              {
+                "default": null,
+                "name": "total",
+                "nullable": true,
+                "type": "numeric"
+              }
+            ]
+          },
+          "slug": "sql-describe-table"
+        },
+        {
+          "credential": "sql",
+          "description": "Adds one row or a list of them, from column to value. All of them or none go in.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Rows",
+              "name": "rows",
+              "type": "textarea"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Insert Rows",
+          "notes": {
+            "en": "**Rows** is one object or a list of them, from column to value, like `{\"customer\": \"{{body.email}}\", \"total\": {{body.total}}}`. It is `{{result}}` by default, so it inserts what the previous node returned, a **Select Rows** included. Many rows go in batches, all or none. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "**Rows** é um objeto ou uma lista deles, de coluna para valor, como `{\"customer\": \"{{body.email}}\", \"total\": {{body.total}}}`. O padrão é `{{result}}`, então insere o que o nó anterior devolveu, inclusive um **Select Rows**. Muitas linhas vão em lotes, todas ou nenhuma. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "rows": [
+              {
+                "customer": "bruno@example.com",
+                "id": 4412,
+                "total": "89.00"
+              }
+            ]
+          },
+          "slug": "sql-insert-rows"
+        },
+        {
+          "credential": "sql",
+          "description": "Returns the names of the tables of the database.",
+          "fields": [],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: List Tables",
+          "notes": {
+            "en": "Lists the tables the credential's user sees. Useful as a tool of an AI Agent, so it finds out what the database holds before querying it.",
+            "pt": "Lista as tabelas que o usuário da credencial enxerga. Útil como ferramenta de um AI Agent, para ele descobrir o que o banco tem antes de consultar."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "tables": [
+              "public.customers",
+              "public.orders"
+            ]
+          },
+          "slug": "sql-list-tables"
+        },
+        {
+          "credential": "sql",
+          "description": "Runs any statement on PostgreSQL, MySQL, MariaDB, SQL Server, SQLite or Oracle. {{placeholders}} go as parameters, so a value can't change the query.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Query",
+              "name": "sql",
+              "type": "textarea"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Run Query",
+          "notes": {
+            "en": "Runs any statement, on PostgreSQL, MySQL, MariaDB, SQL Server, Oracle or SQLite, depending on the credential.\n\n```sql\nSELECT id, total FROM orders WHERE customer = {{body.email}} AND status = 'open'\n```\n\n`result.rows` is a list of objects and `result.count` how many. Statements that change rows return the changed ones where the engine can (PostgreSQL with `RETURNING`), and MySQL returns `result.last_id` after an insert. Decimal numbers come as text, like `\"129.90\"`, so no cent is lost. A query that returns more than 10,000 rows fails: use `LIMIT`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "Roda qualquer comando, no PostgreSQL, MySQL, MariaDB, SQL Server, Oracle ou SQLite, conforme a credencial.\n\n```sql\nSELECT id, total FROM orders WHERE customer = {{body.email}} AND status = 'open'\n```\n\n`result.rows` é uma lista de objetos e `result.count` quantos são. Comandos que alteram linhas devolvem as alteradas quando o banco permite (PostgreSQL com `RETURNING`), e o MySQL devolve `result.last_id` depois de um insert. Números decimais vêm como texto, como `\"129.90\"`, para nenhum centavo se perder. Uma consulta que devolve mais de 10.000 linhas falha: use `LIMIT`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 1,
+            "rows": [
+              {
+                "customer": "ana@example.com",
+                "id": 4411,
+                "total": "129.90"
+              }
+            ]
+          },
+          "slug": "sql-run-query"
+        },
+        {
+          "credential": "sql",
+          "description": "Runs several statements, separated by semicolons. If one fails, none of them count.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Statements",
+              "name": "statements",
+              "type": "textarea"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Run Transaction",
+          "notes": {
+            "en": "Runs **Statements**, separated by `;`, all or none: if one fails, none of them is applied. `result.results` has what each returned, in order.\n\n```sql\nUPDATE accounts SET balance = balance - {{amount}} WHERE id = {{from}};\nUPDATE accounts SET balance = balance + {{amount}} WHERE id = {{to}}\n```\n\nA transaction can't span several nodes. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "Roda **Statements**, separados por `;`, todos ou nenhum: se um falha, nenhum é aplicado. `result.results` tem o que cada um devolveu, em ordem.\n\n```sql\nUPDATE accounts SET balance = balance - {{valor}} WHERE id = {{origem}};\nUPDATE accounts SET balance = balance + {{valor}} WHERE id = {{destino}}\n```\n\nUma transação não atravessa vários nós. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 2,
+            "results": [
+              {
+                "count": 1,
+                "rows": []
+              },
+              {
+                "count": 1,
+                "rows": []
+              }
+            ]
+          },
+          "slug": "sql-run-transaction"
+        },
+        {
+          "credential": "sql",
+          "description": "Reads rows from a table, without writing SQL.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Columns (empty for all)",
+              "name": "columns",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Where",
+              "name": "where",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Order by",
+              "name": "order_by",
+              "type": "text"
             },
             {
               "default": "100",
@@ -3030,561 +3525,15 @@
               "type": "text"
             }
           ],
-          "group": "Elasticsearch",
-          "icon": "logo-elasticsearch",
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
           "inputs": [
             "exec"
           ],
-          "name": "Elasticsearch: Search",
+          "name": "SQL: Select Rows",
           "notes": {
-            "en": "**Search** is the query part of the search, like `{\"match\": {\"name\": \"{{term}}\"}}`. Each document comes with its `_id` and `_score`. **Limit** and **Offset** page through the hits. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
-            "pt": "**Search** é a parte `query` da busca, como `{\"match\": {\"name\": \"{{termo}}\"}}`. Cada documento vem com `_id` e `_score`. **Limit** e **Offset** paginam os resultados. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "documents": [
-              {
-                "_id": "p-1",
-                "_score": 3.2,
-                "name": "Blue mug"
-              }
-            ],
-            "total": 1
-          },
-          "slug": "elasticsearch-search"
-        },
-        {
-          "credential": "elasticsearch",
-          "description": "Reads a document by its ID.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Index",
-              "name": "index_name",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Document ID",
-              "name": "document_id",
-              "type": "text"
-            }
-          ],
-          "group": "Elasticsearch",
-          "icon": "logo-elasticsearch",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Elasticsearch: Get Document",
-          "notes": {
-            "en": "Returns the document with its `_id`. It goes down `error` when it doesn't exist. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).",
-            "pt": "Devolve o documento com o `_id` dele. Sai por `error` quando não existe. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "_id": "p-1",
-            "name": "Blue mug",
-            "price": 39.9
-          },
-          "slug": "elasticsearch-get-document"
-        },
-        {
-          "credential": "elasticsearch",
-          "description": "Saves a document in an index, and replaces the one with the same ID.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Index",
-              "name": "index_name",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Document ID (empty to generate one)",
-              "name": "document_id",
-              "type": "text"
-            },
-            {
-              "default": "{{result}}",
-              "label": "Document",
-              "name": "document",
-              "type": "textarea"
-            }
-          ],
-          "group": "Elasticsearch",
-          "icon": "logo-elasticsearch",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Elasticsearch: Index Document",
-          "notes": {
-            "en": "Saves **Document**, an object. With **Document ID**, it creates or replaces that one; blank lets the server pick an ID. `result.outcome` is `created` or `updated`. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
-            "pt": "Salva **Document**, um objeto. Com **Document ID**, cria ou substitui aquele; em branco o servidor escolhe um ID. `result.outcome` é `created` ou `updated`. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "id": "p-1",
-            "outcome": "created"
-          },
-          "slug": "elasticsearch-index-document"
-        },
-        {
-          "credential": "elasticsearch",
-          "description": "Changes some fields of a document, and leaves the others as they are.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Index",
-              "name": "index_name",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Document ID",
-              "name": "document_id",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "New values",
-              "name": "changes",
-              "type": "textarea"
-            }
-          ],
-          "group": "Elasticsearch",
-          "icon": "logo-elasticsearch",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Elasticsearch: Update Document",
-          "notes": {
-            "en": "Changes only the fields in **New values**, an object, and keeps the others. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
-            "pt": "Altera só os campos de **New values**, um objeto, e mantém os outros. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "id": "p-1",
-            "outcome": "updated"
-          },
-          "slug": "elasticsearch-update-document"
-        },
-        {
-          "credential": "elasticsearch",
-          "description": "Deletes a document by its ID.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Index",
-              "name": "index_name",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Document ID",
-              "name": "document_id",
-              "type": "text"
-            }
-          ],
-          "group": "Elasticsearch",
-          "icon": "logo-elasticsearch",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Elasticsearch: Delete Document",
-          "notes": {
-            "en": "It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).",
-            "pt": "Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "id": "p-1",
-            "outcome": "deleted"
-          },
-          "slug": "elasticsearch-delete-document"
-        },
-        {
-          "credential": "elasticsearch",
-          "description": "Calls any endpoint of the API, like /_cat/indices or /products/_bulk.",
-          "fields": [
-            {
-              "default": "GET",
-              "label": "Method",
-              "name": "method",
-              "options": [
-                {
-                  "label": "GET",
-                  "value": "GET"
-                },
-                {
-                  "label": "POST",
-                  "value": "POST"
-                },
-                {
-                  "label": "PUT",
-                  "value": "PUT"
-                },
-                {
-                  "label": "DELETE",
-                  "value": "DELETE"
-                }
-              ],
-              "type": "select"
-            },
-            {
-              "default": "/",
-              "label": "Path",
-              "name": "path",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Payload (JSON)",
-              "name": "payload",
-              "type": "textarea"
-            }
-          ],
-          "group": "Elasticsearch",
-          "icon": "logo-elasticsearch",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Elasticsearch: Run Request",
-          "notes": {
-            "en": "Calls any endpoint, like `GET /_cat/indices?format=json` or `POST /products/_bulk`, and `result` is what it answered. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
-            "pt": "Chama qualquer endpoint, como `GET /_cat/indices?format=json` ou `POST /products/_bulk`, e `result` é o que ele respondeu. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "acknowledged": true
-          },
-          "slug": "elasticsearch-run-request"
-        },
-        {
-          "credential": "dynamodb",
-          "description": "Reads an item by its key.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Table",
-              "name": "table",
-              "type": "text"
-            },
-            {
-              "default": "{\"id\": \"{{id}}\"}",
-              "label": "Key",
-              "name": "item_key",
-              "type": "textarea"
-            }
-          ],
-          "group": "DynamoDB",
-          "icon": "logo-dynamodb",
-          "inputs": [
-            "exec"
-          ],
-          "name": "DynamoDB: Get Item",
-          "notes": {
-            "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. `result.found` is false, and `item` null, when there is none. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
-            "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. `result.found` é falso, e `item` nulo, quando não existe. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "found": true,
-            "item": {
-              "id": "42",
-              "name": "Ana",
-              "plan": "pro"
-            }
-          },
-          "slug": "dynamodb-get-item"
-        },
-        {
-          "credential": "dynamodb",
-          "description": "Saves an item, and replaces the one with the same key.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Table",
-              "name": "table",
-              "type": "text"
-            },
-            {
-              "default": "{{result}}",
-              "label": "Item",
-              "name": "item_data",
-              "type": "textarea"
-            }
-          ],
-          "group": "DynamoDB",
-          "icon": "logo-dynamodb",
-          "inputs": [
-            "exec"
-          ],
-          "name": "DynamoDB: Put Item",
-          "notes": {
-            "en": "Saves **Item**, an object with the primary key, `{{result}}` by default. An item with the same key is replaced. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
-            "pt": "Salva **Item**, um objeto com a chave primária, `{{result}}` por padrão. Um item com a mesma chave é substituído. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "saved": true
-          },
-          "slug": "dynamodb-put-item"
-        },
-        {
-          "credential": "dynamodb",
-          "description": "Changes some attributes of an item, and leaves the others as they are.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Table",
-              "name": "table",
-              "type": "text"
-            },
-            {
-              "default": "{\"id\": \"{{id}}\"}",
-              "label": "Key",
-              "name": "item_key",
-              "type": "textarea"
-            },
-            {
-              "default": "",
-              "label": "New values",
-              "name": "changes",
-              "type": "textarea"
-            }
-          ],
-          "group": "DynamoDB",
-          "icon": "logo-dynamodb",
-          "inputs": [
-            "exec"
-          ],
-          "name": "DynamoDB: Update Item",
-          "notes": {
-            "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. Sets the attributes of **New values**, an object, keeps the others, and returns the whole item. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
-            "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. Define os atributos de **New values**, um objeto, mantém os outros e devolve o item inteiro. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "item": {
-              "id": "42",
-              "name": "Ana",
-              "plan": "business"
-            }
-          },
-          "slug": "dynamodb-update-item"
-        },
-        {
-          "credential": "dynamodb",
-          "description": "Deletes an item by its key.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Table",
-              "name": "table",
-              "type": "text"
-            },
-            {
-              "default": "{\"id\": \"{{id}}\"}",
-              "label": "Key",
-              "name": "item_key",
-              "type": "textarea"
-            }
-          ],
-          "group": "DynamoDB",
-          "icon": "logo-dynamodb",
-          "inputs": [
-            "exec"
-          ],
-          "name": "DynamoDB: Delete Item",
-          "notes": {
-            "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
-            "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "deleted": true
-          },
-          "slug": "dynamodb-delete-item"
-        },
-        {
-          "credential": "dynamodb",
-          "description": "Reads the items of a partition key, with a condition like pk = :pk.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Table",
-              "name": "table",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Index (optional)",
-              "name": "index_name",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Key condition",
-              "name": "condition",
-              "type": "text"
-            },
-            {
-              "default": "{\":pk\": \"{{id}}\"}",
-              "label": "Values",
-              "name": "condition_values",
-              "type": "textarea"
-            },
-            {
-              "default": "100",
-              "label": "Limit",
-              "name": "limit",
-              "type": "text"
-            }
-          ],
-          "group": "DynamoDB",
-          "icon": "logo-dynamodb",
-          "inputs": [
-            "exec"
-          ],
-          "name": "DynamoDB: Query Items",
-          "notes": {
-            "en": "Reads the items of one partition. **Condition** is a key condition, like `customer = :pk AND begins_with(order, :prefix)`, and **Condition values** gives its values, like `{\":pk\": \"{{id}}\"}`. **Index** queries a secondary index instead of the table. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
-            "pt": "Lê os itens de uma partição. **Condition** é uma condição de chave, como `customer = :pk AND begins_with(order, :prefix)`, e **Condition values** dá os valores, como `{\":pk\": \"{{id}}\"}`. **Index** consulta um índice secundário em vez da tabela. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "count": 1,
-            "items": [
-              {
-                "customer": "42",
-                "order": "4411",
-                "total": 129.9
-              }
-            ]
-          },
-          "slug": "dynamodb-query-items"
-        },
-        {
-          "credential": "dynamodb",
-          "description": "Reads the items of a table, one after the other. Query is cheaper when it can be used.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Table",
-              "name": "table",
-              "type": "text"
-            },
-            {
-              "default": "100",
-              "label": "Limit",
-              "name": "limit",
-              "type": "text"
-            }
-          ],
-          "group": "DynamoDB",
-          "icon": "logo-dynamodb",
-          "inputs": [
-            "exec"
-          ],
-          "name": "DynamoDB: Scan Items",
-          "notes": {
-            "en": "Reads items across the whole table, up to **Limit**. It reads every item to find them, so prefer **Query Items** on big tables. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
-            "pt": "Lê itens da tabela inteira, até **Limit**. Ele lê todos os itens para achar, então prefira **Query Items** em tabelas grandes. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "count": 1,
-            "items": [
-              {
-                "id": "42",
-                "name": "Ana"
-              }
-            ]
-          },
-          "slug": "dynamodb-scan-items"
-        },
-        {
-          "credential": "dynamodb",
-          "description": "Returns the names of the tables.",
-          "fields": [],
-          "group": "DynamoDB",
-          "icon": "logo-dynamodb",
-          "inputs": [
-            "exec"
-          ],
-          "name": "DynamoDB: List Tables",
-          "notes": {
-            "en": "Lists the tables of the credential's region.",
-            "pt": "Lista as tabelas da região da credencial."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "tables": [
-              "customers",
-              "orders"
-            ]
-          },
-          "slug": "dynamodb-list-tables"
-        },
-        {
-          "credential": "cassandra",
-          "description": "Runs a CQL statement on Cassandra or ScyllaDB, a BATCH included. {{placeholders}} go as parameters, so a value can't change the query.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Query",
-              "name": "cql",
-              "type": "textarea"
-            }
-          ],
-          "group": "Cassandra",
-          "icon": "logo-cassandra",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Cassandra: Run Query",
-          "notes": {
-            "en": "Runs a CQL statement on Cassandra or ScyllaDB, in the credential's keyspace: `SELECT * FROM users WHERE id = {{body.id}}`. Statements that return nothing give an empty `rows`. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
-            "pt": "Roda um comando CQL no Cassandra ou ScyllaDB, no keyspace da credencial: `SELECT * FROM users WHERE id = {{body.id}}`. Comandos que não devolvem nada dão `rows` vazio. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+            "en": "Reads rows without writing SQL. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`. **Columns** is a list with commas, and blank reads them all. **Where** and **Order by** are SQL, with placeholders as parameters: `status = 'open' AND total > {{min}}`, `created_at DESC`. **Limit** is 100 by default, and **Offset** skips rows, for pages.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "Lê linhas sem escrever SQL. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`. **Columns** é uma lista com vírgulas, e em branco lê todas. **Where** e **Order by** são SQL, com placeholders como parâmetros: `status = 'open' AND total > {{minimo}}`, `created_at DESC`. **Limit** é 100 por padrão, e **Offset** pula linhas, para paginar.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
           },
           "outputs": [
             "success",
@@ -3594,48 +3543,99 @@
             "count": 1,
             "rows": [
               {
-                "id": "6f1c...",
-                "name": "Ana"
+                "customer": "ana@example.com",
+                "id": 4411,
+                "total": "129.90"
               }
             ]
           },
-          "slug": "cassandra-run-query"
+          "slug": "sql-select-rows"
         },
         {
-          "credential": "neo4j",
-          "description": "Runs a Cypher query on a graph. {{placeholders}} go as parameters, so a value can't change the query.",
+          "credential": "sql",
+          "description": "Changes the rows that match. To change every row, write 1 = 1 in Where.",
           "fields": [
             {
               "default": "",
-              "label": "Query",
-              "name": "cypher",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "New values",
+              "name": "changes",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Where",
+              "name": "where",
               "type": "textarea"
             }
           ],
-          "group": "Neo4j",
-          "icon": "logo-neo4j",
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
           "inputs": [
             "exec"
           ],
-          "name": "Neo4j: Run Query",
+          "name": "SQL: Update Rows",
           "notes": {
-            "en": "Runs a Cypher query on Neo4j or Aura: `MATCH (p:Person {email: {{body.email}}})-[:KNOWS]->(f) RETURN p.name AS name, count(f) AS friends`. Each row is an object by the names in `RETURN`. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
-            "pt": "Roda uma consulta Cypher no Neo4j ou Aura: `MATCH (p:Person {email: {{body.email}}})-[:KNOWS]->(f) RETURN p.name AS name, count(f) AS friends`. Cada linha é um objeto com os nomes do `RETURN`. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+            "en": "**New values** is an object from column to value, like `{\"status\": \"shipped\"}`. **Where** is SQL, and can't be empty: to change every row on purpose, write `1 = 1`. `result.count` is how many rows changed. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+            "pt": "**New values** é um objeto de coluna para valor, como `{\"status\": \"shipped\"}`. **Where** é SQL e não pode ficar vazio: para alterar todas as linhas de propósito, escreva `1 = 1`. `result.count` é quantas linhas mudaram. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
           },
           "outputs": [
             "success",
             "error"
           ],
           "result": {
-            "count": 1,
-            "rows": [
-              {
-                "friends": 12,
-                "name": "Ana"
-              }
-            ]
+            "count": 3,
+            "rows": []
           },
-          "slug": "neo4j-run-query"
+          "slug": "sql-update-rows"
+        },
+        {
+          "credential": "sql",
+          "description": "Adds rows, and updates the ones whose key columns already exist.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Table",
+              "name": "table",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Rows",
+              "name": "rows",
+              "type": "textarea"
+            },
+            {
+              "default": "",
+              "label": "Key columns",
+              "name": "key_columns",
+              "type": "text"
+            }
+          ],
+          "group": "SQL",
+          "icon": "hero-circle-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "SQL: Upsert Rows",
+          "notes": {
+            "en": "Inserts the rows, or updates the ones that already exist. **Key columns** say which columns identify a row, like `email`, and need a unique index on them. **Rows** works as in **Insert Rows**. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+            "pt": "Insere as linhas, ou atualiza as que já existem. **Key columns** dizem quais colunas identificam uma linha, como `email`, e precisam de um índice único nelas. **Rows** funciona como no **Insert Rows**. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "count": 2,
+            "rows": []
+          },
+          "slug": "sql-upsert-rows"
         }
       ]
     },
@@ -3644,65 +3644,19 @@
       "label": "Email",
       "nodes": [
         {
-          "credential": "smtp",
-          "description": "Sends an email through SMTP. Separate several addresses with commas.",
+          "credential": "imap",
+          "description": "Deletes an email for good through IMAP. To keep a copy, use Move Email to the trash folder.",
           "fields": [
             {
-              "default": "",
-              "label": "To",
-              "name": "to",
+              "default": "{{result.id}}",
+              "label": "Email ID",
+              "name": "id",
               "type": "text"
             },
             {
-              "default": "",
-              "label": "Cc",
-              "name": "cc",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Bcc",
-              "name": "bcc",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Subject",
-              "name": "subject",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Message",
-              "name": "message",
-              "type": "text"
-            },
-            {
-              "default": "plain",
-              "label": "Format",
-              "name": "format",
-              "options": [
-                {
-                  "label": "Text",
-                  "value": "plain"
-                },
-                {
-                  "label": "HTML",
-                  "value": "html"
-                }
-              ],
-              "type": "select"
-            },
-            {
-              "default": "",
-              "label": "Attachment name",
-              "name": "attachment_name",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Attachment content",
-              "name": "attachment",
+              "default": "INBOX",
+              "label": "Folder",
+              "name": "folder",
               "type": "text"
             }
           ],
@@ -3711,22 +3665,70 @@
           "inputs": [
             "exec"
           ],
-          "name": "Email: Send Email",
+          "name": "Email: Delete Email",
           "notes": {
-            "en": "Sends through the SMTP server of the credential, from its address. **To**, **Cc** and **Bcc** take addresses separated by commas, and the Bcc ones stay out of the headers. **Format** `HTML` sends **Message** as HTML.\n\nTo attach a file, fill in **Attachment name**, like `report.csv`, and **Attachment content**: text, or `{{result}}` after a node that returned a file.\n\nSee [Credentials](/docs/guides/credentials/#email).",
-            "pt": "Envia pelo servidor SMTP da credencial, a partir do endereço dela. **To**, **Cc** e **Bcc** aceitam endereços separados por vírgula, e os de Bcc ficam fora dos cabeçalhos. **Format** `HTML` envia **Message** como HTML.\n\nPara anexar um arquivo, preencha **Attachment name**, como `relatorio.csv`, e **Attachment content**: um texto, ou `{{result}}` depois de um nó que devolveu um arquivo.\n\nVeja [Credenciais](/pt/docs/guides/credentials/#email)."
+            "en": "Deletes the email for good. To keep it, move it to the trash folder instead. **Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now.",
+            "pt": "Apaga o email de vez. Para guardar, mova para a pasta de lixeira. **Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora."
           },
           "outputs": [
             "success",
             "error"
           ],
           "result": {
-            "sent_to": [
-              "ana@example.com",
-              "team@example.com"
-            ]
+            "id": 4021
           },
-          "slug": "email-send-email"
+          "slug": "email-delete-email"
+        },
+        {
+          "credential": "imap",
+          "description": "Returns the text, HTML and attachment names of an email through IMAP, without marking it as read.",
+          "fields": [
+            {
+              "default": "{{result.id}}",
+              "label": "Email ID",
+              "name": "id",
+              "type": "text"
+            },
+            {
+              "default": "INBOX",
+              "label": "Folder",
+              "name": "folder",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-envelope-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Email: Get Email",
+          "notes": {
+            "en": "Reads one email, with its text and HTML bodies. Attachments are only described, with name, type and size. **Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now. Reading it doesn't mark it as read.",
+            "pt": "Lê um email, com os corpos em texto e HTML. Os anexos são só descritos, com nome, tipo e tamanho. **Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora. Ler não marca como lido."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "attachments": [
+              {
+                "name": "receipt.pdf",
+                "size": 48213,
+                "type": "application/pdf"
+              }
+            ],
+            "cc": null,
+            "date": "Tue, 12 May 2026 09:14:00 +0000",
+            "from": "Ana <ana@example.com>",
+            "html": "",
+            "id": 4021,
+            "subject": "Order 4411",
+            "text": "Hi, where is my order?",
+            "to": "orders@example.com",
+            "unread": true
+          },
+          "slug": "email-get-email"
         },
         {
           "credential": "imap",
@@ -3799,57 +3801,6 @@
             }
           ],
           "slug": "email-list-emails"
-        },
-        {
-          "credential": "imap",
-          "description": "Returns the text, HTML and attachment names of an email through IMAP, without marking it as read.",
-          "fields": [
-            {
-              "default": "{{result.id}}",
-              "label": "Email ID",
-              "name": "id",
-              "type": "text"
-            },
-            {
-              "default": "INBOX",
-              "label": "Folder",
-              "name": "folder",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "hero-envelope-solid",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Email: Get Email",
-          "notes": {
-            "en": "Reads one email, with its text and HTML bodies. Attachments are only described, with name, type and size. **Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now. Reading it doesn't mark it as read.",
-            "pt": "Lê um email, com os corpos em texto e HTML. Os anexos são só descritos, com nome, tipo e tamanho. **Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora. Ler não marca como lido."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "attachments": [
-              {
-                "name": "receipt.pdf",
-                "size": 48213,
-                "type": "application/pdf"
-              }
-            ],
-            "cc": null,
-            "date": "Tue, 12 May 2026 09:14:00 +0000",
-            "from": "Ana <ana@example.com>",
-            "html": "",
-            "id": 4021,
-            "subject": "Order 4411",
-            "text": "Hi, where is my order?",
-            "to": "orders@example.com",
-            "unread": true
-          },
-          "slug": "email-get-email"
         },
         {
           "credential": "imap",
@@ -3967,19 +3918,65 @@
           "slug": "email-move-email"
         },
         {
-          "credential": "imap",
-          "description": "Deletes an email for good through IMAP. To keep a copy, use Move Email to the trash folder.",
+          "credential": "smtp",
+          "description": "Sends an email through SMTP. Separate several addresses with commas.",
           "fields": [
             {
-              "default": "{{result.id}}",
-              "label": "Email ID",
-              "name": "id",
+              "default": "",
+              "label": "To",
+              "name": "to",
               "type": "text"
             },
             {
-              "default": "INBOX",
-              "label": "Folder",
-              "name": "folder",
+              "default": "",
+              "label": "Cc",
+              "name": "cc",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Bcc",
+              "name": "bcc",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Subject",
+              "name": "subject",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Message",
+              "name": "message",
+              "type": "text"
+            },
+            {
+              "default": "plain",
+              "label": "Format",
+              "name": "format",
+              "options": [
+                {
+                  "label": "Text",
+                  "value": "plain"
+                },
+                {
+                  "label": "HTML",
+                  "value": "html"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "",
+              "label": "Attachment name",
+              "name": "attachment_name",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Attachment content",
+              "name": "attachment",
               "type": "text"
             }
           ],
@@ -3988,19 +3985,22 @@
           "inputs": [
             "exec"
           ],
-          "name": "Email: Delete Email",
+          "name": "Email: Send Email",
           "notes": {
-            "en": "Deletes the email for good. To keep it, move it to the trash folder instead. **Email ID** is the `id` that **Email: List Emails** returns, which is the default, `{{result.id}}`. Put a **For Each** on the list to act on each one. **Folder** is where the email is now.",
-            "pt": "Apaga o email de vez. Para guardar, mova para a pasta de lixeira. **Email ID** é o `id` que **Email: List Emails** devolve, que já é o padrão, `{{result.id}}`. Coloque um **For Each** na lista para agir em cada um. **Folder** é onde o email está agora."
+            "en": "Sends through the SMTP server of the credential, from its address. **To**, **Cc** and **Bcc** take addresses separated by commas, and the Bcc ones stay out of the headers. **Format** `HTML` sends **Message** as HTML.\n\nTo attach a file, fill in **Attachment name**, like `report.csv`, and **Attachment content**: text, or `{{result}}` after a node that returned a file.\n\nSee [Credentials](/docs/guides/credentials/#email).",
+            "pt": "Envia pelo servidor SMTP da credencial, a partir do endereço dela. **To**, **Cc** e **Bcc** aceitam endereços separados por vírgula, e os de Bcc ficam fora dos cabeçalhos. **Format** `HTML` envia **Message** como HTML.\n\nPara anexar um arquivo, preencha **Attachment name**, como `relatorio.csv`, e **Attachment content**: um texto, ou `{{result}}` depois de um nó que devolveu um arquivo.\n\nVeja [Credenciais](/pt/docs/guides/credentials/#email)."
           },
           "outputs": [
             "success",
             "error"
           ],
           "result": {
-            "id": 4021
+            "sent_to": [
+              "ana@example.com",
+              "team@example.com"
+            ]
           },
-          "slug": "email-delete-email"
+          "slug": "email-send-email"
         }
       ]
     },
@@ -4245,54 +4245,6 @@
         },
         {
           "credential": "slack",
-          "description": "Sends a file to a channel. The content can come from a Download node.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Channel ID",
-              "name": "channel",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "File name",
-              "name": "filename",
-              "type": "text"
-            },
-            {
-              "default": "{{result}}",
-              "label": "Content",
-              "name": "content",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Message",
-              "name": "comment",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "logo-slack",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Slack: Upload File",
-          "notes": {
-            "en": "**Content** is `{{result}}` after a node that returned a file, like **S3: Download File** or **Write CSV**, or text. **File name** shows in Slack, with its extension. **Comment** goes with it as a message. **Channel** is a channel ID, like `C0123456789`: **Slack: List Channels** gives them, and Slack shows it at the bottom of a channel's details. Invite the app to the channel first.",
-            "pt": "**Content** é `{{result}}` depois de um nó que devolveu um arquivo, como **S3: Download File** ou **Write CSV**, ou um texto. **File name** aparece no Slack, com a extensão. **Comment** vai junto como mensagem. **Channel** é o ID de um canal, como `C0123456789`: **Slack: List Channels** devolve eles, e o Slack mostra no fim dos detalhes do canal. Convide o app para o canal antes."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "file_id": "F07ABCDE123"
-          },
-          "slug": "slack-upload-file"
-        },
-        {
-          "credential": "slack",
           "description": "Returns the channels of the workspace, with the IDs the other Slack nodes take.",
           "fields": [
             {
@@ -4341,6 +4293,54 @@
             }
           ],
           "slug": "slack-list-channels"
+        },
+        {
+          "credential": "slack",
+          "description": "Sends a file to a channel. The content can come from a Download node.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Channel ID",
+              "name": "channel",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "File name",
+              "name": "filename",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Content",
+              "name": "content",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Message",
+              "name": "comment",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-slack",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Slack: Upload File",
+          "notes": {
+            "en": "**Content** is `{{result}}` after a node that returned a file, like **S3: Download File** or **Write CSV**, or text. **File name** shows in Slack, with its extension. **Comment** goes with it as a message. **Channel** is a channel ID, like `C0123456789`: **Slack: List Channels** gives them, and Slack shows it at the bottom of a channel's details. Invite the app to the channel first.",
+            "pt": "**Content** é `{{result}}` depois de um nó que devolveu um arquivo, como **S3: Download File** ou **Write CSV**, ou um texto. **File name** aparece no Slack, com a extensão. **Comment** vai junto como mensagem. **Channel** é o ID de um canal, como `C0123456789`: **Slack: List Channels** devolve eles, e o Slack mostra no fim dos detalhes do canal. Convide o app para o canal antes."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "file_id": "F07ABCDE123"
+          },
+          "slug": "slack-upload-file"
         }
       ]
     },
@@ -4348,6 +4348,158 @@
       "id": "google_sheets",
       "label": "Google Sheets",
       "nodes": [
+        {
+          "credential": "google",
+          "description": "Adds rows after the last row of a range.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Spreadsheet ID",
+              "name": "spreadsheet_id",
+              "type": "text"
+            },
+            {
+              "default": "Sheet1!A:Z",
+              "label": "Range",
+              "name": "range",
+              "type": "text"
+            },
+            {
+              "default": "result",
+              "label": "Rows",
+              "name": "rows",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-google-sheets",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Google Sheets: Add Rows",
+          "notes": {
+            "en": "Adds the rows after the last one of **Range**. Values are read as if typed, so `=SUM(B2:B9)` is a formula and `2026-05-12` a date. **Rows** is the path to the rows in the context, `result` by default: a list of objects, whose values go in the order of the first one's keys; a list of lists; one row; or one object.\n\n**Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+            "pt": "Adiciona as linhas depois da última de **Range**. Os valores são lidos como se fossem digitados, então `=SUM(B2:B9)` é uma fórmula e `2026-05-12` uma data. **Rows** é o caminho até as linhas no contexto, `result` por padrão: uma lista de objetos, cujos valores vão na ordem das chaves do primeiro; uma lista de listas; uma linha; ou um objeto.\n\n**Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "updated_rows": 2
+          },
+          "slug": "google-sheets-add-rows"
+        },
+        {
+          "credential": "google",
+          "description": "Empties the cells of a range, keeping the formatting.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Spreadsheet ID",
+              "name": "spreadsheet_id",
+              "type": "text"
+            },
+            {
+              "default": "Sheet1!A:Z",
+              "label": "Range",
+              "name": "range",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-google-sheets",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Google Sheets: Clear Rows",
+          "notes": {
+            "en": "Empties the cells of **Range**, keeping their formatting. **Range** is in A1 notation: `Sheet1!A:Z` is every row of those columns, and `Sheet1!A2:C10` a block.\n\n**Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+            "pt": "Esvazia as células de **Range**, mantendo a formatação. **Range** é na notação A1: `Sheet1!A:Z` são todas as linhas dessas colunas, e `Sheet1!A2:C10` um bloco.\n\n**Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "cleared_range": "Sheet1!A2:Z1000"
+          },
+          "slug": "google-sheets-clear-rows"
+        },
+        {
+          "credential": "google",
+          "description": "Adds a new sheet to a spreadsheet.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Spreadsheet ID",
+              "name": "spreadsheet_id",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Sheet name",
+              "name": "title",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-google-sheets",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Google Sheets: Create Sheet",
+          "notes": {
+            "en": "Adds a tab named **Title**. It fails when one with that name exists. **Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+            "pt": "Adiciona uma aba chamada **Title**. Falha quando já existe uma com esse nome. **Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "id": 18273645,
+            "title": "May"
+          },
+          "slug": "google-sheets-create-sheet"
+        },
+        {
+          "credential": "google",
+          "description": "Returns the sheets of a spreadsheet.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Spreadsheet ID",
+              "name": "spreadsheet_id",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-google-sheets",
+          "inputs": [
+            "exec"
+          ],
+          "name": "Google Sheets: List Sheets",
+          "notes": {
+            "en": "Lists the tabs of the spreadsheet. **Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
+            "pt": "Lista as abas da planilha. **Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": [
+            {
+              "id": 0,
+              "title": "Sheet1"
+            },
+            {
+              "id": 18273645,
+              "title": "May"
+            }
+          ],
+          "slug": "google-sheets-list-sheets"
+        },
         {
           "credential": "google",
           "description": "Reads rows from a sheet, using a service account. Share the sheet with its email first.",
@@ -4397,48 +4549,6 @@
         },
         {
           "credential": "google",
-          "description": "Adds rows after the last row of a range.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Spreadsheet ID",
-              "name": "spreadsheet_id",
-              "type": "text"
-            },
-            {
-              "default": "Sheet1!A:Z",
-              "label": "Range",
-              "name": "range",
-              "type": "text"
-            },
-            {
-              "default": "result",
-              "label": "Rows",
-              "name": "rows",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "logo-google-sheets",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Google Sheets: Add Rows",
-          "notes": {
-            "en": "Adds the rows after the last one of **Range**. Values are read as if typed, so `=SUM(B2:B9)` is a formula and `2026-05-12` a date. **Rows** is the path to the rows in the context, `result` by default: a list of objects, whose values go in the order of the first one's keys; a list of lists; one row; or one object.\n\n**Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
-            "pt": "Adiciona as linhas depois da última de **Range**. Os valores são lidos como se fossem digitados, então `=SUM(B2:B9)` é uma fórmula e `2026-05-12` uma data. **Rows** é o caminho até as linhas no contexto, `result` por padrão: uma lista de objetos, cujos valores vão na ordem das chaves do primeiro; uma lista de listas; uma linha; ou um objeto.\n\n**Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "updated_rows": 2
-          },
-          "slug": "google-sheets-add-rows"
-        },
-        {
-          "credential": "google",
           "description": "Writes rows over a range, replacing what's there.",
           "fields": [
             {
@@ -4478,116 +4588,6 @@
             "updated_rows": 2
           },
           "slug": "google-sheets-update-rows"
-        },
-        {
-          "credential": "google",
-          "description": "Empties the cells of a range, keeping the formatting.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Spreadsheet ID",
-              "name": "spreadsheet_id",
-              "type": "text"
-            },
-            {
-              "default": "Sheet1!A:Z",
-              "label": "Range",
-              "name": "range",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "logo-google-sheets",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Google Sheets: Clear Rows",
-          "notes": {
-            "en": "Empties the cells of **Range**, keeping their formatting. **Range** is in A1 notation: `Sheet1!A:Z` is every row of those columns, and `Sheet1!A2:C10` a block.\n\n**Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
-            "pt": "Esvazia as células de **Range**, mantendo a formatação. **Range** é na notação A1: `Sheet1!A:Z` são todas as linhas dessas colunas, e `Sheet1!A2:C10` um bloco.\n\n**Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "cleared_range": "Sheet1!A2:Z1000"
-          },
-          "slug": "google-sheets-clear-rows"
-        },
-        {
-          "credential": "google",
-          "description": "Returns the sheets of a spreadsheet.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Spreadsheet ID",
-              "name": "spreadsheet_id",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "logo-google-sheets",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Google Sheets: List Sheets",
-          "notes": {
-            "en": "Lists the tabs of the spreadsheet. **Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
-            "pt": "Lista as abas da planilha. **Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": [
-            {
-              "id": 0,
-              "title": "Sheet1"
-            },
-            {
-              "id": 18273645,
-              "title": "May"
-            }
-          ],
-          "slug": "google-sheets-list-sheets"
-        },
-        {
-          "credential": "google",
-          "description": "Adds a new sheet to a spreadsheet.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Spreadsheet ID",
-              "name": "spreadsheet_id",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Sheet name",
-              "name": "title",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "logo-google-sheets",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Google Sheets: Create Sheet",
-          "notes": {
-            "en": "Adds a tab named **Title**. It fails when one with that name exists. **Spreadsheet ID** is the part of the sheet's URL between `/d/` and `/edit`. Share the spreadsheet with the email of the service account of the credential. See [Credentials](/docs/guides/credentials/#google-sheets).",
-            "pt": "Adiciona uma aba chamada **Title**. Falha quando já existe uma com esse nome. **Spreadsheet ID** é a parte da URL da planilha entre `/d/` e `/edit`. Compartilhe a planilha com o email da conta de serviço da credencial. Veja [Credenciais](/pt/docs/guides/credentials/#google-sheets)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "id": 18273645,
-            "title": "May"
-          },
-          "slug": "google-sheets-create-sheet"
         }
       ]
     },
@@ -4595,168 +4595,6 @@
       "id": "s3",
       "label": "S3",
       "nodes": [
-        {
-          "credential": "s3",
-          "description": "Writes a file to a bucket. The content can come from a Download node.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Bucket",
-              "name": "bucket",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "File path",
-              "name": "key",
-              "type": "text"
-            },
-            {
-              "default": "{{result}}",
-              "label": "Content",
-              "name": "content",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Content type, like text/csv",
-              "name": "content_type",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "logo-s3",
-          "inputs": [
-            "exec"
-          ],
-          "name": "S3: Upload File",
-          "notes": {
-            "en": "**Content** is `{{result}}` after a node that returned a file, like a download, an AI image or **Write CSV**, or text. **Content type**, like `text/csv`, tells browsers what it is. An existing file at **Key** is replaced.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
-            "pt": "**Content** é `{{result}}` depois de um nó que devolveu um arquivo, como um download, uma imagem de IA ou **Write CSV**, ou um texto. **Content type**, como `text/csv`, diz aos navegadores o que ele é. Um arquivo que já existe em **Key** é substituído.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "key": "reports/2026-05.csv"
-          },
-          "slug": "s3-upload-file"
-        },
-        {
-          "credential": "s3",
-          "description": "Reads a file from a bucket.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Bucket",
-              "name": "bucket",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "File path",
-              "name": "key",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "logo-s3",
-          "inputs": [
-            "exec"
-          ],
-          "name": "S3: Download File",
-          "notes": {
-            "en": "`result.content` holds the file. Text stays as text, and anything else comes in base64 with `\"encoding\": \"base64\"`, which the upload nodes and attachments take back unchanged as `{{result}}`.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
-            "pt": "`result.content` guarda o arquivo. Texto fica como texto, e o resto vem em base64 com `\"encoding\": \"base64\"`, que os nós de upload e os anexos aceitam de volta sem alteração como `{{result}}`.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "content": "name,total\nAna,120\n"
-          },
-          "slug": "s3-download-file"
-        },
-        {
-          "credential": "s3",
-          "description": "Returns the paths of the files in a bucket, up to 1000.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Bucket",
-              "name": "bucket",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Only paths starting with",
-              "name": "prefix",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "logo-s3",
-          "inputs": [
-            "exec"
-          ],
-          "name": "S3: List Files",
-          "notes": {
-            "en": "Lists the keys that start with **Prefix**, up to the first 1,000. Blank lists from the top of the bucket.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
-            "pt": "Lista as chaves que começam com **Prefix**, até as primeiras 1.000. Em branco lista a partir do topo do bucket.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "keys": [
-              "reports/2026-04.csv",
-              "reports/2026-05.csv"
-            ]
-          },
-          "slug": "s3-list-files"
-        },
-        {
-          "credential": "s3",
-          "description": "Returns the size, type and date of a file, without reading it.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Bucket",
-              "name": "bucket",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "File path",
-              "name": "key",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "logo-s3",
-          "inputs": [
-            "exec"
-          ],
-          "name": "S3: File Info",
-          "notes": {
-            "en": "Reads a file's size, type and last change without downloading it. It goes down `error` when the file doesn't exist.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
-            "pt": "Lê o tamanho, o tipo e a última alteração de um arquivo sem baixar. Sai por `error` quando o arquivo não existe.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "key": "reports/2026-05.csv",
-            "modified": "Tue, 12 May 2026 09:14:00 GMT",
-            "size": 20481,
-            "type": "text/csv"
-          },
-          "slug": "s3-file-info"
-        },
         {
           "credential": "s3",
           "description": "Copies a file inside the service, without downloading it.",
@@ -4843,6 +4681,120 @@
         },
         {
           "credential": "s3",
+          "description": "Reads a file from a bucket.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Bucket",
+              "name": "bucket",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "File path",
+              "name": "key",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-s3",
+          "inputs": [
+            "exec"
+          ],
+          "name": "S3: Download File",
+          "notes": {
+            "en": "`result.content` holds the file. Text stays as text, and anything else comes in base64 with `\"encoding\": \"base64\"`, which the upload nodes and attachments take back unchanged as `{{result}}`.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+            "pt": "`result.content` guarda o arquivo. Texto fica como texto, e o resto vem em base64 com `\"encoding\": \"base64\"`, que os nós de upload e os anexos aceitam de volta sem alteração como `{{result}}`.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "content": "name,total\nAna,120\n"
+          },
+          "slug": "s3-download-file"
+        },
+        {
+          "credential": "s3",
+          "description": "Returns the size, type and date of a file, without reading it.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Bucket",
+              "name": "bucket",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "File path",
+              "name": "key",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-s3",
+          "inputs": [
+            "exec"
+          ],
+          "name": "S3: File Info",
+          "notes": {
+            "en": "Reads a file's size, type and last change without downloading it. It goes down `error` when the file doesn't exist.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+            "pt": "Lê o tamanho, o tipo e a última alteração de um arquivo sem baixar. Sai por `error` quando o arquivo não existe.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "key": "reports/2026-05.csv",
+            "modified": "Tue, 12 May 2026 09:14:00 GMT",
+            "size": 20481,
+            "type": "text/csv"
+          },
+          "slug": "s3-file-info"
+        },
+        {
+          "credential": "s3",
+          "description": "Returns the paths of the files in a bucket, up to 1000.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Bucket",
+              "name": "bucket",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Only paths starting with",
+              "name": "prefix",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-s3",
+          "inputs": [
+            "exec"
+          ],
+          "name": "S3: List Files",
+          "notes": {
+            "en": "Lists the keys that start with **Prefix**, up to the first 1,000. Blank lists from the top of the bucket.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+            "pt": "Lista as chaves que começam com **Prefix**, até as primeiras 1.000. Em branco lista a partir do topo do bucket.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "keys": [
+              "reports/2026-04.csv",
+              "reports/2026-05.csv"
+            ]
+          },
+          "slug": "s3-list-files"
+        },
+        {
+          "credential": "s3",
           "description": "Creates a link that lets anyone download a file until it expires. It doesn't check the file exists.",
           "fields": [
             {
@@ -4883,6 +4835,54 @@
             "url": "https://my-bucket.s3.amazonaws.com/reports/2026-05.csv?X-Amz-Algorithm=AWS4-HMAC-SHA256&..."
           },
           "slug": "s3-share-link"
+        },
+        {
+          "credential": "s3",
+          "description": "Writes a file to a bucket. The content can come from a Download node.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Bucket",
+              "name": "bucket",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "File path",
+              "name": "key",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Content",
+              "name": "content",
+              "type": "text"
+            },
+            {
+              "default": "",
+              "label": "Content type, like text/csv",
+              "name": "content_type",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "logo-s3",
+          "inputs": [
+            "exec"
+          ],
+          "name": "S3: Upload File",
+          "notes": {
+            "en": "**Content** is `{{result}}` after a node that returned a file, like a download, an AI image or **Write CSV**, or text. **Content type**, like `text/csv`, tells browsers what it is. An existing file at **Key** is replaced.\n\nIt works with AWS S3 and with what speaks its API, like Cloudflare R2, MinIO, DigitalOcean Spaces and Backblaze B2. **Key** is the path of the file in the bucket, like `reports/2026-05.csv`. See [Credentials](/docs/guides/credentials/#s3).",
+            "pt": "**Content** é `{{result}}` depois de um nó que devolveu um arquivo, como um download, uma imagem de IA ou **Write CSV**, ou um texto. **Content type**, como `text/csv`, diz aos navegadores o que ele é. Um arquivo que já existe em **Key** é substituído.\n\nFunciona com o AWS S3 e com o que fala a API dele, como Cloudflare R2, MinIO, DigitalOcean Spaces e Backblaze B2. **Key** é o caminho do arquivo no bucket, como `relatorios/2026-05.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#s3)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "key": "reports/2026-05.csv"
+          },
+          "slug": "s3-upload-file"
         }
       ]
     },
@@ -4892,18 +4892,12 @@
       "nodes": [
         {
           "credential": "ftp",
-          "description": "Writes a file on the server. The content can come from a Download node.",
+          "description": "Creates a folder on the server.",
           "fields": [
             {
               "default": "",
               "label": "Path",
               "name": "path",
-              "type": "text"
-            },
-            {
-              "default": "{{result}}",
-              "label": "Content",
-              "name": "content",
               "type": "text"
             }
           ],
@@ -4912,10 +4906,40 @@
           "inputs": [
             "exec"
           ],
-          "name": "FTP: Upload File",
+          "name": "FTP: Create Folder",
           "notes": {
-            "en": "**Content** is `{{result}}` after a node that returned a file, or text. A file already at **Path** is replaced. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
-            "pt": "**Content** é `{{result}}` depois de um nó que devolveu um arquivo, ou um texto. Um arquivo que já está em **Path** é substituído. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+            "en": "Creates one folder, inside one that exists. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+            "pt": "Cria uma pasta, dentro de uma que já existe. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "path": "exports/2026"
+          },
+          "slug": "ftp-create-folder"
+        },
+        {
+          "credential": "ftp",
+          "description": "Deletes a file from the server.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Path",
+              "name": "path",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-server-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "FTP: Delete File",
+          "notes": {
+            "en": "**Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+            "pt": "**Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
           },
           "outputs": [
             "success",
@@ -4924,7 +4948,37 @@
           "result": {
             "path": "exports/orders.csv"
           },
-          "slug": "ftp-upload-file"
+          "slug": "ftp-delete-file"
+        },
+        {
+          "credential": "ftp",
+          "description": "Deletes an empty folder from the server.",
+          "fields": [
+            {
+              "default": "",
+              "label": "Path",
+              "name": "path",
+              "type": "text"
+            }
+          ],
+          "group": null,
+          "icon": "hero-server-stack-solid",
+          "inputs": [
+            "exec"
+          ],
+          "name": "FTP: Delete Folder",
+          "notes": {
+            "en": "Deletes an empty folder. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+            "pt": "Apaga uma pasta vazia. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+          },
+          "outputs": [
+            "success",
+            "error"
+          ],
+          "result": {
+            "path": "exports/2025"
+          },
+          "slug": "ftp-delete-folder"
         },
         {
           "credential": "ftp",
@@ -5027,12 +5081,18 @@
         },
         {
           "credential": "ftp",
-          "description": "Deletes a file from the server.",
+          "description": "Writes a file on the server. The content can come from a Download node.",
           "fields": [
             {
               "default": "",
               "label": "Path",
               "name": "path",
+              "type": "text"
+            },
+            {
+              "default": "{{result}}",
+              "label": "Content",
+              "name": "content",
               "type": "text"
             }
           ],
@@ -5041,10 +5101,10 @@
           "inputs": [
             "exec"
           ],
-          "name": "FTP: Delete File",
+          "name": "FTP: Upload File",
           "notes": {
-            "en": "**Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
-            "pt": "**Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
+            "en": "**Content** is `{{result}}` after a node that returned a file, or text. A file already at **Path** is replaced. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
+            "pt": "**Content** é `{{result}}` depois de um nó que devolveu um arquivo, ou um texto. Um arquivo que já está em **Path** é substituído. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
           },
           "outputs": [
             "success",
@@ -5053,283 +5113,7 @@
           "result": {
             "path": "exports/orders.csv"
           },
-          "slug": "ftp-delete-file"
-        },
-        {
-          "credential": "ftp",
-          "description": "Creates a folder on the server.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Path",
-              "name": "path",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "hero-server-stack-solid",
-          "inputs": [
-            "exec"
-          ],
-          "name": "FTP: Create Folder",
-          "notes": {
-            "en": "Creates one folder, inside one that exists. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
-            "pt": "Cria uma pasta, dentro de uma que já existe. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "path": "exports/2026"
-          },
-          "slug": "ftp-create-folder"
-        },
-        {
-          "credential": "ftp",
-          "description": "Deletes an empty folder from the server.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Path",
-              "name": "path",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "hero-server-stack-solid",
-          "inputs": [
-            "exec"
-          ],
-          "name": "FTP: Delete Folder",
-          "notes": {
-            "en": "Deletes an empty folder. **Path** is from the folder the credential starts in, like `exports/orders.csv`. See [Credentials](/docs/guides/credentials/#ftp).",
-            "pt": "Apaga uma pasta vazia. **Path** parte da pasta em que a credencial começa, como `exports/pedidos.csv`. Veja [Credenciais](/pt/docs/guides/credentials/#ftp)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "path": "exports/2025"
-          },
-          "slug": "ftp-delete-folder"
-        }
-      ]
-    },
-    {
-      "id": "notion",
-      "label": "Notion",
-      "nodes": [
-        {
-          "credential": "notion",
-          "description": "Starts the flow for each new row of a database, checking every 5 minutes.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Database ID",
-              "name": "database_id",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "hero-document-text",
-          "inputs": [],
-          "name": "Notion: New Database Row",
-          "notes": {
-            "en": "Checks the database every 5 minutes and starts the flow once for each new row, with the row as `result`. The first check only notes the rows already there. Run from the editor, it takes the newest row, to try the flow.\n\n**Database ID** is the 32 characters in the database's link, before `?v=`, and the database must be shared with the connection.",
-            "pt": "Olha o banco a cada 5 minutos e inicia o fluxo uma vez para cada linha nova, com a linha em `result`. A primeira olhada só anota as linhas que já estão lá. Rodando pelo editor, pega a linha mais recente, para testar o fluxo.\n\n**Database ID** são os 32 caracteres no link do banco, antes de `?v=`, e o banco precisa estar compartilhado com a conexão."
-          },
-          "outputs": [
-            "exec"
-          ],
-          "result": {
-            "created_time": "2026-11-22T10:00:00.000Z",
-            "id": "5e6f7a8b-0000-0000-0000-000000000000",
-            "properties": {
-              "Name": {
-                "title": [
-                  {
-                    "plain_text": "Launch"
-                  }
-                ]
-              }
-            },
-            "url": "https://www.notion.so/5e6f7a8b"
-          },
-          "slug": "notion-new-database-row"
-        },
-        {
-          "credential": "notion",
-          "description": "Finds the pages and databases shared with the integration, by title.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Text in the title",
-              "name": "query",
-              "type": "text"
-            },
-            {
-              "default": "page",
-              "label": "Find",
-              "name": "object",
-              "options": [
-                {
-                  "label": "Pages",
-                  "value": "page"
-                },
-                {
-                  "label": "Databases",
-                  "value": "database"
-                }
-              ],
-              "type": "select"
-            }
-          ],
-          "group": null,
-          "icon": "hero-document-text",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Notion: Search",
-          "notes": {
-            "en": "Finds only the pages and databases shared with the connection: when connecting, Notion asks which ones to share. Leave **Text in the title** empty to list them all.\n\nThe credential connects through OAuth. A system admin registers a public integration with Notion first, on the Credentials page. See [Credentials](/docs/guides/credentials/).",
-            "pt": "Só encontra as páginas e bancos compartilhados com a conexão: ao conectar, o Notion pergunta quais compartilhar. Deixe **Text in the title** vazio para listar todos.\n\nA credencial se conecta por OAuth. Antes, um admin do sistema registra uma integração pública no Notion, na página de Credenciais. Veja [Credenciais](/docs/guides/credentials/)."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": [
-            {
-              "id": "1a2b3c4d-0000-0000-0000-000000000000",
-              "object": "page",
-              "properties": {},
-              "url": "https://www.notion.so/Roadmap-1a2b3c4d"
-            }
-          ],
-          "slug": "notion-search"
-        },
-        {
-          "credential": "notion",
-          "description": "Returns the rows of a database.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Database ID",
-              "name": "database_id",
-              "type": "text"
-            }
-          ],
-          "group": null,
-          "icon": "hero-document-text",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Notion: Query Database",
-          "notes": {
-            "en": "**Database ID** is the 32 characters in the database's link, before `?v=`. Returns up to 100 rows, with Notion's properties as they come.",
-            "pt": "**Database ID** são os 32 caracteres no link do banco, antes de `?v=`. Devolve até 100 linhas, com as propriedades como o Notion manda."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": [
-            {
-              "id": "5e6f7a8b-0000-0000-0000-000000000000",
-              "properties": {
-                "Name": {
-                  "title": [
-                    {
-                      "plain_text": "Launch"
-                    }
-                  ]
-                }
-              },
-              "url": "https://www.notion.so/5e6f7a8b"
-            }
-          ],
-          "slug": "notion-query-database"
-        },
-        {
-          "credential": "notion",
-          "description": "Creates a page inside another page, with a title and a first paragraph.",
-          "fields": [
-            {
-              "default": "",
-              "label": "Parent page ID",
-              "name": "parent_id",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Title",
-              "name": "title",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Text",
-              "name": "text",
-              "type": "textarea"
-            }
-          ],
-          "group": null,
-          "icon": "hero-document-text",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Notion: Create Page",
-          "notes": {
-            "en": "Creates the page inside **Parent page ID**, which must be shared with the connection.",
-            "pt": "Cria a página dentro de **Parent page ID**, que precisa estar compartilhada com a conexão."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "id": "9c0d1e2f-0000-0000-0000-000000000000",
-            "url": "https://www.notion.so/Weekly-notes-9c0d1e2f"
-          },
-          "slug": "notion-create-page"
-        },
-        {
-          "credential": "notion",
-          "description": "Adds a paragraph to the end of a page.",
-          "fields": [
-            {
-              "default": "{{result.id}}",
-              "label": "Page ID",
-              "name": "page_id",
-              "type": "text"
-            },
-            {
-              "default": "",
-              "label": "Text",
-              "name": "text",
-              "type": "textarea"
-            }
-          ],
-          "group": null,
-          "icon": "hero-document-text",
-          "inputs": [
-            "exec"
-          ],
-          "name": "Notion: Append Text",
-          "notes": {
-            "en": "Adds a paragraph at the end of the page. **Page ID** takes the page of the step before by default.",
-            "pt": "Adiciona um parágrafo no fim da página. **Page ID** usa a página do passo anterior por padrão."
-          },
-          "outputs": [
-            "success",
-            "error"
-          ],
-          "result": {
-            "page_id": "9c0d1e2f-0000-0000-0000-000000000000"
-          },
-          "slug": "notion-append-text"
+          "slug": "ftp-upload-file"
         }
       ]
     },

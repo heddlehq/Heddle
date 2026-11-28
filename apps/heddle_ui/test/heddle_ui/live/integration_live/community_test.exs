@@ -126,6 +126,35 @@ defmodule HeddleUI.IntegrationLive.CommunityTest do
     refute has_element?(lv, "#integration-slack", "Community")
   end
 
+  test "an editor installs an official manifest, downloaded from the catalog", %{
+    workspace: workspace
+  } do
+    yaml = File.read!(Path.expand("../../../support/fixtures/notion.yaml", __DIR__))
+
+    Catalog.put(%{
+      "notion" => %{
+        "id" => "notion",
+        "name" => "Notion",
+        "version" => "1.0.0",
+        "manifest" => yaml
+      }
+    })
+
+    editor = user_fixture()
+    member_fixture(workspace, editor, "editor")
+    conn = Phoenix.ConnTest.build_conn() |> log_in_user(editor)
+
+    {:ok, lv, _html} = live(conn, ~p"/integrations")
+
+    assert has_element?(lv, "#integration-notion", "Official")
+    refute has_element?(lv, "#integration-notion", "Not verified")
+
+    lv |> element("#install-notion") |> render_click()
+
+    assert has_element?(lv, "#integration-notion", "Installed")
+    assert %{official: true, community: nil} = HeddleNodes.Nodes.get_node("Notion: Search")
+  end
+
   defp system_admin_in(workspace) do
     admin = system_admin_fixture()
     member_fixture(workspace, admin, "admin")

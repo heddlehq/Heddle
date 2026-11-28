@@ -35,19 +35,50 @@ defmodule HeddleNodes.MixProject do
       {:heddle, in_umbrella: true},
       {:heddle_core, in_umbrella: true, only: :test},
       {:heddle_runtime, in_umbrella: true},
-      {:bobbin, "~> 0.4.0"},
-      {:gen_smtp, "~> 1.3"},
+      bobbin(),
       {:nimble_csv, "~> 1.3"},
       {:req, "~> 0.5"},
-      {:jason, "~> 1.2"},
-      {:postgrex, "~> 0.22"},
-      {:myxql, "~> 0.8.0"},
-      {:tds, "~> 2.3"},
-      {:exqlite, "~> 0.43"},
-      {:jamdb_oracle, "~> 0.5.12"},
-      {:mongodb_driver, "~> 1.6"},
-      {:redix, "~> 1.5"},
-      {:xandra, "~> 0.20"}
-    ]
+      {:jason, "~> 1.2"}
+    ] ++ integrations()
+  end
+
+  # BOBBIN_PATH points at a Bobbin checkout, to try a change in both at once.
+  defp bobbin do
+    case System.get_env("BOBBIN_PATH") do
+      nil -> {:bobbin, "~> 0.6"}
+      path -> {:bobbin, path: Path.expand(path), override: true}
+    end
+  end
+
+  # The official integrations in code (see HeddleNodes.Official) this build carries,
+  # from heddlehq/integrations: HEDDLE_INTEGRATIONS=all, or a list like "sql,email".
+  # None by default in prod, every one in dev and test. HEDDLE_INTEGRATIONS_PATH points
+  # at a checkout of that repo, to change both at once.
+  @official ~w(cassandra dynamodb elasticsearch email ftp google_sheets mongodb neo4j redis s3 slack sql)
+
+  defp integrations do
+    ids =
+      case System.get_env("HEDDLE_INTEGRATIONS") do
+        nil -> if Mix.env() == :prod, do: [], else: @official
+        "all" -> @official
+        list -> list |> String.split(",", trim: true) |> Enum.map(&String.trim/1)
+      end
+
+    Enum.map(ids, &integration/1)
+  end
+
+  defp integration(id) do
+    app = String.to_atom("heddle_#{id}")
+
+    case System.get_env("HEDDLE_INTEGRATIONS_PATH") do
+      nil ->
+        {app,
+         git: "https://github.com/heddlehq/integrations.git",
+         sparse: "integrations/#{id}",
+         branch: "main"}
+
+      path ->
+        {app, path: Path.join(Path.expand(path), "integrations/#{id}")}
+    end
   end
 end

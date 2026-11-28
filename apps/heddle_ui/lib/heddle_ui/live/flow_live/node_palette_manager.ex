@@ -231,6 +231,17 @@ defmodule HeddleUI.FlowLive.NodePaletteManager do
     |> filter_nodes(installed)
     |> Enum.group_by(& &1.category)
     |> Enum.sort_by(fn {category, _nodes} -> category_sort_index(category) end)
+    |> Enum.map(fn {category, nodes} -> {category, cluster(nodes)} end)
+  end
+
+  # The sidebar shows a title over each run of nodes of one group (a service's
+  # resource, like "Issue"): the nodes of a group go together, in the order the first
+  # of each appears.
+  defp cluster(nodes) do
+    order =
+      nodes |> Enum.map(&Map.get(&1, :group)) |> Enum.uniq() |> Enum.with_index() |> Map.new()
+
+    Enum.sort_by(nodes, &order[Map.get(&1, :group)])
   end
 
   defp category_sort_index(:trigger), do: 0

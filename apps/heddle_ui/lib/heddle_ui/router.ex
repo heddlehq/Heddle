@@ -123,5 +123,6 @@ defmodule HeddleUI.Router do
     pipe_through [:browser]
 
     delete "/users/log-out", UserSessionController, :delete
+    get "/integrations/logos.css", LogoController, :show
   end
 end

@@ -1,6 +1,6 @@
 ---
 title: Starting flows
-description: Run a flow from a webhook, a form, on a schedule, from the API, or when another flow fails.
+description: Run a flow from a webhook, a form, on a schedule, when something happens in another service, from the API, or when another flow fails.
 sidebar:
   order: 2
 ---
@@ -86,6 +86,17 @@ A [Schedule](/docs/nodes/schedule/) starts the flow at the times of its cron exp
 | `0 8 1 * *` | On the first of each month at 08:00 UTC |
 
 São Paulo is UTC−3, so 09:00 there is `0 12 * * *`. A flow can have several Schedules.
+
+## When something happens in another service
+
+The integrations you install bring their own triggers, like **Slack: New Message**. Each one starts the flow once per new item, with the item in `{{result}}`. There are two kinds:
+
+- **Checks every few minutes**: Heddle asks the service for what's new. The first check only looks, so turning a flow on doesn't start it for everything the service already holds.
+- **Webhook**: the service calls Heddle when something happens. When you publish, Heddle gives the service the address of the trigger and stops it again when the node leaves the flow or the flow is deleted. Some services can't be told by Heddle: then the drawer of the node shows the address under **Webhook address**, and you paste it in the service. The address stays the same across publishes.
+
+Heddle checks that each call came from the service, by the signature the service sends, and refuses the others. If the service refuses the address, the drawer says why, and Heddle tries again on the next publish.
+
+Fields that list what the service has, like a channel or a spreadsheet, have **Load from the service** in the drawer: pick a credential first.
 
 ## The API
 

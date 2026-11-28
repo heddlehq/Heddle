@@ -22,7 +22,7 @@ defmodule HeddleNodes.DocsExamplesTest do
 
       assert :ok =
                GraphValidator.validate(graph["nodes"], graph["connections"],
-                 manifest: HeddleNodes
+                 manifest: HeddleNodes.Nodes
                )
 
       assert :ok = GraphValidator.validate_comments(graph["comments"] || [])

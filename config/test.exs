@@ -55,6 +55,7 @@ config :phoenix,
 config :heddle_ai, :text_default, nil
 config :heddle_ai, :claude_binary, nil
 config :heddle_nodes, :req_plug, {Req.Test, HeddleNodes.Nodes.HttpRequest}
+config :bobbin, :req_plug, {Req.Test, HeddleNodes.Nodes.HttpRequest}
 
 # A flow session goes soon after its last editor leaves, so it doesn't keep a connection.
 config :heddle_core, session_idle_after: 2_000

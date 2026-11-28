@@ -42,7 +42,8 @@ defmodule HeddleUI.Integrations do
            HeddleCore.Integrations.install_community(scope, %{
              "integration" => id,
              "version" => entry["version"],
-             "manifest" => entry["manifest"]
+             "manifest" => entry["manifest"],
+             "official" => HeddleNodes.Official.manifest?(id, entry["manifest"])
            }) do
       HeddleNodes.Community.refresh()
     end
@@ -63,8 +64,19 @@ defmodule HeddleUI.Integrations do
   end
 
   # A community integration can't take the place of an official one, or of its nodes.
+  # The pinned YAML of an official manifest is the official one.
   defp check_manifest(id, yaml) do
-    official = for i <- HeddleNodes.Integrations.all(), not i.community, do: i.id
+    if HeddleNodes.Official.manifest?(id, yaml) do
+      :ok
+    else
+      check_community(id, yaml)
+    end
+  end
+
+  defp check_community(id, yaml) do
+    official =
+      for(i <- HeddleNodes.Integrations.all(), not i.community, do: i.id) ++
+        HeddleNodes.Official.ids()
 
     with {:ok, %{id: ^id} = manifest} <- HeddleNodes.Community.parse(yaml),
          false <- id in official,
