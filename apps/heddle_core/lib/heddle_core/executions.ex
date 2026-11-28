@@ -10,6 +10,7 @@ defmodule HeddleCore.Executions do
   alias HeddleCore.Executions.Execution
   alias HeddleCore.Flows.Flow
   alias HeddleCore.Flows.Versions
+  alias HeddleCore.PackageStore
   alias HeddleCore.Pagination
   alias HeddleCore.Repo
   alias HeddleCore.Workspaces
@@ -739,7 +740,22 @@ defmodule HeddleCore.Executions do
     |> Repo.update()
   end
 
+  @doc """
+  Ends `execution` as succeeded with `result`, and keeps what its nodes changed in
+  `HeddleCore.PackageStore` with it, in the same transaction.
+  """
   def mark_succeeded(%Execution{} = execution, result, attrs \\ %{}) do
+    Repo.transaction(fn ->
+      PackageStore.commit(execution.id)
+
+      case update_succeeded(execution, result, attrs) do
+        {:ok, execution} -> execution
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end)
+  end
+
+  defp update_succeeded(execution, result, attrs) do
     execution
     |> Execution.changeset(
       attrs
@@ -755,7 +771,13 @@ defmodule HeddleCore.Executions do
     |> Repo.update()
   end
 
+  @doc """
+  Ends `execution` as failed with `error`. What its nodes changed in
+  `HeddleCore.PackageStore` is dropped.
+  """
   def mark_failed(%Execution{} = execution, error, attrs \\ %{}) do
+    PackageStore.discard(execution.id)
+
     execution
     |> Execution.changeset(
       attrs
