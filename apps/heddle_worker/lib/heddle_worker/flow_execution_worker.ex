@@ -39,16 +39,25 @@ defmodule HeddleWorker.FlowExecutionWorker do
     end
   end
 
+  # A run cancelled before it began is gone. One whose lane is busy waits, and is queued
+  # again when the run before it ends, see `Executions.admit/1`.
   def perform(%Oban.Job{args: %{"execution_id" => execution_id}}) do
-    execution = Executions.get_execution!(execution_id)
-    Subflow.enter(execution)
-    # It runs the version it was started with, whatever the flow has become since.
-    flow = execution.flow_id |> Flows.get_flow!() |> Versions.for_execution(execution)
+    with %{} = execution <- Executions.find_execution(execution_id),
+         {:ok, running_execution} <- Executions.admit(execution) do
+      Subflow.enter(running_execution)
+      # It runs the version it was started with, whatever the flow has become since.
+      flow =
+        running_execution.flow_id
+        |> Flows.get_flow!()
+        |> Versions.for_execution(running_execution)
 
-    with {:ok, running_execution} <- Executions.mark_running(execution) do
       flow
       |> run_flow(running_execution)
       |> persist(running_execution)
+    else
+      nil -> :ok
+      :held -> :ok
+      {:error, reason} -> {:error, reason}
     end
   end
 

@@ -111,6 +111,9 @@ defmodule HeddleCore.Executions do
     |> Pagination.paginate(Repo, opts)
   end
 
+  @doc "The execution `id`, or nil, like one cancelled before it ran."
+  def find_execution(id), do: Repo.get(Execution, id)
+
   def get_execution!(id) do
     Execution
     |> Repo.get!(id)
@@ -209,15 +212,120 @@ defmodule HeddleCore.Executions do
 
   It runs the published version, and returns `{:error, :not_published}` for a flow
   that has none, unless `version: :draft`.
+
+  `lane:` makes it run after the other runs of the flow's workspace with that lane, one
+  at a time, see `admit/1`. `at:` starts it at that `DateTime`, not before.
   """
   def start_execution(%Flow{} = flow, input, opts \\ []) do
+    attrs = %{
+      flow_id: flow.id,
+      flow_version_id: nil,
+      input: input,
+      lane: opts[:lane] && "#{flow.workspace_id}:#{opts[:lane]}"
+    }
+
     with {:ok, version_id} <- version_id(flow, opts),
          {:ok, %Execution{} = execution} <-
-           create_execution(%{flow_id: flow.id, flow_version_id: version_id, input: input}),
-         {:ok, _job} <- enqueue_execution(execution) do
+           create_execution(%{attrs | flow_version_id: version_id}),
+         {:ok, _job} <- enqueue_execution(execution, opts[:at]) do
       {:ok, execution}
     end
   end
+
+  @doc """
+  Claims the lane of `execution` as it is about to run, and marks it running.
+
+  Returns `{:ok, execution}` to run it, or `:held` when another run of its lane is
+  running or waiting, or was held before it: then it waits, and `release_lane/1` queues
+  it again when the run before it ends. A run without a lane always runs.
+  """
+  def admit(%Execution{lane: nil} = execution), do: mark_running(execution)
+
+  def admit(%Execution{lane: lane} = execution) do
+    Repo.transaction(fn ->
+      lock_lane(lane)
+
+      if lane_busy?(execution) do
+        execution |> Ecto.Changeset.change(lane_held: true) |> Repo.update!()
+        :held
+      else
+        case mark_running(execution, %{lane_held: false}) do
+          {:ok, running} -> running
+          {:error, changeset} -> Repo.rollback(changeset)
+        end
+      end
+    end)
+    |> case do
+      {:ok, :held} -> :held
+      other -> other
+    end
+  end
+
+  @doc """
+  Queues the next run held in the lane of `execution`, which just ended. Called as a
+  run succeeds or fails.
+  """
+  def release_lane(%Execution{lane: nil}), do: :ok
+
+  def release_lane(%Execution{lane: lane}) do
+    {:ok, _result} =
+      Repo.transaction(fn ->
+        lock_lane(lane)
+
+        busy? =
+          Repo.exists?(
+            from e in Execution, where: e.lane == ^lane and e.status in ["running", "waiting"]
+          )
+
+        next =
+          Repo.one(
+            from e in Execution,
+              where: e.lane == ^lane and e.status == "queued" and e.lane_held,
+              order_by: e.lane_position,
+              limit: 1
+          )
+
+        if next && not busy? do
+          next = next |> Ecto.Changeset.change(lane_held: false) |> Repo.update!()
+          {:ok, _job} = enqueue_execution(next)
+        end
+      end)
+
+    :ok
+  end
+
+  @doc """
+  Cancels a run of a flow of `workspace_id` that hasn't begun, by its `public_id`, like
+  one queued for later. It leaves nothing, since it never ran. Returns `:ok`, or
+  `{:error, :not_found}` for a run that isn't there, is of another workspace, or began.
+  """
+  def cancel_queued(workspace_id, public_id) when is_binary(public_id) do
+    query =
+      from e in Execution,
+        join: f in assoc(e, :flow),
+        where: e.public_id == ^public_id and f.workspace_id == ^workspace_id,
+        where: e.status == "queued"
+
+    case Repo.delete_all(query) do
+      {1, _rows} -> :ok
+      {0, _rows} -> {:error, :not_found}
+    end
+  end
+
+  def cancel_queued(_workspace_id, _public_id), do: {:error, :not_found}
+
+  defp lane_busy?(%Execution{id: id, lane: lane, lane_position: position}) do
+    Repo.exists?(
+      from e in Execution,
+        where: e.lane == ^lane and e.id != ^id,
+        where:
+          e.status in ["running", "waiting"] or
+            (e.status == "queued" and e.lane_held and e.lane_position < ^position)
+    )
+  end
+
+  # Holds the lane until the transaction ends, so two runs can't claim it at once.
+  defp lock_lane(lane), do: Repo.query!("SELECT pg_advisory_xact_lock(hashtext($1))", [lane])
 
   @doc """
   The version a run of `flow` takes: `{:ok, id}` of the published one, or with
@@ -423,9 +531,13 @@ defmodule HeddleCore.Executions do
   # The UI and the worker each run their own Oban, under different names.
   defp running_oban, do: Enum.find([oban_name(), Oban], &Oban.whereis/1)
 
-  def enqueue_execution(%Execution{} = execution) do
+  def enqueue_execution(%Execution{} = execution, at \\ nil) do
+    options =
+      [queue: :executions, worker: @flow_execution_worker, max_attempts: 3] ++
+        if(at, do: [scheduled_at: at], else: [])
+
     %{execution_id: execution.id}
-    |> Oban.Job.new(queue: :executions, worker: @flow_execution_worker, max_attempts: 3)
+    |> Oban.Job.new(options)
     |> then(&Oban.insert(running_oban() || oban_name(), &1))
   end
 
@@ -753,7 +865,11 @@ defmodule HeddleCore.Executions do
         {:error, changeset} -> Repo.rollback(changeset)
       end
     end)
+    |> tap(&release_after/1)
   end
+
+  defp release_after({:ok, %Execution{} = execution}), do: release_lane(execution)
+  defp release_after(_error), do: :ok
 
   defp update_succeeded(execution, result, attrs) do
     execution
@@ -790,6 +906,7 @@ defmodule HeddleCore.Executions do
     )
     |> Ecto.Changeset.put_change(:paused, nil)
     |> Repo.update()
+    |> tap(&release_after/1)
   end
 
   def append_log(%Execution{} = execution, log_entry) when is_map(log_entry) do
