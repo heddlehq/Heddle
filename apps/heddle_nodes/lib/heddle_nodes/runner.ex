@@ -28,6 +28,7 @@ defmodule HeddleNodes.Runner do
   alias HeddleNodes.Agent
   alias HeddleNodes.Nodes
   alias HeddleNodes.Nodes.Approval
+  alias HeddleNodes.Tools
   alias HeddleNodes.Trace
   alias HeddleNodes.Usage
 
@@ -489,6 +490,9 @@ defmodule HeddleNodes.Runner do
       {:agent, request} ->
         run_agent(request, step)
 
+      {:with_tools, fun} ->
+        run_with_tools(fun, step)
+
       {:wait, wait} ->
         Usage.leave(step.usage)
         {:wait, Map.put(wait, "node_id", node.id), context, []}
@@ -571,17 +575,7 @@ defmodule HeddleNodes.Runner do
   defp run_agent(request, step) do
     tools = Graph.next(step.flow.graph, step.node, "tools")
 
-    run_tool = fn node, input ->
-      case execute_node(node, tool_context(step.context, input), step.flow) do
-        {:wait, _wait, context, _frames} ->
-          {:error, "A Wait can't be the tool of an AI Agent.", node.id, context}
-
-        result ->
-          result
-      end
-    end
-
-    case Agent.run(request, step.flow.flow_id, tools, run_tool) do
+    case Agent.run(request, step.flow.flow_id, tools, tool_runner(step)) do
       {:ok, value, calls, logs} ->
         step.context
         |> agent_result(value, calls, logs)
@@ -593,6 +587,84 @@ defmodule HeddleNodes.Runner do
         step.context
         |> agent_result(error, calls, logs)
         |> follow("error", step)
+    end
+  end
+
+  # A node that brings its own model, like a package's agent: `fun` gets what the tools
+  # are and a function that calls one by name, and answers `{:ok, value}`,
+  # `{:ok, value, output}` or `{:error, reason}`. `tool_calls` and the logs of the tools
+  # are kept, like the AI Agent's.
+  defp run_with_tools(fun, step) do
+    tools = Tools.build(Graph.next(step.flow.graph, step.node, "tools"))
+    {parent, ref} = {self(), make_ref()}
+    run_tool = tool_runner(step)
+
+    call = fn name, args ->
+      case Enum.find(tools, &(&1.name == to_string(name))) do
+        nil ->
+          {:error, "There is no tool called #{name}."}
+
+        tool ->
+          case Tools.call(tool, args, run_tool) do
+            {:ok, output, call, logs} ->
+              send(parent, {ref, call, logs})
+              {:ok, output}
+
+            {:error, message, call} ->
+              send(parent, {ref, call, []})
+              {:error, message}
+          end
+      end
+    end
+
+    outcome = call_with_tools(fun, Enum.map(tools, &Tools.describe/1), call)
+    {calls, logs} = collect_tool_calls(ref, [], [])
+
+    case outcome do
+      {:ok, value} ->
+        step.context |> agent_result(value, calls, logs) |> follow("success", step)
+
+      {:ok, value, output} ->
+        step.context |> agent_result(value, calls, logs) |> follow(to_string(output), step)
+
+      {:error, error} ->
+        error = if is_binary(error), do: %{"error" => error}, else: error
+        step.context |> agent_result(error, calls, logs) |> follow("error", step)
+    end
+  end
+
+  defp call_with_tools(fun, tools, call) do
+    case fun.(tools, call) do
+      {:ok, _value} = ok -> ok
+      {:ok, _value, _output} = ok -> ok
+      {:error, _reason} = error -> error
+      other -> {:error, "The node answered #{inspect(other)}."}
+    end
+  rescue
+    e -> {:error, Exception.message(e)}
+  catch
+    kind, reason -> {:error, Exception.format(kind, reason, __STACKTRACE__)}
+  end
+
+  defp collect_tool_calls(ref, calls, logs) do
+    receive do
+      {^ref, call, new_logs} -> collect_tool_calls(ref, [call | calls], logs ++ new_logs)
+    after
+      0 -> {Enum.reverse(calls), logs}
+    end
+  end
+
+  # Runs a tool's node with its new controls and input. A Wait would hold the node
+  # that called it, so it can't be one.
+  defp tool_runner(step) do
+    fn node, input ->
+      case execute_node(node, tool_context(step.context, input), step.flow) do
+        {:wait, _wait, context, _frames} ->
+          {:error, "A Wait can't be a tool.", node.id, context}
+
+        result ->
+          result
+      end
     end
   end
 
