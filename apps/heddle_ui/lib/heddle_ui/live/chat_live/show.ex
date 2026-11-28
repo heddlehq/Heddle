@@ -142,6 +142,17 @@ defmodule HeddleUI.ChatLive.Show do
     assign(socket, :messages, messages)
   end
 
+  attr :message, :map, required: true
+
+  # A visitor's words as they wrote them, and an agent's with its Markdown.
+  defp message_text(%{message: %{role: :visitor}} = assigns) do
+    ~H"""
+    <p class="whitespace-pre-line">{String.trim(@message.text)}</p>
+    """
+  end
+
+  defp message_text(assigns), do: ~H"{HeddleUI.ChatText.to_html(@message.text)}"
+
   defp waiting?(messages), do: match?(%{role: :visitor}, List.last(messages))
 
   defp peer(socket) do
@@ -220,7 +231,7 @@ defmodule HeddleUI.ChatLive.Show do
             :for={{message, index} <- Enum.with_index(@messages)}
             id={"chat-message-#{index}"}
             class={[
-              "max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed",
+              "chat-text max-w-[85%] break-words rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed",
               if(message.role == :visitor,
                 do: "self-end bg-primary text-primary-content",
                 else:
@@ -228,7 +239,7 @@ defmodule HeddleUI.ChatLive.Show do
               )
             ]}
           >
-            {message.text}
+            <.message_text message={message} />
           </div>
           <div
             :if={waiting?(@messages)}
