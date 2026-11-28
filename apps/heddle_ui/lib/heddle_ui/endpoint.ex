@@ -48,6 +48,9 @@ defmodule HeddleUI.Endpoint do
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
+  # Before the parsers, so a service's signature is checked against the body it sent.
+  plug HeddleUI.Plugs.IntegrationHookPlug
+
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],

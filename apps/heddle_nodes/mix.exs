@@ -45,7 +45,7 @@ defmodule HeddleNodes.MixProject do
   # BOBBIN_PATH points at a Bobbin checkout, to try a change in both at once.
   defp bobbin do
     case System.get_env("BOBBIN_PATH") do
-      nil -> {:bobbin, "~> 0.5"}
+      nil -> {:bobbin, "~> 0.6"}
       path -> {:bobbin, path: Path.expand(path), override: true}
     end
   end

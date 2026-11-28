@@ -218,7 +218,9 @@ export async function createEditor(container, { readOnly = false } = {}) {
                                                 label: control.label || key,
                                                 type: control.type || 'text',
                                                 options: control.options || [],
-                                                credential_kind: control.credentialKind
+                                                credential_kind: control.credentialKind,
+                                                options_from: control.optionsFrom || false,
+                                                required: control.required || false
                                             };
                                         });
                                     }
@@ -1243,10 +1245,13 @@ export async function createEditor(container, { readOnly = false } = {}) {
                     }
                 };
             } else {
-                control.type = ['select', 'credential', 'model', 'textarea', 'form_fields', 'flow', 'schema'].includes(field.type) ? field.type : 'text';
+                control.type = ['select', 'credential', 'model', 'textarea', 'form_fields', 'flow', 'schema', 'boolean', 'json', 'multiselect', 'datetime'].includes(field.type) ? field.type : 'text';
                 control.label = field.label;
                 control.credentialKind = field.kind;
                 if (field.options) control.options = field.options;
+                // The drawer lists these from the service, see HeddleUI.FlowLive.IntegrationManager.
+                if (field.options_from) control.optionsFrom = true;
+                if (field.required) control.required = true;
             }
 
             node.addControl(field.name, control);

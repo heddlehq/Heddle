@@ -4,6 +4,7 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
   alias HeddleUI.AIChoices
   alias HeddleUI.Components.Flow.FormFieldsEditor
   alias HeddleUI.Components.Flow.ValidationRulesEditor
+  alias HeddleUI.FlowLive.IntegrationManager
   alias HeddleUI.FlowLive.NodeCode
   alias HeddleUI.FlowLive.NodeSettings
 
@@ -15,6 +16,8 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
   attr :validate_form, :boolean, default: false
   attr :read_only, :boolean, default: false
   attr :form_link, :map, default: nil
+  attr :hook_link, :map, default: nil
+  attr :field_options, :map, default: %{}
   attr :can_run, :boolean, default: false
 
   def node_config_modal(assigns) do
@@ -77,6 +80,8 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
                 can_run={@can_run}
               />
 
+              <.hook_link :if={@hook_link} link={@hook_link} />
+
               <%= if @editing_node_data["controls"] do %>
                 <%= for {key, control} <- ordered_controls(@editing_node_data) do %>
                   <%= if control["type"] == "hidden" do %>
@@ -84,9 +89,47 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
                   <% else %>
                     <div>
                       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 first-letter:uppercase">
-                        {control["label"] || String.replace(key, "_", " ")}
+                        {IntegrationManager.label(
+                          @editing_node_data["type"],
+                          key,
+                          control["label"] || String.replace(key, "_", " ")
+                        )}
+                        <span :if={control["required"]} class="text-red-500">*</span>
                       </label>
-                      <%= case control["type"] do %>
+                      <%= case control_kind(control) do %>
+                        <% "service_options" -> %>
+                          <.service_options
+                            key={key}
+                            control={control}
+                            loaded={@field_options[key]}
+                            read_only={@read_only}
+                          />
+                        <% "multiselect" -> %>
+                          <.multiselect_field
+                            key={key}
+                            value={control["value"]}
+                            options={control["options"] || []}
+                          />
+                        <% "boolean" -> %>
+                          <.boolean_field key={key} value={control["value"]} />
+                        <% "json" -> %>
+                          <textarea
+                            id={"node-field-#{key}"}
+                            name={key}
+                            rows="6"
+                            spellcheck="false"
+                            placeholder={~s({"key": "value"})}
+                            class="w-full px-4 py-3 rounded-lg font-mono text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
+                          >{json_text(control["value"])}</textarea>
+                        <% "datetime" -> %>
+                          <input
+                            id={"node-field-#{key}"}
+                            type="text"
+                            name={key}
+                            value={control["value"]}
+                            placeholder="2026-11-22T09:00:00Z"
+                            class="w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
+                          />
                         <% "select" -> %>
                           <div class="relative">
                             <select
@@ -212,6 +255,220 @@ defmodule HeddleUI.Components.Modals.NodeConfigModal do
           </fieldset>
         </form>
       <% end %>
+    </div>
+    """
+  end
+
+  @field_class "w-full px-4 py-3 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150"
+
+  # A select whose options come from the service: they load when asked, and until then
+  # the field takes text, which may hold an expression.
+  attr :key, :string, required: true
+  attr :control, :map, required: true
+  attr :loaded, :map, default: nil
+  attr :read_only, :boolean, default: false
+
+  defp service_options(assigns) do
+    assigns = assign(assigns, :class, @field_class)
+
+    ~H"""
+    <div id={"service-options-#{@key}"} class="space-y-1.5">
+      <%= cond do %>
+        <% @loaded[:options] && @control["type"] == "multiselect" -> %>
+          <.multiselect_field key={@key} value={@control["value"]} options={@loaded.options} />
+        <% @loaded[:options] -> %>
+          <select id={"node-field-#{@key}"} name={@key} class={@class <> " appearance-none pr-10"}>
+            <option value="">{gettext("Pick one")}</option>
+            <option
+              :if={
+                @control["value"] not in [nil, ""] and
+                  not Enum.any?(@loaded.options, &(to_string(&1["value"]) == @control["value"]))
+              }
+              value={@control["value"]}
+              selected
+            >
+              {@control["value"]}
+            </option>
+            <option
+              :for={option <- @loaded.options}
+              value={option["value"]}
+              selected={to_string(option["value"]) == @control["value"]}
+            >
+              {option["label"]}
+            </option>
+          </select>
+        <% true -> %>
+          <input
+            id={"node-field-#{@key}"}
+            type="text"
+            name={@key}
+            value={@control["value"]}
+            class={@class}
+          />
+      <% end %>
+      <p
+        :if={@loaded[:error]}
+        id={"service-options-error-#{@key}"}
+        class="text-xs text-red-600 dark:text-red-400"
+      >
+        {@loaded.error}
+      </p>
+      <button
+        :if={not @read_only}
+        id={"service-options-load-#{@key}"}
+        type="button"
+        phx-click="integration_load_options"
+        phx-value-field={@key}
+        class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+      >
+        <.icon name="hero-arrow-path-mini" class="size-4" />
+        {if @loaded[:options], do: gettext("Load again"), else: gettext("Load from the service")}
+      </button>
+    </div>
+    """
+  end
+
+  attr :key, :string, required: true
+  attr :value, :any, default: nil
+  attr :options, :list, default: []
+
+  defp multiselect_field(assigns) do
+    assigns = assign(assigns, :selected, IntegrationManager.selected(assigns.value))
+
+    ~H"""
+    <div
+      id={"node-field-#{@key}"}
+      class="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-slate-700 dark:bg-slate-800"
+    >
+      <input type="hidden" name={@key <> "[]"} value="" />
+      <label
+        :for={option <- @options}
+        class="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200"
+      >
+        <input
+          type="checkbox"
+          name={@key <> "[]"}
+          value={option_value(option)}
+          checked={option_value(option) in @selected}
+          class="rounded border-gray-300 text-primary focus:ring-primary/30 dark:border-slate-600"
+        />
+        {option_label(option)}
+      </label>
+      <p :if={@options == []} class="text-xs text-gray-500 dark:text-gray-400">
+        {gettext("No options yet.")}
+      </p>
+    </div>
+    """
+  end
+
+  attr :key, :string, required: true
+  attr :value, :any, default: nil
+
+  defp boolean_field(assigns) do
+    ~H"""
+    <label class="inline-flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
+      <input type="hidden" name={@key} value="false" />
+      <input
+        id={"node-field-#{@key}"}
+        type="checkbox"
+        name={@key}
+        value="true"
+        checked={to_string(@value) in ["true", "1", "yes", "on"]}
+        class="rounded border-gray-300 text-primary focus:ring-primary/30 dark:border-slate-600"
+      />
+      {gettext("Yes")}
+    </label>
+    """
+  end
+
+  # A select or multiselect whose options come from the service has its own field.
+  defp control_kind(%{"type" => type, "options_from" => true})
+       when type in ~w(select multiselect),
+       do: "service_options"
+
+  defp control_kind(control), do: control["type"]
+
+  defp option_value(%{"value" => value}), do: to_string(value)
+  defp option_value(%{value: value}), do: to_string(value)
+  defp option_value(value), do: to_string(value)
+
+  defp option_label(%{"label" => label}), do: label
+  defp option_label(%{label: label}), do: label
+  defp option_label(value), do: to_string(value)
+
+  defp json_text(value) when is_binary(value), do: value
+  defp json_text(nil), do: ""
+  defp json_text(value), do: Jason.encode!(value, pretty: true)
+
+  # The address a service calls for a webhook trigger, once the flow is published.
+  attr :link, :map, required: true
+
+  defp hook_link(assigns) do
+    ~H"""
+    <div
+      id="hook-link"
+      class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
+    >
+      <div class="flex items-center justify-between gap-2">
+        <p class="text-sm font-medium text-gray-900 dark:text-white">{gettext("Webhook address")}</p>
+        <span
+          :if={not @link.published or is_nil(@link.url)}
+          id="hook-link-unpublished"
+          class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+        >
+          {gettext("Publish to get it")}
+        </span>
+        <span
+          :if={(@link.published and @link.url) && is_nil(@link.error)}
+          class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+        >
+          {gettext("Live")}
+        </span>
+      </div>
+      <div :if={@link.url} class="mt-2 flex gap-2">
+        <input
+          id="hook-link-url"
+          type="text"
+          readonly
+          value={@link.url}
+          class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-xs text-gray-700 focus:border-primary focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300"
+        />
+        <button
+          id="hook-link-copy"
+          type="button"
+          phx-click={JS.dispatch("phx:copy", detail: %{to: "#hook-link-url"})}
+          class="group inline-flex shrink-0 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 transition-colors hover:border-primary hover:text-primary dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300"
+        >
+          <.icon name="hero-clipboard-document-mini" class="size-4 group-data-[copied]:hidden" />
+          <.icon
+            name="hero-check-mini"
+            class="hidden size-4 text-emerald-600 group-data-[copied]:block"
+          />
+          <span class="group-data-[copied]:hidden">{gettext("Copy")}</span>
+          <span class="hidden group-data-[copied]:inline">{gettext("Copied")}</span>
+        </button>
+      </div>
+      <p :if={@link.error} id="hook-link-error" class="mt-2 text-xs text-red-600 dark:text-red-400">
+        {gettext("%{service} refused the address: %{error}",
+          service: @link.service,
+          error: @link.error
+        )}
+      </p>
+      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+        <%= if @link.manual do %>
+          {gettext(
+            "Paste this address in %{service}, where it sends its events. What arrives is in %{placeholder}.",
+            service: @link.service,
+            placeholder: "{{result}}"
+          )}
+        <% else %>
+          {gettext(
+            "Heddle gives this address to %{service} when the flow is published. What arrives is in %{placeholder}.",
+            service: @link.service,
+            placeholder: "{{result}}"
+          )}
+        <% end %>
+      </p>
     </div>
     """
   end

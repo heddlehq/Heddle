@@ -4,9 +4,12 @@ defmodule HeddleNodes.Manifests do
   workspace downloaded from the catalog (`HeddleNodes.Community`), and the ones packages
   carry (`HeddleNodes.Packages`). `Bobbin.Integration.Runtime` runs their nodes.
 
-  Each trigger becomes a node a flow starts from. `HeddleWorker.PollWorker` calls it
-  every few minutes, see `poll/3`, and starts the flow once for each new item, which
-  the node passes on as `result`.
+  Each trigger becomes a node a flow starts from. A polling trigger is called by
+  `HeddleWorker.PollWorker` every few minutes, see `poll/3`, which starts the flow
+  once for each new item. A webhook trigger is called by the service, at the address
+  `HeddleWorker.HookWorker` registers when the flow is published (see
+  `HeddleCore.Integrations.Hooks`). Either way the node passes the item on as
+  `result`.
   """
 
   alias Bobbin.Integration.Runtime
@@ -63,12 +66,36 @@ defmodule HeddleNodes.Manifests do
   defdelegate run(manifest, action_name, context), to: Runtime
   defdelegate poll(manifest, trigger_name, context), to: Runtime
   defdelegate trigger(manifest, trigger_name, context), to: Runtime
+  defdelegate options(manifest, step_name, field_name, context), to: Runtime
+  defdelegate register_webhook(manifest, trigger_name, context, webhook), to: Runtime
+  defdelegate unregister_webhook(manifest, trigger_name, context, webhook), to: Runtime
+  defdelegate receive_webhook(manifest, trigger_name, context, event, webhook), to: Runtime
 
   @doc """
-  The trigger nodes of every manifest:
+  The polling trigger nodes of every manifest:
   `[%{type: node_name, manifest: manifest, trigger: trigger}]`.
   """
-  def poll_triggers do
+  def poll_triggers, do: Enum.reject(triggers(), & &1.trigger.webhook)
+
+  @doc "The webhook trigger nodes of every manifest, like `poll_triggers/0`."
+  def webhook_triggers, do: Enum.filter(triggers(), & &1.trigger.webhook)
+
+  @doc "The webhook trigger whose node is of `type`, or nil."
+  def webhook_trigger(type), do: Enum.find(webhook_triggers(), &(&1.type == type))
+
+  @doc """
+  The manifest and the action or trigger of a node of `type`, or nil:
+  `%{manifest: manifest, step: step}`.
+  """
+  def step(type) do
+    Enum.find_value(all(), fn manifest ->
+      Enum.find_value(manifest.triggers ++ manifest.actions, fn step ->
+        if "#{manifest.name}: #{step.name}" == type, do: %{manifest: manifest, step: step}
+      end)
+    end)
+  end
+
+  defp triggers do
     for manifest <- all(), trigger <- manifest.triggers do
       %{type: "#{manifest.name}: #{trigger.name}", manifest: manifest, trigger: trigger}
     end

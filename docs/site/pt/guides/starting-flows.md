@@ -1,6 +1,6 @@
 ---
 title: Disparando fluxos
-description: Rode um fluxo por webhook, por um formulário, num horário, pela API ou quando outro fluxo falha.
+description: Rode um fluxo por webhook, por um formulário, num horário, quando algo acontece em outro serviço, pela API ou quando outro fluxo falha.
 sidebar:
   order: 2
 ---
@@ -86,6 +86,17 @@ Um [Schedule](/pt/docs/nodes/schedule/) inicia o fluxo nos horários da express�
 | `0 8 1 * *` | No dia 1º de cada mês às 08:00 UTC |
 
 São Paulo está em UTC−3, então 09:00 lá é `0 12 * * *`. Um fluxo pode ter vários Schedules.
+
+## Quando algo acontece em outro serviço
+
+As integrações que você instala trazem triggers próprios, como **Slack: New Message**. Cada um começa o fluxo uma vez por item novo, com o item em `{{result}}`. Há dois tipos:
+
+- **Consulta a cada poucos minutos**: o Heddle pergunta ao serviço o que há de novo. A primeira consulta só olha, então ligar um fluxo não dispara ele para tudo o que o serviço já tem.
+- **Webhook**: o serviço chama o Heddle quando algo acontece. Ao publicar, o Heddle passa ao serviço o endereço do trigger, e desliga de novo quando o nó sai do fluxo ou o fluxo é apagado. Alguns serviços não deixam o Heddle fazer isso: aí a gaveta do nó mostra o endereço em **Endereço do webhook**, e você cola no serviço. O endereço continua o mesmo entre publicações.
+
+O Heddle confere que cada chamada veio do serviço, pela assinatura que ele envia, e recusa as outras. Se o serviço recusar o endereço, a gaveta diz por quê, e o Heddle tenta de novo na próxima publicação.
+
+Campos que listam o que o serviço tem, como um canal ou uma planilha, têm **Carregar do serviço** na gaveta: escolha uma credencial antes.
 
 ## A API
 

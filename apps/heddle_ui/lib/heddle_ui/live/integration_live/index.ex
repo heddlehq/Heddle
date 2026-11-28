@@ -143,7 +143,7 @@ defmodule HeddleUI.IntegrationLive.Index do
           id: id,
           title: entry["name"] || id,
           category: id,
-          icon: entry["icon"] || "hero-puzzle-piece",
+          icon: if(entry["logo"], do: "logo-" <> id, else: entry["icon"] || "hero-puzzle-piece"),
           color: @community_color,
           community: not official?,
           download: official?,
