@@ -32,6 +32,11 @@ defmodule HeddleCore.Flows do
     to: HeddleCore.Flows.Versions,
     as: :list_published_with_node
 
+  @doc "Like `list_flows_with_node/1`, for the flows of one workspace."
+  defdelegate list_flows_with_node(type, workspace_id),
+    to: HeddleCore.Flows.Versions,
+    as: :list_published_with_node
+
   @doc "The flows of the workspace the caller works in."
   def list_flows(%Scope{} = scope) do
     scope

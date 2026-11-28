@@ -1,10 +1,12 @@
 defmodule HeddleNodes.BobbinHost do
   @moduledoc """
   What Heddle gives the nodes written with Bobbin, see `Bobbin.Host`: the credentials
-  of each workspace, and a store for what a package keeps between runs.
+  of each workspace, runs of the flows that begin at a package's trigger, and a store
+  for what a package keeps between runs.
 
   heddle_core is only a test dependency of this app, so they come from config, as
-  `:credentials_client` and `:store_client` (`HeddleCore.PackageStore`).
+  `:credentials_client`, `:runs_client` (`HeddleWorker.PackageRuns`) and
+  `:store_client` (`HeddleCore.PackageStore`).
   """
 
   @behaviour Bobbin.Host
@@ -16,6 +18,12 @@ defmodule HeddleNodes.BobbinHost do
 
     if opts == [], do: apply(client, :fetch, args), else: apply(client, :fetch, args ++ [opts])
   end
+
+  @impl true
+  def start_runs(request), do: runs().start_runs(request)
+
+  @impl true
+  def cancel_run(workspace_id, run_id), do: runs().cancel_run(workspace_id, run_id)
 
   @impl true
   def store_get(workspace_id, namespace, key, opts),
@@ -33,5 +41,6 @@ defmodule HeddleNodes.BobbinHost do
   def store_list(workspace_id, namespace, prefix, opts),
     do: store().list(workspace_id, namespace, prefix, opts)
 
+  defp runs, do: Application.fetch_env!(:heddle_nodes, :runs_client)
   defp store, do: Application.fetch_env!(:heddle_nodes, :store_client)
 end
